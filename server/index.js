@@ -11,7 +11,6 @@ const path = require('path');
 
 const DeadClickUtils = require('DeadClick').utils;
 const Error = require('DeadClick').Error;
-DeadClickUtils.requestsPath = __dirname + '/../new_collect/';
 
 const repairService = require('./repairService');
 
