@@ -1,0 +1,390 @@
+// START: VIEW CART CONTROLLER
+app.controller('orderSummaryCtrl', ['$scope', '$http', '$timeout', '$log', '$compile', 'httpRequest', 'pcService', function($scope, $http, $timeout, $log, $compile, httpRequest, pcService) {     
+
+    $scope.shoppingcart = [];
+    $scope.provider = "";
+    
+    $scope.blockUI = function (div, msg) {
+        $pc.blockUI.defaults.css = {
+            top: '5%',
+            left: '20%',
+            right: '20%'
+        };
+        $pc(div).block({
+            centerY: 0,
+            centerX: false,
+            message: '<div id="pcMain">' + msg + "</div>",
+            overlayCSS: {
+                backgroundColor: '#FFFFFF',
+                cursor: 'wait',
+                padding: '4px'
+            }
+        });
+    };
+
+    $scope.unblockUI = function (div) {
+        $pc(div).unblock();
+    };
+
+    $scope.$on('handleBroadcast', function(event, data){
+        $scope.shoppingcart = data;
+        $scope.unblockUI('#pcCart');
+    });
+    $scope.refresh = function () {
+        pcService.getShoppingCart('', false);
+    };
+
+
+	// START: Discounts
+    $scope.calculateDiscountsCart = function (rtype) {
+
+        $scope.checkSessionExpired();
+        $scope.clearAllErrorMsg();
+        
+        httpRequest.loadAsync('opc_calculate.asp', $pc('#DiscountCode').fieldSerialize() + '&fromcart=1&rtype='+rtype).then(function (data) {            
+			if (data == "SECURITY") {
+                // Session Expired
+                window.location = "msg.asp?message=1";
+            } else {
+                if (data.indexOf("|***|OK|***|") >= 0) {
+                    var tmpArr = data.split("|***|")
+                    $scope.clearAllErrorMsg();
+                    $pc("#DiscountCode").val(tmpArr[2]);                   
+                } else {                    
+                    var tmpArr = data.split("|***|")
+                    $scope.displayMessage("#DiscountMessageBox", tmpArr[3]);
+                    $pc("#DiscountCode").val(tmpArr[2]);                   
+                }
+            }
+            $scope.refresh();
+        });
+    }
+    // END: Discounts
+
+
+    // START: Check Expired Cart
+    $scope.checkSessionExpired = function (formdata) {
+
+        httpRequest.loadAsync('opc_cartcheck.asp', formdata).then(function (data) {
+
+            if (data !== "OK") {
+                window.location = "viewcart.asp";
+            }
+
+        });
+
+    };
+    // END: Check Expired Cart
+
+
+	// START: Submit Est Ship Form
+    $scope.submitEstShipForm = function (rtype) {
+        httpRequest.loadAsync('estimateShipCost.asp', $pc('#shipCost').formSerialize()).then(function (data) {
+			injector = $compile(data)($scope);
+			$pc("#pcEstimateShippingArea").html(injector);
+            $scope.unblockUI('#pcOrderSummaryWrapper');
+        });
+    }
+    // END: Submit Est Ship Form
+	
+
+	
+	// START: Load Estimate Ship Form
+    $scope.LoadEstShipForm = function () {
+        httpRequest.loadAsync('estimateShipCost.asp', '').then(function (data) {
+			injector = $compile(data)($scope);
+			$pc("#pcEstimateShippingArea").html(injector);
+			$pc("#zip").keydown(function(event){
+				if(event.keyCode == 13){
+					event.preventDefault();
+					$pc("#SubmitShip").click();
+				}
+			});
+        });
+    }
+    // END: Load Estimate Ship Form
+
+
+    // Update Order with Selected Shipping Method
+    $scope.updateShippingMethod = function (formdata) {
+
+        $scope.checkSessionExpired();
+        $scope.clearAllErrorMsg();
+
+		$scope.blockUI('#pcOrderSummaryWrapper', '<div class="pcCheckoutSubTitle"><img src="images/ajax-loader1.gif" /> Updating Order Summary...</div>');
+        
+        formdata = $pc('#ShipChargeForm').formSerialize() + "&ShippingChargeSubmit=yes&f=cart";
+
+        // Block UI
+        $scope.blockUI('#pcRatesPanelContent', '<div class="pcCheckoutSubTitle"><img src="images/ajax-loader1.gif" /> Preparing Payment Information</div>');
+
+        httpRequest.loadAsync('opc_chooseShpmnt.asp', formdata).then(function (data) {
+            if (data == "SECURITY") {
+                // Session Expired
+                // window.location = "msg.asp?message=1";
+                $scope.unblockUI('#pcOrderSummaryWrapper');                
+            } else {
+                //if (data == "OK") {
+                    //$scope.clearAllErrorMsg();
+                    //$scope.ratingSubmit = true;
+                    //$scope.checkTaxRates();
+                //} else {                    
+                    $scope.unblockUI('#pcOrderSummaryWrapper');
+                    //$scope.displayCustErrorMsg("#RatingMessageBox", '<img src="images/pc_icon_error_small.png" align="absmiddle"> ' + data);
+                //}
+                $scope.refresh();
+            }
+        });
+    };
+	
+	$scope.showEstShip = function () {
+		$pc('#pcEstimateShippingTxt').hide();
+		$scope.LoadEstShipForm();
+        $pc('#pcEstimateShippingArea').show();
+    };
+	
+	$scope.getEstShipServices = function () {
+		var tmpTest=FormEst_Validator();
+		if (tmpTest==3)
+		{
+			$scope.blockUI('#pcOrderSummaryWrapper', '<div class="pcCheckoutSubTitle"><img src="images/ajax-loader1.gif" /> Estimating Shipping...</div>');
+			
+			httpRequest.loadAsync('checkValidZip.asp', $pc('#shipCost').formSerialize()).then(function (data) {
+				if(data == "VALID") {
+					$scope.submitEstShipForm();
+				} else {
+					$pc("#ErrorZipBox").html(data);
+					$pc("#ErrorZipBox").show();
+					setTimeout(function(){
+						$pc("#ErrorZipBox").fadeOut('fast');
+					},2000);
+					$scope.unblockUI('#pcOrderSummaryWrapper');
+				}            
+			});
+		}
+		else
+		{
+			if (tmpTest==1)
+			{
+				$pc("#ErrorZipBox").html("Please enter a value for Postal Code");
+			}
+			else
+			{
+				if (tmpTest==2) $pc("#ErrorZipBox").html("Please enter a value for StateCode/Province");
+			}
+			$pc("#ErrorZipBox").show();
+			setTimeout(function(){
+				$pc("#ErrorZipBox").fadeOut('fast');
+			},2000);
+			$scope.unblockUI('#pcOrderSummaryWrapper');	
+		}
+    };
+	
+	$scope.getEstShipServicesS = function () {
+		if ($pc('#provider').val()!='')
+		{
+			$scope.blockUI('#pcEstimateShippingArea', '<div class="pcCheckoutSubTitle"><img src="images/ajax-loader1.gif" /> Loading Cart...</div>');
+			$scope.submitEstShipForm();
+			$scope.unblockUI('#pcEstimateShippingArea');
+		}
+    };
+	
+	$scope.hideEstShip = function () {
+		$pc('#pcEstimateShippingTxt').show();
+        $pc('#pcEstimateShippingArea').hide();
+    };
+	
+	$scope.displayMessage = function (div, msg) {
+        $pc(div).html(msg);
+        $pc(div).show();
+    };
+    $scope.clearAllErrorMsg = function () {
+
+        $pc('#DiscountMessageBox').html('');
+        $pc('#DiscountMessageBox').hide();
+    };
+	
+    function init() {
+        $scope.blockUI('#pcCart', '<div class="pcCheckoutSubTitle"><img src="images/ajax-loader1.gif" /> Loading Cart...</div>');
+		if (scDispDiscCart=="1") {
+            $scope.calculateDiscountsCart(''); 
+        }
+    };
+    init();
+
+    $scope.Evaluate = function (val) {
+        if (val == 'true' || val == true) {
+            return true;
+        } else {
+            return false;
+        }
+    };
+
+    $scope.IsEmpty = function (val) {
+        if (val) {
+            return false;
+        } else {
+            return true;
+        }
+    };
+
+    $scope.CheckQuantityMins = function (a, b, c, d, e, f) {
+        checkproqtyNew(a, b, c, d, e, f);
+    };
+    
+    $scope.currentUpdate='';
+    $scope.ShowUpdateButton = function (id) {       
+        if ($scope.currentUpdate==id || $scope.currentUpdate=='') {                       
+            $pc("#pcUpdate" + id).show();            
+        } else {
+            $pc("#pcUpdate" + $scope.currentUpdate).hide();            
+            $pc("#pcUpdate" + id).show();  
+        }
+        $scope.currentUpdate = id;
+    };
+    $scope.HideUpdateButton = function (id) {
+        var expr = '$pc("#pcUpdate' + id + '").hide();';       
+        setTimeout(expr, 200); 
+    };
+
+}]);
+// END: VIEW CART CONTROLLER
+
+
+function checkQtyChange() {
+    var i = 0;
+    for (i = 1; i <= pcCartIndex; i++) {
+        if (eval("document.recalculate.Cant" + i).value != eval("document.recalculate.SavQty" + i).value) {
+            alert(alert_recal);
+            return (false);
+        }
+    }
+    return (true);
+
+}
+
+function win(fileName) {
+    myFloater = window.open('', 'myWindow', 'scrollbars=yes,status=no,width=300,height=250')
+    myFloater.location.href = fileName;
+}
+
+function winShipPreview(fileName) {
+    myFloater = window.open('', 'myWindow', 'scrollbars=yes,status=no,width=520,height=400')
+    myFloater.location.href = fileName;
+}
+
+function validateNumber(field) {
+    var val = field.value;
+    if (!/^\d*$/.test(val) || val == 0) {
+        alert(showcart_2);
+        field.focus();
+        field.select();
+    }
+}
+
+function isDigit(s) {
+    var test = "" + s;
+    if (test == "0" || test == "1" || test == "2" || test == "3" || test == "4" || test == "5" || test == "6" || test == "7" || test == "8" || test == "9") {
+        return (true);
+    }
+    return (false);
+}
+
+function allDigit(s) {
+    var test = "" + s;
+    for (var k = 0; k < test.length; k++) {
+        var c = test.substring(k, k + 1);
+        if (isDigit(c) == false) {
+            return (false);
+        }
+    }
+    return (true);
+}
+
+function checkproqtyNew(id, qty, ctype, remain, MultiQty, isActive) {
+
+    if (isActive == 'true' || isActive == true) {
+
+        var fname = $pc("#" + id)
+
+        RemainIssue1 = "A";
+        if (fname.val() == "") {
+            if (RemainIssue.indexOf('||' + id) == -1) RemainIssue = RemainIssue + '||' + id;
+            fname.focus();
+            return (false);
+        }
+
+        if (allDigit(fname.val()) == false) {
+            alert(alert_5);
+            if (RemainIssue.indexOf('||' + id) == -1) RemainIssue = RemainIssue + '||' + id;
+            fname.focus();
+            return (false);
+        }
+
+        if (fname.val() == "0") {
+            alert(alert_5);
+            if (RemainIssue.indexOf('||' + id) == -1) RemainIssue = RemainIssue + '||' + id;
+            fname.focus();
+            return (false);
+        }
+
+        if (ctype > 0) {
+            TempValue = eval(fname.val());
+            TempV1 = (TempValue / MultiQty);
+            TempV1a = TempValue * TempV1;
+            TempV2 = Math.round(TempValue / MultiQty);
+            TempV2a = TempValue * TempV2;
+            if ((TempV1a != TempV2a) || (TempV1 < 1)) {
+                alert(alert_3 + MultiQty);
+                if (RemainIssue.indexOf('||' + id) == -1) RemainIssue = RemainIssue + '||' + id;
+                fname.focus();
+                return (false);
+            }
+        }
+        if (qty > 0) {
+            TempValue = eval(fname.val());
+            if (TempValue < qty) {
+                alert(alert_8 + qty + alert_9);
+                if (RemainIssue.indexOf('||' + id) == -1) RemainIssue = RemainIssue + '||' + id;
+                fname.focus();
+                return (false);
+            }
+        }
+
+        //<% 'GGG Add-on start
+        if (HaveGRAddress = 1) {
+            if ((eval(fname.val()) > remain) && (remain > 0)) {
+                alert("Your entered a quantity greater than remaining quantity.");
+                if (RemainIssue.indexOf('||' + id) == -1) RemainIssue = RemainIssue + '||' + id;
+                fname.focus();
+                return (false);
+            }
+        }
+
+        if (RemainIssue != "") RemainIssue = RemainIssue.replace('||' + id, '');
+        if (RemainIssue1 == "A") RemainIssue1 = "";
+        return (true);
+
+    }
+}
+
+
+/***********************************************
+ * Disable "Enter" key in Form script- By Nurul Fadilah(nurul@REMOVETHISvolmedia.com)
+ * This notice must stay intact for use
+ * Visit http://www.dynamicdrive.com/ for full source code
+ ***********************************************/
+
+function handleEnter(field, event) {
+    var keyCode = event.keyCode ? event.keyCode : event.which ? event.which : event.charCode;
+    if (keyCode == 13) {
+        var i;
+        for (i = 0; i < field.form.elements.length; i++)
+            if (field == field.form.elements[i])
+                break;
+        i = (i + 1) % field.form.elements.length;
+        field.form.elements[i].focus();
+        return false;
+    } else
+        return true;
+}

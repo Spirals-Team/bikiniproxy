@@ -1,0 +1,824 @@
+/**
+ *
+ * @TODO:
+ *
+ * document interface
+ * document flow
+ *
+ */
+
+
+
+
+;
+bam.mediawall = (function(window, document, $, undefined, bam) {
+
+  /**
+   **************** Private ****************
+   */
+  var _currentPanel = 0,
+      _numRotations = 0,
+      _numIntervals = 19,
+      
+      
+      // clock ticks. this should equal the number of icons in the controls bg sprite
+      _easing = "easeOutCirc",
+      _properties = {},
+      
+      
+      // local cache for club props. used in game mode for FB but included here cuz it's useful
+      _$container, // assigned in _self.init
+      _panelwidth, // assigned in _setContainerWidth
+      _running = false,
+      
+      
+      // true while panels are rotating
+      _countdown = null,
+      
+      
+      // clock timer. assigned in _rotate
+      _restart = null,
+      
+      
+      // timeout that runs after autostop is called before triggering autostart
+      _timeLeft, // tracks time between autorotations
+      _activeNav = "#mw_nav li.mw_nav_circle_on",
+      $doc = $(document),
+      _config = {
+      club: "mlb",
+      property: "mlb",
+      speed: 500,
+      //millis
+      defaultdelay: 12000,
+      //millis
+      template: "/shared/components/mediawall/v3.1/mediawall.tpl",
+      ispostseason: false,
+      compname: "Mediawall",
+      numpanels: null,
+      // this gets overwritten in v3.1 inside _loadData
+      numloops: 2,
+      //autorun       : true,
+      autorun: (!bam.env.host.isBeta),
+      mediacenterlink: "/mediacenter/index.jsp",
+      defaultimgbase: "/shared/components/mediawall/images/default/",
+      overlaybase: "/images/homepage/y2009/frames/",
+      boxlinkbase: "/mlb/gameday/index.jsp?gid=",
+      videopage: "/video/play.jsp",
+      audiotext: "Audio",
+      wraptext: "Wrap",
+      boxtext: "Box",
+      gamedaytext: "Gameday",
+      tvtext: "MLB.TV",
+      previewtext: "Preview",
+      panels: []
+      },
+      
+      
+      
+      
+      
+      
+      
+      /**
+       * 
+       * _log
+       * 
+       * Private utility functions for debugging
+       */
+      
+      
+      
+      _log = function(msg) {
+      if (_self.debug && typeof console !== "undefined" && !! console.log) {
+        if (typeof msg === "string") console.log("bam.mediawall: " + msg);
+        else if (typeof msg === "object" && !! console.dir) console.dir(msg);
+        else console.log(msg);
+      }
+      },
+      
+      
+      
+      
+      
+      /**
+       * 
+       * _setDebugging
+       * 
+       * Private utility functions for debugging
+       * allows component-specific debugging via URL param. 
+       * Example:
+       * http://qa.mlb.com/index.jsp?debug=mediawall
+       * 
+       */
+      
+      
+      
+      _setDebugging = function(component) {
+      var d = bam.url.Location(window.location).getParam("debug");
+      if ( !! d && (d === "true" || ~d.indexOf(component))) return true;
+      else
+      return false;
+      },
+      
+      
+      
+      
+      
+      /**
+       * 
+       * _getScriptSync
+       * @private
+       * Utility function for synchronously loading JavaScript includes 
+       * without updating global ajax props via ajaxSetup
+       * @param url String
+       */
+      
+      
+      
+      _getScriptSync = function(url) {
+      $.ajax({
+        type: "GET",
+        async: false,
+        cache: true,
+        url: url,
+        dataType: "script"
+      });
+      },
+      
+      
+      
+      
+      
+      
+      /**
+       * 
+       * _get
+       * @private
+       * Cached jQuery selector getter
+       */
+      
+      
+      
+      _get = function(selector) {
+      return _get.cache[selector] = _get.cache[selector] || $(selector);
+      },
+      
+      
+      
+      
+      
+      
+      /**
+       * 
+       * _setContainerWidth
+       * @private
+       * Sets the width for the scrolling element ( numpanels * container width )
+       */
+      
+      
+      
+      _setContainerWidth = function() {
+      var clipwidth;
+      _panelwidth = _$container.parent().width();
+      clipwidth = _panelwidth * (_config.numpanels + 2); // numpanels is incremented to allow room for the cloned panels  
+      _$container.empty().width(clipwidth);
+      },
+      
+      
+      
+      
+      
+      
+      
+      /**
+       * 
+       * _loadData
+       * @private
+       * Stores json in local cache 
+       * Creates panels and starts auto rotation
+       */
+      
+      
+      
+      _loadData = function(cb) {
+      $.ajax({
+        url: _config.datasource,
+        type: "get",
+        timeout: 5000,
+        dataType: "json",
+        error: function(xhr) {
+          _log("Error: " + xhr.status + " " + xhr.statusText);
+        },
+        success: function(json) {
+          _config.cache = $.ensureArray(json.members);
+          if (!_config.numpanels) _config.numpanels = _config.cache.length; // allow editorial to set number of panels    
+          _setContainerWidth();
+          $.template(_config.template, _config.cache).find("li").appendTo(_$container);
+          _self.trigger("dataLoaded");
+        },
+        complete: function() {;
+          if ($.isFunction(cb)) cb();
+        }
+      });
+      },
+      
+      
+      
+      
+      
+      
+      /**
+       * 
+       * _rotate
+       * @private
+       * Animates the scrolling.
+       */
+      
+      
+      
+      _rotate = function() {
+      _log("_rotate. _currentPanel=" + _currentPanel + ", _timeLeft=" + _timeLeft);
+      var duration, curbgpos, newbgpos, interval, $circle = $(_activeNav);
+      // disable autostop after n rotations for demo purposes 
+      if (_numRotations >= _config.numloops || !_config.autorun) {
+        _self.trigger("autoStop");
+      } else {
+        // panel duration is retrieved from JSON (and set in the .tpl template). A default value is used if none is set.
+        duration = _config.panels[_currentPanel - 1].display_seconds || _config.defaultdelay;
+        interval = Math.floor(duration / _numIntervals);
+        // timer for panel countdown      
+        clearInterval(_countdown);
+        _countdown = setInterval(function() {
+          if (_timeLeft > 0) {
+            _timeLeft--;
+/*      
+                    curbgpos = $circle.css("background-position");      
+                    // hack for IE. 
+                    // IE doesn't understand the selector background-position. 
+                    // It understands the non-standard background-position-x and background-position-y.             
+                    // @TODO: use jquery csshooks here, or is there too much overhead?                
+                    if(curbgpos === undefined) curbgpos = $circle.css("background-position-x") + " " + $circle.css("background-position-y");
+                    curbgpos=curbgpos.split(" ")[1];  
+                    newbgpos = parseInt(curbgpos,10) - 15;           
+                    $circle.css("background-position","0 " + newbgpos + "px");    
+                    */
+          } else {
+            _timeLeft = _numIntervals;
+            _log("_rotate: clearing countdown interval. time remaining for this panel is " + _timeLeft + " seconds.");
+            clearInterval(_countdown);
+            if (_config.autorun) _self.moveRight(_rotate);
+          }
+        }, interval);
+      }
+      },
+      
+      
+      
+      
+      
+      
+      
+      
+      // loads the main photo and the overlay
+      _getPhoto = function(obj, $elem) {
+      var $photo = $elem.find(".mw_photo a"),
+          $overlay = $elem.find(".mw_overlay"),
+          $thumb = $elem.find(".mw_video a"),
+          defaultphoto = _config.defaultimgbase + "mediawall-" + _config.club + ".jpg";
+      if ($photo.find("img").length === 0) {
+        $("<img>").hide().load(function() {
+          $photo.append(this);
+          $(this).fadeIn(400, function() {
+            _self.trigger("photoLoaded");
+          });
+        }).error(function() {
+          _log("Error loading mediawall photo. Loading default photo instead.");
+          // load default photo 
+          obj.photo = defaultphoto;
+          $photo.append(this);
+          $(this).attr('src', defaultphoto).removeAttr('width').removeAttr('height').fadeIn().unbind("error");
+        }).attr('src', obj.photo || obj.photo270 || defaultphoto);
+      }
+      if ( !!obj.overlay && $overlay.find("img").length === 0) {
+        $("<img>").hide().addClass("png").load(function() {
+          _log("overlay found and loaded successfully");
+          $overlay.find("a").append(this);
+          $(this).fadeIn();
+        }).error(function() {
+          _log("Error loading mediawall overlay. Removing overlay from data object.");
+          // void overlay if the path is incorrect
+          obj.overlay = "";
+          $overlay.remove();
+          $(this).unbind("error");
+        }).attr('src', _config.overlaybase + obj.overlay);
+      }
+      _log(obj);
+
+      if ( !!obj.video_thumb && $thumb.find("img").length === 0) {
+        $("<img>").hide().load(function() {
+          _log("video thumb found and loaded successfully");
+          $thumb.prepend(this);
+          $(this).fadeIn();
+        }).error(function() {
+          _log("Error loading video thumb. Removing it from data object.");
+          // void thumb if the path is incorrect
+          obj.video_thumb = "";
+          $thumb.closest(".mw_video").remove();
+          $(this).unbind("error");
+        }).attr('src', obj.video_thumb);
+      }
+      },
+      
+      
+      
+      
+      
+      _loadPhoto = function(idx) {
+      var panelObj, $panelElem, panels = _config.panels;
+      if (idx === 1) {
+        // load image in first cloned panel to support moveLeft after initialization
+        panelObj = panels[_config.numpanels - 1];
+        $panelElem = _$container.find(".isClone:eq(0)");
+        _getPhoto(panelObj, $panelElem);
+        // load image in panel 2 to support moveRight after initialization
+        panelObj = panels[1];
+        $panelElem = _$container.find(".mw_panel:not(.isClone):eq(1)");
+        _getPhoto(panelObj, $panelElem);
+      } else if (idx === _config.numpanels) {
+        // load image in last cloned panel to support moveRight after last panel 
+        panelObj = panels[0];
+        $panelElem = _$container.find(".isClone:eq(1)");
+        _getPhoto(panelObj, $panelElem);
+      } else {
+        idx = (idx < 0) ? _config.numpanels - 1 : idx;
+        panelObj = ( !! panels[idx]) ? panels[idx] : panels[0];
+        $panelElem = _$container.find(".mw_panel:not(.isClone):eq(" + idx + ")");
+        _getPhoto(panelObj, $panelElem);
+      }
+      },
+      
+      
+      
+      
+      
+      
+      
+      /**
+       * 
+       * _loadFacebook
+       * @private
+       * loads facebook "like" button iframes
+       * this is done here instead of in the .tpl because Firefox has some problems loading iframes dynamically
+       * @TODO: consider converting to facebook fbml
+       * @TODO: consider calling this only when some data is set, rather than on every rotationEnd
+       */
+      
+      
+      
+      _loadFacebook = function(idx) {
+      idx = (idx < 0) ? _config.numpanels - 1 : idx;
+      var $fbcontainer = _$container.find(".mw_panel:not(.isClone):eq(" + idx + ")").find(".fb_module_content"),
+          panels, panelObj, away_src, home_src, away_id, home_id, tempFrame;
+      if ($fbcontainer.length > 0) {
+        panels = _config.panels, panelObj = ( !! panels[idx]) ? panels[idx] : panels[0], away_src = "http://www.facebook.com/plugins/like.php?href=" + panelObj.facebook.away_url + "&layout=button_count&show_faces=false&width=75&action=like&colorscheme=light&height=27", home_src = "http://www.facebook.com/plugins/like.php?href=" + panelObj.facebook.home_url + "&layout=button_count&show_faces=false&width=75&action=like&colorscheme=light&height=27", away_id = "fbframe_" + panelObj.facebook.away_code, home_id = "fbframe_" + panelObj.facebook.home_code, tempFrame;
+        $("<iframe>").attr({
+          scrolling: "no",
+          frameBorder: "0",
+          allowTransparency: "true",
+          src: home_src,
+          id: home_id
+        }).appendTo($fbcontainer);
+        // workaround for Firefox iframe caching bug:
+        // https://bugzilla.mozilla.org/show_bug.cgi?id=356558      
+        tempFrame = document.getElementById(home_id);
+        tempFrame.contentWindow.location.href = tempFrame.src;
+        if ( !! panelObj.facebook.away_url) {
+          $("<iframe>").attr({
+            scrolling: "no",
+            frameBorder: "0",
+            allowTransparency: "true",
+            src: away_src,
+            id: away_id
+          }).prependTo($fbcontainer);
+          // workaround for Firefox iframe caching bug:
+          // https://bugzilla.mozilla.org/show_bug.cgi?id=356558
+          tempFrame = document.getElementById(away_id);
+          tempFrame.contentWindow.location.href = tempFrame.src;
+        }
+      }
+      },
+      
+      
+      
+      _clearFacebook = function() {
+      _$container.find(".fb_module_content iframe").remove();
+      },
+      
+      
+      
+      
+      
+      
+      
+      
+      // this function gets called twice: once when data is loaded and once when the first photo has loaded. 
+       // this ensures the animation won't run until everything is ready.
+      _animateOnLoad = function() {
+      if (!this.called) {
+        this.called = true;
+        return;
+      }
+      var $backgrounds = _$container.find(".mw_bottom_bg"),
+          $kids = _$container.find(".mw_panel").children(),
+          counter1 = $backgrounds.length,
+          counter2 = $kids.length;
+
+      if (!$backgrounds.length) _self.trigger("loadAnimationComplete");
+
+      $backgrounds.animate({
+        top: 270
+      }, // @TODO: this, apparently, will change based on the panel type (promo and video panels may have taller blurb area)
+      {
+        duration: 500,
+        easing: _easing,
+        complete: function() {
+          counter1--;
+          if (!counter1) {
+            $kids.fadeIn(function() {
+              counter2--;
+              if (!counter2) _self.trigger("loadAnimationComplete");
+            });
+          }
+        }
+      }).end().siblings("#mw_nav").find(".mw_nav_prev").animate({
+        left: -34
+      }, {
+        duration: 500,
+        easing: _easing
+      }).end().find(".mw_nav_next").animate({
+        left: 445
+      }, {
+        duration: 500,
+        easing: _easing
+      });
+      },
+      
+      
+      
+      
+      
+      
+      
+      /**
+       * 
+       * _bindevents
+       * @private
+       * Binds custom events to handlers. 
+       */
+      
+      
+      
+      _bindevents = function() {
+      _log("_bindevents");
+
+      _self.bind("dataLoaded", function() {
+        _log("dataLoaded event fired.");
+
+        // hide controls for one panel mediawalls.
+        if (_config.numpanels < 2) {
+          $("#mw_nav").remove();
+          _self.trigger("autoStop");
+        }
+
+        _cloneEndPanels();
+        _buildNav();
+
+        // move past the prepended clone        
+        _self.moveRight(function() {
+          _$container.parent().fadeIn(function() {
+            _animateOnLoad();
+          });
+        });
+      });
+
+      _self.one("photoLoaded", function() {
+        _animateOnLoad();
+      });
+
+      _self.one("loadAnimationComplete", function() {
+        _log("loadAnimationComplete event fired.");
+        _rotate();
+      });
+
+      _self.bind("autoStart", function() {
+        _log("autoStart event fired. Current panel: " + _currentPanel);
+        _config.autorun = true;
+        $(".mw_nav_onoff").removeClass("mw_nav_play").addClass("mw_nav_pause");
+        _rotate();
+      });
+
+      _self.bind("autoStop", function() {
+        _log("autoStop event fired. Current panel: " + _currentPanel);
+        clearInterval(_countdown);
+        _config.autorun = false;
+        _numRotations = 0;
+        $(".mw_nav_onoff").removeClass("mw_nav_pause").addClass("mw_nav_play");
+      });
+
+      _self.bind("rotationBegin", function(e, isprevmove) {
+        _log("rotationBegin event fired. Current panel: " + _currentPanel);
+        var idx = (isprevmove) ? _currentPanel - 1 : _currentPanel;
+        _running = true;
+        _loadPhoto(idx);
+        _clearFacebook();
+        clearInterval(_countdown);
+        _timeLeft = _numIntervals;
+        $("#mw_nav").find(".mw_nav_circle_on").removeClass("mw_nav_circle_on").addClass("mw_nav_circle").removeAttr("style");
+      });
+
+      _self.bind("rotationEnd", function() {
+        _log("rotationEnd event fired. Current panel: " + _currentPanel);
+        var idx = _currentPanel - 1;
+        setTimeout(function() {
+          _loadFacebook(idx);
+        }, 500);
+        _running = false;
+        $("#mw_nav").find(".mw_nav_circle:eq(" + idx + ")").removeClass("mw_nav_circle").addClass("mw_nav_circle_on").removeAttr("style");
+      });
+
+      _self.bind("reset", function(event, isLast) {
+        _log("reset event fired. Current panel: " + _currentPanel);
+        var lastPanelLeft = -_panelwidth * _config.numpanels,
+            newLeft = (isLast) ? lastPanelLeft : -_panelwidth;
+        _currentPanel = (isLast) ? _config.numpanels : 1;
+        _$container.css("left", newLeft);
+        if (_config.autorun) _numRotations++;
+      });
+
+      _self.bind("zPlayerStart", function() {
+        _log("zPlayerStart event fired.");
+        if (_config.autorun) _self.trigger("autoStop");
+        // stop CVC
+        if ( !! bam.clubhome && typeof bam.clubhome.playerObj !== "undefined" && !! bam.clubhome.playerObj) {
+          bam.clubhome.playerObj.execute("pausePlayback");
+        }
+      });
+
+      $doc.selector = "#mwContainer";
+      $doc.live("click", function(e) {
+        //_self.trigger("autoStop");    
+        clearTimeout(_restart);
+        // timeout that restarts autorotation after 30 seconds
+        if (_config.autorun) {
+          _restart = setTimeout(function() {
+            _self.trigger("autoStart");
+          }, 30000);
+        }
+      });
+
+      $doc.selector = "#mw_nav .mw_nav_next";
+      $doc.live("click", function(e) {
+        _self.moveRight(_rotate);
+        _numRotations = 0;
+      });
+
+      $doc.selector = "#mw_nav .mw_nav_prev";
+      $doc.live("click", function(e) {
+        _self.moveLeft(_rotate);
+        _numRotations = 0;
+      });
+
+      $doc.selector = "#mw_nav .mw_nav_circle";
+      $doc.live("click", function(e) {
+        var idx = $(this).parent().find(".mw_nav_circle, .mw_nav_circle_on").index(this);
+        _self.jumpTo(idx, _rotate);
+        _numRotations = 0;
+      });
+
+      $doc.selector = "#media_wall .mw_video_play";
+      $doc.live("click", function(e) {
+        var videoID = $(this).attr("video_id"),
+            topicID = $(this).attr("topic_id");
+        if ( !! videoID) {
+          bam.zPlayer.play(videoID, topicID);
+          _self.trigger("zPlayerStart");
+        }
+      });
+
+      },
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      // build navigation controls
+      _buildNav = function() {
+      var idx, navhtml = "<li class='mw_nav_circle_on'></li>";
+      for (i = 1; i < _config.numpanels; i++) {
+        navhtml += "<li class='mw_nav_circle'></li>";
+      }
+      $(navhtml)
+      // @TODO: bind this in _bindevents with live()? having trouble getting hovers to work 
+      .hover(
+
+      function() {
+        idx = $(this).parent().find(".mw_nav_circle").index(this);
+      }, function() {
+        idx = $(this).parent().find(".mw_nav_circle").index(this);
+      }).insertAfter("#mw_nav li.mw_nav_onoff");
+      },
+      
+      
+      
+      
+      _slideIn = function() {
+
+
+
+
+
+    },
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      // clones the first and last panels to support "circular" scrolling 
+      _cloneEndPanels = function() {
+      var $firstClone, $lastClone;
+      $firstClone = _$container.find("li:first").clone().addClass("isClone");
+      $lastClone = _$container.find("li:last").clone().addClass("isClone");
+      $firstClone.appendTo(_$container);
+      $lastClone.prependTo(_$container);
+      },
+      
+      
+      
+      
+      
+      
+      
+      
+      /*
+    *
+    *
+    *
+    *
+    * ROOT LEVEL OBJECT
+    *
+    * @public/priveleged
+    *
+    *
+    */
+      
+      
+      
+      
+      
+      _self = {
+
+      debug: _setDebugging("mediawall"),
+
+      init: function(props) {
+        _log("initializing...");
+        $.extend(_config, props); // allow default config to get overwritten
+        _get.cache = {};
+        _$container = _get("#media_wall");
+        // stupid hack to handle wide mac fonts     
+        if (~navigator.appVersion.indexOf("Mac") != -1) _$container.addClass("mw_ismac");
+        //_setContainerWidth();         
+        _bindevents();
+        _loadData();
+        delete _self.init;
+      },
+
+      reload: function(cfg) {
+        _log("reload");
+        $("#media_wall").empty();
+        _currentPanel = 0;
+        _numRotations = 0;
+        _config.panels = [];
+        $.extend(_config, cfg); // allow config to get overwritten
+        _$container.hide();
+        _loadData(function() {
+          _$container.fadeIn("slow");
+          _self.trigger("autoStart");
+        });
+
+      },
+
+      moveLeft: function(cb) {
+        _log("moveLeft");
+        var newLeft = 0;
+        if (!_running && _currentPanel > 0) {
+          _currentPanel--;
+          _self.trigger("rotationBegin", true); // true arg identifies this as a "prev" rotation  
+          newLeft -= _currentPanel * _panelwidth;
+          _$container.animate({
+            left: newLeft
+          }, {
+            duration: _config.speed,
+            easing: _easing,
+            complete: function() {
+              if (_currentPanel === 0) _self.trigger("reset", true);
+              _self.trigger("rotationEnd");
+              if ($.isFunction(cb)) cb();
+            }
+          });
+        }
+      },
+
+      moveRight: function(cb, idx) {
+        _log("moveRight");
+        var newLeft = 0;
+        if (!_running && _currentPanel <= _config.numpanels) {
+          _self.trigger("rotationBegin");
+          _currentPanel++;
+          newLeft -= _currentPanel * _panelwidth;
+          _$container.animate({
+            left: newLeft
+          }, {
+            duration: _config.speed,
+            easing: _easing,
+            complete: function() {
+              if (_currentPanel > _config.numpanels) _self.trigger("reset");
+              _self.trigger("rotationEnd");
+              if ($.isFunction(cb)) cb();
+            }
+          });
+        }
+      },
+
+
+      jumpTo: function(idx, cb) {
+        _log("jumpTo: idx=" + idx);
+        idx++;
+        if (idx > _currentPanel) {
+          _currentPanel = idx - 1;
+          _self.moveRight(cb);
+        } else if (idx < _currentPanel) {
+          _currentPanel = idx + 1;
+          _self.moveLeft(cb);
+        }
+      },
+
+
+      createPanel: function(obj) {
+        _config.panels[_config.panels.length || 0] = obj;
+      },
+
+      loadPanel: function(options) {
+        //var newHTML = $.template(options.template, options.json);
+        //$(".mw_panel:eq("+_currentPanel+")").html(newHTML);         
+      },
+
+      getConfig: function(option) {
+        return _config[option];
+      },
+
+      getAllConfigs: function() {
+        return _config;
+      },
+
+      // properties setter/getter
+      setProperty: function(key, value) {
+        if (key && typeof(value) !== "undefined") {
+          _properties[key] = value;
+        }
+        _log("setting property: " + key + ". Displaying _properties below:");
+        _log(_properties);
+      },
+
+      getProperty: function(key) {
+        _log("getting " + key);
+        return (key && key in _properties) ? _properties[key] : null;
+      },
+
+      getCurrentPanelIndex: function() {
+        return _currentPanel - 1;
+      },
+
+      stop: function() {
+        _self.trigger("autoStop");
+      }
+
+      };
+
+
+  $.bindable(_self, "dataLoaded photoLoaded autoStart autoStop rotationBegin rotationEnd reset zPlayerStart gamePanelFound loadAnimationComplete");
+
+  // @TODO: can we move everything in bindevents() here?
+  return _self;
+
+})(this, this.document, this.jQuery, undefined, this.bam);

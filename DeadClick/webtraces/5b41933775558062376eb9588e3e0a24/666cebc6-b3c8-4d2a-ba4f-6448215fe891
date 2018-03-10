@@ -1,0 +1,1 @@
+define(["jquery","underscore"],function(a,b,c,d){var e={selector:".carousel .paging-pages"},f={init:function(c){return c=b.extend({},e,c),a(c.selector).each(function(){var b=a(this),c=b.children().length;b.width(c*100+"%"),b.children().width(100/c+"%")})}};return f})

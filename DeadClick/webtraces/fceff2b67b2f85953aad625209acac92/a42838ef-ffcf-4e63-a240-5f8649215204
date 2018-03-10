@@ -1,0 +1,667 @@
+var PF_VERSION = "2018-02-15-100745947";
+
+!function() {
+  var e = document.getElementById("printfriendly-data");
+  if (e) {
+    var t = JSON.parse(e.getAttribute("data"));
+    window.pfstyle = t.pfstyle, window.pfOptions = t.pfOptions;
+  }
+}();
+
+var pfMod = window.pfMod || function(e, t) {
+  var n = e.document, r = "https:";
+  e.addEventListener("message", function(t) {
+    try {
+      if (t.data) {
+        var n = t.data.payload;
+        switch (t.data.type) {
+         case "PfCoreLoaded":
+          coreWindow.postMessage({
+            type: "PfStartCore",
+            payload: f.pfData
+          }, "*");
+          break;
+
+         case "PfClosePreview":
+          f.closePreview();
+          break;
+
+         case "PfAddCSS":
+          d.addCSS(n.css, n.useBody);
+          break;
+
+         case "PfRestoreStyles":
+          d.restoreStyles();
+          break;
+
+         case "PfAddViewPortTag":
+          d.addViewPortTag();
+          break;
+
+         case "PfScrollTop":
+          e.scrollTo(0, 0);
+          break;
+
+         case "PfTwitterCopyEmbeded":
+          u.copyEmbeded();
+          break;
+
+         case "PfCreateByAdType":
+          o.createAdByType(n.adType);
+          break;
+
+         case "PfShowAds":
+          o.show();
+          break;
+
+         case "PfHideAds":
+          o.hide();
+          break;
+
+         case "PfFinished":
+          f.hasContent = n.hasContent, f.finished = !0;
+          break;
+
+         case "PfRedirectIfNecessary":
+          f.dsData = n.dsData, f.isRedirectNecessary() ? f.redirect() : coreWindow.postMessage({
+            type: "PfLaunchCore"
+          }, "*");
+        }
+      }
+    } catch (e) {
+      g.log(e);
+    }
+  });
+  var o = {
+    createAdByType: function(e) {
+      if (!document.getElementById("gaiframe")) {
+        var t = o.isMobile() ? "_mobile" : "", i = f.config.hosts.cdn + f.config.filePath + f.version + "/ads/" + e + t + ".html", r = document.createElement("iframe");
+        r.id = "gaiframe", r.name = "gaiframe", r.style = "border: 0!important; position:absolute!important; height:280px!important; margin-left: auto!important; margin-right: auto!important; left: 0!important; right:0!important; z-index: 2147483647!important; display:none;", 
+        r.src = i, r.scrolling = "no", n.body.appendChild(r), o.setupSetStyle();
+      }
+    },
+    isMobile: function() {
+      return e.innerWidth <= 700;
+    },
+    setupSetStyle: function() {
+      o.setStyle(), e.addEventListener("resize", function() {
+        o.setStyle();
+      });
+    },
+    setStyle: function() {
+      var t = document.getElementById("gaiframe");
+      if (t) {
+        var n = e.innerWidth > 860 ? "284px" : "250px", i = e.innerWidth > 730 ? "700px" : e.innerWidth;
+        t.style.removeProperty("width"), t.style.removeProperty("top"), t.style.setProperty("width", i, "important"), 
+        t.style.setProperty("top", n, "important");
+      }
+    },
+    show: function() {
+      var e = document.getElementById("gaiframe");
+      e && (e.style.display = "block");
+    },
+    hide: function() {
+      var e = document.getElementById("gaiframe");
+      e && (e.style.display = "none");
+    }
+  }, a = {
+    sendEvent: function(e, t, n) {
+      coreWindow.postMessage({
+        type: "PfGaEvent",
+        payload: {
+          category: e,
+          action: t,
+          label: n
+        }
+      }, "*");
+    }
+  }, s = {
+    environment: "production",
+    disableUI: !1,
+    protocol: "https:",
+    dir: "ltr",
+    usingBM: !1,
+    maxImageWidth: 750,
+    filePath: "/assets/versions/",
+    platform: "unknown",
+    hosts: {
+      cdn: "https://cdn.printfriendly.com",
+      pf: "https://www.printfriendly.com",
+      ds: "https://www.printfriendly.com",
+      translations: "https://www.printfriendly.com",
+      ds_cdn: "https://ds-4047.kxcdn.com",
+      pdf: "https://pdf.printfriendly.com",
+      email: "https://www.printfriendly.com",
+      page: e.location.host.split(":")[0],
+      ravenDsn: "https://5463b49718cd4266911eab9e5c0e114d@sentry.io/22091"
+    },
+    domains: {
+      page: e.location.host.split(":")[0].split("www.").pop()
+    }
+  }, c = {
+    removeEmailsFromUrl: function(e) {
+      for (var t = (e = e.split("?")[0]).split("/"), n = t.length; n-- > 0; ) -1 !== t[n].indexOf("@") && t.splice(n, 1);
+      return t.join("/");
+    },
+    isDynamicPage: function() {
+      return !!(e.React || e.angular || e.ng && e.ng.coreTokens || e.Backbone || e.Ember || e.Vue || document.querySelector && (document.querySelector("[ng-version]") || document.querySelector("*[data-reactroot]")));
+    },
+    isLocalHost: function() {
+      var t = e.location.host, n = e.location.hostname;
+      return -1 !== t.indexOf(":") || !!n.match(/\d+\.\d+\.\d+\.\d+/) || "localhost" === n || !!n.split(".").pop().match(/invalid|test|example|localhost|dev/);
+    }
+  }, d = {
+    addViewPortTag: function() {
+      var e = n.getElementsByTagName("head")[0], t = n.querySelector("meta[name=viewport]");
+      t || ((t = n.createElement("meta")).name = "viewport"), t.content = "width=device-width, initial-scale=1", 
+      e.appendChild(t);
+    },
+    addCSS: function(e, t) {
+      var i = t ? "body" : "head", r = n.getElementsByTagName(i)[0], o = n.createElement("style");
+      o.type = "text/css", o.setAttribute("name", "pf-style"), o.styleSheet ? o.styleSheet.cssText = e : o.appendChild(n.createTextNode(e)), 
+      r.appendChild(o);
+    },
+    restoreStyles: function() {
+      for (var e = document.getElementsByName("pf-style"), t = e.length - 1; t >= 0; t--) e[t].parentNode.removeChild(e[t]);
+    }
+  }, l = {
+    isReady: !1,
+    readyBound: !1,
+    ready: function() {
+      if (!l.isReady) {
+        if (!document.body) return setTimeout(l.ready, 13);
+        l.isReady = !0, l.readyFunc.call();
+      }
+    },
+    doScrollCheck: function() {
+      if (!l.isReady) {
+        try {
+          document.documentElement.doScroll("left");
+        } catch (e) {
+          return setTimeout(l.doScrollCheck, 50);
+        }
+        l.detach(), l.ready();
+      }
+    },
+    detach: function() {
+      document.addEventListener ? (document.removeEventListener("DOMContentLoaded", l.completed, !1), 
+      e.removeEventListener("load", l.completed, !1)) : document.attachEvent && "complete" === document.readyState && (document.detachEvent("onreadystatechange", l.completed), 
+      e.detachEvent("onload", l.completed));
+    },
+    completed: function(e) {
+      (document.addEventListener || "load" === e.type || "complete" === document.readyState) && (l.detach(), 
+      l.ready());
+    },
+    bindReady: function() {
+      if (!l.readyBound) {
+        if (l.readyBound = !0, "complete" === document.readyState) return l.ready();
+        if (document.addEventListener) document.addEventListener("DOMContentLoaded", l.completed, !1), 
+        e.addEventListener("load", l.completed, !1); else if (document.attachEvent) {
+          document.attachEvent("onreadystatechange", l.completed), e.attachEvent("onload", l.completed);
+          var t = !1;
+          try {
+            t = null == e.frameElement && document.documentElement;
+          } catch (e) {}
+          t && t.doScroll && l.doScrollCheck();
+        }
+      }
+    },
+    domReady: function(e) {
+      this.readyFunc = e, this.bindReady();
+    },
+    canonicalize: function(e) {
+      if (e) {
+        var t = document.createElement("div");
+        return t.innerHTML = "<a></a>", t.firstChild.href = e, t.innerHTML = t.innerHTML, 
+        t.firstChild.href;
+      }
+      return e;
+    }
+  }, p = {
+    headerImageUrl: l.canonicalize(e.pfHeaderImgUrl),
+    headerTagline: e.pfHeaderTagline,
+    imageDisplayStyle: e.pfImageDisplayStyle,
+    customCSSURL: l.canonicalize(e.pfCustomCSS),
+    disableClickToDel: e.pfdisableClickToDel,
+    disablePDF: e.pfDisablePDF,
+    disablePrint: e.pfDisablePrint,
+    disableEmail: e.pfDisableEmail
+  };
+  -1 !== "|full-size|remove-images|large|medium|small|".indexOf(e.pfImagesSize) ? p.imagesSize = e.pfImagesSize : p.imagesSize = 1 == e.pfHideImages ? "remove-images" : "full-size";
+  var f = {
+    version: PF_VERSION,
+    initialized: !1,
+    finished: !1,
+    onServer: !1,
+    hasContent: !1,
+    messages: [],
+    errors: [],
+    waitDsCounter: 0,
+    autoStart: !1,
+    stats: {},
+    init: function(t) {
+      try {
+        this.initialized = !0, this.configure(t), this.onServerSetup(), f.onServer || this.config.isExtension || this.getAdSettingsFromPFServer(), 
+        this.setVariables(), this.detectBrowser(), this.startIfNecessary(), e.print = this.start;
+      } catch (e) {
+        g.log(e);
+      }
+    },
+    configure: function(t) {
+      if (this.config = s, t) {
+        this.config.environment = t.environment || "development";
+        for (var n in t.hosts) this.config.hosts[n] = t.hosts[n];
+        t.filePath && (this.config.filePath = t.filePath), t.ssLocation && (this.config.ssLocation = t.ssLocation), 
+        t.ssStyleSheetHrefs && (this.config.ssStyleSheetHrefs = t.ssStyleSheetHrefs);
+      }
+      this.userOptions = {
+        redirect: {
+          disableForiPad: !!this.getVal(e.pfUserOptions, "redirect.disableForiPad")
+        }
+      }, this.config.isExtension = !!e.extensionPath;
+    },
+    getVal: function(e, t) {
+      for (var n = t.split("."); void 0 !== e && n.length; ) e = e[n.shift()];
+      return e;
+    },
+    startIfNecessary: function() {
+      (e.pfstyle || this.autoStart) && this.start();
+    },
+    urlHasAutoStartParams: function() {
+      return -1 !== this.config.urls.page.indexOf("pfstyle=wp");
+    },
+    start: function() {
+      if (f.onServer || f.config.isExtension) f.launch(); else {
+        if (f.waitDsCounter += 1, f.waitDsCounter < 20 && !f.dsData) return setTimeout(function() {
+          f.start();
+        }, 100);
+        f.isRedirectNecessary() ? f.redirect() : f.supportedSiteType() && f.launch();
+      }
+    },
+    launch: function() {
+      l.domReady(function() {
+        try {
+          f.startTime = new Date().getTime(), h.run(), f.pfData = m.get(), f.config.disableUI || (f.sanitizeLocation(), 
+          f.createMask()), f.loadCore();
+        } catch (e) {
+          g.log(e);
+        }
+      });
+    },
+    sanitizeLocation: function() {
+      url = document.location.href.split("?")[0], url = c.removeEmailsFromUrl(url), url !== document.location.href && (history && "function" == typeof history.pushState ? history.pushState({
+        pf: "sanitized"
+      }, document.title, url) : f.urlHasPII = !0);
+    },
+    unsanitizeLocation: function() {
+      history && history.state && "sanitized" == history.state.pf && history.back();
+    },
+    onServerSetup: function() {
+      e.onServer && (this.onServer = !0, this.config.disableUI = !0);
+    },
+    setVariables: function() {
+      var t = this, n, i = "";
+      "production" !== this.config.environment && (i = "?_=" + Math.random());
+      var r = t.config.hosts.cdn + t.config.filePath + t.version, o = this.config.disableUI ? "" : r + "/pf-app/main.css" + i, a = this.config.disableUI ? "" : r + "/content/main.css" + i;
+      this.config.urls = {
+        version: r,
+        js: {
+          jquery: "https://cdn.printfriendly.com/assets/unversioned/jquery/1.12.4.min.js",
+          raven: "https://cdn.ravenjs.com/3.19.1/raven.min.js",
+          core: r + "/core.js" + i,
+          algo: r + "/algo.js" + i
+        },
+        css: {
+          pfApp: o,
+          content: a
+        },
+        pdfMake: t.config.hosts.pdf + "/pdfs/make",
+        email: t.config.hosts.email + "/email/new"
+      };
+      try {
+        n = top.location.href;
+      } catch (t) {
+        n = e.location.href;
+      }
+      this.config.urls.page = n, this.userSettings = p, this.config.pfstyle = e.pfstyle, 
+      !e.pfstyle || "bk" !== e.pfstyle && "nbk" !== e.pfstyle && "cbk" !== e.pfstyle || (this.config.usingBM = !0), 
+      this.autoStart = this.urlHasAutoStartParams();
+    },
+    detectBrowser: function() {
+      this.browser = {};
+      var e = navigator.appVersion;
+      e && -1 !== e.indexOf("MSIE") ? (this.browser.version = parseFloat(e.split("MSIE")[1]), 
+      this.browser.isIE = !0) : this.browser.isIE = !1;
+    },
+    loadScript: function(e, t) {
+      var n = document.getElementsByTagName("head")[0], i = document.createElement("script");
+      i.type = "text/javascript", i.src = e, i.onreadystatechange = t, i.onload = t, n.appendChild(i);
+    },
+    createIframe: function(e) {
+      var t = e.createElement("iframe");
+      return t.frameBorder = "0", t.allowTransparency = "true", t;
+    },
+    loadHtmlInIframe: function(e, t, n) {
+      var i, r;
+      try {
+        r = t.contentWindow.document;
+      } catch (n) {
+        i = e.domain, r = t.contentWindow.document;
+      }
+      r.write(n), r.close();
+    },
+    redirect: function() {
+      var e = [ "source=cs", "url=" + encodeURIComponent(top.location.href) ], t;
+      for (var n in p) void 0 !== p[n] && e.push(n + "=" + encodeURIComponent(p[n]));
+      t = this.config.hosts.pf + "/print/?" + e.join("&"), this.autoStart ? top.location.replace(t) : top.location.href = t;
+    },
+    supportedSiteType: function() {
+      return "about:blank" !== f.config.urls.page && ("http:" === f.config.protocol || "https:" === f.config.protocol);
+    },
+    isRedirectNecessary: function() {
+      var t = e.pfstyle && "wp" != e.pfstyle, n = c.isDynamicPage(), i = c.isLocalHost();
+      if (f.stats.page = {
+        bm: t,
+        dynamic: n,
+        local: i
+      }, f.dsData) {
+        var r = f.dsData.domain_settings.ad_free, o = f.dsData.domain_settings.redirect, a = f.dsData.domain_settings.bk_redirect, s = !t && o, d = t && a;
+        if (!r && !n && !i && (s || d)) return !0;
+      }
+      try {
+        var l = navigator.userAgent.match(/Edge\/(\d+.\d+)/);
+        return !!(!history || "function" != typeof history.pushState || navigator.userAgent.match(/(ipod|opera.mini|blackberry|playbook|bb10)/i) || this.browser.isIE && this.browser.version < 11 || this.browser.isIE && e.adsbygoogle || "undefined" != typeof $ && $.jcarousel && this.browser.isIE || l && 2 === l.length && parseFloat(l[1]) < 13.10586);
+      } catch (e) {
+        return g.log(e), !1;
+      }
+    },
+    createMask: function() {
+      var e = document.createElement("div");
+      e.innerHTML = '<div id="pf-mask" style="z-index: 2147483627!important; position: fixed !important; top: 0pt !important; left: 0pt !important; background-color: rgb(0, 0, 0) !important; opacity: 0.8 !important;filter:progid:DXImageTransform.Microsoft.Alpha(opacity=80); height: 100% !important; width: 100% !important;"></div>', 
+      document.body.appendChild(e.firstChild);
+    },
+    closePreview: function() {
+      l.readyBound = !1, l.isReady = !1, f.unsanitizeLocation();
+      var e = document.getElementById("pf-core");
+      e && e.parentElement && e.parentElement.removeChild(e);
+      var t = document.getElementById("pf-mask");
+      t && t.parentElement && t.parentElement.removeChild(t);
+      var n = document.getElementById("gaiframe");
+      n && n.parentElement && n.parentElement.removeChild(n);
+    },
+    removeDoubleSemiColon: function(e) {
+      return e.replace(/;{2}/g, ";");
+    },
+    loadCore: function() {
+      var e = this.createIframe(document);
+      e.id = "pf-core", e.name = "pf-core", document.body.appendChild(e);
+      var t = e.style.cssText + ";width: 100% !important;max-width:100% !important;height: 100% !important; display: block !important; overflow: hidden !important; position: absolute !important; top: 0px !important; left: 0px !important; background-color: transparent !important; z-index: 2147483647!important";
+      if (e.style.cssText = this.removeDoubleSemiColon(t), coreWindow = e.contentWindow, 
+      this.config.isExtension) e.src = extensionPath + "/core.html", e.onload = function() {
+        coreWindow.postMessage({
+          type: "PfStartCore",
+          payload: f.pfData
+        }, "*");
+      }; else {
+        var n = '<!DOCTYPE html><html><head><base target="_parent"><meta http-equiv="X-UA-Compatible" content="IE=edge" /><meta name="viewport" content="width=device-width, initial-scale=1"><script src="' + this.config.urls.js.jquery + '"><\/script>';
+        f.onServer || (n += '<script src="' + this.config.urls.js.raven + '"><\/script>'), 
+        n += '<script src="' + this.config.urls.js.core + '"><\/script><link media="screen" type="text/css" rel="stylesheet" href="' + this.config.urls.css.pfApp + '"></head><body class="cs-core-iframe" onload="core.init();"></body>', 
+        this.loadHtmlInIframe(document, e, n);
+      }
+    },
+    getAdSettingsFromPFServer: function() {
+      var e = document.createElement("script");
+      e.src = f.config.hosts.ds_cdn + "/api/v3/domain_settings/a?callback=pfMod.saveAdSettings&hostname=" + f.config.hosts.page + "&client_version=" + f.version, 
+      document.getElementsByTagName("head")[0].appendChild(e);
+    },
+    saveAdSettings: function(t) {
+      f.dsData = t, e.coreWindow && coreWindow.postMessage({
+        type: "PfConfigureAdSettings",
+        payload: {
+          dsData: t
+        }
+      }, "*");
+    }
+  }, m = {
+    emailText: function() {
+      var e = document.getElementsByClassName("pf-email");
+      return e.length ? e[0].textContent : "";
+    },
+    csStyleSheetHrefs: function() {
+      var e = [];
+      for (i = 0; i < n.styleSheets.length; i++) e.push(n.styleSheets[i].href);
+      return e;
+    },
+    metas: function() {
+      var e = n.getElementsByTagName("meta"), t = [];
+      for (i = 0; i < e.length; i++) t.push({
+        name: e[i].name,
+        content: e[i].content,
+        property: e[i].property,
+        itemprop: e[i].itemprop
+      });
+      return t;
+    },
+    screen: function() {
+      return {
+        x: void 0 !== e.top.screenX ? e.top.screenX : e.top.screenLeft,
+        y: void 0 !== e.top.screenY ? e.top.screenY : e.top.screenTop,
+        width: void 0 !== e.top.outerWidth ? e.top.outerWidth : e.top.document.documentElement.clientWidth,
+        height: void 0 !== e.top.outerHeight ? e.top.outerHeight : e.top.document.documentElement.clientHeight - 22
+      };
+    },
+    language: function() {
+      var e = document.getElementsByTagName("html")[0].getAttribute("lang");
+      if (!e) {
+        var t = document.querySelector("meta[http-equiv=Content-Language]");
+        t && (e = t.getAttribute("content"));
+      }
+      return e;
+    },
+    primaryImageSrcs: function() {
+      function e() {
+        for (var e = n.querySelectorAll("img"), t = 0; t < e.length; t++) {
+          var i = e[t];
+          if (i.clientWidth > LARGE_IMAGE_WIDTH && i.clientHeight > LARGE_IMAGE_HEIGHT && !i.classList.contains("hidden-originally")) return i;
+        }
+        return null;
+      }
+      function t() {
+        var e = i('meta[property="og:image"]') || i('meta[name="twitter:image"]') || i('meta[itemprop="image"]');
+        return e ? r(e, n) : null;
+      }
+      function i(e) {
+        var t = n.querySelector(e);
+        return t ? t.getAttribute("content") : null;
+      }
+      function r(e, t) {
+        e = c(e), e = decodeURI(e);
+        for (var n = null, i = t.querySelectorAll("img, picture source"), r = 0; r < i.length; r++) {
+          var a = i[r], d = o(a);
+          if (d) {
+            d = c(d), d = decodeURI(d);
+            var l = s(a);
+            if (l = decodeURI(l), d === e || -1 !== l.indexOf(e)) {
+              n = a;
+              break;
+            }
+          }
+        }
+        return n;
+      }
+      function o(e) {
+        return f.onServer ? e.getAttribute("pf-orig-src") || e.src : e.src;
+      }
+      function a(e) {
+        return f.onServer ? e.getAttribute("pf-restore-src") : e.src;
+      }
+      function s(e) {
+        return f.onServer ? e.getAttribute("pf-orig-srcset") : e.srcset;
+      }
+      function c(e) {
+        return e = e.replace(/format=\d+w/g, ""), e = e.replace(/[-_]\d{1,4}x\d{1,4}/, "");
+      }
+      LARGE_IMAGE_WIDTH = 300, LARGE_IMAGE_HEIGHT = 200;
+      try {
+        var d = t() || e(), l;
+        return d && (l = {
+          toRestore: a(d),
+          orig: o(d)
+        }), l;
+      } catch (e) {
+        g.log(e);
+      }
+    },
+    canvasDataUrls: function() {
+      for (var e = [], t = n.getElementsByTagName("canvas"), i = 0; i < t.length; i++) {
+        var r = t[i], o = r.toDataURL("image/png");
+        r.setAttribute("pf-dataurl-index", e.length), e.push(o);
+      }
+      return e;
+    },
+    svgsDataUrls: function() {
+      for (var t = [], i = n.getElementsByTagName("svg"), r = 0; r < i.length; r++) {
+        var o = i[r];
+        o.getAttribute("version") || o.setAttribute("version", 1.1), o.getAttribute("xmlns") || o.setAttribute("xmlns", "http://www.w3.org/2000/svg");
+        var a = o.outerHTML, s = "data:image/svg+xml;base64," + e.btoa(unescape(encodeURIComponent(a)));
+        o.setAttribute("pf-dataurl-index", t.length), t.push(s);
+      }
+      return t;
+    },
+    get: function() {
+      f.config.extensionPath = e.extensionPath;
+      var t = this.canvasDataUrls(), i = this.svgsDataUrls();
+      return page = {
+        dir: n.body.getAttribute("dir") || n.querySelector("html").getAttribute("dir") || getComputedStyle(n.body).getPropertyValue("direction") || "ltr",
+        bodyClassList: [].slice.call(n.body.classList),
+        emailText: this.emailText(),
+        screen: this.screen(),
+        metas: this.metas(),
+        primaryImageSrcs: this.primaryImageSrcs(),
+        csStyleSheetHrefs: this.csStyleSheetHrefs(),
+        locationHref: document.location.href,
+        hasPrintOnly: 0 !== n.querySelectorAll("#print-only, .print-only").length,
+        title: document.title,
+        body: document.body.innerHTML,
+        language: this.language(),
+        canvasDataUrls: t,
+        svgsDataUrls: i
+      }, {
+        startTime: f.startTime,
+        config: f.config,
+        userSettings: f.userSettings,
+        version: f.version,
+        onServer: f.onServer,
+        browser: f.browser,
+        urlHasPII: f.urlHasPII,
+        dsData: f.dsData,
+        stats: f.stats,
+        page: page
+      };
+    }
+  }, u = {
+    copyEmbeded: function() {
+      var e, t, i;
+      for (i = (e = n.querySelectorAll("twitterwidget.twitter-tweet-rendered")).length - 1; i >= 0; i--) t = e[i], 
+      coreWindow.postMessage({
+        type: "PfTwitterWidgetShadowDom",
+        payload: {
+          id: t.id,
+          innerHTML: t.shadowRoot.innerHTML,
+          cssText: t.style.cssText
+        }
+      }, "*");
+      for (i = (e = n.querySelectorAll("iframe.twitter-tweet-rendered")).length - 1; i >= 0; i--) e = e[i], 
+      coreWindow.postMessage({
+        type: "PfTwitterTweetRendered",
+        payload: {
+          id: t.id,
+          head: t.contentDocument.head.innerHTML,
+          body: t.contentDocument.body.innerHTML,
+          cssText: t.style.cssText
+        }
+      }, "*");
+    }
+  }, h = {
+    run: function() {
+      this.processChildren(document.body);
+    },
+    processChildren: function(t) {
+      for (var n, i, r = t.firstChild; r; ) {
+        if (!r.classList || !r.classList.contains("comment-list")) {
+          if (r.nodeType === Node.ELEMENT_NODE) try {
+            n = r.nodeName.toLowerCase(), "none" !== (i = r.currentStyle || e.getComputedStyle(r)).display && "hidden" !== i.visibility || r.classList.add("hidden-originally"), 
+            "a" === n ? (href = r.getAttribute("href") || "", "#" !== href.charAt(0) && (r.href = r.href)) : "img" === n && (r.src = r.src, 
+            pfMod.onServer || -1 !== r.className.indexOf("hidden-originally") || (r.width = r.width, 
+            r.height = r.height));
+          } catch (e) {}
+          r.hasChildNodes() && this.processChildren(r);
+        }
+        r = r.nextSibling;
+      }
+    }
+  }, g = {
+    _window: e.top,
+    _doc: e.top.document,
+    installInitiated: !1,
+    validFile: /d3nekkt1lmmhms|printfriendly\.com|printnicer\.com|algo\.js|printfriendly\.js|core\.js/,
+    setVars: function() {
+      this._window.frames["pf-core"] && this._window.frames["pf-core"].document && (this._window = this._window.frames["pf-core"], 
+      this._doc = this._window.document);
+    },
+    install: function() {
+      if (this.installInitiated) return !0;
+      this.installInitiated = !0, this.setVars();
+      var e = this._doc.createElement("script"), t = this._doc.getElementsByTagName("script")[0];
+      e.src = this.config.urls.js.raven, t.parentNode.appendChild(e), this.wait();
+    },
+    wait: function() {
+      if (!this._window.Raven) return setTimeout(function() {
+        g.wait();
+      }, 100);
+      this.configure(), this.pushExistingErrors();
+    },
+    configure: function() {
+      var e = {
+        dataCallback: function(e) {
+          var t, n;
+          try {
+            (t = e.stacktrace.frames[0]).filename.match(g.validFile) && "onload" !== t.function || e.stacktrace.frames.shift();
+          } catch (e) {}
+          return e;
+        },
+        shouldSendCallback: function(e) {
+          return !!(e && e.extra && e.extra.file);
+        },
+        release: f.version
+      };
+      this._window.Raven.config(f.config.hosts.ravenDsn, e).install();
+    },
+    sendError: function(e, t) {
+      (t = void 0 !== t ? {
+        file: t.file
+      } : {
+        file: "printfriendly.js"
+      }).usingBM = f.config.usingBM, t.url = f.config.urls.page, "production" === f.config.environment && this._window.Raven.captureException(e, {
+        extra: t
+      });
+    },
+    pushExistingErrors: function() {
+      for (var e = 0; e < f.errors.length; e++) this.sendError(f.errors[e].err, f.errors[e].opts);
+    },
+    log: function(e, t) {
+      "development" === f.config.environment && console.error(e), f.finished = !0, t = t || {
+        file: "printfriendly.js"
+      };
+      try {
+        this._window.Raven ? this.sendError(e, t) : (f.errors.push({
+          err: e,
+          opts: t
+        }), this.install(), f.messages.push(e.name + " : " + e.message), f.messages.push(e.stack));
+      } catch (e) {}
+    }
+  };
+  return f.exTracker = g, f;
+}(window), priFri = pfMod;
+
+pfMod.initialized && data ? pfMod.start() : "algo" === window.name || "pf-core" === window.name || pfMod.initialized || pfMod.init(window.pfOptions);

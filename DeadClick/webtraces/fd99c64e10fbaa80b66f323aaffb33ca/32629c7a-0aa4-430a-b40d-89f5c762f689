@@ -1,0 +1,97 @@
+var tcmAds = tcmAds || {}; //create empty object
+
+tcmAds.createHeaderTout = function(adVars) {
+if (typeof adVars.name == "undefined") { throw "You must supply a name for this tout"; }
+
+  var ad = {
+    // Register default channel
+    dfltChannel : "dflt",
+
+    channels : {
+      "dflt" : [
+        "https://subscription.health.com/storefront/subscribe-to-health/link/1042195.html",
+        "https://subscription.health.com/storefront/subscribe-to-health/link/1042196.html"
+      ]
+    },
+
+    eventElement : null,
+    
+    drawTout: function() {
+      var linkArray = this.channels["dflt"];
+      // add css
+      document.write(
+        ''+'<link rel="stylesheet" type="text/css" href="'+toutLibrary.resources_path+'images/style.css">'+
+        '<div id="tcm-flyout-expanded" style="display: none;">'+'<i class="icon-arrowdown"></i>'+
+          '<img src="https://subscription-assets.timeinc.com/current/4478_top1_207_thumb.jpg" alt="Cover" class="cvr">'+
+          '<img src="'+toutLibrary.resources_path+'images/subscribe.png" alt="Subscribe &amp; Save!" class="subscribe_btn_1">'+
+          '<a target="_blank" href="'+ toutLibrary.links[0]+'"><img src="'+toutLibrary.resources_path+'images/btn1.png" alt="Subscribe" class="btn1"></a>'+
+          '<a target="_blank" href="'+ toutLibrary.links[1]+'"><img src="'+toutLibrary.resources_path+'images/btn2.png" alt="Give a Gift" class="btn2"></a>'+
+        '</div>'
+      );
+    },
+
+    findEventElement : function() {
+      var listItems = parent.document.querySelectorAll('header nav .primary-text-links li.subscribe-flyout > a');
+      var subscribeItem;
+      for (var i = 0; i < listItems.length; i++) {
+        anchorText = listItems[i].innerHTML;
+        if (anchorText.toLowerCase() === 'subscribe') {
+          subscribeItem = listItems[i];
+          break;
+        }
+      }
+      this.eventElement = subscribeItem.parentElement;
+    },
+    
+    attachEventHandlers : function() {
+      var that = this;
+
+      // move flyout into navbar
+      var expandedAd = parent.document.getElementById('tcm-flyout-expanded');
+      that.eventElement.appendChild(expandedAd);
+      
+      if (this.eventElement.addEventListener) {
+        this.eventElement.addEventListener('mouseover', function() { that.expandTout(); }, false);
+        this.eventElement.addEventListener('mouseleave', function() { that.hideTout(); }, false);
+      } else {
+        this.eventElement.attachEvent('onmouseover', function() { that.expandTout(); });
+        this.eventElement.attachEvent('onmouseleave', function() { that.hideTout(); });
+      }
+    },
+    
+    expandTout : function() {
+      var expandedElement = parent.document.getElementById('tcm-flyout-expanded');
+      if (expandedElement.style.display == 'none') {
+        expandedElement.style.display = 'block';
+      }
+    },
+
+    hideTout : function() {
+      var expandedElement = parent.document.getElementById('tcm-flyout-expanded');
+
+      if (expandedElement.style.display == 'block') {
+        expandedElement.style.display = 'none';
+      }
+    },
+    
+    channel : "",
+
+    makeIt : function() {
+      toutLibrary.setup(this.dfltChannel, adVars, this.channels);
+
+      this.drawTout();
+
+      toutLibrary.exposeTout(this);
+      toutLibrary.breakout();
+
+      this.findEventElement();
+      this.attachEventHandlers();
+    }
+
+  }
+
+  ad.makeIt();
+
+}
+
+tcmAds.createHeaderTout(tcmAds['ha-flyoutunit0717.config']);

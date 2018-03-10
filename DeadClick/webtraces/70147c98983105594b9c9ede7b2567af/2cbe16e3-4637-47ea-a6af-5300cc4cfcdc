@@ -1,0 +1,63 @@
+<html>
+<head>
+<script src="/cdn-cgi/apps/head/gkOpMIfXCsXHxuXmenyCEA-mOmA.js"></script><link rel="stylesheet" href="css/main.css">
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+  ga('create', 'UA-1030601-4', 'auto');
+  ga('send', 'pageview');
+</script>
+</head>
+<body>
+<section class="sidebar-item" id="nn-news">
+</section>
+<script src="https://code.jquery.com/jquery-1.11.3.min.js"></script>
+<script>
+function getLatestNNNews() {
+$.ajax({
+    type: "GET",
+	url: 'nn-latest.xml',
+	cache: false,
+	dataType: "xml",
+	success: function(xml){
+	    var stories;
+		var listitems = '';
+		var imageUrl;
+		var title;
+		var link;
+		var description;
+		var i = 0;
+		
+		$(xml).find('item').each(function(){
+            if(i<5){
+				$(this).find('title').each(function(){
+					title = $(this).text();
+				});
+				$(this).find('link').each(function(){
+					link = $(this).text();
+				});
+				$(this).find('description').each(function(){
+					description = $(this).text();
+					imageUrl = $(description).find('img').attr('src');
+					console.log(imageUrl);
+				});
+				//imageUrl = $(description).attr('src');
+				
+				if(typeof imageUrl != 'undefined'){
+				    $('#nn-news').append('<li class="story-teaser tiny-teaser" itemscope="" itemtype="http://www.schema.org/NewsArticle"><figure><img src=' + imageUrl + ' width="90px" height="60px" itemprop="image" alt=' + title + '></figure><a marked="1" href=' + link + '><span>Nairobi News</span></a> <br><a marked="1" href=' + link + ' target="_blank" itemprop="url"><n itemprop="headline">' + title + '</n> &nbsp; </a></li>');
+				}else{
+				    $('#nn-news').append('<li class="story-teaser tiny-teaser" itemscope="" itemtype="http://www.schema.org/NewsArticle"><a marked="1" href=' + link + '><span>Nairobi News</span></a> <br><a marked="1" href=' + link + ' target="_blank" itemprop="url"><n itemprop="headline">' + title + '</n> &nbsp; </a></li>');
+				}				
+			}
+			i++;
+		});		
+	}
+});
+}
+
+getLatestNNNews();
+</script>
+</body>
+</html>

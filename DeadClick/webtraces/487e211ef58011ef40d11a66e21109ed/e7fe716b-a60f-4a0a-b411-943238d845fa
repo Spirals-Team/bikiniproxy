@@ -1,0 +1,10 @@
+/*
+	Kailash Nadh (http://kailashnadh.name)
+
+	tinytooltip
+	March 2012
+	A tiny tooltip plugin for jQuery
+
+	License	:	MIT License
+*/
+(function(a){a.fn.tinytooltip=function(b){var c={message:"",hover:true,classes:""};if(b){a.extend(c,b)}return this.each(function(){var b=a(this);if(!b.width())return false;var d=b.offset();var e=a('<span class="tooltip_dummy">'+c.message+"</span>").css("visibility","hidden");a("body").append(e);var f=e.width();e.remove();var g=a('<span class="tinytooltip'+(c.classes?" "+c.classes:"")+'"><span class="arrow"></span><span class="message">'+c.message+"</span></span>");g.width(f).css("opacity",0).hide();a("body").append(g);g.css("left",d.left+b.outerWidth()/2-g.outerWidth()/2);g.css("top",d.top+b.outerHeight());b.bind((c.hover?"mouseover ":"")+"showtooltip",function(){g.show().animate({opacity:1},200)});b.bind((c.hover?"mouseout ":"")+"hidetooltip",function(){g.animate({opacity:0},200,function(){a(this).hide()})})})};return this})(jQuery)

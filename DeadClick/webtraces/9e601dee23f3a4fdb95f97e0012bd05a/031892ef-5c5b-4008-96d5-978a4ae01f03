@@ -1,0 +1,93 @@
+// Data for the map markers
+var locations = [
+	{
+		coordinates: new google.maps.LatLng(39.948755, -75.167399),
+		title: "Pennsylvania Office",
+		address: "1525 Locust St. 9th Floor",
+		state: "Philadelphia, PA 19102",
+		icon: '/assets/images/map-marker-a.png',
+		link: "<a class = 'map-link' href='https://goo.gl/maps/P5IhZ'  target='_blank'>Map and Directions</a>"
+	},
+	
+	{
+		coordinates: new google.maps.LatLng(39.971064, -74.920205),
+		title: "New Jersey Office",
+		address: "110 Marter Ave. Suite #502",
+		state: "Moorestown, NJ 08057",
+		icon: '/assets/images/map-marker-b.png',
+		link: "<a class = 'map-link' href='https://goo.gl/maps/xhdZU'  target='_blank'>Map and Directions</a>"
+	}
+]
+
+$(document).ready(function() {
+	initializeMap();	
+});
+
+/**
+	This function creates the map and calls the addMarkers function to place the markers
+	representing the different offices of the firm.
+**/
+function initializeMap() {
+	var initLocation = mapOptions = {
+			mapTypeId: google.maps.MapTypeId.ROADMAP,
+			mapTypeControl: false,
+			streetViewControl: false
+		},
+		map = new google.maps.Map(document.getElementById("map_canvas"), mapOptions);	
+	
+	addMarkers(map, locations);
+}
+
+/**
+	This function places the markers on the map. It uses the infobox class. 
+	See reference: https://developers.google.com/maps/documentation/javascript/examples/infowindow-simple
+	@ param map: the map where the markers will be placed
+	@ param data: the array that contains the corresponding data (coordinates, name, address)
+	for the office locations
+**/
+function addMarkers(map, data){
+	var locations = [];
+	var marker;
+	var bounds = new google.maps.LatLngBounds();
+	
+	for(var i = 0; i < data.length; i++){
+		if (typeof(data[i]) != 'undefined' && data[i] !== null) {
+			bounds.extend(data[i].coordinates);
+			marker = new google.maps.Marker({
+				map: map,
+				position: data[i].coordinates,
+				icon: data[i].icon,
+				title: data[i].title
+			}),
+			
+			boxText = '<div style="width: 20em; font-size: 14px;">' +
+			'<strong>' + data[i].title + '</strong><br>' + 
+			data[i].address + '<br>' + 
+			data[i].state + '<br>' +
+			data[i].link + '</div>';
+			
+			infoBoxOptions = {
+				content: boxText
+			};
+			
+			locations.push(marker);
+			
+			locations[i].infobox = new google.maps.InfoWindow(infoBoxOptions);
+			
+			google.maps.event.addListener(marker, 'click', (function(marker, i) {
+				return function(){
+					locations[i].infobox.open(map, this);
+					map.panTo(data[i].coordinates);
+				}
+			})(marker, i));
+		}
+		
+	}
+
+	if (data.length < 2) {
+		map.setCenter( data[0].coordinates );
+		map.setZoom( 13 );
+	} else {	
+		map.fitBounds(bounds);
+	}
+}

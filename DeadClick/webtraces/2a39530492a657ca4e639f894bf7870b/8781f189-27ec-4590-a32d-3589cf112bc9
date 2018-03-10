@@ -1,0 +1,424 @@
+
+/*  ****** Attributes to be given for elements are the following ****** */
+
+/*
+required = form field is required 
+validate = type of validation required { "email" or "int" or "float" or "text" or "checked" or "date" or "select" or "radio" or "total","compare"}
+
+message = message to be displayed "error message to alert" 
+group= assign  a group for radio buttons or check boxes 
+
+Note:
+
+give validate="total" for total amount validation.
+if validate="compare"  then give compareid attribute to that element.
+eg:
+<input type="text" id="txt_RetypeEmail" required="yes" validate="compare" compareid="txt_email" message="Please retype the correct E-mail." />
+*/
+
+
+if(typeof String.prototype.trim !== 'function') {
+  String.prototype.trim = function() {
+    return this.replace(/^\s+|\s+$/g, ''); 
+  }
+}
+
+function ValidateForm(form)
+{			
+		var error = "";
+		//for each form element
+		for(var i=0; i<form.length; i++){
+			var element = form[i];
+			var nextelement = form[i+1];
+			//if required
+			if(element.getAttribute("required") == "yes"){
+				//if form element if empty
+				if(!valid(element.getAttribute("validate"),element,nextelement))
+					error += element.getAttribute("message") + "\r\n";	
+			}
+		}
+		if(error != ""){
+			alert(error);
+			document.formSubmit = false;
+		}
+		else
+			document.formSubmit = true;		
+				
+}	
+
+function ValidateForm2(form)
+{
+    var error = "";
+    var setfocus = false;
+    //for each form element
+    for(var i=0; i<form.length; i++){
+        var element = form[i];
+        var nextelement = form[i+1];
+        //if required
+        if(element.getAttribute("required") == "yes"){
+            //if form element if empty
+            if(!valid(element.getAttribute("validate"),element,nextelement)){
+            	if (element.value.trim()!='' && element.getAttribute("message_err"))  error += element.getAttribute("message_err") + "\r\n";
+                else error += element.getAttribute("message") + "\r\n";
+                if (!setfocus) element.focus();
+                setfocus = true;
+            }
+        }
+    }
+
+    if(error != ""){
+        alert(error);
+        return false;
+    }
+    else
+        return true;
+
+}
+
+function valid(type,element,nextelement)
+{
+     	element.value = element.value.trim();
+		if(type=="total")
+		{		
+			var objRegExp  =  /(^-?\d\d*\.\d*$)|(^-?\d\d*$)|(^-?\.\d\d*$)/ ;
+			if(objRegExp.test(element.value)==false || element.value=='')
+			{
+				element.value=0;				
+			}
+		}
+		else if(type!="select" && !IsNotEmpty(element.value))
+			return false;		
+			
+		switch(type){
+			
+			case "email":	
+				if(!IsEmail(element.value))
+					return false;
+				break;
+			case "phone":	
+				if(!IsPhone(element.value))
+					return false;
+				break;
+			case "int":
+			    if(!IsInteger(element.value))
+					return false;
+				break;
+			case "checked":
+				if(!ValidateGroup(element.checked,element,nextelement))
+					return false;			
+				break;
+			case "radio":
+				if(!ValidateGroup(element.checked,element,nextelement))
+					return false;			
+				break;
+			case "date":				
+				if(!IsDate(element.value))
+					return false;
+				break;
+			case "date2":				
+				if(!IsDate2(element.value))
+					return false;
+				break;
+			case "select":				
+				if(!IsSelected(element))
+					return false;
+				break;
+			case "float":
+				if(!IsNumeric(element.value))
+					return false;
+				break;
+			case "total":
+				if(!ValidateTotalSum(element,nextelement))
+					return false;
+				break;
+			case "compare":
+				if(!Compare(element,element.getAttribute("compareid")))
+					return false;
+				break;
+			case "compare_select":
+				if(!CompareSelect(element,element.getAttribute("compareid")))
+					return false;
+				break;
+			case "greater":
+				if(!Greaterthan(element,element.getAttribute("compareamt")))
+					return false;
+				break;
+			default://string
+				break;
+		}
+		return true;
+}
+
+function Compare(element,compareid)
+{
+	var comp=document.getElementById(compareid);
+	if(element.value!=comp.value)
+	{
+		return false;
+	}
+	return true;
+}
+function CompareSelect(element,compareid)
+{
+	var comp=document.getElementById(compareid);
+	if (element.value != '0' || comp.value != '0')
+	{
+		return false;
+	}
+	else if (element.value == '0' && comp.value == '0')
+	{
+		return true;
+	}
+}
+
+function Greaterthan(element,compareamt)
+{
+	var div1 = document.getElementById("qty_cash_in");
+	alert (div1);
+	var comp = div1.getAttribute("compareamt");
+	if(element.value > comp.value)
+	{
+		return false;
+	}
+	return true;
+}
+
+var checkFlag=false;
+
+function  ValidateGroup(val,element,nextelement)
+{		
+	
+	 if(element.getAttribute("group")== nextelement.getAttribute("group"))
+	 {
+		 if(val==true || nextelement.checked==true)
+		 {
+			checkFlag=true; 
+			return true;
+		 }
+	 }	 
+	 else
+	 {	
+		 if(checkFlag==true)
+		 {
+			checkFlag=false ; 
+			return true;
+		 }
+		 else
+		 {
+			 return false;
+		 }
+	 }							
+	return true;
+}
+
+var amtFlag=false;
+
+function  ValidateTotalSum(element,nextelement)
+{		
+	 
+	 if(element.getAttribute("group")== nextelement.getAttribute("group"))
+	 {
+		  var value1=element.value;
+		  var value2=nextelement.value;		  
+		  var objRegExp  =  /(^-?\d\d*\.\d*$)|(^-?\d\d*$)|(^-?\.\d\d*$)/ ;
+		  
+		  if((objRegExp.test(value1)==true && value1>0) || (objRegExp.test(value2)==true && value2>0))
+		  {		 				
+				amtFlag=true;
+				return true;
+		  }				
+	 }	 
+	 else
+	 {	
+		 if(amtFlag==true)
+		 {			
+			amtFlag=false ; 
+			return true;
+		 }
+		 else
+		 {			
+			 return false;
+		 }
+	 }
+	 
+	return true;
+}
+
+function IsNotEmpty(val)
+{    
+	var strTemp = val;
+	var re = /\s/g; //Match any white space including space, tab, form-feed, etc. 
+	RegExp.multiline = true; // IE support
+	var str = strTemp.replace(re, "");
+	if (str.length == 0)
+	{		
+		return false;
+	} 
+	return true;
+   
+}
+
+function IsEmail(val)
+{
+	var strValue=val ;
+	var str =Trim(strValue);	
+	
+	var objRegExp = /^[\w\-\.\+]+\@[a-zA-Z0-9\.\-]+\.[a-zA-z0-9]{2,4}$/;
+
+	if(objRegExp.test(strValue)==false)
+	{			 
+		 return false;
+	}	
+	return true;
+
+}
+
+function IsPhone(val)
+{
+    var strValue=val ;
+    var str =Trim(strValue);
+
+    var objRegExp = /^[\d\-]+$/;
+
+    if(objRegExp.test(strValue)==false || (str.match(/\d/g) || []).length<7)
+    {
+        return false;
+    }
+    return true;
+
+}
+
+function Trim(string)
+{
+	while (string.substring(0,1) == ' ')
+	{
+		string = string.substring(1, string.length);
+	}
+	
+	while (string.substring(string.length-1, string.length) == ' ')
+	{
+		string = string.substring(0,string.length-1);
+	}
+	return string;
+}
+
+function IsInteger(val)
+{
+
+  var strValue=val;
+  var objRegExp  = /(^\d\d*$)/;
+  // var objRegExp  = /(^-\d\d*$)/;
+
+  //check for integer characters
+  var ret= objRegExp.test(strValue);
+  if(ret==false)
+  {		
+	return false;
+  }
+  return true;
+}
+
+function  IsNumeric(val)
+{
+	  var txtValue=val;
+	  var objRegExp  =  /(^-?\d\d*\.\d*$)|(^-?\d\d*$)|(^-?\.\d\d*$)/ ;
+
+	  //check for numeric characters
+	  var ret= objRegExp.test(txtValue);
+		
+	  if(ret==false || txtValue<=0)
+	  {		  	
+	    
+			return false;
+	  }
+	  return true;
+	
+}
+
+function IsDate(val)
+{   
+	//alert(val)	;
+	var strDate=val;
+  var validformat=/^\d{1,2}\/\d{1,2}\/\d{4}$/  ;//Basic check for format validity
+  //alert(validformat.test(val));
+  if (validformat.test(val)==false)
+  {	
+	  return false;
+  }
+  else
+  {     
+	   
+	  // alert(strDate);
+	   var today=new Date();
+	   var dayfield=strDate.split("/")[1];
+	   var monthfield=strDate.split("/")[0];
+	   var yearfield=strDate.split("/")[2];
+	   var dayobj = new Date(monthfield+"/"+dayfield+"/"+yearfield);
+	   var xDate2 = new Date(today.getMonth()+1+"/"+today.getDate()+"/"+(today.getYear()));
+	   if (yearfield<1900|| (dayobj.getMonth()!=monthfield-1)||(dayobj.getDate()!=dayfield)||(dayobj.getFullYear()!=yearfield))
+	   {			 
+			 return false;
+	   }
+	   if (dayobj<xDate2)
+	   {
+			 return false;
+	   }
+
+  }
+  return true;
+}
+
+function IsDate2(val)
+{   
+	//alert(val)	;
+	var strDate=val;
+  var validformat=/^\d{1,2}\/\d{1,2}\/\d{4}$/  ;//Basic check for format validity
+  //alert(validformat.test(val));
+  if (validformat.test(val)==false)
+  {	
+	  return false;
+  }
+  else
+  {     
+	   
+	  // alert(strDate);
+	   var today=new Date();
+	   var dayfield=strDate.split("/")[1];
+	   var monthfield=strDate.split("/")[0];
+	   var yearfield=strDate.split("/")[2];
+	   var dayobj2 = new Date(monthfield+"/"+dayfield+"/"+yearfield);
+	   var newDate = (today.getDate()+14);
+	   var xDate3 = new Date(today.getMonth()+1+"/"+newDate+"/"+(today.getYear()));
+	   if (yearfield<1900|| (dayobj2.getMonth()!=monthfield-1)||(dayobj2.getDate()!=dayfield)||(dayobj2.getFullYear()!=yearfield))
+	   {			 
+			 return false;
+	   }
+	   if (dayobj2 < xDate3)
+	   {
+			 return false;
+	   }
+
+  }
+  return true;
+}
+
+function  IsSelected(element)
+{
+	  if(element.selectedIndex==0)
+	  {
+	    return false;
+	  }
+	  return true;
+}
+
+function calcJulian(isDate){
+
+	gregDate = new Date(isDate);
+	year = gregDate.getFullYear(); 
+	month = gregDate.getMonth()+1; 
+	day = gregDate.getDate();
+	A = Math.floor((7*(year+Math.floor((month+9)/12)))/4);
+	B = day+Math.floor((275*month)/9)
+	isJulian = (367*year)-A+B+1721014;
+	return isJulian; 
+}

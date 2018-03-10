@@ -1,0 +1,18 @@
+$(document).ready(function () {
+
+    $('li', '.productimage-thumbs').on('click', function () {
+        var thumb = $(this).find("img");;
+        var mainImg = $(this).parent().prev()
+        mainImg.attr('src', $(this).find('img').attr('src')).data("mainimage", thumb.data("mainimage"));
+        if (thumb.hasClass("hasMainTinyImage")) {
+            mainImg.addClass("hasMainImage");
+        }
+    });
+    $("#products-container").on("click", ".hasMainImage", function (e) {
+        e.preventDefault();
+        var div = $("<div/>").addClass("mainImagesDialog");
+        $("<img/>", { src: $(this).data("mainimage") }).addClass('mainImage img-responsive center-block').appendTo(div);
+        div.dialog({ minWidth: 500, width: $(window).width() - 20, height: $(window).height() - 20, buttons: { "Close": function () { $(this).dialog("close"); } } });
+    });
+    $("#products-container").find(".hasMainImage").attr("title", "Click to see larger image");
+});

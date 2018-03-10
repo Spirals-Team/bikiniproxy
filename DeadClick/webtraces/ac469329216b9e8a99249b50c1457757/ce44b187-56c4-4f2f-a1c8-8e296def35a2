@@ -1,0 +1,218 @@
+var $red = document.querySelector('.red1');
+  var $green = document.querySelector('.green1');
+  var $blue = document.querySelector('.blue1');
+  var $purple = document.querySelector('.purple1');
+  var start = 0;
+
+  var tl = new TimelineMax({
+    repeat: -1,
+    repeatDelay: 0.05,
+  });
+  // center
+  tl.fromTo($green, 0.4, {x: 0}, {x: 30, ease: Linear.easeNone}, start);
+  tl.fromTo($blue, 0.4, {x: 0}, {x: -30, ease: Linear.easeNone}, start);
+  // ext 1st
+  tl.to($green, 0.4, {x: 60, ease: Linear.easeNone}, start + 0.45);
+  tl.fromTo($purple, 0.4, {x: 0}, {x: -30, ease: Linear.easeNone}, start + 0.45);
+  tl.to($blue, 0.4, {x: -60, ease: Linear.easeNone}, start + 0.45);
+  tl.fromTo($red, 0.4, {x: 0}, {x: 30, ease: Linear.easeNone}, start + 0.45);
+  // ext return
+  tl.to($green, 0.4, {x: 30, ease: Linear.easeNone}, start + 0.9);
+  tl.to($purple, 0.4, {x: 0, ease: Linear.easeNone}, start + 0.9);
+  tl.to($blue, 0.4, {x: -30, ease: Linear.easeNone}, start + 0.9);
+  tl.to($red, 0.4, {x: 0, ease: Linear.easeNone}, start + 0.9);
+  // center again
+  tl.to($green, 0.4, {x: 0, ease: Linear.easeNone}, start + 1.35);
+  tl.to($blue, 0.4, {x: 0, ease: Linear.easeNone}, start + 1.35);
+
+
+  jQuery(document).ready(function ($) {
+      $('#full-width-slider').royalSlider({
+          arrowsNav: false,
+          loop: false,
+          keyboardNavEnabled: true,
+          controlsInside: false,
+          imageScaleMode: 'fill',
+          arrowsNavAutoHide: false,
+          autoScaleSlider: true,
+          autoScaleSliderWidth: 1920,
+          autoScaleSliderHeight: 700,
+          controlNavigation: 'none',
+          thumbsFitInViewport: false,
+          navigateByClick: false,
+          startSlideId: 0,
+          transitionType: 'move',
+          transitionSpeed: 700,
+          globalCaption: false,
+          deeplinking: {
+              enabled: true,
+              change: false
+          },
+          autoPlay: {
+              // autoplay options go gere
+              enabled: false,
+              stopAtAction: true
+          },
+          sliderTouch: true,
+          easeInOut: 'easeInOutSine',
+          thumbs: {
+              arrows: false
+          }
+          
+      });
+
+  });
+
+$(document).ready(function(){
+
+	$(".accordion_head").click(function(){
+		//if ($('.accordion_body').is(':visible')) {
+		//	$(".accordion_body").slideUp(600);
+		//	$(".plusminus").text('+');
+		//}
+
+		$(this).next(".accordion_body").slideToggle(600); 
+		$(this).children(".plusminus").toggleClass('minus');
+	});
+
+	$('ul.top-nav li.has-children > a').click(function() {
+		$(this).parent().siblings().find('ul').slideUp(300);
+		$(this).next('ul').stop(true, false, true).slideToggle(300);
+		return false;
+	});
+
+
+
+
+
+	//Check to see if the window is top if not then display button
+	$(window).scroll(function(){
+		if ($(this).scrollTop() > 100) {
+			$('.scrollToTop').fadeIn();
+		} else {
+			$('.scrollToTop').fadeOut();
+		}
+	});
+	
+	//Click event to scroll to top
+	$('.scrollToTop').click(function(){
+		$('html, body').animate({scrollTop : 0},800);
+		return false;
+	});
+
+
+
+
+
+
+
+
+$(".load").css("display", "none");
+	 $(document).ajaxStart(function(){
+	 	//debugger;
+        $(".load").css("display", "block");
+    });
+    $(document).ajaxStop(function(){
+        $(".load").css("display", "none");
+    });
+    $(document).ajaxComplete(function(){
+        $(".load").css("display", "none");
+    });
+	
+});
+
+
+
+
+
+
+
+
+
+
+	
+	
+	
+	
+	
+(function(){
+	function isTouchDevice(){
+		try{
+			document.createEvent("TouchEvent");
+			return true;
+		}catch(e){
+			return false;
+		}
+	}
+	
+	function touchScroll(id){
+  if( isTouchDevice() ){ //if touch events exist...
+    var el = document.getElementById(id);
+    var scrollStartPos = 0;
+
+    document.getElementById(id).addEventListener("touchstart", function(event){
+      scrollStartPos = this.scrollTop + event.touches[0].pageY;
+      //event.preventDefault(); <-- This line can be removed
+    }, false);
+
+    document.getElementById(id).addEventListener("touchmove", function(event){
+      this.scrollTop = scrollStartPos - event.touches[0].pageY;
+      event.preventDefault();
+    },false);
+  }
+}
+
+	//On page load
+	touchScroll('nav');
+	
+	
+	function getMobileOperatingSystem() {
+//debugger;
+  var userAgent = navigator.userAgent || navigator.vendor || window.opera;
+
+  if( userAgent.match( /iPad/i ) || userAgent.match( /iPhone/i ) || userAgent.match( /iPod/i ) )
+  {
+    //alert('ios1');
+	document.getElementsByTagName("nav")[0].style.display = "none";
+	
+	
+	 document.getElementById("hamburger").onclick = function() {myFunction()};
+	 function myFunction() {
+	 //alert('click1');
+	 document.getElementsByTagName("nav")[0].style.display = "block";
+	 }
+	 
+	document.getElementById("contentLayer").onclick = function() {myFunction1()};
+		 function myFunction1() {
+		 //alert('layer');
+		 document.getElementsByTagName("nav")[0].style.display = "none";
+	 }
+  }
+  else if( userAgent.match( /Android/i ) )
+  {
+
+    //alert('android');
+  }
+  else
+  {
+    //alert('unknown');
+  }
+}
+ getMobileOperatingSystem();
+	
+	
+	
+	
+
+})();
+
+
+
+
+
+
+
+
+
+
+

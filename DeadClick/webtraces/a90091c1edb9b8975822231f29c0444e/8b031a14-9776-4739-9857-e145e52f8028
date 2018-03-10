@@ -1,0 +1,43 @@
+var Mint = new Object();
+Mint.save = function() 
+{
+	var now		= new Date();
+	var debug	= false; // this is set by php 
+	if (window.location.hash == '#Mint:Debug') { debug = true; };
+	var path	= 'http://drivemomcrazy.com/mint/?record&key=3430383032586137434a58643831354d71756967317169';
+	path = path.replace(/^https?:/, window.location.protocol);
+	
+	// Loop through the different plug-ins to assemble the query string
+	for (var developer in this) 
+	{
+		for (var plugin in this[developer]) 
+		{
+			if (this[developer][plugin] && this[developer][plugin].onsave) 
+			{
+				path += this[developer][plugin].onsave();
+			};
+		};
+	};
+	// Slap the current time on there to prevent caching on subsequent page views in a few browsers
+	path += '&'+now.getTime();
+	
+	// Redirect to the debug page
+	if (debug) { window.open(path+'&debug&errors', 'MintLiveDebug'+now.getTime()); return; };
+	
+	var img = new Image();
+	img.src = path+'&serve_img';
+};
+if (!Mint.SI) { Mint.SI = new Object(); }
+Mint.SI.Referrer = 
+{
+	onsave	: function() 
+	{
+		var encoded = 0;
+		if (typeof Mint_SI_DocumentTitle == 'undefined') { Mint_SI_DocumentTitle = document.title; }
+		else { encoded = 1; };
+		var referer		= (window.decodeURI)?window.decodeURI(document.referrer):document.referrer;
+		var resource	= (window.decodeURI)?window.decodeURI(document.URL):document.URL;
+		return '&referer=' + escape(referer) + '&resource=' + escape(resource) + '&resource_title=' + escape(Mint_SI_DocumentTitle) + '&resource_title_encoded=' + encoded;
+	}
+};
+Mint.save();

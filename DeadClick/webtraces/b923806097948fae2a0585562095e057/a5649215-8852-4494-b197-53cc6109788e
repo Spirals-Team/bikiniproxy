@@ -1,0 +1,24 @@
+function piEnableTracking(element) {
+	piSetCookie('pi_opt_in299472', 'true', 999);
+	pi.tracker.pi_opt_in = 'true';
+	piTracker();
+	element.parentNode.style.display = 'none';
+}
+function piDisableTracking(element) {
+	piSetCookie('pi_opt_in299472', 'false', 999);
+	piSetCookie('visitor_id299472', '', 999);
+	pi.tracker.pi_opt_in = 'false';
+	pi.tracker.notify_pi = true;
+	piTracker();
+	element.parentNode.style.display = 'none';
+}
+function piResponse() {
+	var body = document.getElementsByTagName("body")[0];
+	var trackingDiv = document.createElement('div');
+	var displaySettings = {"message":"This website stores cookies, which are used to improve the website and provide personalized services to you. May we continue to use cookies to track your activity?  ","style":"position: fixed; \nbottom: 0pt;\nleft: 0;\nwidth: 100%;\ntext-align: center;\nbackground: #ED6B45; \ncolor: #ffffff; \nopacity: 0.8;\nfilter:alpha(opacity=80);\nfont-size: 1em;\npadding: 5px 0pt; \nz-index: 1000;","link_style":"font-size: 1em;\ncolor: #ffffff; \n"};
+	trackingDiv.innerHTML = '<div style=\'' + displaySettings.style + '\'>' + displaySettings.message + '<a href="#" style=\'' + displaySettings.link_style + '\' onclick=\'piEnableTracking(this); return false;\'>Yes</a> <a href="#" style=\'' + displaySettings.link_style + '\' onclick=\'piDisableTracking(this); return false;\'>No</a><div>';
+	body.appendChild(trackingDiv);
+}
+piResponse();
+
+

@@ -1,0 +1,96 @@
+var err_name = 'Please enter your name';
+var err_phone = 'Please enter your phone number';
+var err_email = 'Please enter your email address';
+var err_email_validate = 'Please enter your valid email address';
+var err_msg = 'Please enter your message';
+var err_enquiry = "Please select an establishment";
+
+function validateEmail(strValue)
+{
+    var objRegExp = /^[a-z0-9]([a-z0-9_\-\.]*)@([a-z0-9_\-\.]*)(\.[a-z]{2,3}(\.[a-z]{2}){0,2})$/i;
+    return objRegExp.test(strValue);
+}
+function numeric(event)
+{
+    if ((event.keyCode >= 48 && event.keyCode <= 57) || (event.keyCode >= 96 && event.keyCode <= 105) || (event.keyCode == 8) || (event.keyCode == 9) || (event.keyCode == 12) || (event.keyCode == 27) || (event.keyCode == 37) || (event.keyCode == 39) || (event.keyCode == 46))
+    {
+        return true;
+    }
+    else {
+        event.preventDefault();
+        return false;
+    }
+}
+
+function contact_us()
+{   
+   var x = 0;
+   curr_blog_id = jQuery('.curr_blog_id').val();
+   if (curr_blog_id == 4) {
+      if (jQuery('.enquiry_for').val() == '') {
+        jQuery('#err_enquiry').text(err_enquiry);
+        jQuery('#err_enquiry').css('display', 'block');
+         x++;
+        
+    } else {
+        jQuery('#err_enquiry').css('display', 'none');
+        jQuery('#err_enquiry').html('&nbsp;');
+    }  
+   }
+
+   if (jQuery('#name').val() == '') {
+        jQuery('#err_name').text(err_name);
+        jQuery('#err_name').css('display', 'block');
+         x++;
+        
+    } else {
+        jQuery('#err_name').css('display', 'none');
+        jQuery('#err_name').html('&nbsp;');
+    }
+
+    if (jQuery('#phone').val() == '') {
+        jQuery('#err_phone').text(err_phone);
+        jQuery('#err_phone').css('display', 'block');
+         x++;
+    } else {
+        jQuery('#err_phone').css('display', 'none');
+        jQuery('#err_phone').html('&nbsp;');
+    }
+
+   if (jQuery('#email').val() == '') {
+        jQuery('#err_email').text(err_email);
+        //jQuery('#err_valemail').css('display','none');
+        jQuery('#err_email').css('display', 'block');
+        x++;
+    } else if ((jQuery('#email').val() != '') && validateEmail(jQuery('#email').val()) === false) {
+        jQuery('#err_email').text(err_email_validate);
+        //jQuery('#err_email').css('display', 'none');
+        jQuery('#err_email').css('display', 'block');
+     x++;
+    }
+    else {
+        //jQuery('#err_valemail').css('display','none');
+        jQuery('#err_email').css('display', 'none');
+        jQuery('#err_email').html('&nbsp;');
+    } 
+   
+  
+
+    if (jQuery('#msg').val() == '') {
+        jQuery('#err_msg').text(err_msg);
+        jQuery('#err_msg').css('display', 'block');
+         x++;
+    } else {
+        jQuery('#err_msg').css('display', 'none');
+        jQuery('#err_msg').html('&nbsp;');
+    }
+
+    if (x == 0) {
+        
+        //jQuery('.global-error').css('display', 'none');
+        jQuery('#contactus').submit();
+        return true;
+    }
+
+    return false;
+}

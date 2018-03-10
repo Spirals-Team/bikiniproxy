@@ -1,0 +1,46 @@
+var propertyBase = "";var jsMode = "inline";var cssMode = "inline";var htmlMode = "inline";var passThroughParams = "&pt=keyword&jsm=inline&cssm=inline&p=LATArticles&t=kp-LA4-G02&c=";
+function pm_nav_pre() {
+    LazyLoad.js('http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js', pm_load_nav_css_import);
+}
+
+function pm_nav_init() {
+    if (typeof console == 'object') {
+        if (jsMode == 'inject') console.log('PM NAV - injecting JS (end)');
+        if (htmlMode == 'inject') console.log('PM NAV - injecting DOM (start)');
+    }
+    if (htmlMode == 'inject') {
+        jQuery.ajax({
+            type: "GET",
+            url: "full-nav-data.php?mode=getNavHTML" + passThroughParams + "&propertyBase=" + escape(propertyBase),
+            converters: { "text html": true },
+            success: function(data) {
+                jQuery("#mod-logo").html(data);
+                if (typeof console == 'object') console.log('PM NAV - injecting DOM (end)');
+            }
+        });
+    }
+}
+
+function pm_load_nav_css_import() {
+    if (cssMode == 'inject') {
+        if (typeof console == 'object') console.log('PM NAV - injecting CSS (start)');
+        LazyLoad.css("full-nav-data.php?mode=getNavCSS" + passThroughParams + "&propertyBase=" + escape(propertyBase), pm_load_nav_js_import);
+    }
+    else pm_load_nav_js_import();
+}
+
+function pm_load_nav_js_import() {
+    // remove reference to $ for jquery as it could conflict with imported javascript libraries
+    $.noConflict();
+
+    if (cssMode == 'inject' && typeof console == 'object') console.log('PM NAV - injecting CSS (end)');
+
+    if (jsMode == 'inject') {
+        if (typeof console == 'object') console.log('PM NAV - injecting JS (start)');
+        LazyLoad.js("full-nav-data.php?mode=getNavJS" + passThroughParams + "&propertyBase=" + escape(propertyBase), pm_nav_init);
+    }
+    else pm_nav_init();
+}
+pm_nav_pre();
+
+

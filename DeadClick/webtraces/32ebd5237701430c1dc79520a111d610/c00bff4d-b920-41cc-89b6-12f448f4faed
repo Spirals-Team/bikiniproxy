@@ -1,0 +1,16 @@
+
+$(document).ready(function()
+{$("#new-product-review").dialog({'modal':true,'resizable':false,'autoOpen':false,'draggable':false,'width':700,'height':420,'stack':false,'overlay':0.8,'title':'Write a review','closeOnEscape':false,'open':function(ev,ui)
+{$('#new-product-review-submit').click(function(){$(this).attr('disabled','disabled');submitProductReview();$(this).removeAttr('disabled');return false;});$('#new-product-review-close').click(function(){$("#new-product-review").dialog("close");return false;});}});$('#product-rating').rater({'curvalue':$('#product-rating').attr('title'),'disable':true});$('#new-product-rating').rater({'sticky':true,'callback':function(value){$('#new-product-rating').data("rating",value);}});$('div.product-review-item-rating').each(function(){$(this).rater({'curvalue':this.title,'disable':true});});});function showReviewDialog()
+{$('#new-product-review').dialog("open");return false;}
+function submitProductReview()
+{var error_message='';if($('#new-product-review-title').val().length<3)
+{error_message=error_message+msg.reviews_alert_title+"\n";$('#new-product-review-title').focus();}
+if($('#new-product-review-text').val().length<10)
+{error_message=error_message+msg.reviews_alert_text+"\n";$('#new-product-review-text').focus();}
+if($('#new-product-rating').data("rating")==null)
+{error_message=error_message+msg.reviews_alert_rating+"\n";}
+if(parseInt(error_message.length))
+{alert(error_message);return false;}
+$.post(site_base_url+'index.php?ua=AddReview',{pid:$('#pid').val(),rating:$('#new-product-rating').data("rating"),review_title:$('#new-product-review-title').val(),review_text:$('#new-product-review-text').val()},function(id)
+{$('.product-reviews .product-reviews-top-text').html('Thank you for your review!');$("#new-product-review").dialog("close");});}

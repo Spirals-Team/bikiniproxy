@@ -1,0 +1,12 @@
+/*
+ * hoverIntent v1.9.1 // 2017.03.30
+ * Forked https://github.com/amclin/jquery-hoverIntent
+ *
+ * Original hoverIntent v1.9.0
+ * http://briancherne.github.io/jquery-hoverIntent/
+ *
+ * You may use hoverIntent under the terms of the MIT license. Basically that
+ * means you are free to use hoverIntent as long as this header is left intact.
+ * Copyright 2007, 2014 Brian Cherne
+ */
+(function(a){if(typeof define==="function"&&define.amd){define(["jquery"],a)}else{if(jQuery&&!jQuery.fn.hoverIntent){a(jQuery)}}})(function(d){var g={interval:100,sensitivity:6,timeout:[0,0]};var i=0;var f,e;var b=function(j){f=j.pageX;e=j.pageY};var a=function(m,k,l,j){if(Math.sqrt((l.pX-f)*(l.pX-f)+(l.pY-e)*(l.pY-e))<j.sensitivity){k.off(l.event,b);delete l.timeoutId;l.isActive=true;m.pageX=f;m.pageY=e;delete l.pX;delete l.pY;l.timeoutId=setTimeout(function(){h(m,k,l,j)},j.timeout[0])}else{l.pX=f;l.pY=e;l.timeoutId=setTimeout(function(){a(m,k,l,j)},j.interval)}};var c=function(m,k,l,j){delete k.data("hoverIntent")[l.id];return j.out.apply(k[0],[m])};var h=function(m,k,l,j){delete l.timeoutId;return j.over.apply(k[0],[m])};d.fn.hoverIntent=function(n,o,j){var m=i++;var l=d.extend({},g);if(d.isPlainObject(n)){l=d.extend(l,n);if(!d.isFunction(l.out)){l.out=l.over}}else{if(d.isFunction(o)){l=d.extend(l,{over:n,out:o,selector:j})}else{l=d.extend(l,{over:n,out:n,selector:o})}}if(typeof l.timeout==="number"){l=d.extend(l,{timeout:[0,l.timeout]})}var k=function(u){var s=d.extend({},u);var q=d(this);var p=q.data("hoverIntent");if(!p){q.data("hoverIntent",(p={}))}var t=p[m];if(!t){p[m]=t={id:m}}if(t.timeoutId){t.timeoutId=clearTimeout(t.timeoutId)}var r=t.event="mousemove.hoverIntent.hoverIntent"+m;if(u.type==="mouseenter"){if(t.isActive){return}t.pX=s.pageX;t.pY=s.pageY;q.off(r,b).on(r,b);t.timeoutId=setTimeout(function(){a(s,q,t,l)},l.interval)}else{if(!t.isActive){return}q.off(r,b);t.timeoutId=setTimeout(function(){c(s,q,t,l)},l.timeout[1])}};return this.on({"mouseenter.hoverIntent":k,"mouseleave.hoverIntent":k},l.selector)}});

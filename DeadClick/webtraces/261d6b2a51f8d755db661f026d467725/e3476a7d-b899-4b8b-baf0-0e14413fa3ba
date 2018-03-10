@@ -1,0 +1,278 @@
+var kc = kc || {};
+
+$.fn.equalHeight = function(e){
+	var p = this.parent(),
+		l = this.length,
+		max = 0;
+		
+	while(l--){
+		max = (max > this.eq(l).height()) ? max : this.eq(l).height();
+	}
+	//	this.detach().height(max).appendTo(p);
+	//Optimize by detaching the set, adjusting heights, and appending. need do differentiate each parent, though.
+	//In the meantime, just accept the reflow.
+
+	return this.height(max);;
+};
+
+$.fn.mediaGallery = function(rev){
+	rev == rev || false;
+	
+	var	li = this.children()
+	,	last = li.last()
+	,	first = li.first()
+	,	lastpos = parseInt(last.css('left'))//+w;
+	;
+	
+	if(rev){
+      this.height(last.height())
+		last.insertBefore(first).css('left',(last.width()*-1));
+		li.animate({left:'+=200px'},100);
+	}
+	else{
+        this.height(first.height())
+		li.animate({left:'-=200px'},100,function(){
+
+			if($(this).index()==0){
+				first.css('left',lastpos).insertAfter(last);
+			}
+		})	
+	}
+	
+	return this;
+};
+
+$.fn.cyclenews = function(obj){
+	var c = this.children(obj)
+	,	x = this
+	,	rotationTime = 4000
+	,	par = $('<div class="cyclenews" />')
+	;
+	
+	cyclenews = {} || cyclenews;
+
+	function anim(){
+		var cur = c.filter(':visible')
+		//,	p = cur.parent()
+		,	w = x.width()
+		;
+
+		cur.animate({'left':'-='+w},300,function(){
+			$(this).hide().next().show().each(function(){
+				par.animate({'height':$(this).height()},300)
+			}).css('left',w).animate({'left':0},300).end().appendTo(par).css('left',w)
+		})
+		cyclenews.timer = setTimeout(arguments.callee, rotationTime);
+	};
+
+	par.insertBefore(c.first()).append(c).height(c.first().height()).bind('mouseenter mouseleave', function(e){
+		if(e.type == 'mouseenter'){
+		    clearTimeout(cyclenews.timer);
+		}
+		else{
+			cyclenews.timer = setTimeout(anim,rotationTime);
+		}
+	});
+
+	c.width(x.width()).addClass('cyclecopy').not(':first').hide();	
+	$(window).load(function () {
+		par.height(c.first().height()); // ensure slow loading images aren't truncated
+		cyclenews.timer = setTimeout(anim,rotationTime);
+	});
+
+	return this;
+}
+
+kc.query =  (function () {
+	var qString, queryStart, query, parts, bits, subbits, returnVals = {};
+	qString = window.location.toString();
+	queryStart = qString.indexOf('?');
+	if (queryStart==-1) {
+		return returnVals;
+	}
+	query = qString.substring(queryStart + 1, qString.length);
+	parts = query.split("&");
+	for (var i=0; i<parts.length; i++) {
+		bits = parts[i].split("=");
+		if (bits[1]) {
+			subbits = bits[1].split("#");
+			returnVals[bits[0].toLowerCase()] = subbits[0]; // query properties are lowercase!
+		}
+	}
+	return returnVals;
+}) () // self-invoking!
+
+
+function brandribbon(rev){
+	var list = $('#br_ul').children()
+	,    range = (list.length/2)+1
+	,    slice = (rev) ? list.slice(0,range) : list.slice(range, range*2)
+	,    len = slice.length
+	,    px = 0
+	;
+
+	if(!$('#br_ul').length){
+		return false;
+	}
+
+	while(len--){
+	    px-=slice.eq(len).height();
+	}
+
+	if(rev){
+		list.animate({'top':px},250,function(){
+	    	list.css('top',0);
+	    	slice.appendTo(list.parent());
+		})
+	}
+	else{
+	    slice.prependTo(list.parent());
+	    list.css('top',px).animate({'top':'-='+px},250)
+	}
+	kc.kctimer = setTimeout(function(){brandribbon(rev)},4000);
+}
+
+$(function(){
+	var $a = $('.accordion')
+	,	$s = $('.rotatestory')	
+	;
+	
+	$('.colunit:even').css('clear','both')
+	//$('.colunit').equalHeight();
+	/*
+		$('.colunit').height('auto').filter(':even').each(function(){
+		//var x = $(this);
+		//Equalize heights based on partnered pairs.
+		})
+	*/
+	$('.news').equalHeight();
+	$('#continentlist').find('a').equalHeight().click(function(e){
+		var t = $(this)
+		,	x = $('#'+t.attr('rel'))
+		;
+		
+		e.preventDefault();
+		t.addClass('sel').parent().siblings().find('a').removeClass('sel');
+		x.show().siblings('.accordion').hide();
+	}).eq(0).addClass('sel');
+	
+	/*Hide all but the first set of accordion panels. (For the pages with tabbed panels.)*/
+	$a.accordion({autoHeight: false, collapsible: true}).not(':first').hide();
+	
+	$('table').not('.ui-accordion-content').each(function(i,e){
+	    $(e).find('tr:odd').addClass('alt')
+	});
+	
+	
+	$('.gallery').filter(':last').addClass('lastgallery');
+	$('.current').parents('ul').show();
+    $('#navtop a:contains("' + ($('.LandingLink').text() == '' ? 'NoLandingLink' : $('.LandingLink').text()) + '")').addClass('primaryselect');
+	$('#frmSearch')//.find(':submit').hide().end()
+	.find('label').bind('click',function(e){
+		$(e.target).parent().submit();
+	})
+	$('#subSearch').hide(); 
+	$('.D1aBottom').each(function() {
+	    $(this).appendTo($(this).parents('.ui-accordion-content'))
+	}).parents('.accordion').accordion();
+	
+	/*For c1 and d1a and d2 templates that have no images related to the article, expand the body copy fully.*/
+	$('.c1, .d1a, .d2').each(function(i,e){
+	    if($('#images',e).children().length == 0){
+	        $(e).addClass('fullwidth');
+	    }
+	});
+	
+	brandribbon();
+
+/*
+	$('#brandribbon').hover(function(e){
+	    kc.cleared = clearTimeout(kc.kctimer)
+	}, function (e){
+	    kc.kctimer = setTimout(function(){brandribbon()},4000)
+	});
+*/
+
+$('#brandribbon').bind('mouseenter mouseleave',function(e){
+	if(e.type == 'mouseenter'){
+		clearTimeout(kc.kctimer)
+	}
+	else{
+		kc.kctimer = setTimeout(function(){brandribbon()},4000)
+	}
+})
+
+
+	if($s.length > 1){
+		$s.parent().cyclenews('.story');	
+	}
+});
+
+$(function(){
+	var ul = $('.gallery_list')
+	,	w = 200
+	;
+
+	$('li',ul).each(function(i,e){
+		$(e).css('left',i*w);
+	}).first().each(function(){
+		ul.height($(this).height())
+	})
+	
+	$('#gl_fwd').click(function(){
+		$('.gallery_list').mediaGallery();
+	})
+	
+	$('#gl_rev').click(function(){
+		$('.gallery_list').mediaGallery(1);
+	})
+})
+
+$(function(){
+	$('<div>',{
+	id:'media_overlay',
+	html:'<div id="mo_flash"/><img src="/images/close.png" id="mo_close" />'
+	}).prependTo('#main');
+	
+	$('a').filter('[href$=".mp4"],[href$=".flv"]').unbind('click').bind('click',function(e){
+		var path = $(this).attr('href');
+		
+		$('#media_overlay').show()
+		$f('mo_flash',
+			{
+			    src: '/images/flowplayer-3.2.5.swf',
+			    wmode: 'opaque'
+			},
+			{
+			    key: '#@6763637a425d2643b30',
+			    clip: {
+			        url: path,
+			        autoPlay: true,
+			        autoBuffering: true
+
+			    }
+			}
+		);
+		e.preventDefault();
+	})
+	
+	$('#mo_close').live('click',function(){
+		$f('mo_flash').close();
+		$('#media_overlay').hide();
+	})
+	/*
+
+		.each(function(){
+		var params = {
+			allowScriptAccess: "always",
+			bgcolor: "#ffffff",
+			wmode: "opaque"
+		};
+		var flashvars = {};
+		var attributes = {id:"mo_video"};
+		swfobject.embedSWF("/swf/worldmap.swf", "mo_flash", "580", "300", "9.0.45", "/swf/expressinstall.swf", flashvars, params, attributes);
+		})
+		*/
+	
+})
+

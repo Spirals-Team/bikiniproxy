@@ -1,0 +1,64 @@
+(function($){
+var update_lsched_game=function(lsched_id){
+	var lsched = $("#"+lsched_id);
+	var active = lsched.attr("data-active");
+	if(!active){
+		var active = lsched_game[lsched_id]["default"];
+		lsched.attr("data-active",active);
+	}
+	$("#"+lsched_id+" th.lsched_day_number").html("jour&nbsp;"+active);
+	var html="";
+	$.each(lsched_game[lsched_id]["game"][active],function(index,value){
+		html+="<tr class=\"row_type_"+(index%2)+"\"><td colspan=\"3\" class='lsg_dt'>";
+		var tmp = value["date"].split("-");
+		var tmp = tmp[2]+"/"+tmp[1]+"/"+tmp[0];
+		html+=tmp;
+//		html+="</td><td>";
+		var tmp=value["time"];
+		var tmp=tmp.split(":");
+		html+=" "+tmp[0]+":"+tmp[1];
+		html+="</td></tr><tr class=\"row_type_"+(index%2)+"\"><td>";
+		if(value["home"]["short"]=="AMI") var cl="is_ami";
+		else var cl="";
+		html+="<span class='lsg_team "+cl+"'>"+value["home"]["name"]+"</span>";
+		html+="</td><td>";
+		if(value["score"].trim()){
+			html+="<span class='lsb_sc'>"+value["score"].replace(/:/,"</span><span class='lsb_sc_sep'> : </span><span class='lsb_sc'>")+"</span>";
+		}else{
+			html+="<strong class='lsb_vs'>VS</strong>";
+		}
+		html+="</td><td> ";
+		if(value["away"]["short"]=="AMI") var cl="is_ami";
+                else var cl="";
+		html+="<span class='lsg_team "+cl+"'>"+value["away"]["name"]+"</span>";
+		html+="</td></tr>";
+	});
+	$("#"+lsched_id+" tbody").html(html);
+}
+if(lsched_game!==undefined){
+	$.each(lsched_game,function(index, value){
+		update_lsched_game(index);
+
+	});
+	$("a.lsched-next").click(function(){
+		var lsched_id = $(this).attr("data-ref");
+		var active =  $("#"+lsched_id).attr("data-active");
+		if(parseInt(active)<parseInt(lsched_game[lsched_id]["max"])){
+			active=(parseInt(active)+1).toString();
+			$("#"+lsched_id).attr("data-active",active);
+		}
+		update_lsched_game(lsched_id);
+	});
+	$("a.lsched-prev").click(function(){
+		var lsched_id = $(this).attr("data-ref");
+		var active =  $("#"+lsched_id).attr("data-active");
+		var first = parseInt(lsched_game[lsched_id]["first"]);
+		if(parseInt(active)>first){
+                        active=(parseInt(active)-1).toString();
+                        $("#"+lsched_id).attr("data-active",active);
+                }
+
+                update_lsched_game(lsched_id);
+        });
+}
+})(jQuery);

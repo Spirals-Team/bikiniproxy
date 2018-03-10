@@ -1,0 +1,154 @@
+jQuery.noConflict();
+$j = jQuery;
+jQuery(document).ready( function($){
+    /*
+     * articleか否かを確認
+     */
+     //    var credit = $j('p.credit').html();
+    var is_article = $j('body').hasClass('single');
+    var is_not_news = $j('body').hasClass('single-format-standard');
+    var is_faq = $j('body').hasClass('single-question');
+    var is_cityguide = $j('body').hasClass('cityguide');
+    var is_n2u = $j('body').hasClass('single-n2u');
+    var is_jnu = $j('body').hasClass('single-jnu');
+
+    /*
+     * COUNT UP
+    if (is_article) {
+     */
+    if ( ( is_article ) && ( ! is_not_news ) && ( ! is_faq ) && ( ! is_cityguide ) && ( ! is_n2u ) && ( ! is_jnu ) ) {
+      JTO_Paywall.count_up().then(
+	  function(data) {
+	  
+	      // console.log(data);
+
+	      sns_name = data.sns;
+	      sns_name = sns_name.toString().toLowerCase();
+	      //	      $j('.affiliate_header .header_content ul').append('<li><a href="#">' + data.name + ' from ' + data.sns + '</a></li>');
+	      if (data.name.length > 0) {
+		  if (sns_name == 'kyodo') {
+		      display_name = data.name;
+		      sns_name = 'mail';
+		  } else {
+		      display_name = data.sns;
+		      sns_name = display_name.toString().toLowerCase();
+		  }
+		  $j('ul#user_account_header li:first-child').remove();
+		  $j('ul#user_account_header li:first-child').remove();
+
+		  $j('ul#user_account_header li:first-child').before('<li><a href="https://members.japantimes.co.jp/myaccount/">My Account</a></li>');
+
+		  $j('ul#user_account_header li:first-child').before('<li><a href="https://members.japantimes.co.jp/myaccount/"><span class="icon icon-' + sns_name + '" title="You are logged in ' +display_name + '">' +display_name + '</a>  |  <a href="/login/wp_logout.php">LOGOUT »</a></li>');
+//		  $j('ul#user_account_header li:first-child').before('<li>' + display_name + '  |  <a href="/login/wp_logout.php">LOGOUT »</a></li>');
+
+
+		  // MOBILE
+		  $j('div.login_header ul li:first-child').remove();
+		  $j('div.login_header ul li:first-child').before('<li><a href="https://members.japantimes.co.jp/myaccount/">' +display_name + '</a><span> | </span><a href="/login/wp_logout.php">LOGOUT</a><span> | </span></li>');
+		  $j('div.login_header ul li:first-child').next().remove();
+	      }
+
+	      if (data.paywall) {
+		  /*
+		   * HIDE elements
+		   */
+		  $j('.gallery').remove();
+		  $j('.embed-container').remove();
+		  $j('.meta.footer').remove();
+		  $j('.related_articles').remove();
+		  $j(".main_content .entry p:not(:first)").remove();
+		  $j('.hreview').remove();
+
+		  /*
+		   * ADD div element
+		   */
+		  $j('.main_content .entry p').after('<div id="jto_paywall" style="display: none;"></div>');
+
+		  /*
+		   * SHOW PAYWALL
+		   */
+		  show_ajax_message_box(data.html);
+
+		  /*
+		   * HIDE NOTIFICATIONS
+		   */
+		  hide_notifications(data.reason, data.sns);
+	      }
+	  },
+	  function(data) {
+	      // console.log(data);
+	      // console.log("failed");
+	  }
+      );
+    } else {
+      JTO_Paywall.get_user().then(
+	  function(data) {
+	      sns_name = data.sns;
+	      sns_name = sns_name.toString().toLowerCase();
+
+	      if (data.name.length > 0) {
+		  if (sns_name == 'kyodo') {
+		      display_name = data.name;
+		      sns_name = 'mail';
+		  } else {
+		      display_name = data.sns;
+		      sns_name = display_name.toString().toLowerCase();
+		  }
+		  $j('ul#user_account_header li:first-child').remove();
+		  $j('ul#user_account_header li:first-child').remove();
+
+		  $j('ul#user_account_header li:first-child').before('<li><a href="https://members.japantimes.co.jp/myaccount/">My Account</a></li>');
+
+		  $j('ul#user_account_header li:first-child').before('<li><a href="https://members.japantimes.co.jp/myaccount/"><span class="icon icon-' + sns_name + '" title="You are logged in ' +display_name + '">' +display_name + '</a>  |  <a href="/login/wp_logout.php">LOGOUT »</a></li>');
+//		  $j('ul#user_account_header li:first-child').before('<li>' + display_name + '  |  <a href="/login/wp_logout.php">LOGOUT »</a></li>');
+
+		  // MOBILE
+		  $j('div.login_header ul li:first-child').remove();
+		  $j('div.login_header ul li:first-child').before('<li><a href="https://members.japantimes.co.jp/myaccount/">' +display_name + '</a><span> | </span><a href="/login/wp_logout.php">LOGOUT</a><span> | </span></li>');
+		  $j('div.login_header ul li:first-child').next().remove();
+	      }
+	  },
+	  function(data) {
+//	      console.log("failed");
+	  }
+      );
+    }
+
+});
+
+function show_ajax_message_box(text) {
+    $j("#jto_paywall").css("display", "block");
+    $j("#jto_paywall").html(text);
+}
+
+/*
+      reason
+      1.You’ve reached your story limit as a non-registered user. 
+        notification_article_limit_non_registered
+      2.You’ve reached your story limit as a registered user. 
+        notification_article_limit_registered
+      3.You’ve reached your limit of Kyodo News stories. Subscribe to read more. 
+        notification_article_old_kyodo
+*/
+function hide_notifications(reason, sns) {
+    if (reason == 1) {
+	$j('#notification_article_old_kyodo').remove();
+	$j('#notification_article_limit_registered').remove();
+    }
+    if (reason == 2) {
+	$j('#notification_article_old_kyodo').remove();
+	$j('#notification_article_limit_non_registered').remove();
+    }
+    if (reason == 3) {
+	$j('#notification_article_limit_registered').remove();
+	$j('#notification_article_limit_non_registered').remove();
+    }
+
+    if (((reason == 2) || (reason == 3)) && (sns != 'Kyodo') && (sns != '')) {
+	$j('#user_account').remove();
+    } else {
+	$j('#user_account_jto').remove();
+    }
+/*
+*/
+}

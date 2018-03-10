@@ -1,0 +1,133 @@
+jQuery(document).ready(function($) {
+
+    jQuery('.find_dealer .box_search .search_tabs .tab .btn').on("click", function(e){
+  		var criteria_val = ($(this).closest("div").attr("id")=="box_search_tab_1_tab")?jQuery('.find_dealer .box_search .search_tabs .tab .txt').first().val():jQuery('.find_dealer .box_search .search_tabs .tab .txt').last().val();
+  		digitalData.page.component.dealerSearch.criteria = criteria_val;
+  		_satellite.track("updatemap");
+  		_satellite.pageBottom();
+    });
+
+    /*$('#global-nav > ul > li > a').on('click', function() {
+        var linkType = 'main-nav';
+        var linkName = $(this).attr('name');
+        if (linkName !== '' && linkName !== undefined && linkName !== null && linkName !== '#') {
+            xLayer.mainNavClick($, linkType, linkName, function() {
+                digitalData.page.pageInfo.linkType = xLayer.link.linkType;
+                digitalData.page.pageInfo.linkName = xLayer.link.linkType + xp(xLayer.link.linkName);
+                _satellite.pageBottom(); //
+            });
+        }
+    });
+
+    $('#global-nav > ul > li > .dropdown > nav > ul > li > a').on('click', function() {
+        var linkType = 'main-nav';
+        var linkSection = $(this).closest('nav').closest('li').attr('id');
+        var linkName = $(this).attr('name');
+        if (linkName !== '' && linkName !== undefined && linkName !== null && linkName !== '#') {
+            xLayer.mainNavDropdownClick($, linkType, linkSection, linkName, function() {
+                digitalData.page.pageInfo.linkType = xLayer.link.linkType;
+                digitalData.page.pageInfo.linkName = xLayer.link.linkType + xp(xLayer.link.linkSection) + xp(xLayer.link.linkName);
+                _satellite.pageBottom();
+            });
+        }
+    });
+
+    $('#footer-links ul > li > a').on('click', function() {
+        var linkType = 'footer';
+        var linkName = $(this).attr('name');
+        if (linkName !== '' && linkName !== undefined && linkName !== null && linkName !== '#') {
+            xLayer.footerLinkClick($, linkType, linkName, function() {
+                digitalData.page.pageInfo.linkType = xLayer.link.linkType;
+                digitalData.page.pageInfo.linkName = xLayer.link.linkType + xp(xLayer.link.linkName);
+                _satellite.pageBottom();
+                debugger;
+            });
+        }
+    });
+
+    $('#util-nav > ul > li > a').on('click', function() {
+        var linkType = 'cta';
+        var linkSection = 'cta-top';
+        var linkName = $(this).attr('name');
+        if (linkName !== '' && linkName !== undefined && linkName !== null) {
+            xLayer.ctaClick($, linkType, linkSection, linkName, function() {
+                digitalData.page.pageInfo.linkType = xLayer.link.linkType;
+                digitalData.page.pageInfo.linkName = xLayer.link.linkType + xp(xLayer.link.linkSection) + xp(xLayer.link.linkName);
+                _satellite.pageBottom();
+            });
+        }
+    });*/
+
+
+});
+
+var digitalData =
+{
+    page :
+    {
+        pageInfo :
+        {
+            sysEnv : '',
+            pageName : '',
+            countryCode : 'ru',     //	2 characters ISO 3166-1
+            language : '', 	//	2 characters ISO 639-1
+            vehicleBrand : 'jeep',
+            vehicleModel : '',
+            vehicleYear : '',
+            vehicleTrim : '',
+            vehicleID : '',
+            linkName	: '',
+            linkType	: ''
+        },
+        attributes : {
+            platform: {
+                device: '' // according to the device
+            },
+            style : ''
+        },
+        category :
+        {
+            hierarchy : '',
+            primaryCategory : '',
+            subCategory1 : '',
+            subCategory2 : '',
+            pageType : ''
+
+        },
+        component :
+        {
+            form :
+            {
+                leadType : '',
+                stepName : '' ,
+                transactionID : ''
+            },
+            dealerSearch : {
+                dealerID : ''
+            }
+        }
+    },
+};
+
+var xp = function(text) {
+    if (text !== '' && text !== undefined && text !== null) {
+        return ':' + text;
+    }
+    return '';
+};
+
+xLayer.init(jQuery, function() {
+    digitalData.page.pageInfo.language = xLayer.language;
+    digitalData.page.attributes.platform.device = xLayer.platform;
+    digitalData.page.pageInfo.sysEnv = xLayer.platform;
+    digitalData.page.attributes.style = xLayer.pageStyle;
+    digitalData.page.category.pageType = xLayer.brand + xp(xLayer.country) + xp(xLayer.pageType);
+    digitalData.page.category.primaryCategory = xLayer.brand + xp(xLayer.country) + xp(xLayer.section1) + xp(xLayer.section2) + xp(xLayer.section3);
+    digitalData.page.category.subCategory1 = xLayer.brand + xp(xLayer.country) + xp(xLayer.section1);
+    digitalData.page.category.subCategory2 = xLayer.brand + xp(xLayer.country) + xp(xLayer.section1) + xp(xLayer.section2);
+    digitalData.page.pageInfo.pageName = xLayer.brand + xp(xLayer.country) + xp(xLayer.section1) + xp(xLayer.section2) + xp(xLayer.section3);
+    digitalData.page.pageInfo.vehicleModel = xLayer.vehicle.vehicleModel;
+    digitalData.page.pageInfo.vehicleYear = xLayer.vehicle.vehicleYear;
+    digitalData.page.pageInfo.vehicleTrim = xLayer.vehicle.vehicleTrim;
+    digitalData.page.pageInfo.vehicleID = xLayer.vehicle.vehicleID;
+});

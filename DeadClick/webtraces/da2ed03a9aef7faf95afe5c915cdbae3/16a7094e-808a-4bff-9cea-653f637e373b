@@ -1,0 +1,190 @@
+if(jQuery && (typeof(galert) == "undefined")) {
+
+   // Dictionary of alert text:
+   var alert_text = {
+       
+       'submission' : '<p style="padding: 0.5em 2em; font-size: 12px; text-align: center; background: #FFB6B6 url(/core/icons/exclamation.png) no-repeat 5px center;">NCBI servers will be undergoing scheduled maintenance from 7:00 PM EST until 10:00 PM EST on February 15. The NCBI Submission Portal may experience processing delays during this time.',
+       'pubmedcommons': '<p style="padding: 0.5em 2em; background: #FFFFCC url(/core/icons/error.png) no-repeat 5px 5px;"><b>PubMed Commons to be discontinued</b> \
+<a href="https://ncbiinsights.ncbi.nlm.nih.gov/2018/02/01/pubmed-commons-to-be-discontinued/">Read more</a></p>\
+<style type="text/css">.ncbi-alerts { background-color: #FFFFCC; border-bottom: solid 1px #ccc;}</style>',
+	'null' : ''
+    };
+       
+    var now = new Date();
+
+    // Selection rules:
+    var choices = [
+          
+          // Rule: SD-882, Submission portal downtime
+          [ function() {
+               var expires = new Date("Fri Feb 16 2018 00:00:00 EST");
+               return /submit\.ncbi\.nlm\.nih\.gov/.exec(window.location.href) && (now < expires);
+          }, "submission"
+          ],
+        
+          // Rule: SD-881, pubmedcommons retirement
+          [ function() {
+               var expires = new Date("Sat Mar 3 2018 00:00:00 EST");
+               return /\bpubmedcommons\b|\bmyncbi\/[^\/]*\/(profile|comments)/.exec(window.location.href) && (now < expires);
+           }, "pubmedcommons" 
+          ],
+         
+          // Debug alert
+          [ window.location.hash.toString(), /\bdebug_alert\b/, "debug_alert"],
+
+        // If the rule above fails, show nothing.
+          [ /.*/, "null" ]
+    ];
+       
+    (function($) {
+
+        // GWC-332; remove when GWC-331 is complete.
+        // MSIE 7 + Trident/ >= 4 means a later browser in compat mode.
+        // IE begins defining "rv:" and says it's "like Gecko" starting with 11.
+        // So we also remove the error for that.
+        fix_browser_message = function() {
+            var m = /MSIE\s+7.*\(Trident\/[4565789]\)/.exec(navigator.userAgent);
+            if ((m && m != null && parseFloat(m[1]) >= 4.0) ||
+                (/rv:.*like Gecko/.exec(navigator.userAgent))) {
+                $(".error .browsername, .browsercheck .error").remove();
+            }
+        }
+
+        galert_message = function(selectors, styles) {
+    
+           // Global flag prevents repeat calls
+           if (typeof(galert.complete) != 'undefined') {
+               return;
+           }
+       
+           // Build message text based on rules.
+           function get_message_data() {
+       
+               var m = $('meta[name=galert_type]');
+       
+               var message = null;
+               var message_type = null;
+       
+               while (message == null && choices.length > 0) {
+                   var rule = choices.shift();
+       
+                   urlpart = rule.shift();
+       
+                   // If string comes first, it's what to match against
+                   if (typeof(urlpart) == "string") {
+                       matcher = rule.shift();
+                   } else {
+                       matcher = urlpart;
+                       urlpart = window.location.pathname.toString();
+                   }
+
+                   // Get matcher function; convert RE to function if needed.
+                   if (matcher instanceof RegExp) {
+                       var _matcher = matcher;
+                       matcher = function(s) {
+                           return _matcher.test(s);
+                       }
+                   }
+       
+                   // If rule matches, choose message
+                   var testresult = matcher(urlpart);
+       
+                   // If matcher returns a string, the string is the message type.
+                   // If it returns boolean, then the next string in the rule is the message type.
+                   message_type = typeof(testresult) == "string" ? testresult : rule.shift();
+                   message = (typeof(testresult) == "string" || testresult) ? alert_text[message_type] : null;
+       
+                   if (message != null) {
+                       var extra = rule.shift();
+                       while (extra != null) {
+                           message += alert_text[extra];
+                           extra = rule.shift();
+                       }
+                   }
+               }
+               return [message_type, message]
+           }
+
+           // returns [message_type, message]; message_type is the name of the message in <choices>,
+           // message is the message to show. If message is null, show nothing.       
+           var message_data = get_message_data();
+           var message_type = message_data.shift();
+           message = message_data.shift();
+
+           if (window.location.hash == "#test") { debugger; }
+
+           // Show no message if message text is null or empty string
+           if (message === null || message == "") {
+              return;
+           } 
+       
+           // Each expression returns list of length at least two; match[1] is result of first capture group.
+           var alert_jq =  $(
+               '<div class="ncbi-alerts ' + message_type + '"><p>' +
+                   message +
+// Uncomment for shutdown...
+//                   ' For updates regarding government operating status see <a href="http://www.usa.gov" id="usa">USA.gov</a>.'+
+               '' +
+               '</p></div>'
+           );
+
+
+       
+           // Standard alert style
+           var galert_style = $(
+               "<style type='text/css'>" +
+                   ".ncbi-alerts { background: none repeat scroll 0% 0% #671414;"+ 
+                   "color: #fff;padding: .231em 1.231em;}"+
+                   ".ncbi-alerts p { color: #fff; }"+
+                   ".ncbi-alerts a, .ncbi-alerts a:visited {color: #fff; background: none;}"+
+                   ".ncbi-alerts p {margin: 1em 0;padding: 0 0 0 1.5em; }"+
+                   ".ncbi-alerts p:nth-child(1) {background-image: url(\'/core/icons/information.png\');"+
+                   "background-position: left top;background-repeat: no-repeat }"+
+                   ".ncbi-alerts.subclosed p:nth-child(1) {background-image: url(\'/core/alerts/warning.png\');}"+
+                   ".ncbi-alerts.subclosed p { padding-left: 2em;}"+
+                   ".ncbi-alerts.pubmed, .ncbi-alerts.pubmed p {background-color: #97B0C8; color: #000;}"+
+                   ".ncbi-alerts a { text-decoration: underline !important; }"+
+                   ".ncbi-alerts.pubmed a, .ncbi-alerts.pubmed a:visited { color: #000; }"+
+// Next two lines set default to info style (blue) instead of shutdown style (red)
+                   ".ncbi-alerts, .ncbi-alerts p {background-color: #97B0C8; color: #000;}"+
+                   ".ncbi-alerts a, .ncbi-alerts a:visited { color: #000; }"+
+                   "</style>"
+           );
+       
+           // Add styles
+           var head = $("head");
+       
+           galert_style.appendTo(head);
+           styles && $(styles).appendTo(head);
+       
+           // Choose selector, first nonempty selector wins
+           var sel = selectors.shift();
+           node = $(sel);
+           while ((node.length == 0) && (sel = selectors.shift())) {
+               node = $(sel);
+           }
+
+           if (node && node.length > 0) {
+               var msgnode = alert_jq.insertAfter(node[0]);
+               msgnode.hide();
+               msgnode.fadeIn("slow");
+               
+               // Transfer margin-bottom of node to msgnode
+               var bmarg = node.css("margin-bottom");
+               node.css("margin-bottom", "0");
+               msgnode.css("margin-bottom", bmarg);
+       
+               // Prevent multiple calls
+               galert.complete = true;
+           }
+        }
+
+        galert = function(selectors, styles) {
+            $(document).ready(function() {
+                fix_browser_message();
+                galert_message(selectors, styles);
+            });
+        }
+
+    })(jQuery);
+}

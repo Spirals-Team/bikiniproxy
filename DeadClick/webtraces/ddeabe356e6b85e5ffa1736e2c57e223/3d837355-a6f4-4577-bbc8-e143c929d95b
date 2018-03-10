@@ -1,0 +1,25 @@
+/*
+ * backgroundSize: A jQuery cssHook adding support for "cover" and "contain" to IE6,7,8
+ *
+ * Requirements:
+ * - jQuery 1.7.0+
+ *
+ * Limitations:
+ * - doesn't work with multiple backgrounds (use the :after trick)
+ * - doesn't work with the "4 values syntax" of background-position
+ * - doesn't work with lengths in background-position (only percentages and keywords)
+ * - doesn't work with "background-repeat: repeat;"
+ * - doesn't work with non-default values of background-clip/origin/attachment/scroll
+ * - you should still test your website in IE!
+ *
+ * latest version and complete README available on Github:
+ * https://github.com/louisremi/jquery.backgroundSize.js
+ *
+ * Copyright 2012 @louis_remi
+ * Licensed under the MIT license.
+ *
+ * This saved you an hour of work?
+ * Send me music http://www.amazon.co.uk/wishlist/HNTU0468LQON
+ *
+ */
+!function(t,e,s,i){var a=t("<div>")[0],o=/url\(["']?(.*?)["']?\)/,n=[],r={top:0,left:0,bottom:1,right:1,center:.5};if(!("backgroundSize"in a.style)||t.debugBGS){t.cssHooks.backgroundSize={set:function(e,s){var i,a,o,h=!t.data(e,"bgsImg");t.data(e,"bgsValue",s),h?(n.push(e),t.refreshBackgroundDimensions(e,!0),a=t("<div>").css({position:"absolute",zIndex:-1,top:0,right:0,left:0,bottom:0,overflow:"hidden"}),o=t("<img>").css({position:"absolute"}).appendTo(a),a.prependTo(e),t.data(e,"bgsImg",o[0]),i=(t.css(e,"backgroundPosition")||t.css(e,"backgroundPositionX")+" "+t.css(e,"backgroundPositionY")).split(" "),t.data(e,"bgsPos",[r[i[0]]||parseFloat(i[0])/100,r[i[1]]||parseFloat(i[1])/100]),"auto"==t.css(e,"zIndex")&&(e.style.zIndex=0),"static"==t.css(e,"position")&&(e.style.position="relative"),t.refreshBackgroundImage(e)):t.refreshBackground(e)},get:function(e){return t.data(e,"bgsValue")||""}},t.cssHooks.backgroundImage={set:function(e,s){return t.data(e,"bgsImg")?t.refreshBackgroundImage(e,s):s}},t.refreshBackgroundDimensions=function(e,s){var i=t(e),a={width:i.innerWidth(),height:i.innerHeight()},o=t.data(e,"bgsDim"),n=!o||a.width!=o.width||a.height!=o.height;t.data(e,"bgsDim",a),n&&!s&&t.refreshBackground(e)},t.refreshBackgroundImage=function(e,s){var i=t.data(e,"bgsImg"),a=(o.exec(s||t.css(e,"backgroundImage"))||[])[1],n=i&&i.src,r=a!=n;r&&(i.style.height=i.style.width="auto",i.onload=function(){var s={width:i.width,height:i.height};(1!=s.width||1!=s.height)&&(t.data(e,"bgsImgDim",s),t.data(e,"bgsConstrain",!1),t.refreshBackground(e),i.style.visibility="visible",i.onload=null)},i.style.visibility="hidden",i.src=a,(i.readyState||i.complete)&&(i.src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==",i.src=a),e.style.backgroundImage="none")},t.refreshBackground=function(e){var s,a,o=t.data(e,"bgsValue"),n=t.data(e,"bgsDim"),r=t.data(e,"bgsImgDim"),h=t(t.data(e,"bgsImg")),d=t.data(e,"bgsPos"),g=t.data(e,"bgsConstrain"),c=n.width/n.height,u=r.width/r.height;"contain"==o?u>c?(t.data(e,"bgsConstrain",s="width"),a=i.floor((n.height-n.width/u)*d[1]),h.css({top:a}),s!=g&&h.css({width:"100%",height:"auto",left:0})):(t.data(e,"bgsConstrain",s="height"),a=i.floor((n.width-n.height*u)*d[0]),h.css({left:a}),s!=g&&h.css({height:"100%",width:"auto",top:0})):"cover"==o&&(u>c?(t.data(e,"bgsConstrain",s="height"),a=i.floor((n.height*u-n.width)*d[0]),h.css({left:-a}),s!=g&&h.css({height:"100%",width:"auto",top:0})):(t.data(e,"bgsConstrain",s="width"),a=i.floor((n.width/u-n.height)*d[1]),h.css({top:-a}),s!=g&&h.css({width:"100%",height:"auto",left:0})))};var h,d,g,c=t.event,u={_:0},l=0;h=c.special.throttledresize={setup:function(){t(this).on("resize",h.handler)},teardown:function(){t(this).off("resize",h.handler)},handler:function(e,s){var i=this,a=arguments;d=!0,g||(t(u).animate(u,{duration:1/0,step:function(){l++,(l>h.threshold&&d||s)&&(e.type="throttledresize",c.dispatch.apply(i,a),d=!1,l=0),l>9&&(t(u).stop(),g=!1,l=0)}}),g=!0)},threshold:1},t(e).on("throttledresize",function(){t(n).each(function(){t.refreshBackgroundDimensions(this)})})}}(jQuery,window,document,Math);

@@ -1,0 +1,37 @@
+var cookieObject = {
+    getParamSearch: function (name) {
+        name = name.replace(/[*+?^$.\[\]{}()|\\\/]/g, "\\$&"); // escape RegEx control chars
+        var match = location.search.match(new RegExp("[?&]" + name + "=([^&]+)(&|$)"));
+        return match && decodeURIComponent(match[1].replace(/\+/g, " "));
+    },
+    getParamCookie: function (name) {
+        var matches = document.cookie.match(new RegExp(
+                "(?:^|; )" + name.replace(/([\.$?*|{}\(\)\[\]\\\/\+^])/g, '\\$1') + "=([^;]*)"
+            ));
+          return matches ? decodeURIComponent(matches[1]) : "";
+    },
+    setCookie: function (arrName) {
+        if(typeof arrName === "undefined" || arrName.length === 0) return false;
+
+        arrName.forEach(function (name, i) {
+            var value = cookieObject.getParamSearch(name);
+
+            if(typeof value !== "undefined" && value !== null){
+                var date = new Date(new Date().getTime() + 60 * 60 * 1000); // 1 час
+                document.cookie = name + "=" + value + "; path=/; expires=" + date.toUTCString();
+            }else{
+                //cookieObject.deleteCookie(name);
+            }
+        });
+    },
+    deleteCookie: function (name) {
+        document.cookie = name + '=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;';
+    }
+};
+
+cookieObject.setCookie(["utm_source", "utm_medium", "utm_content", "utm_campaign"]);
+
+if(location.search !== ""){
+    var date = new Date(new Date().getTime() + 60 * 60 * 1000); // 1 час
+    document.cookie = 'utm_full_search=' + location.search + '; path=/; expires=' + date.toUTCString();
+}

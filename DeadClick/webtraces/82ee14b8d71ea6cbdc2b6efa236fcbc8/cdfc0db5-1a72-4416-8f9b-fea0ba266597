@@ -1,0 +1,695 @@
+
+
+bam.clubhome = (function($){	
+
+	// BASIC LOGGING/DEBUGGING
+
+	var _log=function(msg){
+		if (_self.debug && typeof console!=="undefined") {
+			if (typeof msg === "string") console.log("bam.clubhome: "+msg);
+			else console.log(msg);			
+		}	
+	},	
+		
+	_ielog=function(msg){
+		if (_self.debug && document.location.search.indexOf("iedebug")!=-1 && typeof msg === "string") {
+			alert(msg);			
+		}
+	},
+
+
+	//DATA ARRAYS FOR STATS/STANDINGS MODULES
+
+	_statsData = {
+
+		divisionNames: {
+			117 : {
+				displayName : "International",
+				divisions : { 219:"North", 220:"South", 221:"West" }
+			},
+			112 : {
+				displayName : "Pacific Coast",
+				divisions : { 231:"Pac. Northern", 232:"Am. Northern", 233:"Pac. Southern", 234:"Am. Southern" }
+			},
+			109 : {
+				displayName : "Texas",
+				divisions : { 241:"North", 242:"South"}	
+			},			
+			111 : {
+				displayName : "Southern",
+				divisions : { 239:"North", 240:"South"}	
+			},		
+			113 : {
+				displayName : "Eastern",
+				divisions : { 212:"Eastern", 213:"Western"}	
+			},
+			110 : {
+				displayName : "California",
+				divisions : { 208:"North", 209:"South" }
+			},
+			123 : {
+				displayName : "Florida State",
+				divisions : { 214:"North", 215:"South" }
+			},	
+			122 : {
+				displayName : "Carolina",
+				divisions : { 210:"Northern", 211:"Southern" }
+			},
+			116 : {
+				displayName : "South Atlantic",
+				divisions : { 237:"Northern", 238:"Southern" }
+			},
+			118 : {
+				displayName : "Midwest",
+				divisions : { 224:"Eastern", 225:"Western" }
+			},
+			125 : {
+				displayName : "LMB",
+				divisions : { 222:"Norte", 223:"Sur" }
+			},
+			126 : {
+				displayName : "Northwest",
+				divisions : { 226:"North", 227:"South" }
+			},
+			127 : {
+				displayName : "New York-Penn",
+				divisions : { 228:"McNamara", 229:"Pinckney", 230:"Stedler" }
+			},	
+			120 : {
+				displayName : "Appalachian",
+				divisions : { 206:"East", 207:"West" }
+			},
+			121 : {
+				displayName : "Arizona",
+				divisions : { 560:"East", 561:"West" }
+			},
+			124 : {
+				displayName : "Gulf Coast",
+				divisions : { 216:"East", 217:"North", 218:"South" }
+			},
+			128 : {
+				displayName : "Pioneer",
+				divisions : { 235:"North", 236:"South" }
+			},
+			130 : {
+				displayName : "Dominican Summer",
+				divisions : { 246:"San Pedro de Macoris", 247:"Boca Chica North",249:"Santo Domingo North", 250:"Boca Chica Baseball City" }
+			},
+			134 : {
+				displayName : "Venezuelan Summer",
+				divisions : { }
+			}	
+		}
+	},
+
+	// STATS DISPLAY RANDOMIZER
+	_randomCat=function(){
+		var 	count = 0,
+				randNum = 0;
+
+		randNum = Math.floor(Math.random()*5);
+		var battingStatCats = ["avg","rbi","r","sb","hr"];
+		_displayBattingStat = battingStatCats[randNum];
+
+		randNum = Math.floor(Math.random()*5);
+		var pitchingStatCats = ["era","whip","w","so","sv"];
+		_displayPitchingStat = pitchingStatCats[randNum];
+
+	},
+	
+
+
+	// STATS MODULE FUNCTION
+
+	_stats = {
+
+		cache: {},
+		batting_lookup_url : (window.lookupBaseURL || '') + "/json/named.milb_team_leader_hitting_repeater.bam",
+		batting_lookup_params : {
+			"sort_column" : ["'avg'","'rbi'","'r'","'sb'","'hr'"],
+			"results" : 3,
+			"game_type" : "'R'",
+			"milb_team_leader_hitting_repeater.col_in" : ["player_id","r","sb","rbi","avg","hr","name_display_init","last_name","team_abbrev","team_id"]
+		},
+
+		pitching_lookup_url : (window.lookupBaseURL || '') + "/json/named.milb_team_leader_pitching_repeater.bam",
+		pitching_lookup_params : {
+			"sort_column" : ["'era'","'whip'","'w'","'so'","'sv'"],
+			"results" : 3,
+			"game_type" : "'R'",
+			"milb_team_leader_pitching_repeater.col_in" : ["player_id","era","w","sv","so","whip","name_display_init","last_name","team_abbrev","team_id"]
+		},
+
+
+
+		load_batting : function(statSeason) {
+			if (!!statSeason){
+				$.extend(_stats.batting_lookup_params,{ 
+					team_id : "'" + _clubID + "'",
+					season:  statSeason
+				});		
+			}
+			else {
+				$.extend(_stats.batting_lookup_params,{ 
+					team_id : "'" + _clubID + "'",
+					season:  _seasonYear
+				});	
+			}		
+			return $.ajax({
+				url:         _stats.batting_lookup_url,
+				data:        _stats.batting_lookup_params,
+				dataType:	"json",
+				traditional: true
+			});
+		},
+
+		load_pitching : function(statSeason) {
+			if (!!statSeason){
+				$.extend(_stats.pitching_lookup_params,{ 
+					team_id : "'" + _clubID + "'",
+					season:  statSeason
+				});			
+			}
+			else {
+				$.extend(_stats.pitching_lookup_params,{ 
+					team_id : "'" + _clubID + "'",
+					season:  _seasonYear
+				});			
+			}		
+				return $.ajax({
+				url:         _stats.pitching_lookup_url,
+				data:        _stats.pitching_lookup_params,
+				dataType:	"json",
+				traditional: true
+			});
+		},
+
+		setupNav: function(){
+			$(".stats-leaders ul li").click(function(){	
+				_log("target clicked");
+				var cat = $(this).attr("cat");
+				var stat = $(this).text().toLowerCase().replace(/\s*$/, '');
+				_log("cat="+cat+", stat="+stat);
+				_stats.writeGrid(cat,stat);
+			});
+			delete this.setupNav;
+		},
+
+
+		writeGrid: function(cat, stat) {	
+			_log("writeGrid: cat=" + cat + ", stat=" + stat );
+			// update tab nav
+			var $curTab = $(".stats-leaders ul li").filter(function(){
+				var tabstat = $(this).text().replace(/^\s+|\s+$/g,"").toLowerCase();
+				var tabside = $(this).attr("cat").replace(/^\s+|\s+$/g,"").toLowerCase();
+				var out = (tabstat === stat && tabside === cat);
+				return out;			
+			});		
+			$curTab.siblings().removeClass("statsTabOn").addClass("statsTabOff")
+			.end().removeClass("statsTabOff").addClass("statsTabOn");
+
+			var subData, selData, x=0;
+			var limitedData=[];
+
+			if (cat=="batting"){subData = _stats.cache[cat].milb_team_leader_hitting_repeater.milb_team_leader_hitting_mux;}
+			if (cat=="pitching"){subData = _stats.cache[cat].milb_team_leader_pitching_repeater.milb_team_leader_pitching_mux;}
+ 
+			if (!!subData){
+				for (var sl = 5; x < sl; x++){
+					if ("'"+stat+"'" === subData[x].sort_column){
+						selData = $.ensureArray(subData[x].queryResults.row);
+					}
+				}
+			}
+
+			if (!!selData){
+				var limiter = 0;
+				var outNo = 3;
+				if (selData.length<outNo){outNo=selData.length;}
+				for (var sl = outNo; limiter < sl; limiter++){
+					limitedData[limiter]= selData[limiter];
+				}
+			}
+
+			$(".stats-"+cat).empty();
+			$("#stats_"+cat+"_mug").empty();
+			if (selData.length>0){
+				bam.require(["data", "flexgrid-0.1"], function( ctx ){
+
+					var myData = new ctx.data.DataStore(limitedData);
+					if (!!myData.__data__[0]){
+						_log(myData.__data__[0].player_id);
+						$("#stats_"+cat+"_mug").html('<img width="90" height="135" class="milbHeadshot'+cat+'" src="/images/'+myData.__data__[0].player_id+'/t'+myData.__data__[0].team_id+'/90x135/'+myData.__data__[0].player_id+'.jpg " />');
+						$(".milbHeadshot"+cat).error(function () {
+							$(this).unbind("onerror").attr("src", "/images/"+myData.__data__[0].player_id+"/generic/90x135/"+myData.__data__[0].player_id+".jpg");
+							$(this).error(function () {
+							$(this).unbind("onerror").attr("src", "/images/silhouette/90x135.jpg");
+							});
+						});
+					}
+					var rank = 0;
+					var myColumns = [
+							{dataField: "rank", title: "rank", width: 20, sortable: false, type:"text",decorator: function(value,row) {
+								rank++;
+								return rank;
+							}},
+							{dataField: "name_display_init", title: "Player", width: 190, sortable: false, type:"text",decorator: function(value,row) {
+								var name = row.name_display_init + '. ' + row.last_name;
+	//							var name = row.last_name;
+								return name.link("/player/index.jsp?sid=t"+_clubID+"&player_id="+row.player_id)
+							}}
+							];
+	//				myColumns.push ({dataField: "team_abbrev", title: "Team", width: 40 });
+					myColumns.push ({dataField: stat, title: stat, width: 40});
+
+					var myGrid = new ctx.flexgrid.FlexGrid({
+						dataSource: myData,
+						columns: myColumns,
+						showHeader: false
+					})
+					.render(".stats-"+cat);
+				});
+			}
+			else {
+				$(".stats-pitching").html('<div id="noQualifiers">No qualifiers</div>');
+			}	
+		},
+
+
+
+		displayBattingStats : function(data) {
+			var numberofstatsavailable = 0;
+			var dataCols = data.milb_team_leader_hitting_repeater.milb_team_leader_hitting_mux;
+			for(i=0;i<dataCols.length;i++){
+				if(dataCols[i].queryResults.totalSize>0) {
+					numberofstatsavailable++;
+				}
+			}
+			if(numberofstatsavailable===0) {
+				_stats.load_batting(_seasonYear-1).done(_stats.displayLastBattingStats).fail(_stats.battingError);
+			}
+			else {
+				if(!!_stats.setupNav)_stats.setupNav();
+				_stats.cache["batting"] = data;
+				_stats.writeGrid("batting", _displayBattingStat);
+			}
+		},
+		displayPitchingStats : function(data) {
+			var numberofstatsavailable = 0;
+			var dataCols = data.milb_team_leader_pitching_repeater.milb_team_leader_pitching_mux;
+			for(i=0;i<dataCols.length;i++){
+				if(dataCols[i].queryResults.totalSize>0) {
+					numberofstatsavailable++;
+				}
+			}
+			if(numberofstatsavailable===0) {
+				_stats.load_pitching(_seasonYear-1).done(_stats.displayLastPitchingStats).fail(_stats.pitchingError);
+			}
+			else {
+				if(!!_stats.setupNav)_stats.setupNav();
+				_stats.cache["pitching"] = data;
+				_stats.writeGrid("pitching", _displayPitchingStat);
+			}
+		},
+		displayLastBattingStats : function(data) {
+			if(!!_stats.setupNav)_stats.setupNav();
+			_stats.cache["batting"] = data;
+			_stats.writeGrid("batting", _displayBattingStat);
+		},
+		displayLastPitchingStats : function(data) {
+			if(!!_stats.setupNav)_stats.setupNav();
+			_stats.cache["pitching"] = data;
+			_stats.writeGrid("pitching", _displayPitchingStat);
+		},
+
+
+		battingError : function(data) {
+			$(".batting-leaders").hide();
+			_log(data);
+		},
+
+		pitchingError : function(data) {
+			$(".pitching-leaders").hide();
+			_log(data);
+		}
+
+	},
+
+
+
+
+	// STANDINGS MODULE FUNCTION
+
+	_standings = {
+		cache: {},
+
+		standings_lookup_params: {
+			"sit_code" : ["'h0'","'h1'","'h2'"],
+			"standings_all.col_ex" : "playoff_points_sw,points,streak,elim,last_ten,home,away,vs_division,is_wildcard_sw,gb_wildcard,elim_wildcard"		
+		},	
+		standings_lookup_url: (window.lookupBaseURL || '') + "/json/named.standings_display_flip.bam",
+
+		load_standings : function(getLeague) {
+
+			//temp force 2013 for NWL
+			var getSeason = _seasonYear;
+			// if (getLeague==="126"){getSeason="2013";}
+
+			$.extend(_standings.standings_lookup_params,{
+				league_id:	getLeague,
+				org_id:	getLeague,
+				season:	getSeason
+			});			
+			return $.ajax({
+				url:         _standings.standings_lookup_url,
+				data:        _standings.standings_lookup_params,
+				dataType:	"json",
+				traditional: true
+			});
+		},
+
+
+		writeGrid: function(league, div) {	
+			_log("writeGrid: league=" + league+ ", div=" + div );
+			// update tab nav
+			var $curTab = $(".standings ul li").filter(function(){
+				var tableague = $(this).attr("league").replace(/^\s+|\s+$/g,"").toLowerCase();
+				var tabdiv = $(this).attr("div").replace(/^\s+|\s+$/g,"").toLowerCase();
+				var out = (tableague === league && tabdiv === div);
+				return out;			
+			});		
+			$curTab.siblings().removeClass("statsTabOn").addClass("statsTabOff")
+			.end().removeClass("statsTabOff").addClass("statsTabOn");
+			$(".l"+league).empty();
+			var	standingsOut = [],
+				subData = _standings.cache[league],
+				period = "h0",
+				isSplitSeason = false,
+				org,
+				rows;
+
+			if (subData.standings_display_flip.standings_all){
+				rows = subData.standings_display_flip.standings_all.queryResults.row;
+			}
+			if (subData.standings_display_flip.org_history){
+				org = subData.standings_display_flip.org_history.queryResults.row;
+			}
+
+
+			isSplitSeason = ((org.split_season_sw)&&(org.split_season_sw==="Y"))?true:false;		
+			if(!!isSplitSeason) {								
+				var firstHalfBegin = org.first_date_seas.replace(/-/g,"").substr(0,8);	
+				var secondHalfBegin = org.first_date_2ndh.replace(/-/g,"").substr(0,8);	
+				_log("_currentDate="+_currentDate+", firstHalfBegin="+firstHalfBegin+", secondHalfBegin="+secondHalfBegin)
+				if (_currentDate < firstHalfBegin)period= "h0"				
+				else if (_currentDate >= firstHalfBegin && _currentDate < secondHalfBegin+1)period= "h1"
+				else if (_currentDate >= secondHalfBegin)period= "h2";
+			}
+			_log("writeGrid: period=" + period);
+			for (var row in rows) {
+				if ((rows[row].sit_code) && (rows[row].division_id)){
+					if ((rows[row].sit_code==period) && (rows[row].division_id==div)){
+						standingsOut.push ({
+							clinch_icon : rows[row].playoffs_flag_milb,
+							team_id: rows[row].team_id,
+							team_short: rows[row].team_short,
+							w: rows[row].w,
+							l: rows[row].l,
+							pct: rows[row].pct,
+							gb: rows[row].gb
+						});
+					}
+				}
+			}
+			bam.require(["data", "flexgrid-0.1"], function( ctx ){
+				var myData = new ctx.data.DataStore(standingsOut);
+				var myColumns = [
+						{dataField: "clinch_icon", sortable: false, title: "" },
+						{dataField: "team", title: "", sortable: false, width:100, type:"text",decorator: function(value,row) {
+							var name = row.team_short;
+							return name.link("/index.jsp?sid=t"+row.team_id)
+						}}
+
+						];
+				myColumns.push ({dataField: "w", title: "W", type: "number", width: 40 });
+				myColumns.push ({dataField: "l", title: "L", type: "number", width: 40 });
+				myColumns.push ({dataField: "pct", title: "%", type: "number", width: 60 });
+				myColumns.push ({dataField: "gb", title: "GB", type: "number", width: 40, sortable: false });
+				var myGrid = new ctx.flexgrid.FlexGrid({
+					dataSource: myData,
+					columns: myColumns
+				})
+				.render(".l"+league);
+			});
+		},
+
+		displayStandings: function(data) {
+			if(!!_standings.setupTables)_standings.setupTables();
+			var oID = data.standings_display_flip.org_history.queryResults.row.organization_id;
+			_standings.cache[oID] = data;
+			_standings.writeGrid(oID, _divisionID);
+		},
+		standingsError : function(data) {
+			//$(".standings-tables l"+league).hide();
+			_log(data);
+		},
+
+		setupTables: function(){
+			var divisions, leagueOut = "";
+			divisions = _leagueData.divisions;
+			leagueOut += '<div class="tabbed-header-table standings">';
+		//	leagueOut += '<a href="/standings/index.jsp?lid=' + _leagueID + '">';
+		//	leagueOut += '<h4>'+ _leagueData.displayName +' League</h4></a>';
+			leagueOut += '<ul>';
+			for (var division in divisions) {
+				leagueOut += ['<li ',
+						'class="',
+						(parseInt(division,10)===_divisionID?"statsTabOn":"statsTabOff"),
+						'" div="',
+						division,
+						'" league="',
+						_leagueID,
+						'"><a>',
+						divisions[division],
+						'</a></li>'
+					].join("")
+			}
+			leagueOut += '</ul>';
+			leagueOut += '<div class="standings-tables l';
+			leagueOut += _leagueID,
+			leagueOut += '"></div>';
+			leagueOut += '</div>';
+			if (_leagueID === "125"){
+				leagueOut += '<div class="more-link"><a href="http://www.milb.com/standings/index.jsp?sid=l'+_leagueID+'">POSICIONES COMPLETO &raquo;</a></div>';
+			}
+			else {
+				leagueOut += '<div class="more-link"><a href="http://www.milb.com/standings/index.jsp?sid=l'+_leagueID+'">EXPANDED STANDINGS &raquo;</a></div>';
+			}
+			$(".standings-section").append(leagueOut);
+			$(".standings ul li").click(function(){	
+				_log("target clicked");
+				var div = $(this).attr("div");
+				var league = $(this).attr("league");
+				_log("div="+div);
+				_log("league="+league);
+				_standings.writeGrid(league, div);
+			});
+			delete this.setupTables;
+		}
+	},
+
+
+
+	// PROMO CAROUSEL FUNCTION
+
+	_createPromoCarousel = {
+
+		process: function(){
+			var randomOrder = false,
+				promoSize = 'normal',
+				carouselItems = [],
+				countItems = 0,
+				output = '';
+
+			if (_promo_size === 'large'){
+				promoSize = 'large';
+			}
+
+			$("#promo_carousel").addClass(promoSize);
+
+			if (_promo_random === 'true'){
+				randomOrder = true;
+			}
+
+			for (var item in _promo_carousel) {
+				if (_promo_carousel.hasOwnProperty(item)) {
+					if ((_num_items===0)||(countItems<_num_items)){
+						if (promoSize==='large'){
+							if (((_promo_carousel[item].blurb!='')||(_promo_carousel[item].image_large!=''))&&(countItems<4)){
+								carouselItems.push (_promo_carousel[item]);
+								countItems++;
+							}
+						}
+						else {
+							if (((_promo_carousel[item].blurb!='')||(_promo_carousel[item].image_normal!=''))&&(countItems<12)){
+								carouselItems.push (_promo_carousel[item]);
+								countItems++;
+							}
+						}
+					}
+				}
+			};
+
+			if (randomOrder){
+				carouselItems = _createPromoCarousel.fisherYates(carouselItems);
+			}
+
+			for (var item in carouselItems) {
+				if (carouselItems.hasOwnProperty(item)) {
+					if (promoSize==='large'){
+						if(carouselItems[item].blurb!=''){
+							$('<iframe>').attr({src: '/y2013/components/home/third_party_ads.jsp?sid=t'+_clubID+'&src=carousel&item='+carouselItems[item].id,height:'600',width:'150',border:'0',framespacing:'0',frameborder:'0',scrolling:'no'}).appendTo('#promo_carousel');
+						}
+						else {
+							output = ['<a target="_Blank"',
+								' href="',
+								carouselItems[item].url,
+								'">',
+								'<img src="',
+								carouselItems[item].image_large,
+								'" width="600" height="150" border="0">',
+								'</a>'
+							].join("");
+							$(output).appendTo('#promo_carousel');
+						}
+					}
+					else {
+						if(carouselItems[item].blurb!=''){
+							$('<iframe>').attr({src: '/y2013/components/home/third_party_ads.jsp?sid=t'+_clubID+'&src=carousel&item='+carouselItems[item].id,height:'150',width:'180',border:'0',framespacing:'0',frameborder:'0',scrolling:'no'}).appendTo('#promo_carousel');
+						}
+						else {
+							output = ['<a target="_Blank"',
+								' href="',
+								carouselItems[item].url,
+								'">',
+								'<img src="',
+								carouselItems[item].image_normal,
+								'" width="180" height="150" border="0">',
+								'</a>'
+							].join("");
+							$(output).appendTo('#promo_carousel');
+						}
+					}
+				}
+			};
+
+			$(document).ready($("#promo_carousel_module").show());
+			if (promoSize==='large'){
+				_createPromoCarousel.initSlider(1);
+			}
+			else {
+				_createPromoCarousel.initSlider(3);
+			}
+		},
+
+		fisherYates:  function(myArray){
+			var i = myArray.length;
+			if ( i == 0 ) return false;
+			while ( --i ) {
+				var j = Math.floor( Math.random() * ( i + 1 ) );
+				var tempi = myArray[i];
+				var tempj = myArray[j];
+				myArray[i] = tempj;
+				myArray[j] = tempi;
+			}
+			return myArray;
+		},
+
+		initSlider : function(panels){
+			var lastSlideGroupIndex,
+			totalPages,
+			totalSlides,
+			isLastPage,
+			isFirstPage;
+
+			$('#promo_carousel').bxSlider({
+				pager: true,
+				autoControls: true,
+				displaySlideQty: panels,
+				moveSlideQty: panels,
+				speed: 600,
+				infiniteLoop : false,
+				hideControlOnEnd: true,
+				onAfterSlide: function(currentSlideNumber, totalSlideQty, currentSlideHtmlObject){
+				  //$('.bx-next').hide();
+				  _log(currentSlideNumber+' '+totalSlideQty+' '+currentSlideHtmlObject)
+				  _log(panels)
+				  _log('updated')
+				}
+			}).goToFirstSlide();
+			$('.pager-link').empty();
+			if ( $('.bx-pager a').length == 1 ) $('.bx-pager').hide();
+		}
+
+	},
+
+
+
+
+	// these are populated when init() is called
+	_currentDate = null,
+	_seasonYear = null,
+	_leagueData = null,
+	_clubID = null,
+	_leagueID = null,
+	_displayClub = null,
+	_displayBattingStat = null,
+	_displayPitchingStat = null,
+	_promo_carousel = null,
+
+
+	_self = {
+		debug: (!!bam.env.host.isQA || !!bam.env.host.isDev),
+		init: function(props) {							
+			_seasonYear = props.seasonYear;
+			_currentDate = props.currentDate;
+			_leagueID = props.leagueID;
+			_log("Loading with these vars:");
+			if (!!_leagueID){
+				_leagueData = _statsData.divisionNames[_leagueID];
+				_divisionID = props.divisionID;
+				_log("_leagueID="+ props.leagueID);
+				_log("_divisionID="+ props.divisionID);
+			}
+			_clubID = props.clubID;
+			_displayClub = props.displayClub;
+			_promo_carousel = props.promo_carousel;
+			_promo_size = props.promo_size;
+			_promo_random = props.promo_random;
+			_num_items = props.num_items;
+
+			_randomCat();
+
+			_log("_seasonYear="+_seasonYear);
+			_log("_currentDate="+_currentDate);
+			_log("_clubID="+ props.clubID);
+			_log("_displayClub="+_displayClub);
+
+			if (!!_leagueID){
+				$(document).ready($("#hdrStandings").html(_seasonYear+ " " + _leagueData.displayName+" Standings"));
+				$(document).ready($("#hdrLeaders").html(_seasonYear+ " " + _displayClub+" Leaders"));
+				_standings.load_standings(props.leagueID).done(_standings.displayStandings).fail(_standings.standingsError);
+				_stats.load_batting().done(_stats.displayBattingStats).fail(_stats.battingError);
+				_stats.load_pitching().done(_stats.displayPitchingStats).fail(_stats.pitchingError);
+			}
+			if ($.trim($("#club_promo_area h2").html()) == ''){$("#club_promo_area li").addClass("taller");}
+			_createPromoCarousel.process();
+
+			delete _self.init;	
+		}
+	};
+		
+	return _self;			
+
+
+})(jQuery);

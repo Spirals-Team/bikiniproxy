@@ -1,0 +1,230 @@
+/**
+ * The functions in this script are used to display a detailed information dialog
+ */
+
+var loaded = false;
+var displayed = false;
+var dialog_timer = 25000;
+
+/**
+ * this function affects the book author and title text
+ */
+$(".bookinfo").click(function(){
+    $("#books_tool_tip_" + $( ".bookinfo" ).index( this )).dialog();
+});
+
+/**
+ * this function affects the book image
+ */
+$(".sidebarHover").click(function(){
+    $("#books_tool_tip_" + $( ".sidebarHover" ).index( this )).dialog();
+})
+
+$(".books_bottom").hover(function(){
+    // get the name of the parent div with the index
+    var row = $(this).parent("div").attr("id");
+    $(".close_btn").click(function(){
+        $("#" + row).dialog("close");
+        //alert("This is row " + row);
+    });
+});
+
+function previewResponse( info )
+{
+  for ( id in info )
+  {
+    if ( info[id] && 'noview' != info[id].preview )
+    {
+      googlePreviewISBN = id;
+      
+      var span = document.getElementById( 'google_Preview' );
+      span.style.display = 'block';
+      
+      var gbsScript = document.createElement('script');
+      gbsScript.type = 'text/javascript';
+      gbsScript.appendChild (document.createTextNode('GBS_insertPreviewButtonPopup(googlePreviewISBN);'));
+      span.appendChild(gbsScript);
+      
+      //$.wait(500);
+      
+      $("#__GBS_Button0").appendTo("#google_Preview");
+      
+      /* var p = document.createElement( 'p' );
+      p.setAttribute( 'class', 'google' );
+
+      var a = document.createElement( 'a' );
+      a.id = 'googlePreviewLink';
+      a.appendChild( document.createTextNode( 'Google Preview' ) );
+      p.appendChild( a );
+
+      span.appendChild( p );
+
+      $( '#googlePreviewLink' ).click(
+          function()
+          {
+            if ( displayed )
+            {
+              var box = document.getElementById( 'googlePreviewPane' );
+              box.style.display = 'none';
+              if ( box.hasChildNodes() )
+              {
+                while( box.childNodes.length >= 1 )
+                {
+                  box.removeChild( box.firstChild );
+                }
+              }
+
+              displayed = false;
+              return;
+            }
+
+            if ( ! loaded )
+            {
+              setTimeout( displayBook( id ), 1000 );
+            }
+            else displayBook( id );
+          }); */
+
+      break;
+    }
+  }
+}
+
+function displayBook( id )
+{
+  var box = document.getElementById( 'googlePreviewPane' );
+  box.style.display = 'block';
+  var viewer = new google.books.DefaultViewer( box );
+  viewer.load( id );
+  displayed = true;
+}
+
+function loadBook()
+{
+  loaded = true;
+}
+
+function init_dw_Scroll()
+{
+  var wndo = new dw_scrollObj( 'sliderContent', 'slideDetails' );
+  wndo.setUpScrollbar( "dragBar", "track", "v", 1, 1 );
+  wndo.setUpScrollControls( 'scrollbar-v' );
+
+  //tooltip init
+  // BEGIN - modified by James Bray 2010-11-11 : removed old code for pop-up box
+  $( ".sidebarHover" ).hover( function( e ){},function( e ){delay( 2000 );} );
+  // END
+  $( "#tooltips" ).hover( function( e )
+  {
+    clearTimer();
+    //show(e,tmpContainer);
+  }, function( e )
+  {
+    //alert("HERE");
+    delay( 2000 );
+  } );
+}
+
+// if code supported, link in the style sheet and call the init function onload
+if ( dw_scrollObj.isSupported() )
+{
+  //dw_writeStyleSheet('css/scroll.css')
+  dw_Event.add( window, 'load', init_dw_Scroll );
+}
+// tooltip
+
+function show( e, $o )
+{
+  clearTimeout( removeDelay );
+  clearTimeout( showdelayed );
+  $( "#tooltips" ).empty();
+  var v = getViewport();
+  //alert( v.pageX );
+
+
+  var pageX = getMouseCoord( v, e )[0] + 15;
+  var pageY = getMouseCoord( v, e )[1];
+  //$o.find( ".booksthisointer_right" ).addClass( "booksthisointer_left" ).removeClass( "booksthisointer_right" );
+  if ( pageX + $( "#tooltips" ).width() > v.innerWidth + v.pageXOffset )
+  {
+    pageX = pageX - $( "#tooltips" ).width() - 30;
+  }
+  coordinates = $o.parent().offset();
+  y = coordinates.top;
+
+  $( "#tooltips" ).append( $o.html() );
+  var w = $( "#tooltips" ).width();
+  var h = $( "#tooltips" ).height();
+  // var y = y - h;
+
+  //alert(y);
+  var left = 0;
+  var top = y - h;
+  $( "#tooltips" ).css( "left", left ).css( "top", top ).css( "display", "block" );
+}
+
+function clearTimer()
+{
+  clearTimeout( removeDelay );
+}
+
+function hide()
+{
+  clearTimeout( removeDelay );
+  //$("#tooltips").empty();
+  $( "#tooltips" ).empty();
+  $( "#tooltips" ).css( "display", "none" ).css( "left", 0 ).css( "top", 0 );
+  //    resetHide();
+}
+
+var removeDelay;
+
+function delay( d )
+{
+  removeDelay = setTimeout( function()
+  {hide()}, d );
+  return false;
+  //$(this).data('removeTimer', removeDelay);
+}
+
+function delayShow( d, e, sid )
+{
+  showdelayed = setTimeout( function()
+  {show( e, sid )}, d );
+  return false;
+  //$(this).data('removeTimer', removeDelay);
+}
+
+function getMouseCoord( v, e )
+{
+  ( !e ) ? e = window.event : e = e;
+  ( e.pageX ) ? v.pageX = e.pageX : v.pageX = e.clientX + v.scrollLeft;
+  ( e.pageY ) ? v.pageY = e.pageY : v.pageY = e.clientY + v.scrollTop;
+  return [ e.pageX, e.pageY ];
+}
+
+function getViewport()
+{
+  var viewport = {}
+  if ( self.innerHeight )
+  {
+    viewport.pageYOffset = self.pageYOffset;
+    viewport.pageXOffset = self.pageXOffset;
+    viewport.innerHeight = self.innerHeight;
+    viewport.innerWidth = self.innerWidth;
+  }
+  else
+  {
+    if ( document.documentElement && document.documentElement.clientHeight )
+    {
+      viewport.pageYOffset = document.documentElement.scrollTop;
+      viewport.pageXOffset = document.documentElement.scrollLeft;
+      viewport.innerHeight = document.documentElement.clientHeight;
+      viewport.innerWidth = document.documentElement.clientWidth;
+    }
+  }
+  alert(viewport.pageXOffset);
+  return viewport;
+}
+
+

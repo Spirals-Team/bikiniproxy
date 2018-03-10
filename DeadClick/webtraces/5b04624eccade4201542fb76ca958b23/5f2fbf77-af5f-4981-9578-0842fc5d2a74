@@ -1,0 +1,653 @@
+/* 
+* Selecter v3.2.4 - 2015-01-07 
+ * A jQuery plugin for replacing default select elements. Part of the Formstone Library. 
+ * http://formstone.it/selecter/ 
+ * 
+ * Copyright 2015 Ben Plum; MIT Licensed 
+ */
+
+
+.selecter {
+  position: relative;
+  display: block;
+  margin: 10px 0;
+  z-index: 1;
+  text-align: center;
+}
+.selecter:focus {
+  box-shadow: none;
+  outline: none;
+}
+.selecter,
+.selecter * {
+  -webkit-user-select: none !important;
+     -moz-user-select: none !important;
+      -ms-user-select: none !important;
+          user-select: none !important;
+}
+.selecter,
+.selecter *,
+.selecter *:before,
+.selecter *:after {
+  box-sizing: border-box;
+}
+.selecter-element {
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  left: 0;
+  opacity: 0;
+  z-index: -1;
+}
+.selecter-element,
+.selecter-element:focus {
+  outline: none;
+  -webkit-tap-highlight-color: rgba(255, 255, 255, 0);
+  -webkit-tap-highlight-color: transparent;
+}
+.no-opacity .selecter-element {
+  left: -999999px;
+}
+.selecter-selected {
+  position: relative;
+  background: #ffffff;
+  border: 2px solid #ba503a;
+  color: #222222;
+  cursor: pointer;
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  margin: 0;
+  overflow: hidden;
+  padding: 10px 15px;
+  text-overflow: clip;
+  z-index: 2;
+}
+.selecter-selected:after {
+  height: 0;
+  width: 0;
+  position: absolute;
+  top: -15px;
+  right: 10px;
+  bottom: 0;
+  content: '\f107';
+  display: block;
+  margin: auto 0;
+  font-family: fontAwesome;
+  font-size: 12px;
+}
+.no-touch .selecter-selected:hover {
+  color: #333333;
+}
+.no-touch .selecter.disabled .selecter-selected:hover {
+  color: #cccccc;
+}
+.selecter-options {
+  width: 100%;
+  max-height: 260px;
+  position: absolute;
+  top: 100%;
+  left: 0;
+  border: 1px solid #d4d4d4;
+  border-top: 0;
+  background-color: #ffffff;
+  display: none;
+  margin: 0;
+  overflow: auto;
+  overflow-x: hidden;
+  padding: 0;
+  z-index: 50;
+}
+.selecter-options.scroller {
+  position: absolute;
+}
+.no-opacity .selecter-options {
+  width: auto;
+}
+.selecter-group {
+  border-bottom: 1px solid #eee;
+  color: #999999;
+  display: block;
+  font-size: 11px;
+  padding: 10px 15px;
+  text-transform: uppercase;
+}
+.selecter-item {
+  width: 100%;
+  background: #ffffff;
+  color: #222222;
+  cursor: pointer;
+  display: block;
+  font-size: 13px;
+  margin: 0;
+  overflow: hidden;
+  padding: 10px 15px;
+  text-decoration: none;
+  text-overflow: ellipsis;
+}
+.selecter-item.placeholder {
+  display: none;
+}
+.selecter-item.selected {
+  background: #fcfcfc;
+}
+.selecter-item.disabled {
+  color: #999999;
+  cursor: default;
+}
+.selecter-item:first-child {
+  border-radius: 0;
+}
+.selecter-item:last-child {
+  border-bottom: 0;
+  border-radius: 0 0 2px 2px;
+}
+.no-touch .selecter-item:hover,
+.no-touch .selecter-item.selected:hover {
+  color: #333333;
+  background-color: #fcfcfc;
+}
+.selecter-item.disabled,
+.no-touch .selecter-item.disabled:hover {
+  color: #cccccc;
+  background-color: #ffffff;
+}
+.selecter.open {
+  z-index: 3;
+}
+.selecter.open .selecter-selected {
+  z-index: 51;
+  border-radius: 3px 3px 0 0;
+}
+.selecter.open .selecter-selected,
+.selecter.focus .selecter-selected {
+  background-color: #ffffff;
+  box-shadow: 0;
+}
+.selecter.cover .selecter-options {
+  border-width: 1px;
+  top: 0;
+  border-radius: 3px;
+}
+.selecter.cover .selecter-options .selecter-item.first {
+  border-radius: 3px 3px 0 0;
+}
+.selecter.cover.open .selecter-selected {
+  z-index: 49;
+  border-radius: 3px 3px 0 0;
+}
+.selecter.bottom .selecter-options {
+  top: auto;
+  bottom: 100%;
+  border-width: 1px 1px 0;
+}
+.selecter.bottom .selecter-item:last-child {
+  border: none;
+}
+.selecter.bottom.open .selecter-selected {
+  border-radius: 0 0 3px 3px;
+}
+.selecter.bottom.open .selecter-options {
+  border-radius: 3px 3px 0 0;
+}
+.selecter.bottom .cover .selecter-options {
+  top: auto;
+  bottom: 0;
+}
+.selecter.bottom .cover.open .selecter-selected {
+  border-radius: 3px;
+}
+.selecter.bottom .cover.open .selecter-options {
+  border-radius: 3px;
+}
+.selecter.multiple .selecter-options {
+  width: 100%;
+  position: static;
+  border-width: 1px;
+  display: block;
+  border-radius: 3px;
+  box-shadow: none;
+}
+.selecter.disabled .selecter-selected {
+  background: #ffffff;
+  border-color: #cccccc;
+  color: #cccccc;
+  cursor: default;
+}
+.selecter.disabled .selecter-options {
+  background: #ffffff;
+  border-color: #cccccc;
+}
+.selecter.disabled .selecter-group,
+.selecter.disabled .selecter-item {
+  border-color: #cccccc;
+  color: #cccccc;
+  cursor: default;
+}
+.selecter.disabled .selecter-item.selected,
+.no-touch .selecter.disabled .selecter-item.selected:hover {
+  background: #fafafa;
+}
+.selecter.disabled .selecter-item,
+.no-touch .selecter.disabled .selecter-item:hover {
+  color: #cccccc;
+  background-color: #ffffff;
+}
+.selecter-options.scroller {
+  overflow: hidden;
+}
+.selecter-options.scroller .scroller-content {
+  max-height: 260px;
+  padding: 0;
+}
+@media screen and (max-width: 740px) {
+  .selecter {
+    max-width: 40%;
+  }
+}
+@media screen and (max-width: 500px) {
+  .selecter {
+    max-width: 100%;
+  }
+}
+
+
+/**
+ * BxSlider v4.1.2 - Fully loaded, responsive content slider
+ * http://bxslider.com
+ *
+ * Written by: Steven Wanderski, 2014
+ * http://stevenwanderski.com
+ * (while drinking Belgian ales and listening to jazz)
+ *
+ * CEO and founder of bxCreative, LTD
+ * http://bxcreative.com
+ */
+
+
+.bx-wrapper {
+  position: relative;
+  padding: 0;
+  *zoom: 1;
+}
+
+.bx-wrapper img {
+  display: block;
+}
+
+.bx-wrapper .bx-viewport {
+  -webkit-transform: translatez(0);
+  -moz-transform: translatez(0);
+  -ms-transform: translatez(0);
+  -o-transform: translatez(0);
+  transform: translatez(0);
+  margin-top: 30px;
+}
+
+
+
+/* DIRECTION CONTROLS (NEXT / PREV) */
+.bx-wrapper .bx-prev {
+    left: 50%;
+    margin-left: -16px;
+    background: transparent;
+    top: -42px;
+}
+
+a.bx-prev:after {
+    font-family: FontAwesome;
+    font-size: 22px;
+    color: #000000;
+    content: "\f106";
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 32px;
+    width: 32px;
+    text-align: center;
+    line-height: 32px;
+}
+
+.bx-wrapper .bx-next {
+	left: 50%;
+    background: transparent;
+	margin-left: -16px;
+  	bottom: -42px;
+}
+
+a.bx-next:after {
+    font-family: FontAwesome;
+    font-size: 22px;
+    color: #000000;
+    content: "\f107";
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 32px;
+    width: 32px;
+    text-align: center;
+    line-height: 32px;
+}
+
+.bx-wrapper .bx-prev:hover {
+	background-position: 0 0;
+}
+
+.bx-wrapper .bx-next:hover {
+	background-position: -43px 0;
+}
+
+.bx-wrapper .bx-controls-direction a {
+	position: absolute;
+	outline: 0;
+	width: 32px;
+	height: 32px;
+}
+
+.bx-wrapper .bx-controls-direction a.disabled {
+	display: none;
+}
+
+/* AUTO CONTROLS (START / STOP) */
+
+.bx-wrapper .bx-controls-auto {
+	text-align: center;
+}
+
+.bx-wrapper .bx-controls-auto .bx-start {
+	display: block;
+	text-indent: -9999px;
+	width: 10px;
+	height: 11px;
+	outline: 0;
+	background: url(images/controls.png) -86px -11px no-repeat;
+	margin: 0 3px;
+}
+
+.bx-wrapper .bx-controls-auto .bx-start:hover,
+.bx-wrapper .bx-controls-auto .bx-start.active {
+	background-position: -86px 0;
+}
+
+.bx-wrapper .bx-controls-auto .bx-stop {
+	display: block;
+	text-indent: -9999px;
+	width: 9px;
+	height: 11px;
+	outline: 0;
+	background: url(images/controls.png) -86px -44px no-repeat;
+	margin: 0 3px;
+}
+
+.bx-wrapper .bx-controls-auto .bx-stop:hover,
+.bx-wrapper .bx-controls-auto .bx-stop.active {
+	background-position: -86px -33px;
+}
+
+/* PAGER WITH AUTO-CONTROLS HYBRID LAYOUT */
+
+.bx-wrapper .bx-controls.bx-has-controls-auto.bx-has-pager .bx-pager {
+	text-align: left;
+	width: 80%;
+}
+
+.bx-wrapper .bx-controls.bx-has-controls-auto.bx-has-pager .bx-controls-auto {
+	right: 0;
+	width: 35px;
+}
+
+/* IMAGE CAPTIONS */
+
+.bx-wrapper .bx-caption {
+	position: absolute;
+	bottom: 0;
+	left: 0;
+	background: #666\9;
+	background: rgba(80, 80, 80, 0.75);
+	width: 100%;
+}
+
+.bx-wrapper .bx-caption span {
+	color: #fff;
+	font-family: Arial;
+	display: block;
+	font-size: .85em;
+	padding: 10px;
+}
+
+#mobile-product .bx-controls.bx-has-controls-direction {
+    display: none;
+}
+
+/* Header Logo */
+#header-logo {
+  list-style: none;
+  margin-bottom: 0;
+}
+#header-logo li a {
+  display: inline-block;
+}
+#header-logo-img {
+  width: 158px;
+  height: auto;
+  max-height: 31px;
+  display: inline-block;
+  vertical-align: middle;
+}
+
+/* Header Right Nav */
+ul#cart li span.selecter-selected {
+  padding: 0 14px 0 0;
+  font-size: 12px !important;
+}
+
+ul#cart i.icon-search {
+  margin-right: 7px;
+  font-size: 11px !important;
+}
+ul#cart li a, ul#cart li span.selecter-selected { 
+  font-size: 10px !important;
+  height: 100%;
+  display: inline-block;
+}
+span#my-tote {
+  display: inline-block;
+  width: 15px;
+  height: 20px;
+  background-image: url(//cdn.shopify.com/s/files/1/0178/2834/t/11/assets/tote.png?1760438929395477753);
+  background-size: 16px 21px;
+  background-repeat: no-repeat;
+  position: relative;
+  top: 4px;
+  z-index: -1;
+}
+ul#cart span#item_count {
+  color: #000000;
+  display: inline-block;
+  width: 16px;
+  margin-left: -19px;
+  text-align: center;
+  font-size: 10px;
+}
+ul#cart li.cart-overview:after {
+  margin-left: 1px;
+}
+
+/* Main Nav */
+ul#main-nav {
+  text-align: left;
+}
+ul#main-nav li.main-nav-link:last-child {
+  float: right;
+}
+ul#main-nav limain-nav-link:last-child a {
+  padding-right: 10px;
+}
+ul#main-nav li a {
+  letter-spacing: 2px;
+}
+.dl-menuwrapper .dl-menu.dl-menuopen {
+  height: 400px;
+}
+ul.megamenu.row {
+  z-index: 100;
+}
+
+/* footer */
+#footer-wrapper {
+  font-family: Lato, sans-serif;
+  letter-spacing: 1px;
+}
+#footer-wrapper h4 {
+  font-size: 11px;
+  font-family: Lato, sans-serif;
+  letter-spacing: 1px;
+}
+
+#footer-wrapper ul li a {
+  font-size: 11px;
+  font-family: Lato, sans-serif;
+  text-transform: uppercase;
+}
+#footer-wrapper div.credit p {
+  font-family: Lato, sans-serif; 
+}
+img#footer-logo {
+  margin-bottom: 12px;
+}
+h4#footer-address {
+  line-height: 18px;
+  margin-bottom: 0px;
+  padding-bottom: 0;
+}
+hr#footer-sep {
+  height: 2px;
+  color: #000000;
+  background-color: #000000;
+  font-size: 0;
+  border: 0;
+  margin: 20px 0;
+}
+#footer-wrapper ul {
+  margin-top: 0px;
+}
+#footer-wrapper h4.footer-list-title {
+  font-size: 14px;
+}
+div#footer_signup {
+  margin-top: 20px;
+}
+#footer div.footer-linklist:first-of-type {
+  margin-left: 0;
+}
+#footer-wrapper {
+  padding-bottom: 25px;
+}
+
+/* pages */
+#page .rte p:after {
+  content: " ";
+  display: block; 
+  height: 0; 
+  clear: both;
+}
+
+/* fanreel */
+#curalate-fan-reel-wrapper {
+  margin-top: 25px;
+}
+#page #curalate-header {
+  display: none;
+}
+
+/* masonry homepage gallery */
+.grid.js-masonry .grid-sizer, .grid.js-masonry .grid-item {
+  width: 49%;
+}
+.grid.js-masonry .gutter-sizer {
+  width: 2%;
+}
+.grid.js-masonry .promo-inner {
+  float: none;
+}
+
+/* collection sidebar */
+ul#sort-me li.clearfix.filter ul li.disabled a {
+  cursor: default;
+  color: #EDEEED;
+}
+
+/* homepage */
+#homepage-section li.flex-active-slide {
+  z-index: 1 !important;
+}
+.homepage-section:last-of-type {
+  padding-bottom: 20px;
+}
+
+/* reviews badge */
+#product-right .spr-badge {
+  margin-top: -10px;
+  margin-bottom: 3px;
+}
+.spr-content .spr-reviews {
+  text-align: left;
+}
+
+.spr-badge[data-rating="0.0"] {
+  display: none;
+}
+
+/* Product Page */
+.product-vendor-label {
+  /*color: rgb(204, 204, 204);*/
+  margin-top: -10px;
+}
+.product-vendor-label a{
+  /*color: rgb(204, 204, 204) !important;*/
+}
+#product-photos .bigimage.desktop-10.tablet-5 {
+  min-height: 500px;
+}
+#product-photos .bigimage.desktop-10.tablet-5 img {
+  max-height: 530px;
+}
+#mobile-product .bxslider img {
+  max-height: 250px;
+  margin: 0 auto;
+}
+#variant-inventory {
+  position: relative;
+  top: -10px;
+  margin-bottom: 0;
+}
+.bx-viewport {
+  min-height: 420px;
+}
+@media (max-width: 980px) {
+  .bx-viewport {
+    min-height: 230px;
+  } 
+}
+#product-description form, .product-description form {
+  border-bottom: none;
+  border-top: none;
+}
+#itemprop-offers {
+  border-top: 1px solid #000000;
+  border-bottom: 1px solid #000000;
+}
+#itemprop-offers .section-title {
+  margin-top: 0px;
+  margin-bottom: 10px;
+}
+#itemprop-offers .rte {
+  text-align: left;
+  margin-bottom: 10px;
+}
+#shopify-product-reviews {
+  margin-top: 20px;
+}
+#shopify-product-reviews .spr-container {
+  border: none;
+}

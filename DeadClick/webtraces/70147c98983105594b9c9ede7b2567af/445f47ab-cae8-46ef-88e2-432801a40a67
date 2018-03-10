@@ -1,0 +1,1 @@
+var NMGWidgets=NMGWidgets||{};NMGWidgets.jQDeferredLoader=function(){var e=[],i=function(){if(window.jQuery)for(;e.length;)e.shift()(window.jQuery);else window.setTimeout(i,250)};return i(),{execute:function(i){window.jQuery?i(window.jQuery):e.push(i)}}}();

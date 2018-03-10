@@ -1,0 +1,925 @@
+var WEINTO = WEINTO || {};
+
+//CONSOLE ////////////////////////////////////////////////////////////////////////////////
+(function($){
+	var _isAvailable = null;
+	var _isLogActive = null;
+		
+	var _isEnabled = function(){
+
+		if(typeof console == 'object' && typeof console.log == 'function'){
+			_isAvailable = true;
+		} else {
+			_isAvailable = false;
+		}
+		WEINTO.console('log', 'console enabled : '+_isAvailable);
+		return _isAvailable
+	}
+	
+	var methods = {
+		init : function(){WEINTO.console('isEnabled');},
+		isEnabled 	: function(){_isEnabled()},
+		status		: function(action){
+			if(action == 'start'){
+				_isAvailable = true;
+			}
+			if(action == 'stop'){
+				_isAvailable = false;
+			}
+		},
+		log 		: function(){if(_isAvailable){console.log(arguments);}},
+		debug 		: function(){if(_isAvailable){console.debug(arguments);}},
+		info 		: function(){if(_isAvailable){console.info(arguments);}},
+		warn 		: function(){if(_isAvailable){console.warn(arguments);}},
+		error 		: function(){if(_isAvailable){console.error(arguments);}},
+		trace 		: function(){if(_isAvailable){console.trace();}},
+		group 		: function(){if(_isAvailable){console.group(arguments);}},
+		groupEnd 	: function(){if(_isAvailable){console.groupEnd();}},
+		dir 		: function(){if(_isAvailable){console.dir(arguments);}},
+		dirxml 		: function(){if(_isAvailable){console.dirxml(arguments);}}
+	};
+
+	WEINTO.console = function(method){
+		if ( methods[method] ) {
+            return methods[method].apply( this, Array.prototype.slice.call( arguments, 1 ));
+        } else if ( typeof method === 'object' || ! method ) {
+            return methods.init.apply( this, arguments );
+        } else {
+            $.error( 'Method '+method +' does not exist.' );
+        }
+	};
+
+})(jQuery);
+
+//DEVICE ////////////////////////////////////////////////////////////////////////////////
+(function($){
+	var _deviceAgent = null;
+	var _touchMove = null;
+	
+	var methods = {
+		init : function(){
+			_touchMove = true;
+			var isTouch = WEINTO.device('isTouch');
+			WEINTO.console('log', 'is Touch: '+isTouch);
+			
+			document.ontouchmove = function(e){
+				return (_touchMove?_touchMove:e.preventDefault());
+			}
+			
+		},
+		isTouch : function(){ 
+		  try {  
+		    document.createEvent('TouchEvent');  
+		    return true;  
+		  } catch (e) {  
+		    return false;  
+		  }  
+		},
+		isApple : function(){
+			_deviceAgent = navigator.userAgent.toLowerCase();
+			var isAppleDevice = _deviceAgent.match(/(iphone|ipod|ipad)/);
+			isAppleDevice = ((isAppleDevice==null || isAppleDevice==false)?false:true);
+			return isAppleDevice;	
+		},
+		
+		isIpad : function(){
+			return (navigator.userAgent.match(/iPad/i) != null);
+		},
+		isIphone : function(){
+			return (navigator.userAgent.match(/iPhone/i) != null);
+		},
+		isAndroid : function(){
+			return (navigator.userAgent.match(/Android/i) != null);
+		},
+		disableDocumentScroll : function(){
+			_touchMove = false;
+		},
+		enableDocumentScroll : function(){
+			_touchMove = true;
+		},
+	};
+	
+	WEINTO.device = function(method){
+		if ( methods[method] ) {
+			return methods[method].apply( this, Array.prototype.slice.call( arguments, 1 ));
+		} else if ( typeof method === 'object' || ! method ) {
+			return methods.init.apply( this, arguments );
+		} else {
+			$.error( 'Method '+method +' does not exist.' );
+		}
+	};
+	
+})(jQuery);
+
+//REQUEST AJAX ////////////////////////////////////////////////////////////////////////////////
+(function($){
+	var _deviceAgent = null;
+	_agentID = null;
+	
+	var methods = {
+		init : function(){
+
+		},
+		request : function (b) {
+			var a = (b.dataType !== undefined ? b.dataType : "html");
+			$.ajax({
+				type: (b.type !== undefined ? b.type : 'POST'),
+				url: b.url,
+				data: (b.data !== undefined ? b.data : ''),
+				dataType: 'html',
+				beforeSend: function () {
+					if (typeof b.beforeSend === "function") {
+						b.beforeSend();
+					}
+				},
+				error: function (jqXHR, textStatus, errorThrown) {
+					WEINTO.console('group', 'ajax errors');
+					WEINTO.console('error', 'error : ', jqXHR);
+					WEINTO.console('error', 'error : ', textStatus);
+					WEINTO.console('error', 'error : ', errorThrown);
+					WEINTO.console('groupEnd');
+
+				},
+				success: function (response) {
+					if (typeof b.success === "function") {
+						b.success(response);
+					}
+				}
+			})
+		}
+	};
+	
+	WEINTO.request = WEINTO.request || {};
+	
+	WEINTO.request.ajax = function(method){
+		if ( methods[method] ) {
+			return methods[method].apply( this, Array.prototype.slice.call( arguments, 1 ));
+		} else if ( typeof method === 'object' || ! method ) {
+			return methods.init.apply( this, arguments );
+		} else {
+			$.error( 'Method '+method +' does not exist.' );
+		}
+	};
+	
+})(jQuery);
+//REQUEST URL ////////////////////////////////////////////////////////////////////////////////
+(function($){
+	var _params = null
+
+	// Read a page's GET URL variables and return them as an associative array.
+	_getAllParams = function() {
+	    var vars = [], hash;
+	    var hashes = window.location.href.slice(window.location.href.indexOf('?') + 1).split('&');
+	    for(var i = 0; i < hashes.length; i++){
+	        hash = hashes[i].split('=');
+	        vars.push(hash[0]);
+	        vars[hash[0]] = hash[1];
+	    }
+	    return vars;
+	};
+
+	var methods = {
+		init : function(){
+			_params = _getAllParams();
+		},
+		get : function(name) {
+			return _params[name];
+		}
+	};
+	
+	WEINTO.request = WEINTO.request || {};
+	
+	WEINTO.request.url = function(method){
+		if ( methods[method] ) {
+			return methods[method].apply( this, Array.prototype.slice.call( arguments, 1 ));
+		} else if ( typeof method === 'object' || ! method ) {
+			return methods.init.apply( this, arguments );
+		} else {
+			$.error( 'Method '+method +' does not exist.' );
+		}
+	};
+	
+})(jQuery);
+
+//REGEX ////////////////////////////////////////////////////////////////////////////////
+(function($){
+	
+	var _email = /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,})+$/;
+	var _url = /(http|https):\/\/(\w+:{0,1}\w*@)?(\S+)(:[0-9]+)?(\/|\/([\w#!:.?+=&%@!\-\/]))?/;
+	var _number = /[0-9]|\./;
+	
+	var methods = {
+		check : function(regex, value){
+			var str = "_"+regex+".test('"+value+"')";
+			var isValid = eval(str);
+			return isValid;
+		},
+		regex : function(value, regex){
+			return regex.test(value);
+		},
+		isNumber : function(value){
+			return !isNaN(parseFloat(value)) && isFinite(value);
+		},
+		strlenMin : function(mixed_var, limit){
+			return (mixed_var.length >= limit ? true : false);
+		},
+		strlenMax : function(mixed_var, limit){
+			return (mixed_var.length <= limit ? true : false);
+		},
+		nbvalMin : function(nb, limit){
+			return (nb >= limit ? true : false);
+		},
+		nbvalMax : function(nb, limit){
+			return (nb <= limit ? true : false);
+		},
+		not_empty : function(mixed_var){
+			var undef, key, i, len;
+			var emptyValues = [undef, null, false, 0, "", "0"];
+
+			for (i = 0, len = emptyValues.length; i < len; i++) {
+				if (mixed_var === emptyValues[i]) {
+					return true;
+				}
+			}
+			if (typeof mixed_var === "object") {
+				for (key in mixed_var) {
+					// TODO: should we check for own properties only?
+					//if (mixed_var.hasOwnProperty(key)) {
+					return false;
+					//}
+				}
+				return true;
+			}
+			return false;
+		},
+		same_as : function(str, challenge){
+			return (str == challenge ? true : false);
+		}
+	};
+	
+	WEINTO.regex = function(method){
+		if ( methods[method] ) {
+            return methods[method].apply( this, Array.prototype.slice.call( arguments, 1 ));
+        } else if ( typeof method === 'object' || ! method ) {
+            return methods.init.apply( this, arguments );
+        } else {
+            $.error( 'Method '+method +' does not exist.' );
+        }
+	};
+})(jQuery);
+
+
+//FORM ////////////////////////////////////////////////////////////////////////////////
+(function($){
+	var _$withDefaultValue = null;
+
+	var _store_default_value = function(){
+		_$withDefaultValue.each(function(){
+			var t = $(this);
+			t.data('defaultvalue', t.val());
+		});
+	};
+
+	var _check_defaultValue = function(t, focus){
+		if(focus == 'focusin'){
+			if(t.val() == t.data('defaultvalue')){
+				t.val('');
+			}
+		}
+		if(focus == 'focusout'){
+			if(t.val() == ''){
+				t.val(t.data('defaultvalue'));
+			}
+		}
+	};
+
+	var _event = function(){
+
+	};
+	
+	var methods = {
+		init : function(){
+			
+		},
+		initDefaultValues : function(){			
+			_$withDefaultValue = $('.storeDefaultValue');
+			_store_default_value();
+
+			_$withDefaultValue.on('focusin focusout', function(e){
+				_check_defaultValue($(this), e.type);
+			});
+		}
+	};
+	
+	WEINTO.form = function(method){
+		if ( methods[method] ) {
+            return methods[method].apply( this, Array.prototype.slice.call( arguments, 1 ));
+        } else if ( typeof method === 'object' || ! method ) {
+            return methods.init.apply( this, arguments );
+        } else {
+            $.error( 'Method '+method +' does not exist.' );
+        }
+	};
+})(jQuery);
+
+//EVENTS ////////////////////////////////////////////////////////////////////////////////
+
+(function($){
+	
+	var _e = $({});
+	
+	var methods = {
+		listen : function(){
+			_e.on.apply(_e, arguments);
+		},
+		remove : function(){
+			_e.off.apply(_e, arguments);
+		},
+		trigger : function(){
+			_e.trigger.apply(_e, arguments);
+		}
+
+	};
+	
+	WEINTO.events = function(method){
+		if ( methods[method] ) {
+            return methods[method].apply( this, Array.prototype.slice.call( arguments, 1 ));
+        } else if ( typeof method === 'object' || ! method ) {
+            return methods.init.apply( this, arguments );
+        } else {
+            $.error( 'Method '+method +' does not exist.' );
+        }
+	};
+})(jQuery);
+
+
+
+
+
+//FILE SYSTEM ////////////////////////////////////////////////////////////////////////////////
+
+window.requestFileSystem  = window.requestFileSystem || window.webkitRequestFileSystem;
+window.BlobBuilder = window.BlobBuilder || window.WebKitBlobBuilder;
+
+WEINTO.Filesystem = function(){
+	var self = this;
+	self._persistent_root = null;
+};
+
+WEINTO.Filesystem.prototype.init = function(quota){
+	var self = this;
+	window.webkitStorageInfo.requestQuota(
+		PERSISTENT, 
+		quota, 
+		function(grantedBytes){
+			window.requestFileSystem(PERSISTENT, grantedBytes,function(fs){
+				self._persistent_root = fs.root;
+				WEINTO.events('trigger', 'Filesystem/ready');
+			}, self.errorHandler);
+		},
+		function(e) { WEINTO.console('log', 'Error', e); }
+	);
+};
+
+WEINTO.Filesystem.prototype.errorHandler = function(e){
+	var self = this;
+	var msg = '';
+	switch (e.code) {
+		case FileError.QUOTA_EXCEEDED_ERR:
+			msg = 'QUOTA_EXCEEDED_ERR';
+			break;
+		case FileError.NOT_FOUND_ERR:
+			msg = 'NOT_FOUND_ERR';
+			break;
+		case FileError.SECURITY_ERR:
+			msg = 'SECURITY_ERR';
+			break;
+		case FileError.INVALID_MODIFICATION_ERR:
+			msg = 'INVALID_MODIFICATION_ERR';
+			break;
+		case FileError.INVALID_STATE_ERR:
+			msg = 'INVALID_STATE_ERR';
+			break;
+		default:
+			msg = 'Unknown Error';
+			break;
+	};
+	WEINTO.console('log', 'Error: ' + msg, e);
+};
+
+WEINTO.Filesystem.prototype.createFile = function(fileName){
+	var self = this;
+	self._persistent_root.getFile(fileName, {create: true}, function(fileEntry) {
+		WEINTO.events('trigger', 'Filesystem/file/created/'+fileName, fileEntry);
+	}, self.errorHandler);
+};
+
+WEINTO.Filesystem.prototype.writeFile = function(file, content){
+	var self = this;
+	file.createWriter(
+		function(fileWriter){
+			fileWriter.onwriteend = function(){
+				WEINTO.console('log', 'write completed');
+				WEINTO.events('trigger', 'Filesystem/file/written/'+file.fileName, file.fileName);
+			};
+
+			fileWriter.onerror = function(e){
+				WEINTO.console('log', 'Write failed : ', e.toString());
+			};
+
+			var bb = new BlobBuilder();
+			bb.append(content);
+			fileWriter.write(bb.getBlob('text/plain'));
+
+		}, 
+		self.errorHandler
+	);
+};
+
+WEINTO.Filesystem.prototype.readFile = function(filename){
+	var self = this;
+	self._persistent_root.getFile(filename, {}, function(fileEntry) {
+		fileEntry.file(
+			function(file){
+				var reader = new FileReader();
+				reader.onloadend = function(){
+					WEINTO.events('trigger', 'Filesystem/file/read/'+file.fileName, this.result);
+				};
+
+				reader.readAsText(file);
+			},
+			self.errorHandler
+		);
+	});
+};
+
+/*
+//Exemple
+
+var filename = 'cocacola.json';
+
+//Initialize FS for this zone
+var filesystem = new WEINTO.Filesystem();
+filesystem.init(1024*1024); //1Mo
+
+//Wait until the FS is ready and create a file (filename)
+WEINTO.events('listen', 'Filesystem/ready', function(){
+	filesystem.createFile(filename);
+});
+
+//Wait until the file is created and write some content in it
+WEINTO.events('listen', 'Filesystem/file/created/'+filename, function(e, file){
+	var content = {'version':'1'};
+	filesystem.writeFile(file, JSON.stringify(content));
+	filesystem.readFile(filename);
+});
+
+//Open a file and return the content
+WEINTO.events('listen', 'Filesystem/file/read/'+filename, function(e, content){
+	var result = content;
+	WEINTO.console('log', result, JSON.parse(result));
+});
+
+*/
+
+
+
+
+
+
+//WINDOW ////////////////////////////////////////////////////////////////////////////////
+
+(function($){
+
+	var _onResize = function(){
+		_window.on('resize', function(e){
+			_width = _window.width();
+			_height = _window.height();
+			WEINTO.events('trigger', 'window/resize', {width:_width, height:_height});
+			if(_debug){WEINTO.console('log', {width:_width, height:_height});}
+		});
+	}
+	
+	var _window = null;
+	var _width = null;
+	var _height = null;
+	var _debug = null;
+	
+	var methods = {
+		init : function(){
+			_debug = false;
+			_window = $(window);
+			_width = _window.width();
+			_height = _window.height();
+			WEINTO.events('trigger', 'window/resize', {width:_width, height:_height});
+		},
+		debug : function(value){
+			if(value == 'on'){ _debug = true; }
+			if(value == 'off'){ _debug = false; }
+			return _debug;
+		},
+		listen : function(event){
+			if(event == 'resize'){ _onResize(); }
+		},
+		get : function(value){
+			if(value == 'width'){ return _width; }
+			if(value == 'height'){ return _height; }
+		}
+
+	};
+	
+	WEINTO.window = function(method){
+		if ( methods[method] ) {
+            return methods[method].apply( this, Array.prototype.slice.call( arguments, 1 ));
+        } else if ( typeof method === 'object' || ! method ) {
+            return methods.init.apply( this, arguments );
+        } else {
+            $.error( 'Method '+method +' does not exist.' );
+        }
+	};
+})(jQuery);
+
+
+
+
+
+
+//LOADER ////////////////////////////////////////////////////////////////////////////////
+
+
+WEINTO.loader = {};
+WEINTO.loader.engine = (function($){
+
+	function LoaderEngine(element, id){
+		var self = this;
+		self._id = id;
+		self._loaderBox = element;
+		self._fileslist = [];
+		self._nbFiles = 0;
+		self._percent = 0;
+		self._mc = 0;
+		self._url = [];
+
+		self.initEvents();
+	}
+
+	LoaderEngine.prototype.initEvents = function(){
+		var self = this;
+		WEINTO.events('listen', 'loader/'+self._id+'/percent', function(e, percent){
+			if(percent == 100){
+				self.loadComplete();
+			}
+		});
+	}
+
+	LoaderEngine.prototype._getPercent = function(){
+		var self = this;
+		self._percent = Math.round(self._mc/self._nbFiles*100);
+		WEINTO.events('trigger', 'loader/'+self._id+'/percent', self._percent);
+		return self._percent;
+	};
+
+	LoaderEngine.prototype.list = function(list){
+		var self = this;
+		WEINTO.request.ajax('request',{
+			url: list,
+			dataType: 'text',
+			success: function (response) {
+				response = jQuery.parseJSON(response);
+				self._fileslist = response;
+				self._nbFiles = self._fileslist.length;
+				self.load();
+			}
+		})
+	};
+
+	LoaderEngine.prototype.load = function(){
+		var self = this;
+		for(var i=0; i<self._nbFiles; i++){
+			self._url[i] = new Image();
+			$(self._url[i])
+				.load(function(){
+					self._mc++;
+					self._loaderBox.append( $(this) );
+					self._getPercent();
+				})
+				.attr({
+					'src' : self._fileslist[i]
+				});
+		}
+
+	};
+
+	LoaderEngine.prototype.loadComplete = function(){
+		var self = this;
+		if(typeof arguments[0] == 'function'){
+			self._onLoadComplete = arguments[0];
+			return;
+		} 
+
+		self._onLoadComplete.call();
+		
+		
+	};
+
+	return LoaderEngine;
+
+})(jQuery);
+
+
+WEINTO.loader.gauge = (function($){
+	function LauderGauge(options){
+		var self = this;
+		self._gauge = options.gauge;
+		self._fluid = options.fluid;
+		self._text = options.text;
+		self._text.html('0%');
+		self._engineEvent = options.engineEvent;
+		self.listen();
+	}
+
+	LauderGauge.prototype.update = function(percent){
+		var self = this;
+		self._fluid.css('width', percent+'%');
+		self._text.html(percent+'%');
+	};
+
+	LauderGauge.prototype.listen = function(percent){
+		var self = this;
+		WEINTO.events('listen', 'loader/'+self._engineEvent+'/percent', function(e, percent){
+			self.update(percent);
+		});
+	};
+
+	return LauderGauge;
+
+})(jQuery);
+
+
+/*
+	HTML :
+	-------
+		<div id="gauge">
+			<div class="fluid"></div>
+			<p class="text"></p>
+		</div>
+		<div id="loaderBox"></div>
+
+	JS :
+	-------
+
+		var loader = new WEINTO.loader.engine($('#loaderBox'), 'main/images');
+		var gauge = new WEINTO.loader.gauge({
+			gauge : $('#gauge'),
+			fluid : $('.fluid'),
+			text : $('.text'),
+			engineEvent : 'main/images'
+		});
+
+		loader.list('/loader/filelist');
+
+		loader.loadComplete(function(){
+			window.location.href = '/user/login';
+		});
+*/
+
+//DATE ////////////////////////////////////////////////////////////////////////////////
+WEINTO.date = function(format, timestamp) {
+  // *	   source phpjs
+  // *     example 1: date('H:m:s \\m \\i\\s \\m\\o\\n\\t\\h', 1062402400);
+  // *     returns 1: '09:09:40 m is month'
+  // *     example 2: date('F j, Y, g:i a', 1062462400);
+  // *     returns 2: 'September 2, 2003, 2:26 am'
+  // *     example 3: date('Y W o', 1062462400);
+  // *     returns 3: '2003 36 2003'
+  // *     example 4: x = date('Y m d', (new Date()).getTime()/1000);
+  // *     example 4: (x+'').length == 10 // 2009 01 09
+  // *     returns 4: true
+  // *     example 5: date('W', 1104534000);
+  // *     returns 5: '53'
+  // *     example 6: date('B t', 1104534000);
+  // *     returns 6: '999 31'
+  // *     example 7: date('W U', 1293750000.82); // 2010-12-31
+  // *     returns 7: '52 1293750000'
+  // *     example 8: date('W', 1293836400); // 2011-01-01
+  // *     returns 8: '52'
+  // *     example 9: date('W Y-m-d', 1293974054); // 2011-01-02
+  // *     returns 9: '52 2011-01-02'
+    var that = this,
+      jsdate,
+      f,
+      formatChr = /\\?([a-z])/gi,
+      formatChrCb,
+      // Keep this here (works, but for code commented-out
+      // below for file size reasons)
+      //, tal= [],
+      _pad = function (n, c) {
+        n = n.toString();
+        return n.length < c ? _pad('0' + n, c, '0') : n;
+      },
+      txt_words = ["Sun", "Mon", "Tues", "Wednes", "Thurs", "Fri", "Satur", "January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+  formatChrCb = function (t, s) {
+    return f[t] ? f[t]() : s;
+  };
+  f = {
+    // Day
+    d: function () { // Day of month w/leading 0; 01..31
+      return _pad(f.j(), 2);
+    },
+    D: function () { // Shorthand day name; Mon...Sun
+      return f.l().slice(0, 3);
+    },
+    j: function () { // Day of month; 1..31
+      return jsdate.getDate();
+    },
+    l: function () { // Full day name; Monday...Sunday
+      return txt_words[f.w()] + 'day';
+    },
+    N: function () { // ISO-8601 day of week; 1[Mon]..7[Sun]
+      return f.w() || 7;
+    },
+    S: function () { // Ordinal suffix for day of month; st, nd, rd, th
+      var j = f.j();
+      return j < 4 | j > 20 && (['st', 'nd', 'rd'][j % 10 - 1] || 'th');
+    },
+    w: function () { // Day of week; 0[Sun]..6[Sat]
+      return jsdate.getDay();
+    },
+    z: function () { // Day of year; 0..365
+      var a = new Date(f.Y(), f.n() - 1, f.j()),
+        b = new Date(f.Y(), 0, 1);
+      return Math.round((a - b) / 864e5);
+    },
+
+    // Week
+    W: function () { // ISO-8601 week number
+      var a = new Date(f.Y(), f.n() - 1, f.j() - f.N() + 3),
+        b = new Date(a.getFullYear(), 0, 4);
+      return _pad(1 + Math.round((a - b) / 864e5 / 7), 2);
+    },
+
+    // Month
+    F: function () { // Full month name; January...December
+      return txt_words[6 + f.n()];
+    },
+    m: function () { // Month w/leading 0; 01...12
+      return _pad(f.n(), 2);
+    },
+    M: function () { // Shorthand month name; Jan...Dec
+      return f.F().slice(0, 3);
+    },
+    n: function () { // Month; 1...12
+      return jsdate.getMonth() + 1;
+    },
+    t: function () { // Days in month; 28...31
+      return (new Date(f.Y(), f.n(), 0)).getDate();
+    },
+
+    // Year
+    L: function () { // Is leap year?; 0 or 1
+      var j = f.Y();
+      return j % 4 === 0 & j % 100 !== 0 | j % 400 === 0;
+    },
+    o: function () { // ISO-8601 year
+      var n = f.n(),
+        W = f.W(),
+        Y = f.Y();
+      return Y + (n === 12 && W < 9 ? 1 : n === 1 && W > 9 ? -1 : 0);
+    },
+    Y: function () { // Full year; e.g. 1980...2010
+      return jsdate.getFullYear();
+    },
+    y: function () { // Last two digits of year; 00...99
+      return f.Y().toString().slice(-2);
+    },
+
+    // Time
+    a: function () { // am or pm
+      return jsdate.getHours() > 11 ? "pm" : "am";
+    },
+    A: function () { // AM or PM
+      return f.a().toUpperCase();
+    },
+    B: function () { // Swatch Internet time; 000..999
+      var H = jsdate.getUTCHours() * 36e2,
+        // Hours
+        i = jsdate.getUTCMinutes() * 60,
+        // Minutes
+        s = jsdate.getUTCSeconds(); // Seconds
+      return _pad(Math.floor((H + i + s + 36e2) / 86.4) % 1e3, 3);
+    },
+    g: function () { // 12-Hours; 1..12
+      return f.G() % 12 || 12;
+    },
+    G: function () { // 24-Hours; 0..23
+      return jsdate.getHours();
+    },
+    h: function () { // 12-Hours w/leading 0; 01..12
+      return _pad(f.g(), 2);
+    },
+    H: function () { // 24-Hours w/leading 0; 00..23
+      return _pad(f.G(), 2);
+    },
+    i: function () { // Minutes w/leading 0; 00..59
+      return _pad(jsdate.getMinutes(), 2);
+    },
+    s: function () { // Seconds w/leading 0; 00..59
+      return _pad(jsdate.getSeconds(), 2);
+    },
+    u: function () { // Microseconds; 000000-999000
+      return _pad(jsdate.getMilliseconds() * 1000, 6);
+    },
+
+    // Timezone
+    e: function () { // Timezone identifier; e.g. Atlantic/Azores, ...
+      // The following works, but requires inclusion of the very large
+      // timezone_abbreviations_list() function.
+/*              return that.date_default_timezone_get();
+*/
+      throw 'Not supported (see source code of date() for timezone on how to add support)';
+    },
+    I: function () { // DST observed?; 0 or 1
+      // Compares Jan 1 minus Jan 1 UTC to Jul 1 minus Jul 1 UTC.
+      // If they are not equal, then DST is observed.
+      var a = new Date(f.Y(), 0),
+        // Jan 1
+        c = Date.UTC(f.Y(), 0),
+        // Jan 1 UTC
+        b = new Date(f.Y(), 6),
+        // Jul 1
+        d = Date.UTC(f.Y(), 6); // Jul 1 UTC
+      return ((a - c) !== (b - d)) ? 1 : 0;
+    },
+    O: function () { // Difference to GMT in hour format; e.g. +0200
+      var tzo = jsdate.getTimezoneOffset(),
+        a = Math.abs(tzo);
+      return (tzo > 0 ? "-" : "+") + _pad(Math.floor(a / 60) * 100 + a % 60, 4);
+    },
+    P: function () { // Difference to GMT w/colon; e.g. +02:00
+      var O = f.O();
+      return (O.substr(0, 3) + ":" + O.substr(3, 2));
+    },
+    T: function () { // Timezone abbreviation; e.g. EST, MDT, ...
+      // The following works, but requires inclusion of the very
+      // large timezone_abbreviations_list() function.
+/*              var abbr = '', i = 0, os = 0, default = 0;
+      if (!tal.length) {
+        tal = that.timezone_abbreviations_list();
+      }
+      if (that.php_js && that.php_js.default_timezone) {
+        default = that.php_js.default_timezone;
+        for (abbr in tal) {
+          for (i=0; i < tal[abbr].length; i++) {
+            if (tal[abbr][i].timezone_id === default) {
+              return abbr.toUpperCase();
+            }
+          }
+        }
+      }
+      for (abbr in tal) {
+        for (i = 0; i < tal[abbr].length; i++) {
+          os = -jsdate.getTimezoneOffset() * 60;
+          if (tal[abbr][i].offset === os) {
+            return abbr.toUpperCase();
+          }
+        }
+      }
+*/
+      return 'UTC';
+    },
+    Z: function () { // Timezone offset in seconds (-43200...50400)
+      return -jsdate.getTimezoneOffset() * 60;
+    },
+
+    // Full Date/Time
+    c: function () { // ISO-8601 date.
+      return 'Y-m-d\\TH:i:sP'.replace(formatChr, formatChrCb);
+    },
+    r: function () { // RFC 2822
+      return 'D, d M Y H:i:s O'.replace(formatChr, formatChrCb);
+    },
+    U: function () { // Seconds since UNIX epoch
+      return jsdate / 1000 | 0;
+    }
+  };
+  this.date = function (format, timestamp) {
+    that = this;
+    jsdate = (timestamp === undefined ? new Date() : // Not provided
+      (timestamp instanceof Date) ? new Date(timestamp) : // JS Date()
+      new Date(timestamp * 1000) // UNIX timestamp (auto-convert to int)
+    );
+    return format.replace(formatChr, formatChrCb);
+  };
+  return this.date(format, timestamp);
+}
+
+
+
+//INIT ////////////////////////////////////////////////////////////////////////////////
+$(document).ready(function(){
+	WEINTO.console('init');
+	WEINTO.device('init');
+	WEINTO.form('initDefaultValues');
+});
+
+window.location.origin = window.location.origin || window.location.protocol+'//'+window.location.host;

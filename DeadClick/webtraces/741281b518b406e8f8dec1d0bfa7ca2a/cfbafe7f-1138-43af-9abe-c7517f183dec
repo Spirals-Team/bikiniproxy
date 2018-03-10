@@ -1,0 +1,88 @@
+/*slider function with id name for buttons, id name of images, id name of text, and number of buttons/images/texts as argument
+make sure the elements are called what's put in the slider object
+WARNING: description of the images are assumed to be in display = block
+
+E.g. if arguments are "'dot', 'image', 'text', '3'":
+you'll need elements with the following id in html:
+dot1, dot2, dot3
+and image1, image2, image3
+and text1, text2, text3
+*/
+function slider(button, image, text, length) {
+	this.button = button;
+	this.image = image;
+	this.text = text;
+	this.length = length;
+	this.current = 1;
+	this.clicked = false;
+	this.timer;
+	this.tour = false;
+}
+
+slider.prototype.startTour = function() {
+	this.tour = true;
+	slider.next();
+	
+	document.getElementById('tour').setAttribute("onclick", "slider.stopTour()");
+	document.getElementById('tour').innerHTML = "Stop Tour ->";
+}
+
+slider.prototype.test = function() {
+	alert('just a test');
+}
+
+slider.prototype.stopTour = function() {
+	this.tour = false;
+	
+	this.current--;
+	clearTimeout(this.timer);
+
+	document.getElementById('tour').setAttribute("onclick", "slider.startTour()");
+	document.getElementById('tour').innerHTML = "Start Tour ->";
+}
+
+slider.prototype.clickSwitchImage = function(number) {
+	this.clicked = true;
+	slider.switchImage(number);
+	this.clicked = false;
+	
+	this.current = number;
+	clearTimeout(this.timer);
+	
+	if(this.tour) {
+		slider.next();
+	}
+}
+
+slider.prototype.next = function() {
+	if(this.current < this.length) {
+		this.current++;
+	}
+	else {
+		this.current = 1;
+	}
+	
+	this.timer = setTimeout("slider.switchImage("+this.current+");", 6125);
+}
+
+slider.prototype.switchImage = function(number) {
+	for(var i=1; i<=this.length; i++) {
+		if(i == number) {
+			document.getElementById(this.button+i).src = "images/slideshow_dot_active.png";
+			document.getElementById(this.image+i).style.display = "inline";
+			document.getElementById(this.text+i).style.display = "block";
+		}
+		else {
+			document.getElementById(this.button+i).src = "images/slideshow_dot_unactive.png";
+			document.getElementById(this.image+i).style.display = "none";
+			document.getElementById(this.text+i).style.display = "none";
+		}
+	}
+	
+	if(!this.clicked) {
+		slider.next();
+	}
+}
+
+var slider = new slider('dot', 'image', 'text', '9');
+slider.startTour();

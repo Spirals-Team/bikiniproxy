@@ -1,0 +1,204 @@
+(function(){
+	//
+	// Launch once
+	//
+	if (typeof document['FastNews.kiwi'] != 'undefined') return;
+	document['FastNews.kiwi'] = true;
+	
+	//
+	// Check is Chrome Desktop
+	//
+	var isChromium = window.chrome,
+    winNav = window.navigator,
+    vendorName = winNav.vendor,
+    isOpera = winNav.userAgent.indexOf("OPR") > -1,
+    isIEedge = winNav.userAgent.indexOf("Edge") > -1,
+    isIOSChrome = winNav.userAgent.match("CriOS");
+
+
+	var BrowserDetect={init:function(){this.browser=this.searchString(this.dataBrowser)||"An unknown browser",this.version=this.searchVersion(navigator.userAgent)||this.searchVersion(navigator.appVersion)||"an unknown version",this.OS=this.searchString(this.dataOS)||"an unknown OS"},searchString:function(a){for(var b=0;b<a.length;b++){var c=a[b].string,d=a[b].prop;if(this.versionSearchString=a[b].versionSearch||a[b].identity,c){if(-1!=c.indexOf(a[b].subString))return a[b].identity}else if(d)return a[b].identity}},searchVersion:function(a){var b=a.indexOf(this.versionSearchString);if(-1!=b)return parseFloat(a.substring(b+this.versionSearchString.length+1))},dataBrowser:[{string:navigator.userAgent,subString:"Chrome",identity:"Chrome"},{string:navigator.userAgent,subString:"OmniWeb",versionSearch:"OmniWeb/",identity:"OmniWeb"},{string:navigator.vendor,subString:"Apple",identity:"Safari",versionSearch:"Version"},{prop:window.opera,identity:"Opera"},{string:navigator.vendor,subString:"iCab",identity:"iCab"},{string:navigator.vendor,subString:"KDE",identity:"Konqueror"},{string:navigator.userAgent,subString:"Firefox",identity:"Firefox"},{string:navigator.vendor,subString:"Camino",identity:"Camino"},{string:navigator.userAgent,subString:"Netscape",identity:"Netscape"},{string:navigator.userAgent,subString:"MSIE",identity:"Explorer",versionSearch:"MSIE"},{string:navigator.userAgent,subString:"Gecko",identity:"Mozilla",versionSearch:"rv"},{string:navigator.userAgent,subString:"Mozilla",identity:"Netscape",versionSearch:"Mozilla"}],dataOS:[{string:navigator.platform,subString:"Win",identity:"Windows"},{string:navigator.platform,subString:"Mac",identity:"Mac"},{string:navigator.userAgent,subString:"iPhone",identity:"iPhone/iPod"},{string:navigator.platform,subString:"Linux",identity:"Linux"}]};BrowserDetect.init();
+
+
+
+	if(BrowserDetect.browser == 'Chrome' || (BrowserDetect.browser == 'Firefox' && BrowserDetect.version >= 48))
+	{
+	   // is Google Chrome or Firefox > 48
+	}
+	else
+	{
+				return;
+					
+	}
+
+	//
+	// Default action
+	//
+	var onFastNewsKiwi = function(kiwi)
+	{
+		if (!kiwi.extension_installed)
+		{
+			if (document.cookie.indexOf('_fastNewsKiwiRefused=1') != -1) return; // ever refused
+			
+			var iframe = document.createElement('iframe');
+			iframe.style.position = 'fixed';
+			iframe.style.zIndex = '999999999';
+			iframe.style.top = '0';
+			iframe.style.left = '0';
+			iframe.style.right = '0';
+			iframe.style.border = '0';
+			iframe.style.borderBottom = '1px solid rgba(0,0,0,0.5)';
+			iframe.style.height = '40px';
+			iframe.style.width = '100%';
+			iframe.style.overflow = 'hidden';
+			iframe.scrolling = "no";
+			document.body.appendChild(iframe);
+			var ifrm = iframe;
+			ifrm = (ifrm.contentWindow) ? ifrm.contentWindow : (ifrm.contentDocument.document) ? ifrm.contentDocument.document : ifrm.contentDocument;
+			ifrm.document.open();
+			ifrm.document.write('<html>' +
+			'<head></head>' +
+			'<body style="background: url(https://fastnews.kiwi/pics/halfkiwi.png) no-repeat top 5px left -20px; background-color: #555; background-size: auto 40px; padding: 0; margin: 0; font-size: 13px; font-family: Verdana; color: white;">' +
+				'<div style="position: absolute; right: 5px; top: 5px; cursor: pointer;" onclick="window.parent.document._onFastNewsRefused();"><img src="https://fastnews.kiwi/pics/close-white.png" style="height: 30px;"></div>' +
+				'<div style="display: inline-block; vertical-align: middle; width: 80px; height: 39px;"></div>' +
+				'<div style="vertical-align: middle; display: inline-block; width: calc( 100% - 90px ); ">T&eacute;l&eacute;chargez notre extension partenaire et restez inform&eacute; de l\'actualit&eacute; de notre site encore plus rapidement ! <a href="' + kiwi.href + '" target="_blank" style="color: white;">En savoir plus</a></div>' +
+			'</body>' +
+			'</html>');
+			ifrm.document.close();
+			
+	
+			document._onFastNewsRefused = function()
+			{
+				iframe.parentNode.removeChild(iframe);
+				
+        var date = new Date();
+        date.setTime(date.getTime()+(31*3*24*60*60*1000));
+        var expires = "; expires="+date.toGMTString();
+
+		    document.cookie = "_fastNewsKiwiRefused=1"+expires+"; path=/";
+			}
+		}
+	}
+	
+
+	//
+	// Wait for the page to load
+	//
+	var myFunction = function() {
+		
+		
+		
+	  console.info("FastNews.kiwi : loading...");
+	  if (location.protocol != 'http:' && location.protocol != 'https:')
+	  {
+		  console.log("Ce script ne peut fonctionner que sur une page en ligne");
+		  return;
+		}
+		
+	  var scripts = document.getElementsByTagName('script');
+	  var a = 0;
+	  while (typeof scripts[a] != undefined)
+	  {
+		  if (scripts[a].src &&
+		  		scripts[a].src.indexOf('#') != -1)
+		  {
+			  var t = scripts[a].src.split('#');
+			  if (t[0] == 'https://kiwi.fastnews.kiwi/easy.js')
+			  {
+					var href = t[1];
+
+					if (href.substr(0, 7) == 'http://' ||
+							href.substr(0, 8) == 'https://')
+					{
+						console.log("Found : " + href);
+						
+						
+						var meta = document.createElement('meta');
+						meta.name = 'fastnews.kiwi';
+						meta.content = href;
+						
+						if (document.head)
+						{
+							document.head.appendChild(meta);
+							
+							if (typeof document.onFastNewsKiwi != 'function')
+							{
+								document.onFastNewsKiwi = onFastNewsKiwi;
+							}
+			
+			
+							setTimeout(function(){
+								if (typeof document.onFastNewsKiwi == 'function')
+								{
+									var o = {
+										href: 'https://fastnews.kiwi/add/?key=1518723855_b4534e45ff12238519f570a337657a435b7fec32&host=' + location.hostname + '&href=' + encodeURIComponent(href)
+									};
+									if (!document.getElementById('fastnewskiwiinstalled'))
+									{
+										o.extension_installed = false;
+									}
+									else
+									{
+										o.extension_installed = true;
+									}
+									document.onFastNewsKiwi(o);
+								}
+							}, 1);
+							
+							
+							
+								try {
+									(function(){
+										
+										var pvars = '';
+										if (typeof t[2] != 'undefined')
+										{
+											var vars = t[2].split('&');
+											var a = 0;
+											
+											while (typeof vars[a] != 'undefined')
+											{
+												var v = vars[a].split('=');
+												if (v[0] == 'from')
+												{
+													if (v[1] == 'xooit') return;
+													pvars += '&from=' + encodeURIComponent(v[1]);
+												}
+												a++;
+											}
+										}
+										
+										var s = document.createElement('script');
+										s.src = 'https://kiwi.fastnews.kiwi/log.php?host=' + location.hostname + pvars;
+										s.type = 'text/javascript';
+										document.body.appendChild(s);
+									})();
+								}catch(e){
+									console.log(e);
+								}
+							
+							
+						}
+						else
+						{
+							console.log("Error : no <head> found...");
+						}
+						break;
+					}
+					else
+					{
+						console.log("Error : " + href + " is not valid. You must set a complete url starting with http:// or https://");
+					}
+				}
+			}
+			a++;
+		}
+		console.info("FastNews.kiwi : end");
+	};
+	
+	if (document.fastNewsKiwiAutoLaunche)
+		myFunction();
+	else
+		document.addEventListener("DOMContentLoaded", myFunction);
+
+
+})();

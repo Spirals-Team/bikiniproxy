@@ -1,0 +1,565 @@
+/**
+ * sothebys.auction.js:
+ */
+
+var Sothebys = Sothebys || {};
+!function(window, Sothebys) {
+
+	Sothebys.auction = {
+		handleLogoutClick: function(event) {
+			event.preventDefault();
+			Sothebys.auction.logout(event.currentTarget.href);
+		},
+		logout : function(homepagePath) {
+			var stbSubAuth = $.cookie('stb-sub-auth');
+			/*
+				COM-7 and COM-21 removing invaluable/sothebys cookies on logout
+				To logout:
+					If invaluable cookies exist, clear those first then other cookies then redirect.
+					If invaluable cookies don't exist, clear other cookies then redirect.
+					If any failure with API, return false and don't continue with logout.
+			*/
+			var token = (stbSubAuth != null)? this.clearInvaluableCookies(stbSubAuth) : $.when();
+			token.then(function () {
+			  	/* everything went as planned, delete sothebys.com cookies and
+			     redirect user to homepage */
+				Sothebys.auction.clearAuthorizedCookies();
+				window.location = homepagePath;
+			}, function () {
+				//invaluable logout failed, so don't logout or clear cookies
+			  	return false;
+			});
+		},
+		track : function(element, cardID, isRecomm) {
+			Sothebys.auction.addFavoriteIntoProfile(cardID, isRecomm);
+			var $ele = $(element);
+			$ele.find(".untracked").addClass("hidden");
+			$ele.find(".tracked").removeClass("hidden");
+		},
+		loadFavorites : function() {
+			if (Sothebys.auction.authorizedUser()) {
+				if (!$(document).data('favorites')) {
+					var favorites = Sothebys.auction
+							.getFavoritesForAuthorized();
+					$(document).data('favorites', favorites);
+				}
+				Sothebys.auction.applyFavorites();
+			}
+		},
+		applyFavorites : function() {
+			var favorites = $(document).data('favorites');
+			if (favorites && favorites.length > 0) {
+				var untrackedLots = $('.track-item');
+				if (untrackedLots.length > 0) {
+					for ( var i = 0; i < favorites.length; i++) {
+						var favType = favorites[i].type;
+						if (favType == 'auctions' || favType == 'lots') {
+							for ( var j = 0; j < favorites[i].quantity; ++j) {
+								var entityPath = favorites[i].entities[j].entityPath;
+								untrackedLots
+										.each(function(ind) {
+											if ($(this)
+													.attr('data-entity-path') === entityPath) {
+												$(this).find(".untracked")
+														.addClass("hidden");
+												$(this).find(".tracked")
+														.removeClass("hidden");
+											}
+										});
+							}
+						}
+					}
+				}
+			}
+		},
+		getFavoritesForAuthorized : function() {
+			var id = '';
+			var favorites;
+			if ($.cookie('uuid')) {
+				id = $.cookie('uuid');
+			} else {
+				id = uuid();
+				$.cookie('uuid', id, {
+					path : '/'
+				});
+			}
+			$.ajax({
+				async : false,
+				cache : true,
+				url : '/en/_jcr_content.stickyfooter.json?uuid=' + id,
+				success: function (data) {
+					// Returning Object with a 'favorites' array. Must return this array.
+					if (data && data.favorites) {
+						favorites = data.favorites;
+					}
+				}
+			});
+
+			// from etc/designs/sothebys/js/elements/sticky.js
+			function uuid() {
+				var chars = '0123456789abcdef'.split('');
+
+				var uuid = [], rnd = Math.random, r;
+				uuid[8] = uuid[13] = uuid[18] = uuid[23] = '-';
+				uuid[14] = '4'; // version 4
+
+				for ( var i = 0; i < 36; i++) {
+					if (!uuid[i]) {
+						r = 0 | rnd() * 16;
+
+						uuid[i] = chars[(i == 19) ? (r & 0x3) | 0x8 : r & 0xf];
+					}
+				}
+
+				return uuid.join('');
+			}
+			;
+
+			return favorites;
+		},
+		isFavorite : function(nodePath) {
+			if (Sothebys.auction.authorizedUser()) {
+				var favorites;
+				if (!$(document).data('favorites')) {
+					favorites = Sothebys.auction.getFavoritesForAuthorized();
+					$(document).data('favorites', favorites);
+				} else {
+					favorites = $(document).data('favorites');
+				}
+				var type = getType(nodePath);
+				for ( var i = 0; i < favorites.length; i++) {
+					var favType = favorites[i].type;
+					if (favType == type) {
+						for ( var j = 0; j < favorites[i].quantity; ++j) {
+							if (favorites[i].entities[j].entityPath == nodePath) {
+								return true;
+							}
+						}
+					}
+				}
+				return false;
+			} else {
+				var ck = $.cookie('favoritesCardsList');
+				if (!ck) {
+					return false;
+				} else {
+					return ck.indexOf(nodePath) != -1;
+				}
+			}
+		},
+		addFavoriteIntoCookies : function(cardID, expires) {
+			var ck = $.cookie('favoritesCardsList');
+			if (!ck)
+				ck = '';
+			if (ck.lastIndexOf(cardID) == -1) {
+				ck += (ck) ? '.' + cardID : '' + cardID;
+				if (expires) {
+					$.cookie('favoritesCardsList', ck, {
+						path : '/',
+						expires : expires
+					});
+				} else {
+					$.cookie('favoritesCardsList', ck, {
+						path : '/'
+					});
+				}
+			}
+		},
+		addFavoriteIntoProfile : function(cardID, isRecomm) {
+			var hm = (typeof homeUrl !== 'undefined') ? homeUrl : '/en';
+			var newUrl = hm + "/preferred/favorites.addToFavorites.html";
+			if (isRecomm) {
+				newUrl = hm + "/preferred/favorites.addToFavRecomm.html";
+			}
+			console.log("addFavoriteIntoProfile(%s,%s,%s)", hm, cardID, newUrl)
+			$.ajax({
+				url : newUrl,
+				cache : false,
+				data : {
+					card : cardID
+				},
+				complete : function(data) {
+					console.log("FAV:COMPLETE:", data);
+					//update favorites
+					//TODO: avoid the call below by outputting data during this call
+					var favorites = Sothebys.auction
+							.getFavoritesForAuthorized();
+					$(document).data('favorites', favorites);
+				},
+				error : function(error) {
+					console.log("FAV:ERRROR:", error);
+				}
+			});
+		},
+		bidNow : function(shortPath, saleNumber, isBidnowRegistrationAvailable, transactional) {
+			if (!Sothebys.auction.authorizedUser()) {
+				// Person is not logged in, so set them up to login and get approriate
+				// redirections when they come back to the auction page after login
+				var path = window.location.pathname;
+				$.cookie("saleRoomModalShortPath", shortPath, { path: '/'});
+
+				if (path.indexOf("?") >= 0) {
+					path += "&showSaleroomModal=true";
+				} else {
+					path += "?showSaleroomModal=true";
+				}
+				$("#bidNowModal a.btn").eq(0).attr("href","/en/registration/login-to-sothebys.html?resource=" + path);
+				$("#bidNowModal").modal();
+				return false;
+			} else {
+				// Person is logged in and registered, so send them to bidlive.
+				if (STBCore.Util.isRegisteredForSale(saleNumber)) {
+					window.location = "/en/attend-auction.bidlive.html/"+shortPath;
+				} else {
+					// Blocking transacational accounts who cannot bid
+					// And everyone else who is not transactional
+					if ((transactional && !isBidnowRegistrationAvailable) || !transactional)  {
+						$("#bidNowModalCannotRegister a.bidnow-modal-watch-btn").eq(0).attr("href", "/en/attend-auction.bidlive.html/"+shortPath);
+						$("#bidNowModalCannotRegister").modal();
+						return false;
+					}
+					else {
+						// Person can register, but is not currently registered
+						if ($.cookie('pty_id')) {
+							$("#bidNowModalCanRegister a.bidnow-modal-register-btn").eq(0).attr("href", "/en/attend-auction.html/"+shortPath);
+						} else {
+							$("#bidNowModalCanRegister a.bidnow-modal-register-btn").eq(0).attr("href", "/en/registration/transactional.html/"+shortPath);
+						}
+
+						$("#bidNowModalCanRegister a.bidnow-modal-watch-btn").eq(0).attr("href", "/en/attend-auction.bidlive.html/"+shortPath);
+						$("#bidNowModalCanRegister").modal();
+					}
+
+					return false;
+				}
+			}
+		},
+		authorizedUser : function() {
+			//COM-388 If both these cookies exist and the URL does not say login == false;
+			//A login == false means the user should not act as being logged in.
+			if ($.cookie('welcome') && $.cookie('stb-auth') && Sothebys.getURLParameter("login") != "false") {
+				return true;
+			} else {
+				return false;
+			}
+		},
+		clearAuthorizedCookies : function() {
+			$.cookie('stb-auth', null, {
+				path : '/'
+			});
+			$.cookie('welcome', null, {
+				path : '/'
+			});
+			$.cookie('nextIframeWizzard', null, {
+				path : '/'
+			});
+			$.cookie('next', null, {
+				path : '/'
+			});
+			$.cookie('pty_id', null, {
+				path : '/'
+			});
+			$.cookie('confirmedClient', null, {
+				path : '/'
+			});
+			$.cookie('id', null, {
+				path : '/'
+			});
+			$.cookie('shopping-cart-item-count-' + $.cookie('rep:userId'),
+					null, {
+						path : '/'
+					});
+			$.cookie('rep:userId', null, {
+				path : '/'
+			});
+			$.cookie('client_level', null, {
+				path : '/'
+			});
+			$.cookie('country', null, {
+				path : '/'
+			});
+			$.cookie('postalCode', null, {
+				path : '/'
+			});
+			$.cookie('city', null, {
+				path : '/'
+			});
+			$.cookie('mktgseg_id', null, {
+				path : '/'
+			});
+			$.cookie('is_preferred', null, {
+				path : '/'
+			});
+			$.cookie('favoritesCardsList', null, {
+				path : '/'
+			});
+			$.cookie('lotsOfInterests', null, {
+				path : '/'
+			});
+			$.cookie('isPreferredClient', null, {
+				path : '/'
+			});
+			$.cookie('fullname', null, {
+				path : '/'
+			});
+			$.cookie('stbFullClientName', null, {
+				path : '/'
+			});
+		},
+		clearInvaluableCookies: function(stbSubAuth){
+			var domainName = location.hostname;
+			var cookieDomain = location.hostname.replace('www.','');
+			var pageProtocol = location.protocol;
+			var portNumber = (window.location.port ? ':' + window.location.port: '');
+			var logoutTarget = pageProtocol + "//" + domainName + portNumber + "/api/invaluable-logout";
+			
+			return $.ajax({
+			    url: logoutTarget,
+			    data: { "authValue": stbSubAuth },
+			    dataType: 'json',
+			    method: "GET",
+			    success: function(data) {
+			        //Only logout if the result is a success
+			        if(data.RESULT === "SUCCESS") {
+			            // Finished with using globid and stb-sub-auth COM-340
+			            $.cookie('globid', null, {
+			                path : '/',
+			                domain: "." + cookieDomain
+			            });
+			            $.cookie('stb-sub-auth', null, {
+			                path : '/',
+			                domain: "." + cookieDomain
+			            });
+			       }
+			       else {
+			       		//Return false since API call returend RESULT.FAILURE
+			       		return false;
+			       }
+			    }
+			});
+		},
+		showVideoModal : function(videoPath) {
+			var publisher = "104524641001";
+			var playerKey = "";
+
+			//COM-248: Remove .html from videoPath if it exists
+			if (videoPath.match(".html")) {
+				videoPath = videoPath.substring( 0, videoPath.indexOf( ".html"));
+			}
+
+			$.ajax({
+				url : videoPath + '/_jcr_content/video.json',
+				dataType: "json",
+				success : function(data) {
+					var $videoModal = $("#bcVideoModal");
+					var $player = $();
+					var $BrightcoveVideo = $();
+
+					// RED-4859 - Dispatcher Staging will sometimes return our
+					// JSON obj as a string.  Which is bad, m'kay?
+					// TODO :: figure out why we're returning data different ways in different environments
+					if (typeof data === 'string') {
+						data = JSON.parse(data);
+					}
+
+					$('#bcVideoContainer .video-modal-container').html("<section class='player'> </section>");
+					$player = $('.player');
+
+					$videoModal.modal();
+
+					$videoModal.on('hide', function(){
+						STBCore.Util.unmountComponentAtNode("components-BrightcoveVideo", $player, null);
+						$(this).off();
+					});
+
+					$videoModal.on('shown', function() {
+						STBCore.Util.renderComponent('components-BrightcoveVideo', $player, {
+							playerId: 'default',
+							accountId: publisher,
+							videoId: data.videoID,
+							width: '100%',
+							height: '100%',
+							subtitles: STBCore.Util.getSubtitleCodes(),
+							inModal: true
+						});
+						$BrightcoveVideo = $(".BrightcoveVideo");
+					});
+					//Start COM-625: Featured Video "X-Out" button is not working on second time in featured lotsListing pages
+					$(".close").click(function(){
+					   $('.modal').modal('hide');
+					});
+					//End COM-625
+				}
+			}); // /$.ajax
+		},
+        showSrnLink: function(){
+     		$("#srnlink").show();
+     	},
+     	titlelizeGuaranteeLine: function() {
+
+     		// RED-4257
+     		// Via: http://www.oct4th.com/2013/03/15/titleize-for-javascript/
+     		titleize = function(str) {
+				  var words = str.split(' ')
+				  var array = []
+				  for (var i=0; i<words.length; ++i) {
+				    array.push(words[i].charAt(0).toUpperCase() + words[i].toLowerCase().slice(1))
+				  }
+				  return array.join(' ')
+				}
+				// Removing until approved for production
+     		// $('.lotdetail-guarantee,.lotdetail-subtitle').each( function(index) {
+     		// 	var titleizedStr = titleize($(this).text());
+     		// 	if (titleizedStr.length) {
+     		// 		$(this).text(titleizedStr);
+     		// 	};
+     		// });
+     	},
+     	disableSeeMore: function() {
+     		// RED-3602, "See More" button should be disabled on all platforms except phone
+     		if (!isMobile.phone) {
+     			// remove the "See More button"
+     			$('.desc-more').parent().parent().remove();
+     		}
+     	},
+		init : function() {
+
+			Sothebys.auction.titlelizeGuaranteeLine();
+			Sothebys.auction.disableSeeMore();
+
+			if ($('.auctions-container').length > 0
+					|| $('.lot-details').length > 0) {
+				Sothebys.auction.loadFavorites();//load tracked lots or sale
+			}
+			if ($('.eventdetail-container').size() > 0) {
+				if ($('.eventdetail-overview .feature').size() > 0) {
+					$('.eventdetail-overview').addClass('has-featured-media');
+				}
+			}
+			if (Sothebys.util.getParameter("showSaleroomModal") === "true") {
+				if (Sothebys.auction.authorizedUser() && $.cookie("saleRoomModalShortPath")) {
+					var saleRoomModalIsRegisteredToBid = false;
+					var isBidnowRegistrationAvailable = false;
+					var transactional = false;
+					var saleRoomModalShortPath = $.cookie("saleRoomModalShortPath");
+
+					// Get Auction status to pass to bidNow()
+					STBCore.Util.getSaleBidNowStatus(saleRoomModalShortPath, function(result){
+						if (result) {
+						    // Variables needed for bidNow call below
+							isBidnowRegistrationAvailable = result.registerToBid.isBidnowRegistrationAvailable;
+							transactional = result.registerToBid.isTransactionalUser;
+						}
+
+						//Remove cookies
+						$.cookie("saleRoomModalShortPath", null, { path: '/'});
+
+						//Start
+						Sothebys.auction.bidNow(saleRoomModalShortPath, result.saleNumber, isBidnowRegistrationAvailable, transactional);
+					});
+				}
+			}
+		}
+	};
+
+	/**
+	 * Handles ajax calls for the watchlive div
+	 *
+	 * Note we can't truely use ajax because the dynamic data for the button become too complicated
+	 *
+	 */
+
+	Sothebys.watchlive = {
+			watchLiveStatus: {},
+            toShowWatchLive : function(saleNumber, callback){
+				var urlString = '/api/ajax.watchlive.json/' + saleNumber +'/watchlive.json',
+					toShow = false,
+					that = this;
+				if(this.watchLiveStatus.hasOwnProperty(saleNumber)){
+					if(this.watchLiveStatus[saleNumber].doShow !== null){
+						callback(this.watchLiveStatus[saleNumber]);
+					}else{
+						this.watchLiveStatus[saleNumber].cbs.push(callback);
+					}
+				}else{
+					this.watchLiveStatus[saleNumber] = {doShow: null, cbs: [callback]};
+					$.ajax({
+					    dataType: "json",
+					    type: 'GET',
+					    url : urlString,
+					    success : function(obj){
+					          if (obj.trueorfalse != null) {
+								  that.watchLiveStatus[saleNumber].doShow = obj.trueorfalse;
+								  _.each(that.watchLiveStatus[saleNumber].cbs, function(cb){
+								  	cb(obj.trueorfalse);
+								  });
+					          }
+					    },
+					    error : function(data){
+					          console.log("failed with data: " + data);
+					    }
+					});
+				}
+            },
+            showHideAjaxWatchLive: function() {
+            	var watchlivedivs = $('.ajax-watchlive');
+            	// loop through the sales as there might be more than one on the page
+            	if (typeof watchlivedivs != 'undefined' && watchlivedivs.length > 0 ) {
+            		watchlivedivs.each(function() {
+						var that = $(this),
+							saleNumber = that.attr("data-salenumber"),
+							callback = function(toShow){
+			            	if (toShow) {
+			            		that.css("display", "inline").attr({
+			            			"data-toshow": "true"
+			            		});
+			            		// also turn off all registeration-link - probably no longer needed
+			            		$('.registration-link-'+saleNumber).each(function(index, secondValue) {
+			            				$(secondValue).css("display", "none");
+		            		    });
+			            	} else {
+			            		that.css("display", "none").attr({
+			            			"data-toshow": "false"
+			            		});
+			            		$('.registration-link-'+saleNumber).each(function(index, secondValue) {
+		            				$(secondValue).css("display", "inline");
+			            		});
+			            	}
+						};
+						Sothebys.watchlive.toShowWatchLive(saleNumber, callback);
+            		});
+            	}
+            },
+            showHideWatchLiveWithFlag: function() {
+    			// try to get the inner html from the sale portion of the document
+            	var watchlivedivs = $('.ajax-watchlive');
+            	// loop through the sales as there might be more than one on the page
+            	if (typeof watchlivedivs != 'undefined' && watchlivedivs.length > 0 ) {
+            		watchlivedivs.each(function() {
+            			var saleNumber = $(this).attr("data-salenumber");
+            			var toShow = $(this).attr("data-toshow");
+            			if (toShow =='true') {
+    						$('.watchlive-link-'+saleNumber).each(function(index, secondValue) {
+	            				$(secondValue).css("display", "inline");
+    						});
+
+    						$('.registration-link-'+saleNumber).each(function(index, secondValue) {
+	            				$(secondValue).css("display", "none");
+    						});
+	        			} else {
+    						$('.watchlive-link-'+saleNumber).each(function(index, secondValue) {
+	            				$(secondValue).css("display", "none");
+    						});
+
+    						$('.registration-link-'+saleNumber).each(function(index, secondValue) {
+	            				$(secondValue).css("display", "inline");
+    						});
+	        			}
+            		});
+            	}
+            },
+            init : function() {
+            	Sothebys.watchlive.showHideAjaxWatchLive();
+            }
+    };
+}(window, Sothebys);

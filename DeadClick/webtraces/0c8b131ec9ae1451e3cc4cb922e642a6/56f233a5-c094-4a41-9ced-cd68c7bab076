@@ -1,0 +1,20 @@
+// main module, attaches events to DOM elems, etc.
+(function($) {
+  
+  journalsCsrfHeaderModule.setupCsrfHeader();
+
+  searchModule.searchInput.autocomplete({
+    minLength: 0,
+    source: constantsModule.searchTermUrl,
+    response: searchModule.suggestionsLoadedCallback,
+    select: searchModule.customSelect,
+    appendTo: '#search-container'
+  }).focus(function() {
+    // display top 5 suggestions when user just focuses on input
+    $(this).autocomplete('search', this.value || '');
+  });
+  
+  
+  followJournalModule.checkForPerformedFollow();
+  
+})(jQuery);

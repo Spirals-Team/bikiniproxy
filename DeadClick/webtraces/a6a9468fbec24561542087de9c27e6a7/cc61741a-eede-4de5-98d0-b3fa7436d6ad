@@ -1,0 +1,867 @@
+<!DOCTYPE html
+	PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+	 "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en-US" xml:lang="en-US">
+<head>
+<title>Untitled Document</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+</head>
+<body bgcolor="#f9f9f9">
+
+
+<script>
+<!--
+// Convert denomination 2 box name compatible.
+function d2b(denom) {
+	// Divide by 100 to take into account multiply up in calculate and rcalc
+    new_denom = denom / 100;
+	return string_denom = new_denom.toString().replace('.','__');
+}
+
+// HCD based version of ceil/floor to make cent based denominations work
+function hcd_floor(value, hcd)
+{
+    var multiplier = 1;
+    if(hcd < 1)
+    {
+    	multiplier = Math.pow(10, hcd.toString().split('.')[1].length);
+    }
+	value = value * multiplier;
+	value = Math.floor(value);
+	value = value / multiplier;
+	return value;
+}
+
+function hcd_ceil(value, hcd)
+{
+    var multiplier = 1;
+    if(hcd < 1)
+    {
+    	multiplier = Math.pow(10, hcd.toString().split('.')[1].length);
+    }
+    value = value * multiplier;
+	value = Math.ceil(value);
+	value = value / multiplier;
+	return value;
+}
+
+function calculate(hcd, rate, foreignName, localName, denoms, fracs, productid) {
+	var frm = document.order_form;
+	if (productid) { frm = document.getElementById("order_form_"+productid); }
+    
+	//display_rate = parseFloat(frm.display_rate.value);
+	//rate = 1 / parseFloat(display_rate);
+    
+    // Multiply up by 100 to avoid floating point precision errors
+    var ohcd = hcd;
+	hcd = hcd * 100;
+	for ( denom in denoms ) { denoms[denom] = denoms[denom] * 100; }
+	
+    
+	// Check that initial amounts have been entered correctly.
+	var fon;
+	if(frm.sterling.value != "" && frm.foreign.value != "") {
+		alert("Please enter either an amount in " + foreignName + " or in " + localName + ", but not both.");
+		
+		if (document.activeElement == frm.sterling) {
+			frm.foreign.value = '';
+		} else if (document.activeElement == frm.foreign) {
+			frm.sterling.value = '';
+		} else if (buying(frm)) {
+			frm.sterling.value = '';
+		} else {
+			frm.foreign.value = '';
+		}
+		return;
+	}
+    // Calculate the foreign amount
+	if(frm.sterling.value != "") {
+		fon = hcd_floor( Math.round( frm.sterling.value * 100 / rate ), hcd);
+	} else {
+		fon = hcd_floor( frm.foreign.value * 100 , hcd);
+	}
+	
+	// Push to nearest amount divisible by the available denominations
+	if (buying(frm)) {
+		fon = hcd_floor(fon / hcd, hcd) * hcd;
+	} else {
+		fon = hcd_ceil(fon / hcd, hcd) * hcd;
+	}
+	
+	// Increase foreign desired to the minimum denom if it worked out less.
+	if(fon < denoms[0]) { fon = denoms[0]; }
+	
+	// Set the desired values based on the 'valid' desired foreign.
+	frm.tot_foreign.value = fon / 100;
+	frm.target.value = fon / 100;
+	frm.tot_sterling.value = Math.round( fon * rate ) / 100;
+
+	// Split the foreign between the denoms according to the desired percentages (in fracs)
+    // Going up then down the denomination sizes to get everything distributed.
+	for (var i = 0; i <= (denoms.length - 1); i++) { 
+		if(fon >= (hcd_floor(((fracs[i]/100) * frm.tot_foreign.value) / denoms[i], hcd) * denoms[i])) {
+			eval("frm.box_" + d2b(denoms[i]) + ".value = hcd_floor(((fracs[i]/100) * frm.tot_foreign.value * 100) / denoms[i], hcd);");
+			eval("frm.val_" + d2b(denoms[i]) + ".value = frm.box_" + d2b(denoms[i]) + ".value * denoms[i] / 100;");
+            if(ohcd < 1)
+            	eval("frm.val_" + d2b(denoms[i]) + ".value = parseFloat(frm.val_" + d2b(denoms[i]) + ".value).toFixed(ohcd.toString().split('.')[1].length);");
+			fon = fon - ( hcd_floor(((fracs[i]/100) * frm.tot_foreign.value * 100) / denoms[i], hcd) * denoms[i] );
+		}
+	}
+
+	
+	denoms.reverse();
+
+	// Cycle through the denoms, largest first, and allocate any remainder
+	// If no percentages were set then all currency will get allocated here.
+	for ( denom in denoms ) {
+		eval("frm.box_" + d2b(denoms[denom]) + ".value -= -1 * hcd_floor(fon / denoms[denom], hcd);");
+		eval("frm.val_" + d2b(denoms[denom]) + ".value -= (-1 * hcd_floor(fon / denoms[denom], hcd) * denoms[denom]) / 100;");
+		if(ohcd < 1)
+			eval("frm.val_" + d2b(denoms[denom]) + ".value = parseFloat(frm.val_" + d2b(denoms[denom]) + ".value).toFixed(ohcd.toString().split('.')[1].length);");
+		fon = fon - ( hcd_floor(fon / denoms[denom], hcd) * denoms[denom] );
+	}
+
+	denoms.reverse();
+
+	var first = true;
+	var tmpdenoms = denoms.slice(0); 
+	tmpdenoms.reverse();
+	var btm;
+	var count = 0;
+	// If there is still currency to allocate, go from the bottom up.
+	while ( ( fon > 0) && (count < denoms.length ) ) {
+		count ++;
+		for  (denom in denoms ) {
+			if(first == true) {
+				first = false;
+				btm = denoms[denom];
+			} else {
+				var curbox = 0;
+				eval("curbox = frm.box_" + d2b(denoms[denom]) + ".value;");
+				if( (fon > 0) && (curbox > 0) ) {
+					fon -= -1 * denoms[denom];
+					eval("frm.box_" + d2b(denoms[denom]) + ".value -= 1;");
+					eval("frm.val_" + d2b(denoms[denom]) + ".value -= " + denoms[denom] + " / 100;");
+					for (tmpdenom in tmpdenoms) {
+						if(tmpdenoms[tmpdenom] < denoms[denom]) {
+							eval("frm.val_" + d2b(tmpdenoms[tmpdenom]) + ".value -= (-1 * ( hcd_floor(fon / tmpdenoms[tmpdenom], hcd) * tmpdenoms[tmpdenom]) / 100);");
+                            if(ohcd < 1)
+                            	eval("frm.val_" + d2b(tmpdenoms[tmpdenom]) + ".value = parseFloat(frm.val_" + d2b(tmpdenoms[tmpdenom]) + ".value).toFixed(ohcd.toString().split('.')[1].length);");
+							eval("frm.box_" + d2b(tmpdenoms[tmpdenom]) + ".value -= -1 * ( hcd_floor(fon * 100 / tmpdenoms[tmpdenom], hcd) );");
+							fon = fon - (hcd_floor( fon / tmpdenoms[tmpdenom], hcd) * tmpdenoms[tmpdenom]);
+						}
+					}
+				}
+			}
+		}
+	}
+	frm.tot_foreign.value -= -1 * fon / 100;
+	frm.target.value -= -1 * fon / 100;
+	frm.raw_tot_sterling.value = frm.tot_foreign.value * rate;
+	frm.tot_sterling.value = Math.round( frm.tot_foreign.value * rate );
+
+	// Undo the multiply up
+	hcd = hcd / 100;
+	for ( denom in denoms ) { denoms[denom] = denoms[denom] / 100; }	
+	rcalc(rate, denoms,hcd,productid);
+}
+
+function vldt(productid, no_ajax) {
+	var frm = document.order_form;
+	if (productid) {
+		frm = document.forms["order_form_"+productid];
+	}
+	if ( (frm.tot_foreign.value <= 0) && (!document.getElementById('em_c2g_card')) ) {
+		alert("You cannot have a zero or negative total!");
+		return;
+	}
+	if (frm.dist.value > 0) {
+		alert("The total ordered is less than the required amount");
+		return;
+	}
+
+	
+	if (!productid || no_ajax) {
+		frm.submit();
+	} else {
+		// build query
+		var qry = "";
+		var inputs = frm.elements;
+		for (var i=0; i<inputs.length; ++i) {
+			switch (inputs[i].type) {
+				case "text":
+				case "hidden":
+					if (inputs[i].value != "") {
+						qry += inputs[i].name+"="+inputs[i].value+"&";
+					}
+					break;
+				case "select":
+				case "select-one":
+				case "select-multiple":
+					var selected = new Array();
+					for (var j=0; j<inputs[i].options.length; ++j) {
+						if (inputs[i].options[j].selected) {
+							qry += inputs[i].name+"="+inputs[i].options[j].value+"&";
+						}
+					}
+					break;
+				case "radio":
+					if (inputs[i].checked) {
+						qry += inputs[i].name+"="+inputs[i].value+"&";
+					}
+				// TODO: any other type of input?
+				default:
+					break;
+			}
+		}
+		qry += "stateonly=true"; // make request state only
+		qry += "&templateprefix=dynamic"; // call dynamic template
+		
+		// check for auth capture params
+		var auth_capture  = document.getElementById('authority_capture');
+		if (auth_capture) {
+			var auth_email   = document.getElementById('auth_email');
+			var auth_password = document.getElementById('auth_password');
+			qry += "&authority_capture="+( auth_capture.value == 'on' ? ( auth_capture.checked ? 'true' : '' ) : auth_capture.value )
+			    +  "&auth_email="+auth_email.value
+			    +  "&auth_password="+auth_password.value;
+			
+			// clear password so have to enter it again
+			auth_password.value = '';
+		}
+		
+		// can't use frm.action as form has field with name action
+		// ajax_request("POST", frm.getAttribute("action"), qry); // doesn't work in IE
+		ajax_request("POST",  frm.attributes["action"].value, qry);
+		
+		// clear fields
+		inputs = frm.elements;
+		for (var i=0; i<inputs.length; ++i) {
+			switch (inputs[i].type) {
+				case "text":
+					if (inputs[i].value != "") {
+						inputs[i].value = "";
+					}
+					break;
+				default:
+					break;
+			}
+		}
+		
+		// hide form's div
+		document.getElementById("div_"+productid).style.display = "none";
+		document.getElementById("currency_selector").selectedIndex = -1;
+	}
+	return true;
+}
+
+// Use the values in the individual currency boxes to recalculate the
+// foreign/sterling values 
+function rcalc(rate, denoms, hcd, productid, force_rate) {
+	var frm = document.order_form;
+	if (productid) { frm = document.getElementById("order_form_"+productid); }
+	
+	//display_rate = parseFloat(frm.display_rate.value);
+	//rate = 1 / parseFloat(display_rate);
+	
+    // Multiply up by 100 to avoid floating point precision errors
+	hcd = hcd * 100;
+	for ( denom in denoms ) { denoms[denom] = denoms[denom] * 100; }
+
+	// Calculate targets
+	var rate_used = false;
+	var fona;
+	if(frm.sterling.value != "") {
+		fona = hcd_floor(frm.sterling.value * ( Math.round( 10000000 / rate ) / 10000000 ) * 100, hcd);
+	} else {
+		fona = frm.foreign.value * 100;
+	}
+	
+	if (buying(frm)) {
+		fona = hcd_floor(fona / hcd, hcd) * hcd;
+	} else {
+		fona = hcd_ceil(fona / hcd, hcd) * hcd;
+	}
+	if(fona < denoms[0]) { fona = denoms[0]; }
+	frm.target.value = fona / 100;
+	
+	var fon = 0;
+	var rt = 0;
+	for ( denom in denoms.reverse() ) {
+		eval("frm.box_" + d2b(denoms[denom]) + ".value = ( hcd_ceil(Math.round( frm.val_" + d2b(denoms[denom]) + ".value  * 100) / denoms[denom], hcd) );");
+		eval("if(frm.box_" + d2b(denoms[denom]) + ".value < 0) { frm.box_" + d2b(denoms[denom]) + ".value = 0; }");
+		eval("frm.val_" + d2b(denoms[denom]) + ".value = (frm.box_" + d2b(denoms[denom]) + ".value * denoms[denom]) / 100;");
+		eval("fon = fon + ( frm.box_" + d2b(denoms[denom]) + ".value * denoms[denom] );");
+		eval("rt = rt + ( Math.round( frm.box_" + d2b(denoms[denom]) + ".value * denoms[denom] * rate ) );");
+	}
+	denoms.reverse();
+	frm.tot_foreign.value = fon / 100;
+	frm.dist.value = frm.target.value - (fon / 100);
+	frm.tot_sterling.value = Math.round( rt ) / 100 ;
+	if (frm.tot_sterling_2) frm.tot_sterling_2.value = Math.round( rt ) / 100 ;
+}
+
+function sortNumber(a, b)
+{
+return a - b
+}
+
+function ajax_request(type, action, params) {
+	var doc = document.getElementById('live_basket');
+	doc.innerHTML = "Loading...";
+	
+	// AJAX Request
+	var req = null;
+	try {
+		// load request same way that jquery does (should be cross platform)
+		req = (window.ActiveXObject ? new ActiveXObject("Microsoft.XMLHTTP") : new XMLHttpRequest());
+	} catch (e) {
+		req = null;
+	}
+	
+	if (!req) {
+		throw("Unable to get an AJAX object to make request.");
+	}
+		
+	// can't use frm.action as form has field with name action
+	req.open(type, action, true);
+	req.onreadystatechange = function() {
+		if (req.readyState == 4) {
+			// check if we've been sent to login page
+			if (req.responseText.indexOf("value=\"userlogin\"") != -1 || req.responseText.indexOf("value=\"banklogin\"") != -1) {
+				// send to main page to login
+				document.body.innerHTML = req.responseText;
+			} else {
+				
+				// IE doesn't let you set innerHTML on objects within a table
+				// but doesn't let you do it before object has been added to DOM
+				// so create a duplicate live_basket, add result and replace it
+				var new_el = document.createElement(doc.nodeName);
+				new_el.id = 'live_basket';
+				new_el.innerHTML = req.responseText;
+				doc.parentNode.replaceChild(new_el, doc)
+			};
+		}
+	}
+	if (params) {
+		req.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+		req.setRequestHeader("Content-length", params.length);
+	}
+	req.setRequestHeader("Connection", "close");
+	req.send(params);
+}
+
+function refresh_in_stock(url, site, tillsafe_id, catalogue_code, short_code, dept_id, sub_dept_id) {
+	var doc = document.getElementById('view_current_stock_'+catalogue_code+'_'+short_code);
+	doc.innerHTML = "Loading...";
+	
+	var url_with_params =  url+'?site='          +site          +'&tillsafe_id='+tillsafe_id
+	                 +'&catalogue_code='+catalogue_code+'&short_code=' +short_code
+	                 +'&dept_id='       +dept_id       +'&sub_dept_id='+sub_dept_id
+	                 +'&state=ebex_tillsafe_stock&stateonly=true';
+	
+	var req = new XMLHttpRequest();
+	req.open('GET', url_with_params, true);
+	req.onreadystatechange = function() {
+		if (req.readyState == 4) {
+			// check if we've been sent to login page
+			if (req.responseText.indexOf("value=\"userlogin\"") != -1 || req.responseText.indexOf("value=\"banklogin\"") != -1) {
+				// send to main page to login
+				document.body.innerHTML = req.responseText;
+			} else {
+				doc.innerHTML = req.responseText;
+			}
+		}
+	}
+	req.send(null);
+}
+
+function refresh_my_stock(url, site, tillsafe_id) {
+	var doc = document.getElementById('view_current_stock');
+	doc.innerHTML = "Loading...";
+	
+	var url_with_params = url+'?site='+site+'&tillsafe_id='+tillsafe_id
+	                         +'&state=ebex_tillsafe_stock&stateonly=true&lookup=mytill';
+	
+	var req = new XMLHttpRequest();
+	req.open('GET', url_with_params, true);
+	req.onreadystatechange = function() {
+		if (req.readyState == 4) {
+			doc.innerHTML = req.responseText;
+		}
+	}
+	req.send(null);
+}
+
+var original_commission = {};
+function calculate_commission(rate, foreignName, localName, sell_commission_line, buy_commission_line, sell_other_commission_line, buy_other_commission_line, productid) {
+	var frm = document.order_form;
+	if (productid) { frm = document.getElementById("order_form_"+productid); }
+	
+	if (frm.sterling.value != "" && frm.foreign.value != "") {
+		alert("Please enter either an amount in " + foreignName + " or in " + localName + ", but not both.");
+		return;
+	}
+	var amount = frm.raw_tot_sterling.value * 100;
+	
+	/* check normal commission */
+	var commission_line = sell_commission_line;
+	if (buying(frm)) {
+		commission_line = buy_commission_line;
+	}
+	var commission_amount = 0;
+	var args = commission_line.split(":");
+	if (args[2] != 0 || args[3] != 0) {
+		if (args[1] == 'FIX') {
+			commission_amount = args[2];
+		}
+		if (args[1] == 'MIN') {
+			var pr = (args[3] / 100) * amount;
+			if (pr < args[2]) { pr = args[2]; }
+			commission_amount = pr;
+		}
+	}
+	
+	var set_commission = true;
+	if (frm.manual_commission.value != '') {
+		set_commission = false;
+	}
+	
+	if (set_commission) {
+		var disabled = frm.commission.disabled;
+		if (disabled) frm.commission.disabled = 'false';
+		frm.commission.value = Math.floor(commission_amount)/100.0;
+		frm.commission.disabled = disabled;
+	}
+	
+	/* check other commission */
+	if (sell_other_commission_line) {
+		var commission_line = sell_other_commission_line;
+		if (buying(frm)) {
+			commission_line = buy_other_commission_line;
+		}
+		var commission_amount = 0;
+		var args = commission_line.split(":");
+		if (args[2] != 0 || args[3] != 0) {
+			if (args[1] == 'FIX') {
+				commission_amount = args[2];
+			}
+			if (args[1] == 'MIN') {
+				var pr = (args[3] / 100) * amount;
+				if (pr < args[2]) { pr = args[2]; }
+				commission_amount = pr;
+			}
+		}
+		
+		var set_commission = true;
+		if (frm.manual_other_commission.value != '') {
+			set_commission = false;
+		}
+		
+		if (set_commission) {
+			var disabled = frm.other_commission.disabled;
+			if (disabled) frm.other_commission.disabled = 'false';
+			frm.other_commission.value = Math.floor(commission_amount)/100.0;
+			frm.other_commission.disabled = disabled;
+		}
+	}
+}
+
+function buying(frm) {
+	if (!frm) return false;
+	
+	var buysell;
+	if (frm.buysell) {
+		// if multiple buysells on page, find the hidden one
+		if (frm.buysell[0]) {
+			for (var i in frm.buysell) {
+				if (frm.buysell[i].type == 'hidden') {
+					buysell = frm.buysell[i].value;
+				}
+			}
+		} else if (frm.buysell.type == 'hidden') {
+			buysell = frm.buysell.value
+		}
+	}
+	if (buysell == "buy") {
+		return true;
+	}
+	return false;
+}
+
+function calculate_profit(profit_id,src,rate,cover,tot_frgn,commission,other_commission,handling) {
+	var frm = document.order_form;
+//	alert('src: '+src+', rate: '+rate+', cover: '+cover+', frgn:'+tot_frgn);
+/*
+This should accept the value of the field and a flag to show which field is being changed
+src flags what's being changed:
+What can change (fields)?
+Foreign     total foreign amount 
+Rate        rate displayed
+Commission  commission
+Handling    not yet implemented
+
+It should then perform all necessary calculations and update the relevant profit field.
+The calculations need to account for dynamic rate and/or commission and/or handling changes as
+well as dynamic changes to the required transaction amount.
+I believe the addition of handling is the subject of a separate SR but there is code,
+both js and in stock_currency, to process it.
+*/
+
+// Rate change:
+    var profit = (tot_frgn*rate) - (tot_frgn*(1/cover));
+    
+// add the commission and handling profit in
+// Commission change:
+    // force numeric
+    profit = profit + (commission * 1);
+    if (other_commission) {
+        profit = profit + (other_commission * 1);
+    }
+    
+    // round to 2 dp
+    profit = Math.round( profit * 100 );
+    document.getElementById(profit_id).innerHTML = profit/100;
+
+
+}
+
+// returns whether the item was setup for multiple prices
+function has_multiple_rates() {
+	if (window.multiple_prices && window.multiple_prices.length > 0) {
+		return true;
+	}
+	return false;
+}
+
+// returns the multiple prices
+function get_multiple_rates() {
+	if (this.has_multiple_rates) {
+		return multiple_prices;
+	}
+	return [];
+}
+
+// resets the on form rates to defaults, this is used for starting the calculation
+// of which rate to use, as if we start from the last value can end up getting it wrong
+function default_rate(form, rate, product_id) {
+	if (has_multiple_rates()) {
+		var multiple_rates = get_multiple_rates();
+		if (buying(form)) {
+			return multiple_rates[0].default_buy_price;
+		} else {
+			return multiple_rates[0].default_price;
+		};
+	} else {
+		return rate;
+	}
+}
+
+// returns the rate to use in the current situation, i.e. dependent on current amount
+function rate_to_use(form, default_rate, product_id) {
+	
+	// hide existing rates messages
+	hide_rate_type('better', product_id);
+	hide_rate_type('best', product_id);
+	
+	// use the default rate if not using multiple rates
+	if (!has_multiple_rates()) {
+		set_rate(form, default_rate, null, null, null, product_id);
+		return default_rate;
+	}
+	// lookup amount, default rate if not set
+	var amount = form.tot_sterling.value;
+	if (amount) {
+		amount *= 100;
+	} else {
+		amount = 0;
+	}
+	
+	// find the rate to use from multiple prices
+	var multiple_rates = get_multiple_rates();
+	var multiple_rates_index = -1;
+	for (var i=0; i<multiple_rates.length; ++i) {
+		if (multiple_rates[i].min_amount <= amount && amount < multiple_rates[i].max_amount) {
+			multiple_rates_index = i;
+			break;
+		}
+	}
+	
+	// no matching rate found, use default rate and show better/best rates if they have some
+	if (multiple_rates_index == -1) {
+		if (multiple_rates.length > 1) {
+			show_rate_type('better', form, multiple_rates[0], product_id);
+		}
+		show_rate_type('best', form, multiple_rates[multiple_rates.length-1], product_id);
+		
+		set_rate(form, default_rate, multiple_rates[0].default_display_price, null, null, product_id);
+		return default_rate;
+	} else {
+		
+		// show better rate if it is not the one best rate
+		if (multiple_rates_index+1 < multiple_rates.length-1) {
+			show_rate_type('better', form, multiple_rates[multiple_rates_index+1], product_id);
+		}
+		
+		// show best rate if we arte not the best rate
+		if (multiple_rates_index < multiple_rates.length-1) {
+			show_rate_type('best', form, multiple_rates[multiple_rates.length-1], product_id);
+		}
+		
+		// return chosen rates
+		var rate, display_rate;
+		if (buying(form)) {
+			rate = multiple_rates[multiple_rates_index].buy_rate;
+			display_rate = multiple_rates[multiple_rates_index].display_buy_price;
+		} else {
+			rate = multiple_rates[multiple_rates_index].sell_rate;
+			display_rate = multiple_rates[multiple_rates_index].display_sell_price;
+		}
+		
+		set_rate(form, rate, display_rate, null, null, product_id);
+		return rate;
+	}
+	
+	// TODO: checked multiple prices
+	return default_rate;
+}
+
+// hide the selected rate type message
+function hide_rate_type(type, product_id) {
+	
+	// remove the copy made on adding.
+	var rate_message_div = document.getElementById(type+"_rate_message_shown"+( product_id ? "_"+product_id : ''));
+	if (rate_message_div) {
+		rate_message_div.parentNode.removeChild(rate_message_div);
+	}
+}
+
+// show the selected rate type message with the incoming rate values
+function show_rate_type(type, form, rate_info, product_id) {
+	
+	// grab the template and duplicate it and change id
+	var original_rate_message_div = document.getElementById(type+"_rate_message"+( product_id ? "_"+product_id : ''));
+	var rate_message_div = original_rate_message_div.cloneNode();
+	rate_message_div.id = type+"_rate_message_shown"+( product_id ? "_"+product_id : '');
+	
+	// grab the relevant rate
+	var rate, display_rate;
+	if (buying(form)) {
+		rate = rate_info.buy_rate;
+		display_rate = rate_info.display_buy_price;
+	} else {
+		rate = rate_info.sell_rate;
+		display_rate = rate_info.display_sell_price;
+	}
+	
+	// update the placeholders in the contents with the rates values
+	var foreign = smallest_foreign_amount(rate, rate_info.min_amount, rate_info.hcd);
+	var amount = calculate_sterling_amount(rate, foreign);
+	var message = original_rate_message_div.innerHTML;
+	message = message.replace(/\[foreign_amount\]/g, foreign);
+	message = message.replace(/\[rate\]/g, display_rate);
+	message = message.replace(/\[amount\]/g, amount);
+	rate_message_div.innerHTML = message;
+	
+	// add onclick handler to change the selected rate
+	rate_message_div.onclick = function() {
+		set_rate(form, rate, display_rate, null, foreign, product_id, true);
+	};
+	
+	// show the div where the original is
+	rate_message_div.style.display = '';
+	original_rate_message_div.parentNode.appendChild(rate_message_div);
+}
+
+// calculate the smallest foreign amount which is at least the incoming sterling amount
+function smallest_foreign_amount(rate, sterling, hcd) {
+	var amount = (sterling/100) / rate;
+	var rounded = Math.floor(amount / hcd) * hcd;
+	while (calculate_sterling_amount(rate, rounded)*100 < sterling) {
+		rounded += hcd;
+	}
+	return rounded;
+}
+
+// calculates sterling from rate and amount
+function calculate_sterling_amount(rate, amount) {
+	var sterling = amount * rate;
+	var rounded = Math.round(sterling * 100) / 100;
+	return rounded;
+}
+
+// sets the rate in use
+function set_rate(form, rate, display_rate, amount, foreign, product_id, recalc) {
+
+	// set amounts on form
+	if (form.sterling.value != '' && amount != null) {
+		form.sterling.value = amount;
+		form.foreign.value = '';
+	} else if (form.foreign.value != '' && foreign != null) {
+		form.foreign.value = foreign;
+		form.sterling.value = '';
+	} else if (amount != null) {
+		form.sterling.value = amount;
+		form.foreign.value = '';
+	} else if (foreign != null) {
+		form.foreign.value = foreign;
+		form.sterling.value = '';
+	}
+	if (display_rate != null) {
+		var rate_div = document.getElementById("display_rate"+( product_id ? "_"+product_id : ''));
+		rate_div.innerHTML = "x "+display_rate+" = "
+	}
+	if (form.rate) {
+		form.rate.value = rate;
+	}
+	
+	if (recalc) {
+		if (product_id) {
+			window["su_calc_"+product_id]();
+		} else {
+			su_calc();
+		}
+	}
+}
+
+// taking the input sterling amount and recalculates foreign such that total including commission 
+// is as close as possible to the input amount
+function calculate_fixed_amount( cat_code, short_code, hcd, foreign_name, local_name, sell_commission_line, buy_commission_line, sell_other_commission_line, buy_other_commission_line ) {
+
+	var frm = document.getElementById("order_form_"+cat_code+"_"+short_code);
+	
+	// ensure sterling value is present
+	if (frm.sterling.value == "") {
+		alert("Please enter an amount in " + local_name + " to calculated fixed amounts.");
+		return;
+	}
+	
+	// grab the sterling amount and the relevant commission details
+	var sterling_value_to_use;
+	var desired_sterling_value = parseFloat(frm.sterling.value) * 100;
+	var commission_details     = get_commission_details( buying(frm) ? buy_commission_line       : sell_commission_line );
+	var ocommission_details    = get_commission_details( buying(frm) ? buy_other_commission_line : sell_other_commission_line );
+	
+	// no commission then nothing to change, let it calculate with the existing sterling value
+	if ( commission_details.no_commission && ocommission_details.no_commission )
+	{
+		frm.sterling.onkeyup();
+	}
+	
+	// buy sell modifier, to switch + to - to avoid having multiple calculations
+	var buysell_mod = ( buying(frm) ? -1 : 1 );
+	
+	// if just percentages
+	if (    ( commission_details.percentage  || commission_details.no_commission )
+	     && ( ocommission_details.percentage || ocommission_details.no_commission )
+	) {
+		var commission_percentage  = ( commission_details.percentage  ? commission_details.percentage  : 0 );
+		var ocommission_percentage = ( ocommission_details.percentage ? ocommission_details.percentage : 0 );
+		
+		// calculation below comes from:
+		//   calculated_sterling = desired_sterling_value +/- ( commission % of calculated_sterling ) +/- ( ocomission % of calculated_sterling )
+		//   calculated_sterling -/+ ( commission % of calculated_sterling ) -/+ ( ocomission % of calculated_sterling ) = desired_sterling_value
+		//   calculated_sterling * ( 1 -/+ commission % -/+ ocommission % ) = desired_sterling_value
+		//   calculated_sterling = desired_sterling_value / ( 1 -/+ commission % -/+ ocommission % )
+		var calculated_sterling = desired_sterling_value / ( 1 + buysell_mod*commission_percentage + buysell_mod*ocommission_percentage );
+		
+		// if we are below the minimum amount then treat the min as fixed and let it carry on to calculare again
+		if ( commission_details.minimum && (calculated_sterling*commission_percentage) < commission_details.minimum )
+		{
+			commission_details.fixed = commission_details.minimum;
+			delete commission_details.percentage;
+			calculated_sterling = -1;
+		}
+		if ( ocommission_details.minimum && (calculated_sterling*ocommission_percentage) < ocommission_details.minimum )
+		{
+			ocommission_details.fixed = ocommission_details.minimum;
+			delete ocommission_details.percentage;
+			calculated_sterling = -1;
+		}
+		
+		// if not -1 then we got a valid value, use it
+		if (calculated_sterling != -1) {
+			sterling_value_to_use = calculated_sterling;
+		}
+	}
+	
+	// if we have a mix of percentage and fixed and not yet got the desired value
+	if (   !sterling_value_to_use
+	    && (
+	           ( commission_details.percentage && ocommission_details.fixed )
+	        || ( commission_details.fixed      && ocommission_details.percentage )
+	    )
+	) {
+		// setup params for calcs, to avoid having to do it twice for each situation
+		var fixed_commission      = ( ( commission_details.fixed )       ? commission_details  : ocommission_details );
+		var percentage_commission = ( ( commission_details.percentage )  ? commission_details  : ocommission_details );
+		
+		// calculation below comes from:
+		//   calculated_sterling = desired_sterling_value +/- fixed commission +/- ( comission % of calculated_sterling )
+		//   calculated_sterling -/+ ( commission % of calculated_sterling ) = desired_sterling_value +/- fixed commission
+		//   calculated_sterling * ( 1 -/+ commission % ) = desired_sterling_value +/- fixed commission
+		//   calculated_sterling = ( desired_sterling_value +/- fixed commission ) / ( 1 -/+ commission % -/+ ocommission % )
+		var calculated_sterling = ( desired_sterling_value - buysell_mod*fixed_commission.fixed ) / ( 1 + buysell_mod*percentage_commission.percentage );
+		
+		// if we are below the minimum amount then treat the min as fixed
+		if ( percentage_commission.minimum && (calculated_sterling*percentage_commission) < percentage_commission.minimum )
+		{
+			percentage_commission.fixed = percentage_commission.minimum;
+			delete percentage_commission.percentage;
+			calculated_sterling = -1;
+		}
+		
+		// if not -1 then we got a valid value, use it
+		if (calculated_sterling != -1) {
+			sterling_value_to_use = calculated_sterling;
+		}
+	}
+	
+	// if both commissions are fixed and not yet got the desired value
+	if (   !sterling_value_to_use
+	    && (
+	           ( commission_details.fixed   || commission_details.no_commission )
+	        && ( ocommission_details.fixed  || ocommission_details.no_commission )
+	    )
+	) {
+		var commission_fixed  = ( ( commission_details.fixed )  ? commission_details.fixed  : 0 );
+		var ocommission_fixed = ( ( ocommission_details.fixed ) ? ocommission_details.fixed : 0 );
+		
+		// just need to take away the fixed amount to get the desired value
+		sterling_value_to_use = desired_sterling_value - buysell_mod*commission_fixed - buysell_mod*ocommission_fixed;
+	}
+	
+	// if we got a desired value, found to the nearst hcd, set it and trigger the calculation
+	if (sterling_value_to_use) {
+		frm.sterling.value = ( buying(frm) ? hcd_floor( sterling_value_to_use / 100 , hcd) : hcd_ceil( sterling_value_to_use / 100 , hcd) );
+		frm.sterling.onkeyup();
+	}
+}
+
+// function to return parsed commission lines ready to be used in calculations
+function get_commission_details(commission_line) {
+
+	var commission_details = {};
+	var args = commission_line.split(":");
+	if (args[2] != 0 || args[3] != 0) {
+		if (args[1] == 'FIX') {
+			commission_details.fixed = args[2];
+		} else if (args[1] == 'MIN') {
+			commission_details.percentage = (args[3] / 100);
+			commission_details.minimum    = args[2];
+		} else {
+			commission_details.no_commission = true;
+		}
+	} else {
+		commission_details.no_commission = true;
+	}
+	
+	return commission_details;
+}
+
+-->
+</script>
+
+
+</body>
+</html>

@@ -1,0 +1,1 @@
+define(function(){"use strict";function t(n,e){return e?"string"==typeof e?(n.innerHTML=e,n):(e.forEach(function(e){var r=document.createElement(e.tag);e.attrs&&e.attrs.forEach(function(t){r.setAttribute(t.name,t.value)}),n.appendChild(t(r,e.children))}),n):n}return t});

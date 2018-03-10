@@ -1,0 +1,166 @@
+function htmlCart() {
+	
+    var mainContainerId 	= '#footercart_in';
+    var productContainerId 	= '#footercart_products';
+    var infosContainerId 	= '#footercart_info';
+    var actionsContainerId 	= '#footercart_actions';
+    var searchForm          = '#footercart_search';
+    var closecartButton     = 'a.closecart' ;
+    var coupleMode			= false;
+    var options				= {};
+    var classInstance		= null;
+    
+    // Load the cart bar in the default state (minimized)
+    this.init = function() {
+    	classInstance = this;
+    	classInstance.displayLoadingMessage();
+    	
+    	jQuery(closecartButton).live('click', function(e) {
+    		if (jQuery(this).hasClass('closed') === true) {
+    			classInstance.maximize();
+    			jQuery(this).switchClass('closed', 'open');
+    			jQuery(productContainerId).show();
+    		} else {
+    			classInstance.minimize();
+    			jQuery(this).switchClass('open', 'closed');
+    		}
+    		e.preventDefault();
+    	});
+    	
+        classInstance.reload(true);
+    }
+    
+    this.displayLoadingMessage = function()
+    {
+    	jQuery('#cart-loading-message').fadeIn('slow');
+    }
+    
+    this.removeLoadingMessage = function()
+    {
+    	jQuery('#cart-loading-message').fadeOut('slow');
+    }
+    
+    // Reload the cart bar (minimize the bar, show the loading message, reload all infos
+    // remove the loading message and then maximize the bar)
+    this.reload = function(removeMessage) {
+		if (this.hasOption('loadUrl') === true && this.getOption('loadUrl') !== false) {
+    		jQuery.ajax({
+                url: this.getOption('loadUrl'),
+                type: "POST",
+                dataType: "json",
+                success: function(response) {
+    			
+    				if (response.hasOwnProperty('success') === true && response.success === false) {
+    					jQuery.fancybox({
+							'content'			: response['error_html'],
+							'autoDimensions'	: false,
+							'titleShow'			: false,
+							'onComplete'		: function() { jQuery('#fancybox-inner').css('top', '0').css('overflow', 'inherit').css('left', '0'); },
+							'width'             : 491,
+							'height'            : 220
+						});
+    				}
+    			
+    				if (response.hasOwnProperty('product_html') === true) {
+    					jQuery(productContainerId).empty();
+    					jQuery(productContainerId).html(response['product_html']);
+    				}
+    				
+    				if (response.hasOwnProperty('info_html') === true) {
+    					jQuery(infosContainerId).empty();
+    					jQuery(infosContainerId).html(response['info_html']);
+    				}
+    				
+    				
+    				if (typeof(removeMessage != 'undefined') && removeMessage == true) {
+    					classInstance.removeLoadingMessage();
+    				}
+                },
+                error : function (xhr, errorMessage) {
+                	classInstance.removeLoadingMessage();
+                }
+            });
+    	}
+    }
+   
+   
+    
+    // Maximize the bar (show the bar completly)
+    this.maximize = function() {
+    	jQuery(productContainerId).hide();
+    	jQuery(actionsContainerId).fadeOut(100);
+    	jQuery(mainContainerId).switchClass("reduced", "expanded", 800);
+    	jQuery(actionsContainerId).delay(850).fadeIn();
+    	jQuery(productContainerId).delay(1100).fadeIn();
+    	jQuery(searchForm).delay(1000).fadeIn();
+    }
+    
+    // Minimize the bar (show only the infos)
+    this.minimize = function() {
+    	jQuery(productContainerId).fadeOut(200);
+    	jQuery(actionsContainerId).fadeOut(200);
+    	jQuery(searchForm).fadeOut(200);
+    	
+    	jQuery(mainContainerId).switchClass("expanded", "reduced", 500);
+    	jQuery(actionsContainerId).delay(400).fadeIn();
+    }
+    
+    // Delete a product
+    this.deleteProduct = function(productId) {
+    	classInstance.displayLoadingMessage();
+    	if (this.hasOption('deleteUrl') === true && this.getOption('deleteUrl') !== false) {
+    		jQuery.ajax({
+                url: this.getOption('deleteUrl'),
+                type: "POST",
+                data : {'item-id' : productId},
+                dataType: "json",
+                success: function(response) {
+                  	classInstance.reload(true);
+                },
+                error : function (xhr, errorMessage) {
+
+                }
+            });
+    	}
+    }
+    
+    // Modify a product
+    this.modifyProduct = function(productId, quantity) {
+    	classInstance.displayLoadingMessage();
+    	if (this.hasOption('modifyUrl') === true && this.getOption('modifyUrl') !== false) {
+    		jQuery.ajax({
+                url: this.getOption('modifyUrl'),
+                type: "POST",
+                data : {'item-id' : productId, 'qty' : quantity},
+                dataType: "json",
+                success: function(response) {
+                	classInstance.reload(true);
+                },
+                error : function (xhr, errorMessage) {
+                	
+                }
+            });
+    	}
+    }
+    
+    this.isCoupleMode = function() {
+    	return this.getOption('coupleMode');
+    }
+    
+    this.setOptions = function(options) {
+    	this.options = options;
+    }
+    
+    this.hasOption = function(optionName) {
+    	return this.options.hasOwnProperty(optionName);
+    }
+    
+    this.getOption = function(optionName) {
+    	if (this.hasOption(optionName) == true) {
+    		return this.options[optionName];
+    	}
+    	return null;
+    }
+}
+
+var htmlCart = new htmlCart();

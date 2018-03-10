@@ -1,0 +1,84 @@
+/*globals jQuery, ChromerApp, console, window */
+
+(function ($, app) {
+    'use strict';
+
+    var defaults = {},
+
+        addItemToBlogRoll = function (item) {
+            var $blogRoll = this,
+                $title = $("<span></span>"),
+                $titleAnchor = $("<a href='' target='_blank'></a>"),
+                $date = $("<span></span>"),
+                $container = $("<li>"),
+                $itemDate = new Date($(item).find("pubDate").html()),
+                locale = app.locale.language.toLowerCase() + "-" + app.locale.territory.toUpperCase();
+
+            $title.html($(item).find("title").html());
+            $titleAnchor.attr("href", $(item).find("link").html());
+            $date.html($itemDate.toLocaleDateString(locale, {month: "long", day: "numeric", year: "numeric"}));
+
+            $date.appendTo($container);
+            $titleAnchor.append($title).appendTo($container);
+
+            $container.appendTo($blogRoll);
+        },
+
+        processAjaxResponse = function (data) {
+            var $data = $($.parseXML(data)), idx;
+
+            // Get the first 3 items from the list
+            for (idx = 0; idx < 3; idx = idx + 1) {
+                if ($data.find("item")[idx] !== undefined) {
+                    addItemToBlogRoll.call(this, $data.find("item")[idx]);
+                }
+            }
+        },
+
+        runAjaxRequest = function () {
+            var $blogRoll = this,
+                domain = window.location.protocol + "//" + window.location.hostname,
+                path = "/cmsstatic/templates/chromerassets/default/lib/blogcontent/blog.php";
+
+            if (app.locale.language !== "en") {
+                path = "/" + app.locale.language + path;
+            }
+
+            $.ajax({
+                url: domain + path,
+                success: function (data) {
+                    processAjaxResponse.call($blogRoll, data);
+                },
+                error: function (jqXHR) {
+                    console.log("Blog is not reachable at " + domain + path);
+                    console.log("Error returned: " + jqXHR.responseText);
+                    $("#preFooter .blogRoll").remove();
+                }
+            });
+        },
+
+        methods = {
+            init: function (options) {
+                var $blog = $(this),
+                    settings = $.extend({}, defaults, options);
+
+                $blog.data(settings);
+
+                runAjaxRequest.call($blog);
+            }
+        };
+
+    $.fn.blogcontent = function (method) {
+        if (methods[method]) {
+            return methods[method].apply(this, Array.prototype.slice.call(arguments, 1));
+        }
+
+        if (typeof method === 'object' || !method) {
+            return methods.init.apply(this, arguments);
+        }
+
+        $.error('Method ' + method + ' does not exist on JQuery.blogcontent');
+        return this;
+    };
+
+}(jQuery, ChromerApp));

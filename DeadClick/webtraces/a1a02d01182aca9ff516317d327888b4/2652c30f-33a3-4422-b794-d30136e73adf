@@ -1,0 +1,283 @@
+function initializeHeartbeat(e) {
+	return new Heartbeat(e);
+}
+
+var Heartbeat = function(e) {
+	// console.info('[Heartbeat]  Initialize');
+
+	this._ = {
+		//ADB
+		MediaHeartbeat         : ADB.va.MediaHeartbeat,
+		
+		// Objects
+		mediaHeartbeat         : null,
+		playerController       : null,
+		playerConfig		   : null,
+		analyticsConfig        : null,
+		videoMeta              : null,
+		streamType             : null,
+		duration               : null,
+		
+		//Properties
+		isTrackingSession 	   : false,
+		isSeekStart            : false,
+		isInitialPlay          : true,
+		podPosition            : 0
+	};
+
+	// Get Metadatas
+	this._.playerController = e.detail.playerController;
+	this._.analyticsConfig = this._.playerController.getAnalyticsConfig();
+	this._.playerConfig = this._.analyticsConfig.getPlayerConfig();
+	this._.videoMeta = this._.analyticsConfig.getVideoMeta();
+			
+	//Media Heartbeat initialization
+	var MediaHeartbeatConfig = ADB.va.MediaHeartbeatConfig;
+	var mediaConfig = new MediaHeartbeatConfig();
+	mediaConfig.trackingServer = "discoverydp.hb.omtrdc.net";
+	mediaConfig.trackingServerSecure = "discoverydp.hb.omtrdc.net";
+	mediaConfig.playerName = this._.playerConfig.playerName;
+	mediaConfig.channel = this._.playerConfig.channel;
+	mediaConfig.debugLogging = (this._.playerConfig.env !== 'production');
+	mediaConfig.appVersion = this._.playerConfig.appVersion;
+	mediaConfig.ssl = (document.location.protocol === "https:");
+
+	//Media Delegate
+	var MediaHeartbeatDelegate = ADB.va.MediaHeartbeatDelegate;
+	var mediaDelegate = new MediaHeartbeatDelegate();
+	var self = this;
+	mediaDelegate.getCurrentPlaybackTime = function() {
+		return self._.playerController.getCurrentTime();
+	};
+	
+	// Get the app measurement instance.
+	var counter = 0;
+	var timer = setInterval(function(){
+		if (counter == 200) {
+			clearInterval(timer);
+		}
+		else if(typeof window.s_c_il !== 'undefined' && window.s_c_il[1] != null) {
+			counter++;
+			var appMeasurement = window.s_c_il[1];
+			self._.mediaHeartbeat = new self._.MediaHeartbeat(mediaDelegate, mediaConfig, appMeasurement);		
+			self.initEvents();
+			clearInterval(timer);			
+		}
+	},100)
+
+  // if (appMeasurement != null) {
+    // this._.mediaHeartbeat = new this._.MediaHeartbeat(mediaDelegate, mediaConfig, appMeasurement);
+    // this.initEvents();
+  // }
+};
+	
+Heartbeat.prototype = {
+	initEvents: function() {
+
+		var self = this;
+		
+		this._.playerController.on('play',function(){		
+			// console.info('[Heartbeat]  Play *** for video : ', self._.videoMeta.title, self._);
+			
+			self.checkSessionStart();
+			
+			//On video play
+			if (!self._.isSeekStart) {
+				self._.mediaHeartbeat.trackPlay();
+			}
+		});
+
+		this._.playerController.one('ended',function(){
+			// console.info('[Heartbeat]  Complete *** for video : ', self._.videoMeta.title, self._);
+			
+			self.checkSessionStart();
+			
+			//On video complete
+			self._.mediaHeartbeat.trackComplete();
+			self._.mediaHeartbeat.trackSessionEnd();
+			self._.isInitialPlay = true;
+			self._.isTrackingSession = false;
+		});
+
+		this._.playerController.on('pause',function(){
+			// console.info('[Heartbeat]  Pause *** for video : ', self._.videoMeta.title, self._);
+			
+			self.checkSessionStart();
+			
+			//On video complete
+			if (!self._.isSeekStart) {
+				self._.mediaHeartbeat.trackPause();
+			}
+		});
+		
+		// this._.playerController.on('buffer-start', function(){
+			// // // console.info('[Heartbeat]  Buffering start *** for video : ', self._.videoMeta.title);
+			
+			// if (isTrackingSession) {			
+				// // On buffering start
+				// self._.mediaHeartbeat.trackEvent(self._.MediaHeartbeat.Event.BufferStart);
+			// }
+		// });
+		
+		// this._.playerController.on('buffer-complete', function(){
+			// // // console.info('[Heartbeat]  Buffering end *** for video : ', self._.videoMeta.title);
+			
+			// //On buffering end
+			// self._.mediaHeartbeat.trackEvent(self._.MediaHeartbeat.Event.BufferComplete);	
+			
+		// }); 
+		
+		this._.playerController.on('seek',function(){
+			// console.info('[Heartbeat]  Seek Start *** for video : ', self._.videoMeta.title, self._);
+			
+			self.checkSessionStart();
+				
+			//On seek start
+			self._.mediaHeartbeat.trackEvent(self._.MediaHeartbeat.Event.SeekStart);
+			self._.isSeekStart = true;
+		});
+		
+		this._.playerController.on('seeked', function(){
+			// console.info('[Heartbeat]  Seek Complete *** for video : ', self._.videoMeta.title, self._);
+			
+			self.checkSessionStart();
+			
+			//On seek complete
+			self._.mediaHeartbeat.trackEvent(self._.MediaHeartbeat.Event.SeekComplete);
+			self._.isSeekStart = false;
+		});		
+			
+		this._.playerController.on('ads-ad-skip', function() {
+			// console.info('[Heartbeat] Ad Skip  *** for video : ', self._.videoMeta.title, self._);
+			
+			self.checkSessionStart();
+			
+			// On ad skip 
+			self._.mediaHeartbeat.trackEvent(self._.MediaHeartbeat.Event.AdSkip);
+		});
+			
+		this._.playerController.on('ads-pod-started', function() {
+			// console.info('[Heartbeat] Ad Break start *** for video : ', self._.videoMeta.title, self._);
+		
+			self.checkSessionStart();
+			
+			var currentAdData = self._.playerController.getCurrentAdData();
+			if (currentAdData != null) {		
+				var adBreakObject = self._.MediaHeartbeat.createAdBreakObject(currentAdData.type, ++self._.podPosition, self._.playerController.getCurrentTime());
+				
+				// On ad break start 
+				self._.mediaHeartbeat.trackEvent(self._.MediaHeartbeat.Event.AdBreakStart, adBreakObject);
+			}
+
+		});
+		
+		this._.playerController.on('ads-pod-ended', function() {
+			// console.info('[Heartbeat]  Ad Break complete *** for video : ', self._.videoMeta.title, self._);
+			
+			self.checkSessionStart();
+			
+			//On Ad Break complete
+			self._.mediaHeartbeat.trackEvent(self._.MediaHeartbeat.Event.AdBreakComplete);
+		});	
+
+		this._.playerController.on('ads-ad-started', function() {
+			// console.info('[Heartbeat]  Ad start *** for video : ', self._.videoMeta.title, self._);
+			
+			self.checkSessionStart();
+			
+			var currentAdData = self._.playerController.getCurrentAdData();
+			if (currentAdData != null) {	
+				var adObject = self._.MediaHeartbeat.createAdObject(currentAdData.id, currentAdData.id, currentAdData.index, currentAdData.duration);
+
+				// Create ad custom meta data
+				var adCustomMetadata = {
+						ad_campaign: "",
+						ad_campaign_id: "",
+						ad_brand: ""
+				};
+				
+				//On Ad start
+				self._.mediaHeartbeat.trackEvent(self._.MediaHeartbeat.Event.AdStart, adObject, adCustomMetadata);
+			}
+		});
+		
+		this._.playerController.on('ads-ad-ended', function() {
+			// console.info('[Heartbeat]  Ad complete *** video : ', self._.videoMeta.title, self._);
+			
+			self.checkSessionStart();
+			
+			//On Ad complete
+			self._.mediaHeartbeat.trackEvent(self._.MediaHeartbeat.Event.AdComplete);
+		});	
+		
+	},
+	checkSessionStart: function() {
+		
+		if (this._.isInitialPlay) {
+			if (this._.isTrackingSession) {
+				// Close previous tracking session
+				this._.mediaHeartbeat.trackSessionEnd();
+			}
+			
+			
+			this._.streamType = this._.playerController.getAnalyticsStreamType();
+			this._.duration = this._.analyticsConfig.getDuration();
+			
+			var streamTypeHB = this._.MediaHeartbeat.StreamType.VOD;
+			switch (this._.streamType) {
+				case 'linear' :
+					streamTypeHB = this._.MediaHeartbeat.StreamType.LINEAR;
+					break;
+				case 'event_live' :
+					streamTypeHB = this._.MediaHeartbeat.StreamType.LIVE;
+					break;
+			}
+			
+			// 1. Build the core media object		
+			var mediaObject = this._.MediaHeartbeat.createMediaObject(
+				this._.videoMeta.title,
+				this._.videoMeta.equinoxeId,
+				this._.duration,
+				streamTypeHB
+			);	
+			
+			// 2. Set standard Video Metadata
+			var standardVideoMetadata = {};    
+			standardVideoMetadata[this._.MediaHeartbeat.VideoMetadataKeys.NETWORK] = this._.videoMeta.channelName || "freevod-channel";
+			mediaObject.setValue(this._.MediaHeartbeat.MediaObjectKey.StandardVideoMetadata, standardVideoMetadata);
+			
+			// 3. Set custom Video metadata		
+			var videoCustomMetadata = {
+				stream_type: this._.streamType,
+				transmission_type: this._.videoMeta.transmissionType, 
+				station_name: this._.videoMeta.stationName,
+				embedded_status: this._.videoMeta.embeddedStatus,
+				magazine: this._.videoMeta.magazine,
+				family: this._.videoMeta.sportFamily,
+				sport: this._.videoMeta.sportName,
+				competition: this._.videoMeta.sportCompetition,
+				sport_event: this._.videoMeta.sportEvent,
+				season: this._.videoMeta.sportSeason,
+				round: this._.videoMeta.sportRound,
+				discipline: this._.videoMeta.sportDiscipline,
+				participants: this._.videoMeta.sportParticipants,
+				gender: this._.videoMeta.sportGender,
+				sport_age_group: this._.videoMeta.ageGroup,
+				// Not provided by JW Player
+				provider: this._.videoMeta.provider,
+				partner_code: this._.videoMeta.partnerCode,
+				topic: this._.videoMeta.topic
+			};
+
+			// On initial video play. 
+			this._.mediaHeartbeat.trackSessionStart(mediaObject, videoCustomMetadata);
+			
+			this._.isInitialPlay = false;
+			this._.isTrackingSession = true;	
+			this._.podPosition = 0;	
+		}
+	}
+	
+};
+
+window.addEventListener('esv-loaded',  initializeHeartbeat );

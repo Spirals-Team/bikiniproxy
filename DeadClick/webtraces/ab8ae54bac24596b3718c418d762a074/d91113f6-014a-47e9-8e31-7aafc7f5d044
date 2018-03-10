@@ -1,0 +1,1 @@
+crtg_content = '';

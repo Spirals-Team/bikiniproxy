@@ -1,0 +1,483 @@
+(function (window, document, $, bam) {
+
+  var datetime        = bam.datetime,
+      getQueryResults = bam.util.getQueryResults;
+  
+  /**
+   * DateCarousel
+   * Creates a pageable multi-day calendar widget. The navigation displays the
+   * currently selected day, bookended by a specified number of days as well
+   * as two paging arrows. Originally implemented as a standalone widget, this
+   * widget now hides behind the CarouselCalendar widget.
+   *
+   * The current implemetation will display the number of games for each date. 
+   * @todo refactor game counts out of carousel
+   *
+   * @author Dave Furfero <david.furfero@mlb.com>
+   * @version 1.0.0
+   */
+  var DateCarousel = (function () {
+
+    var self,
+        config,
+        element,
+        isEnabled = false,
+        sportCode = "'mlb'",
+
+        // Supported game types
+        // R Regular Season
+        // F First Round
+        // D Divisional Series
+        // L League Series
+        // W World Series
+        // A All-Star Game
+        // S Spring Training
+        // E Exhibition
+        gameTypes = ["'R'","'F'","'D'","'L'","'W'","'A'","'S'","'E'"];
+
+    /**
+     * Formats a date as "'yyyy/MM/dd'"
+     * @param Date date Date to format
+     */
+    function formatDate (date) {
+      return "'" + datetime.formatDate(date, 'yyyy/MM/dd') + "'";
+    }
+
+    /**
+     * Populate game counts on widget
+     * @param Object data
+     */
+    function handleLoadGameCountsSuccess (data) {
+
+      var rows = getQueryResults(data, 'schedule_game_count_by_date'),
+          counts = {},
+          i, n, ymd, s;
+
+      for (i = 0, n = rows.length; i < n; ++i) {
+        ymd = rows[i].game_date.replace(handleLoadGameCountsSuccess.regExp, '$1$2$3');
+        counts[ymd] = ~~counts[ymd] + ~~rows[i].games;
+      }
+
+      for (ymd in counts) {
+        if (counts.hasOwnProperty(ymd)) {
+          s = counts[ymd] !== 1 ? 's' : '';
+          $('#count_' + ymd).text(counts[ymd] + ' game' + s);
+        }
+      }
+    }
+
+    handleLoadGameCountsSuccess.regExp = /^(\d{4})-(\d{2})-(\d{2}).*$/;
+
+    /**
+     * Load game counts by date
+     * @param Date startDate
+     * @param Date endDate
+     */
+    function loadGameCounts (startDate, endDate) {
+      $.ajax({
+        url: '/lookup/json/named.schedule_game_count_by_date.bam',
+        dataType: 'json',
+        data: {
+          sport_code: sportCode,
+          game_type:  gameTypes,
+          season:     startDate.getFullYear(),
+          start_date: formatDate(startDate),
+          end_date:   formatDate(endDate)
+        },
+        success: handleLoadGameCountsSuccess
+      });
+    }
+
+    /**
+     * Handle date click event
+     * @param Object e click event
+     */
+    function handleClick (evt) {
+
+      if (!isEnabled) {
+        evt.preventDefault();
+        return;
+      }
+      var frag = bam.url.parseFragmentIdentifiers(this.hash).date,
+          date = new Date(frag);
+
+      self.render(date);
+
+      var targetClass = this.className,
+          activity = (/\bday\b/).test(targetClass)  && 'onThreeDayClick'  ||
+                     (/\bprev\b/).test(targetClass) && 'onLeftArrowClick' ||
+                     (/\bnext\b/).test(targetClass) && 'onRightArrowClick';
+                     
+      self.trigger(activity, [date]);
+    }
+
+    self = {
+
+      disable: function () {
+        if (isEnabled) {
+          isEnabled = false;
+          element.css('opacity', 0.5); // @todo switch to class
+        }
+      },
+
+      enable: function () {
+        if (!isEnabled) {
+          isEnabled = true;
+          element.css('opacity', 1); // @todo switch to class
+        }
+      },
+
+      render: function (lookupDate /*, silent */) {
+
+        var silent = !!arguments[1],
+            offset = config.range * 2 + 1,
+            i,
+            date = new Date(lookupDate),
+            prev = new Date(lookupDate),
+            next = new Date(lookupDate),
+            first, last;
+
+        date.setDate(date.getDate() - config.range);
+        prev.setDate(prev.getDate() - offset);
+        next.setDate(next.getDate() + offset);
+
+        // @todo rewrite to draw once at init and update texts at render time?
+        var ul = $('<ul/>');
+
+        ul.append(
+          $('<li/>').append(
+            $('<a/>')
+              .attr('href','#date=' + datetime.toShortDate(prev))
+              .addClass('prev')
+              .text('Previous ' + offset + ' days')
+              .click(handleClick)
+          )
+        );
+
+        first = new Date(date);
+        
+        for (i = -config.range; i <= config.range; ++i) {
+
+          ul.append(
+            $('<li/>').append(
+              $('<a/>')
+                .attr('href', '#date=' + datetime.toShortDate(date))
+                .addClass('day' + (i === 0 ? ' today' : ''))
+                .click(handleClick)
+                .append(
+                  $('<span/>')
+                    .addClass('date')
+                    .text(datetime.formatDate(date, 'EEE MMM d')),
+                  $('<span/>')
+                    .addClass('count')
+                    .attr('id', 'count_' + datetime.toYMD(date))
+                )
+            )
+          );
+          
+          if (i < config.range) {
+            date.setDate(date.getDate() + 1);
+          }
+        }
+        
+        last = new Date(date);
+        
+        ul.append(
+          $('<li/>').append(
+            $('<a/>')
+              .attr('href','#date=' + datetime.toShortDate(next))
+              .addClass('next')
+              .text('Next ' + offset + ' days')
+              .click(handleClick)
+          )
+        );
+
+        element.html(ul);
+
+        // Load game counts
+        loadGameCounts(first, last);
+
+        if (!silent) {
+          self.trigger('onChange', [lookupDate]);
+        }
+      },
+
+      init: function (el, date, cfg) {
+
+        element = el;
+
+        // Extend default configuration
+        config = $.extend({ range: 1 }, cfg);
+
+        // Fire silently on init
+        self.render(date, true);
+
+        self.enable();
+      }
+    };
+
+    /**
+     * Augment with bindable behavior
+     */
+    return $.bindable(self, 'click onChange');
+
+  })();
+
+  /**
+   * Calendar date selection widget
+   */
+  var DateSelector = (function () {
+
+    var self,
+        element,
+        calendar,
+        isEnabled = false,
+        currentDate,
+        showCalendarButton,
+        getTodayButton;
+
+    /**
+     * Displays the date selector calendar widget
+     */
+    function showCalendar (e) {
+      e.preventDefault();
+
+      if (!isEnabled) {
+        return;
+      }
+
+      calendar.show(currentDate.getMonth() + 1, currentDate.getFullYear());
+
+      var offset = showCalendarButton.offset();
+
+      $(calendar.$elem).css({
+        position: 'absolute',
+        top:      offset.top + showCalendarButton.height() + 'px',
+        left:     offset.left + 'px'
+      });
+    }
+
+    /**
+     * Sets the current date to today
+     */
+    function getToday (e) {
+      e.preventDefault();
+
+      if (!isEnabled) {
+        return;
+      }
+
+      var date = new Date();
+      self.render(date);
+
+      self.trigger('onSelectToday', [date]);
+    }
+
+    /**
+     * Sets the current date to a user-selected date
+     */
+    function handleProcessSelection () {
+      this.hide();
+      var date = new Date(this.selectedDates.pop().replace(/^(\d{4})(\d{2})(\d{2})$/, '$2/$3/$1'));
+      self.render(date);
+      self.trigger('onSelectDate', [date]);
+    }
+
+    /**
+     * Public API
+     */
+    self = {
+
+      disable: function () {
+        if (isEnabled) {
+          isEnabled = false;
+          element.css('opacity', 0.5); // @todo switch to class
+        }
+      },
+
+      enable: function () {
+        if (!isEnabled) {
+          isEnabled = true;
+          element.css('opacity', 1); // @todo switch to class
+        }
+      },
+
+      render: function (date /*, silent */) {
+
+        var silent    = !!arguments[1],
+            today     = new Date();
+
+        currentDate = date ? new Date(date) : new Date(today);
+
+        getTodayButton.toggleClass('selected', currentDate.toDateString() === today.toDateString());
+
+        calendar.setToday(datetime.toYMD(today));
+        if (!silent) {
+          self.trigger('onChange', currentDate);
+        }
+      },
+
+      /**
+       * Initialize the date selector widget for the schedule app
+       */
+      init: function (el, date) {
+        
+        element = el;
+
+        element.append(
+          $('<ul/>').append(
+            $('<li/>')
+              .attr('id', 'todaysGamesItem')
+              .append(
+                $('<a/>')
+                  .attr({
+                    id: 'getToday',
+                    title: 'View today\'s results'
+                  })
+                  .html('Today\'s<br/>Games')
+              ),
+            $('<li/>')
+              .attr('id', 'calendarItem')
+              .append(
+                $('<a/>')
+                  .attr({
+                    id: 'showCalendar',
+                    title: 'Open calendar to navigate to a different date'
+                  })
+                  .html('Select<br/>Date')
+                  .append(
+                    $('<img/>').attr('src', '/shared/scripts/bam/widget/CalendarCarousel/themes/default/date_picker.gif')
+                  )
+              )
+          )
+        );
+
+
+        $.ajax({
+          url: '/shared/scripts/bam.dateSelector.js',
+          dataType: 'script',
+          async: false,
+          success: function () {
+
+            calendar = bam.dateSelector;
+            calendar.processSelection = handleProcessSelection;
+
+            // Cache interface elements and assign event handlers
+            showCalendarButton = $('#showCalendar').live('click', showCalendar);
+            getTodayButton     = $('#getToday').live('click', getToday);
+
+            // Setup calendar
+            calendar.showResetLink = false;
+
+            // Set fragment identifier on change
+            self.onChange(function (e, date) {
+              window.location.hash = 'date=' + datetime.toShortDate(date);
+            });
+
+            // Fire silently on init
+            self.render(date, true);
+
+            self.enable();
+
+
+          }
+        });
+      }
+    };
+
+    /**
+     * Augment with bindable behavior
+     */
+    return $.bindable(self, 'onChange onSelectDate onSelectToday');
+
+  })();
+  
+
+  /**
+   * Create a unified interface
+   */
+  var CalendarCarousel = (function () {
+    
+    var self,
+        element,
+        isInited = false;
+
+        
+    self = {
+      init: function (el, date) {
+
+        if (isInited) {
+          return;
+        }
+        
+        isInited = true;
+        
+        
+        element = $('#' + el);
+
+        var sbDateRange = $('<div id="sbDateRange"/>').appendTo(element),
+            sbDateSelector = $('<div id="sbDateSelector"/>').appendTo(element);
+
+        DateCarousel.init(sbDateRange, date);
+        DateSelector.init(sbDateSelector, date);
+        
+        // Bind widgets
+        DateCarousel.bind('onChange', function (evt, date) {
+          DateSelector.render(date, true);
+        });
+        DateSelector.bind('onChange', function (evt, date) {
+          DateCarousel.render(date, true);
+        });
+        
+        DateCarousel
+          .bind('onThreeDayClick', function (evt, date) {
+            CalendarCarousel.trigger('onThreeDayClick', [date]);
+          })
+          .bind('onLeftArrowClick', function (evt, date) {
+            CalendarCarousel.trigger('onLeftArrowClick', [date]);
+          })
+          .bind('onRightArrowClick', function (evt, date) {
+            CalendarCarousel.trigger('onRightArrowClick', [date]);
+          })
+          .bind('onChange', function (evt, date) {
+            CalendarCarousel.trigger('onChange', [date]);
+          });
+
+        // proxy DateSelector events
+        DateSelector
+          .bind('onChange', function (evt, date) {
+            CalendarCarousel.trigger('onChange', [date]);
+          })
+          .bind('onSelectDate', function (evt, date) {
+            CalendarCarousel.trigger('onSelectDate', [date]);
+          })
+          .bind('onSelectToday', function (evt, date) {
+            CalendarCarousel.trigger('onSelectToday', [date]);
+          });
+      },
+      
+      enable: function () {
+        DateCarousel.enable();
+        DateSelector.enable();
+      },
+
+      disable: function () {
+        DateCarousel.disable();
+        DateSelector.disable();
+      }
+    };
+    
+    return $.bindable(self, 'click onChange onSelectDate onSelectToday');
+  })();
+
+
+  /**
+   * Add widgets to the bam.widget namespace
+   */
+  bam.namespace('widget');
+  bam.widget.CalendarCarousel = CalendarCarousel;
+  bam.widget.DateCarousel     = DateCarousel;
+  bam.widget.DateSelector     = DateSelector;
+
+
+})(this, this.document, this.jQuery, this.bam);

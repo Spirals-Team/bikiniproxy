@@ -1,0 +1,38 @@
+/**
+ * TuneInPopup 0.1
+ *
+ * @author Mahmud Hossain (Shojib)
+ */
+
+bam = (typeof bam !== 'undefined') ? bam : {};
+
+bam.tuneinPopup = (function (bam) {
+    function showTuneIn(tuneinurl) {
+        if (!!tuneinurl){
+            window.open(tuneinurl,'','menubar=0,scrollbars=0,status=0,toolbar=0,resizable=0,width=732,height=285');
+        }
+    }
+
+	function open(event) {
+	    event.preventDefault();
+        var audioLink = event.currentTarget.attributes.href.value,
+            team = event.currentTarget.attributes.team.value,
+            city = event.currentTarget.attributes.city.value,
+            abbrev = event.currentTarget.attributes.abbrev.value,
+            tiId = audioLink.match('tunein.com\/player\/station\/([0-9]+)\/') ? 's'+RegExp.$1 : '',
+            tuneinUrl = '/common/tunein_popup.jsp?ti_id=' + tiId + '&team=' + team + '&city=' + city + '&abbrev=' + abbrev;
+        showTuneIn(tuneinUrl);
+	}
+
+	function show(event) {
+	    event.preventDefault();
+        var audioLink = event.currentTarget.attributes.href.value;
+        showTuneIn(audioLink);
+	}
+
+	return {
+		open: open,
+		show: show
+	};
+
+})(bam);

@@ -1,0 +1,667 @@
+/*
+ * Fix for Chrome CSS issue - after the document is fully loaded
+ * we loop through all the <link> tags and add a random number to
+ * the href attribute.
+ **********************************************************************/
+//window.onload = updateCSS;
+function updateCSS(){
+	if ( /chrome/.test(navigator.userAgent.toLowerCase()) ){ 
+		var rNum = Math.floor(Math.random()*10000);
+		for( var els = document.getElementsByTagName('link'), i = els.length; i--;) {
+			els[i].href += "?"+rNum;
+			console.log("els["+i+"]", els[i].href);
+		}
+	}
+}
+
+<!-- Poll Function -->
+
+var win;
+var lastOpenedUrl;
+function popNewRadio(station){
+	if(win2 && !win2.closed)win2.close();
+	var agent=navigator.userAgent.toLowerCase();
+	var size=330;
+	size+=50;
+	if(win && window.focus && !win.closed)win.focus();
+	var url="/radio/"+station+"/player.aspx";
+	if(lastOpenedUrl==url && !win.closed)return; 
+	lastOpenedUrl=url;
+	win=window.open(url,"win","width=632,height="+size+",status=0,toolbar=0,menubar=0,resizable=0,location=0,scrollbars=0");
+	if(!win)alert("It appears that your popup blocker has prevented the Radio Window from opening. Please disable your popup blocker for the CBN website or try holding down the CONTROL key and click on the link again.");
+}
+
+var win2;
+var lastOpenedUrl2;
+function popRadio(stationName){
+	if(win && !win.closed)win.close();
+	var agent=navigator.userAgent.toLowerCase();
+	var size=400;
+	if(agent.indexOf("mozilla")>=0)size=400;
+	if(agent.indexOf("explorer")>=0)size=400;
+	if(agent.indexOf("chrome")>=0)size=450;
+	if(win2 && window.focus && !win2.closed)win2.focus();
+	var url="/radio/radio.aspx?"+stationName;
+	if(lastOpenedUrl2==url && !win2.closed)return; 
+	lastOpenedUrl2=url;
+	win2=window.open(url,"win","width=685,height="+size+",status=0,toolbar=0,menubar=0,resizable=0,location=0,scrollbars=0");
+	if(!win2)alert("It appears that your popup blocker has prevented the Radio Window from opening. Please disable your popup blocker for the CBN website or try holding down the CONTROL key and click on the link again.");
+}
+function pollPop() {
+    window.open('',"CBNPolls","status=no,height=360,width=440,scrollbars=yes,resizable=no,toolbar=0");
+}
+
+function sendtofriendPop(link) {
+	if(link != "")
+	{
+		url = "/sendtofriend/sendtofriend.aspx?link=" + link;
+	}
+	else
+	{
+		url = "/sendtofriend/sendtofriend.aspx";
+	}
+	
+    window.open(url,"sendtofriend","status=no,height=340,width=540,scrollbars=yes,resizable=no,toolbar=0");
+}
+
+function poll(ID) {
+	var URL
+	URL = "/poll/poll.asp?p=" + ID
+    window.open(URL,"CBNPolls","status=no,height=360,width=440,scrollbars=yes,resizable=no,toolbar=0");
+}
+
+ function ShareVideo(video, title, image) {
+    // opens a popup window to email a video to a friend
+    url = "/media/sendtofriend.aspx?v=" + video + "&title=" + title + "&image=" + image;
+    wSendtofriend = window.open(url, "SendToFriend","status,height=400,width=700,scrollbars=yes,toolbar=no,status=no");
+    // if the current window still has focus, shift focus to the sendtofriend window
+    if (window.focus) {wSendtofriend.focus()}
+}
+
+<!-- VideoWindows -->
+function video(prgm,vsrc,seg) {
+  // Declare Variables
+  var sUrl, sTitle
+  // Always load player into the top browser window
+  if (window.parent) {
+    oWin = window.parent;
+  } else {
+    oWin = window;
+  }
+  // Determine the correct title to display for each program 
+  switch (prgm)
+  {
+	  case "newswatch":
+	  		sTitle = "Newswatch";
+			break;
+	  case "ltl":
+	  		sTitle= "Living%20The%20Life";
+			break;
+	   case "cwn":
+	        sTitle = "Christian%20World%20News";
+	        break;
+	   case "700club":
+	  		sTitle = "The%20700%20Club";
+			break;
+	   case "goodshepherd":
+	  		sTitle = "Operation Good Shepherd";
+			break;
+	  default:
+	        sTitle = "";
+  }
+  // Determine the correct video source
+  switch (vsrc)
+  {
+	  case "newswatch":
+	  		sUrl= "/media/index.aspx?s=newswatch";
+			break;
+	  case "LTLtoday","ltl":
+	  		sUrl = "/media/index.aspx?s=ltl";
+			break;
+	  case "liveclub":
+	        sUrl = "/media/index.aspx?s=700club";
+	        break;
+	  case "liveclubaudio":
+	        sUrl = "/media/index.aspx?s=700club";
+	        break;
+	   case "cwn":
+	        sUrl = "/media/index.aspx?s=cwn";
+	        break;
+	  default:
+	    //var theURL;
+	    //theURL = "/video/player.asp?prgm=" + prgm + "&vsrc=" + vsrc + "&seg=" + seg;
+	    //window.open(theURL,"CBNVideo","status,height=430,width=700,scrollbars=no,resizable=no");
+		sUrl = "/media/index.aspx?s=" + vsrc 
+		break;
+  }
+  // format segment
+  if (seg != "") {
+    seg = "&seg=" + seg;
+  }
+  // format program
+  if (prgm !="") {
+    prgm = "&prgm=" + prgm;
+  }
+  // format title
+  if (sTitle !="") {
+    sTitle = "&title=" + sTitle;
+  }
+  // Load Media Center
+  oWin.location = sUrl + sTitle + prgm + seg;
+  
+}
+
+
+function electionvideo()
+{
+	window.open("/video/cbnnews/player.htm","CBNNewsVideo","status,height=377,width=400,scrollbars=no,resizable=no");
+}
+
+function videoclip(prgm,vsrc,seg,begin,end,media) {
+  var theURL;
+  theURL = "/video/player.asp?prgm=" + prgm + "&vsrc=" + vsrc + "&seg=" + seg + "&begin=" + begin + "&end=" + end + "&media=" + media;
+  window.open(theURL,"CBNVideo","status,height=430,width=700,scrollbars=no,resizable=no");
+}
+
+
+// video window popout for worldreach
+function videopop(theSource, fileType) {
+	if(fileType=="wmv"){
+		var theURL = "/wr_video/player4-asx.asp?Source=" + theSource;
+		window.open(theURL,"CBNWorldReachVideo","width=240,height=200,scrolling=no,resizable=no,toolbar=0");
+	} else {
+		var theURL = "/wr_video/player4-smi.asp?Source=" + theSource;
+		//   position = theSource.length-1;
+		//   type = theSource.charAt(position);
+		type = theSource.substr(theSource.length-2);
+	
+		if (type.toLowerCase() == "_l"){
+			window.open(theURL,"CBNWorldReachVideo","height=140,width=160,scrolling=no,resizable=no,toolbar=0");
+		} else if (type.toLowerCase() == "_h") {
+			window.open(theURL,"CBNWorldReachVideo","height=230,width=280,scrolling=no,resizable=no,toolbar=0");
+		} else {
+			window.open(theURL,"CBNWorldReachVideo","height=140,width=160,scrolling=no,resizable=no,toolbar=0");
+		}
+	}
+}
+
+// Embeddable Flash Video Player
+function embedFlashVideo(sFileName, iWidth, iHeight, sAutoPlay) {  
+	// embeds standard Flash Video Player
+    // parameter:
+    //				sFileName 	- path to flash video
+    //				iWidth		- width of video
+    //				iHeight		- height of video
+    //				sAutoPlay	- true or false 
+	
+	AC_FL_RunContent( 'codebase','http://download.macromedia.com/pub/shockwave/cabs/flash/swflash.cab#version=8,0,0,0','width',iWidth,'height',iHeight,'id','FLVPlayer','src','/noindex/flash/embedflashvideo/FLVPlayer_Progressive','flashvars','&MM_ComponentVersion=1&skinName=/noindex/flash/embedflashvideo/Clear_Skin_3&streamName=' + sFileName + '&autoPlay=' + sAutoPlay + '&autoRewind=false','quality','high','scale','noscale','name','FLVPlayer','salign','lt','pluginspage','http://www.adobe.com/shockwave/download/download.cgi?P1_Prod_Version=ShockwaveFlash','movie','/noindex/flash/embedflashvideo/FLVPlayer_Progressive' ); //end AC code
+}
+
+<!-- Stock Gifts -->
+
+function POPUP(ID, Name)
+{
+  ASwindow = window.open('https://www.optigift.com/charity/PreInstructions_charity.jsp?ID='+ID+'&Name='+Name+'&date='+(new Date()).getTime(),'ASpopup', 'toolbar=no,location=no,directories=no,status=yes,menubar=no,scrollbars=yes,resizable=yes,width=550,height=650,top=10,left=50'); 
+} 
+
+function resizeWin(left,top,width,height)
+{
+	window.moveTo(left, top);
+	window.resizeTo(width, height);
+}
+
+// Embeddable Flash Audio MP3 Player
+ function audioPlayer(sURL) {
+      document.write('<div style="margin: 5px 0px 20px 0px; padding:10px 0px 10px 0px; border: dotted 1px black; text-align: center">');
+      document.write('<object classid="clsid:D27CDB6E-AE6D-11cf-96B8-444553540000" codebase="http://download.macromedia.com/pub/shockwave/cabs/flash/swflash.cab#version=8,0,0,0" width="200" height="20">');
+      document.write('<param name="movie" value="/noindex/clientscripts/audioplayer/player_mp3_maxi.swf">');
+      document.write('<param name="FlashVars" value="mp3=' + sURL + '&showvolume=1">');
+      document.write('<param name="quality" value="high">');
+      document.write('<param name="wmode" value="transparent">');
+      document.write('<param name="allowScriptAccess" value="always">');
+      document.write('<embed src="/noindex/clientscripts/audioplayer/player_mp3_maxi.swf?mp3=' + sURL + '&showvolume=1" height="20" width="200" wmode="transparent" id="player"/ quality="high" pluginspage="http://www.macromedia.com/go/getflashplayer" type="application/x-shockwave-flash" allowScriptAccess="always"></embed>');
+      document.write('</object>');
+      document.write('</div>');
+}
+
+// Embeddable Flash Audio MP3 Player
+ function audioPlayerMulti(sURL,sTitle) {
+      document.write('<div style="margin: 5px 0px 20px 0px; padding:10px 0px 10px 0px; border: dotted 1px black; text-align: center">');
+      document.write('<object classid="clsid:D27CDB6E-AE6D-11cf-96B8-444553540000" codebase="http://download.macromedia.com/pub/shockwave/cabs/flash/swflash.cab#version=8,0,0,0" width="200" height="100">');
+      document.write('<param name="movie" value="/noindex/clientscripts/audioplayer/player_mp3_multi.swf">');
+      document.write('<param name="FlashVars" value="mp3=' + sURL + '&showvolume=1&showlist=1&bgcolor2=222222&title=' + sTitle + '">');
+      document.write('<param name="quality" value="high">');
+      document.write('<param name="wmode" value="transparent">');
+      document.write('<param name="allowScriptAccess" value="always">');
+      document.write('<embed src="/noindex/clientscripts/audioplayer/player_mp3_multi.swf?mp3=' + sURL + '&showvolume=1&showlist=1&bgcolor2=222222&title=' + sTitle + '" height="100" width="200" wmode="transparent" id="player"/ quality="high" pluginspage="http://www.macromedia.com/go/getflashplayer" type="application/x-shockwave-flash" allowScriptAccess="always"></embed>');
+      document.write('</object>');
+      document.write('</div>');
+}
+ 
+/********************************************************************************
+Scripts that support Macromedia Dreamweaver functions
+********************************************************************************/
+function MM_preloadImages() { //v3.0
+  var d=document; if(d.images){ if(!d.MM_p) d.MM_p=new Array();
+    var i,j=d.MM_p.length,a=MM_preloadImages.arguments; for(i=0; i<a.length; i++)
+    if (a[i].indexOf("#")!=0){ d.MM_p[j]=new Image; d.MM_p[j++].src=a[i];}}
+}
+
+function MM_swapImgRestore() { //v3.0
+  var i,x,a=document.MM_sr; for(i=0;a&&i<a.length&&(x=a[i])&&x.oSrc;i++) x.src=x.oSrc;
+}
+
+function MM_findObj(n, d) { //v4.01
+  var p,i,x;  if(!d) d=document; if((p=n.indexOf("?"))>0&&parent.frames.length) {
+    d=parent.frames[n.substring(p+1)].document; n=n.substring(0,p);}
+  if(!(x=d[n])&&d.all) x=d.all[n]; for (i=0;!x&&i<d.forms.length;i++) x=d.forms[i][n];
+  for(i=0;!x&&d.layers&&i<d.layers.length;i++) x=MM_findObj(n,d.layers[i].document);
+  if(!x && d.getElementById) x=d.getElementById(n); return x;
+}
+
+function MM_swapImage() { //v3.0
+  var i,j=0,x,a=MM_swapImage.arguments; document.MM_sr=new Array; for(i=0;i<(a.length-2);i+=3)
+   if ((x=MM_findObj(a[i]))!=null){document.MM_sr[j++]=x; if(!x.oSrc) x.oSrc=x.src; x.src=a[i+2];}
+}
+function MM_reloadPage(init) {  //reloads the window if Nav4 resized
+  if (init==true) with (navigator) {if ((appName=="Netscape")&&(parseInt(appVersion)==4)) {
+    document.MM_pgW=innerWidth; document.MM_pgH=innerHeight; onresize=MM_reloadPage; }}
+  else if (innerWidth!=document.MM_pgW || innerHeight!=document.MM_pgH) location.reload();
+}
+MM_reloadPage(true);
+
+function P7_autoLayers() { //v1.4 by PVII
+ var g,b,k,f,args=P7_autoLayers.arguments;a=parseInt(args[0]);if(isNaN(a))a=0;
+ if(!document.p7setc){p7c=new Array();document.p7setc=true;for(var u=0;u<10;u++){
+ p7c[u]=new Array();}}for(k=0;k<p7c[a].length;k++){if((g=MM_findObj(p7c[a][k]))!=null){
+ b=(document.layers)?g:g.style;b.visibility="hidden";}}for(k=1;k<args.length;k++){
+ if((g=MM_findObj(args[k]))!=null){b=(document.layers)?g:g.style;b.visibility="visible";f=false;
+ for(var j=0;j<p7c[a].length;j++){if(args[k]==p7c[a][j]) {f=true;}}
+ if(!f){p7c[a][p7c[a].length++]=args[k];}}}
+}
+
+function P7_Snap() { //v2.63 by PVII
+ var x,y,ox,bx,oy,p,tx,a,b,k,d,da,e,el,tw,q0,xx,yy,w1,pa='px',args=P7_Snap.arguments;a=parseInt(a);
+ if(document.layers||window.opera){pa='';}for(k=0;k<(args.length);k+=4){
+ if((g=MM_findObj(args[k]))!=null){if((el=MM_findObj(args[k+1]))!=null){
+ a=parseInt(args[k+2]);b=parseInt(args[k+3]);x=0;y=0;ox=0;oy=0;p="";tx=1;
+ da="document.all['"+args[k]+"']";if(document.getElementById){
+ d="document.getElementsByName('"+args[k]+"')[0]";if(!eval(d)){
+ d="document.getElementById('"+args[k]+"')";if(!eval(d)){d=da;}}
+ }else if(document.all){d=da;}if(document.all||document.getElementById){while(tx==1){
+ p+=".offsetParent";if(eval(d+p)){x+=parseInt(eval(d+p+".offsetLeft"));y+=parseInt(eval(d+p+".offsetTop"));
+ }else{tx=0;}}ox=parseInt(g.offsetLeft);oy=parseInt(g.offsetTop);tw=x+ox+y+oy;
+ if(tw==0||(navigator.appVersion.indexOf("MSIE 4")>-1&&navigator.appVersion.indexOf("Mac")>-1)){
+  ox=0;oy=0;if(g.style.left){x=parseInt(g.style.left);y=parseInt(g.style.top);}else{
+  w1=parseInt(el.style.width);bx=(a<0)?-5-w1:-10;a=(Math.abs(a)<1000)?0:a;b=(Math.abs(b)<1000)?0:b;
+  x=document.body.scrollLeft+event.clientX+bx;y=document.body.scrollTop+event.clientY;}}
+ }else if(document.layers){x=g.x;y=g.y;q0=document.layers,dd="";for(var s=0;s<q0.length;s++){
+  dd='document.'+q0[s].name;if(eval(dd+'.document.'+args[k])){x+=eval(dd+'.left');y+=eval(dd+'.top');
+  break;}}}e=(document.layers)?el:el.style;xx=parseInt(x+ox+a),yy=parseInt(y+oy+b);
+ if(navigator.appVersion.indexOf("MSIE 5")>-1 && navigator.appVersion.indexOf("Mac")>-1){
+  xx+=parseInt(document.body.leftMargin);yy+=parseInt(document.body.topMargin);}
+ e.left=xx+pa;e.top=yy+pa;}}}
+}
+function MM_jumpMenu(targ,selObj,restore){ //v3.0
+  eval(targ+".location='"+selObj.options[selObj.selectedIndex].value+"'");
+  if (restore) selObj.selectedIndex=0;
+}
+function feedback(option) {
+ document.feedback.title.value = document.title
+ document.feedback.URL.value = document.location
+ document.feedback.action = "http://www.cbn.com/contact/" + option
+ document.feedback.submit()
+}
+
+function submitform()
+{
+  document.myform.submit();
+}
+
+function toggleBox(szDivID, iState) // 1 visible, 0 hidden
+{
+    if(document.layers)	   //NN4+
+    {
+       document.layers[szDivID].visibility = iState ? "show" : "hide";
+    }
+    else if(document.getElementById)	  //gecko(NN6) + IE 5+
+    {
+        var obj = document.getElementById(szDivID);
+        obj.style.visibility = iState ? "visible" : "hidden";
+    }
+    else if(document.all)	// IE 4
+    {
+        document.all[szDivID].style.visibility = iState ? "visible" : "hidden";
+    }
+}
+
+// Example: expandCollapseLayers(Layer1,'','show',Layer2,'','hide')
+function expandCollapseLayers()
+{ 
+  var i, visStr, obj, args = expandCollapseLayers.arguments;
+  for (i=0; i<(args.length-2); i+=3)
+  {
+    if ((obj = MM_findObj(args[i])) != null)
+    {
+      visStr = args[i+2];
+      if (obj.style)
+      {
+        obj = obj.style;
+        if(visStr == 'show') visStr = 'inline';
+        else if(visStr == 'hide') visStr = 'none';
+      }
+      obj.display = visStr;
+    }
+  }
+}
+// Example: showHideLayers(Layer1,'','show',Layer2,'','hide');
+function showHideLayers()
+{ 
+  var i, visStr, obj, args = showHideLayers.arguments;
+  for (i=0; i<(args.length-2); i+=3)
+  {
+    if ((obj = MM_findObj(args[i])) != null)
+    {
+      visStr = args[i+2];
+      if (obj.style)
+      {
+        obj = obj.style;
+        if(visStr == 'show') visStr = 'visible';
+        else if(visStr == 'hide') visStr = 'hidden';
+      }
+      obj.visibility = visStr;
+    }
+  }
+}
+
+var PartnerWelcomeWindow;
+function partnerWelcome()
+{
+	var height = 432;
+	var width = 768;
+	var x = Math.round((screen.availWidth - width) / 2);
+	var y = Math.round((screen.availHeight - height) / 2);
+	var featureString = "left=" + x + ",top=" + y + ",height=" + height + ",width=" + width + ",status=0,scrollbars=0,resizable=0,toolbar=0,location=0,directories=0,menubar=0";
+	PartnerWelcomeWindow = window.open("http://www.cbn.com/noindex/flash/partner-welcome-video.html","SuperbookGame",featureString);
+}
+function closePartnerWelcome()
+{
+	PartnerWelcomeWindow.close();	
+}
+
+
+// browser detect function
+var BrowserDetect = {
+	init: function () {
+		this.browser = this.searchString(this.dataBrowser) || "An unknown browser";
+		this.version = this.searchVersion(navigator.userAgent)
+			|| this.searchVersion(navigator.appVersion)
+			|| "an unknown version";
+		this.OS = this.searchString(this.dataOS) || "an unknown OS";
+	},
+	searchString: function (data) {
+		for (var i=0;i<data.length;i++)	{
+			var dataString = data[i].string;
+			var dataProp = data[i].prop;
+			this.versionSearchString = data[i].versionSearch || data[i].identity;
+			if (dataString) {
+				if (dataString.indexOf(data[i].subString) != -1)
+					return data[i].identity;
+			}
+			else if (dataProp)
+				return data[i].identity;
+		}
+	},
+	searchVersion: function (dataString) {
+		var index = dataString.indexOf(this.versionSearchString);
+		if (index == -1) return;
+		return parseFloat(dataString.substring(index+this.versionSearchString.length+1));
+	},
+	dataBrowser: [
+		{
+			string: navigator.userAgent,
+			subString: "Chrome",
+			identity: "Chrome"
+		},
+		{ 	string: navigator.userAgent,
+			subString: "OmniWeb",
+			versionSearch: "OmniWeb/",
+			identity: "OmniWeb"
+		},
+		{
+			string: navigator.vendor,
+			subString: "Apple",
+			identity: "Safari",
+			versionSearch: "Version"
+		},
+		{
+			prop: window.opera,
+			identity: "Opera"
+		},
+		{
+			string: navigator.vendor,
+			subString: "iCab",
+			identity: "iCab"
+		},
+		{
+			string: navigator.vendor,
+			subString: "KDE",
+			identity: "Konqueror"
+		},
+		{
+			string: navigator.userAgent,
+			subString: "Firefox",
+			identity: "Firefox"
+		},
+		{
+			string: navigator.vendor,
+			subString: "Camino",
+			identity: "Camino"
+		},
+		{		// for newer Netscapes (6+)
+			string: navigator.userAgent,
+			subString: "Netscape",
+			identity: "Netscape"
+		},
+		{
+			string: navigator.userAgent,
+			subString: "MSIE",
+			identity: "Explorer",
+			versionSearch: "MSIE"
+		},
+		{
+			string: navigator.userAgent,
+			subString: "Gecko",
+			identity: "Mozilla",
+			versionSearch: "rv"
+		},
+		{ 		// for older Netscapes (4-)
+			string: navigator.userAgent,
+			subString: "Mozilla",
+			identity: "Netscape",
+			versionSearch: "Mozilla"
+		}
+	],
+	dataOS : [
+		{
+			string: navigator.platform,
+			subString: "Win",
+			identity: "Windows"
+		},
+		{
+			string: navigator.platform,
+			subString: "Mac",
+			identity: "Mac"
+		},
+		{
+			   string: navigator.userAgent,
+			   subString: "iPhone",
+			   identity: "iPhone/iPod"
+	    },
+		{
+			string: navigator.platform,
+			subString: "Linux",
+			identity: "Linux"
+		}
+	]
+
+};
+BrowserDetect.init();
+
+// javascript cookie functions added by John Woodcock
+function createCookie(name,value,days) {
+	if (days) {
+		var date = new Date();
+		date.setTime(date.getTime()+(days*24*60*60*1000));
+		var expires = "; expires="+date.toGMTString();
+	}
+	else var expires = "";
+	document.cookie = name+"="+value+expires+"; path=/";
+}
+
+function readCookie(name) {
+	var nameEQ = name + "=";
+	var ca = document.cookie.split(';');
+	for(var i=0;i < ca.length;i++) {
+		var c = ca[i];
+		while (c.charAt(0)==' ') c = c.substring(1,c.length);
+		if (c.indexOf(nameEQ) == 0) return c.substring(nameEQ.length,c.length);
+	}
+	return null;
+}
+
+function eraseCookie(name) {
+	createCookie(name,"",-1);
+}
+// javascript modal window generator
+function showPageModal(PATH,WIDTH,HEIGHT)
+{
+	// create elements
+	var loadingY = $(window).scrollTop() + ($(window).height()*.5) - 16 + "px";
+	var modalBG = $("<div id='modalBG' style='z-index:199999; background:#000 url(/images/loading-anim-black.gif) no-repeat center "+loadingY+"; height:"+$(document).height()+"px; width:"+$(window).width()+"px;position:absolute; top:0px; left:0px;'></div>").fadeTo(0,0).click(hidePageModal);
+	// fade in background
+	$("body").append(modalBG);
+	modalBG.fadeTo("slow",.8);
+	// create Page assets
+	var modalPageClose = $("<a style='display:block; padding:5px 10px; color:#ccc; text-align:right; font-size:1.5em;' href='#'>Close</a>").fadeTo(0,0).click(hidePageModal);
+	var modalPageFrame = $("<iframe style='width:" + WIDTH + "px; height:" + HEIGHT + "px; border:none;' frameborder='0' scrolling='yes' />").fadeTo(0,0);
+	var modalPage = $("<div id='modalPage' style='z-index:200000; position:absolute;'></div>")
+		.fadeTo(0,0)
+		.css({left:($(window).width()*.5)-((WIDTH *.5)-20)+"px",top:$(window).scrollTop() + ($(window).height()*.5) - ((HEIGHT *.5)-10) +"px"})
+		.append(modalPageClose)
+		.append(modalPageFrame);
+	
+	// add elements to body
+	$("body").append(modalPage);
+	
+	// create load listener for iframe
+	modalPageFrame.load(function(){
+		modalPageFrame.contents().find("#networkBanner").hide();
+		setTimeout(function(){modalPage.fadeTo("slow",1);},1500);
+		setTimeout(function(){modalPageFrame.fadeTo("slow",1);},200);
+		setTimeout(function(){modalPageClose.fadeTo("slow",1);},2500);
+	});
+	
+	// load path into iframe
+	setTimeout(function(){modalPageFrame.attr("src",PATH);},100);
+}
+
+function hidePageModal(e)
+{
+	if(e) e.preventDefault();
+	$("#modalBG, #modalPage").fadeOut("slow",function(e){$("#modalPage, #modalBG").remove();});	
+}
+
+
+
+
+
+
+
+// javascript modal window generator
+function showGalleryModal(PATH)
+{
+	// create elements
+	var loadingY = $(window).scrollTop() + ($(window).height()*.5) - 16 + "px";
+	var modalBG = $("<div id='modalBG' style='z-index:199999; background:#000 url(/images/loading-anim-black.gif) no-repeat center "+loadingY+"; height:"+$(document).height()+"px; width:"+$(window).width()+"px;position:absolute; top:0px; left:0px;'></div>").fadeTo(0,0).click(hideGalleryModal);
+	// fade in background
+	$("body").append(modalBG);
+	modalBG.fadeTo("slow",.8);
+	// create gallery assets
+	var modalGalleryClose = $("<a style='display:block; padding:5px 10px; color:#ccc; text-align:right; font-size:1.5em;' href='#'>Close</a>").fadeTo(0,0).click(hideGalleryModal);
+	var modalGalleryFrame = $("<iframe style='width:740px; height:522px; border:none;' frameborder='0' scrolling='no' />").fadeTo(0,0);
+	var modalGallery = $("<div id='modalGallery' style='z-index:200000; position:absolute;'></div>")
+		.fadeTo(0,0)
+		.css({left:($(window).width()*.5)-360+"px",top:$(window).scrollTop() + ($(window).height()*.5) - 291+"px"})
+		.append(modalGalleryClose)
+		.append(modalGalleryFrame);
+	
+	// add elements to body
+	$("body").append(modalGallery);
+	
+	// create load listener for iframe
+	modalGalleryFrame.load(function(){
+		modalGalleryFrame.contents().find("#networkBanner").hide();
+		setTimeout(function(){modalGallery.fadeTo("slow",1);},1500);
+		setTimeout(function(){modalGalleryFrame.fadeTo("slow",1);},200);
+		setTimeout(function(){modalGalleryClose.fadeTo("slow",1);},2500);
+	});
+	
+	// load path into iframe
+	setTimeout(function(){modalGalleryFrame.attr("src",PATH);},100);
+}
+
+function hideGalleryModal(e)
+{
+	if(e) e.preventDefault();
+	$("#modalBG, #modalGallery").fadeOut("slow",function(e){$("#modalGallery, #modalBG").remove();});	
+}
+// javascript modal window generator
+function showVideoModal(PATH)
+{
+	var isMobile = (navigator.userAgent.match(/iPad|iPhone|android/i) != null);
+	var mediaPath = (PATH.indexOf("http://") >= 0 || PATH.indexOf("rtmp://") >= 0) ? PATH : "http://dl2.cbn.com/stream_flash8"+PATH+"_M.mp4";
+	// create elements
+	//isMobile=true;
+	var modalBG = $("<div id='modalBG' style='z-index:199999; background-color:#000; height:"+$(document).height()+"px; width:"+$(window).width()+"px;position:absolute; top:0px; left:0px; -moz-opacity:0; filter:alpha(opacity=0); opacity:0;'></div>").click(hideVideoModal);
+	var modalVideoPlayer = $("<div id='modalVideoPlayer' style='width:640px;height:360px;'></div>");
+	var modalVideoClose = $("<div style='cursor:pointer;position:absolute; top:-20px; right:10px; display:block; padding:2px solid: background:#000; color:#ccc; font-size:1.5em;'>CLOSE</div>").click(hideVideoModal);
+	var modalVideo = $("<div id='modalVideo' style='z-index:200000;background-color:#000;position:absolute;display:none;'></div>");
+		modalVideo.css({left:($(window).width()*.5)-320+"px",top:$(window).scrollTop() + ($(window).height()*.5) - 180+"px"});
+		modalVideo.append(modalVideoPlayer);
+		modalVideo.append(modalVideoClose);
+
+	// add elements to body
+	//try{console.log("adding elements: "+modalVideo.html())}catch(err){};
+	$("body").append(modalBG);
+	$("body").append(modalVideo);
+
+	// show video
+	modalBG.fadeTo("slow",.8);
+	modalVideo.fadeIn("slow",function(e){
+		//try{console.log("showVideo("+VIDEO+")");}catch(err){}
+		if(isMobile)
+		{ 
+			// get path (directly using it in the video src fails on mobile devices using https)
+			$.ajax({url:"/ipad/video/downloadpath.aspx?s="+PATH+"&returnURL=true",success: function(data) {
+				modalVideoPlayer.html("<video src='"+data+"' width='640' height='360' controls='true' autoPlay='true' />");
+			}});
+		}
+		else
+		{
+			modalVideoPlayer.html("<div id='modalVideoPlayerSWF'></div>");
+			swfobject.embedSWF("/media/player/player.swf?"+((PATH.indexOf("http://") >= 0 || PATH.indexOf("rtmp://") >= 0)?"url":"s")+"="+PATH, "modalVideoPlayerSWF", "640", "360", "10.0.0",{},{},{ wmode:"transparent",allowScriptAccess:"always",allowFullScreen:"true" });
+		}
+	});
+}
+
+
+function hideVideoModal()
+{
+	$("#modalVideoPlayer").remove();
+	$("#modalVideoClose").remove();
+	$("#modalBG, #modalVideo").fadeOut("slow",function(e){$("#modalVideo, #modalBG").remove();});	
+}
+
+
+// -->

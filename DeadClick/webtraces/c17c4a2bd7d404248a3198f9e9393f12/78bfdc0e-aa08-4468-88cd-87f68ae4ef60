@@ -1,0 +1,65 @@
+/* UTIL FUNCTIONS */
+$L.add('trim',function(string){
+    return string.replace(/^\s+|\s+$/g, '');
+});
+$L.add('textCounter',function(fieldId,countFieldId,maxLimit) {
+    field = document.getElementById(fieldId);
+    countField = document.getElementById(countFieldId);
+    if (field.value.length > maxLimit){
+        field.value = field.value.substring(0, maxLimit);
+    } else {
+        countField.innerHTML = maxLimit - field.value.length;
+    }
+});
+$L.add('showMessage', function(divId, message, messageType, isDissmissable){
+    var className = "UIFeedback";
+    switch (messageType)
+    {
+        case "error":
+        case "info":
+        case "success":
+        case "warning":
+            className += " " + messageType;
+            break;
+        default:
+            className += " " + "info";
+    }
+    if ( isDissmissable ) {
+        className += " " + "dismissable";
+    }
+    $jq("#"+divId)
+        .addClass(className)
+        .text(message).show();
+    if ( isDissmissable ) {
+        $jq("<div>").html("&times;").addClass("dismissBtn")
+                    .click(function(){$jq(this).parent().fadeOut();})
+                    .appendTo($jq("#"+divId));
+    }
+});
+
+$L.add('hideMessage', function(divId){
+    $jq("#"+divId).hide();
+});
+
+$L.add('hideAjaxLoader', function(id){
+        $jq("#"+id).css('display', 'none');
+});
+
+$L.add('AjaxLoader', function (id, ajaxLoaderImgSrc, message){
+
+    $jq("#"+id).empty();
+    $jq("<img/>").appendTo($jq("#"+id)).attr('src',ajaxLoaderImgSrc);
+    $jq("<label>").html("<br>"+message).appendTo($jq("#"+id));
+    
+    this.show = function(){
+        $jq("#"+id).css('display', 'inline');
+    }
+    this.hide = function(){
+        $L.hideAjaxLoader(id)
+    }
+});
+
+$L.add("reload", function(data, textStatus){
+    window.location.reload();
+});
+

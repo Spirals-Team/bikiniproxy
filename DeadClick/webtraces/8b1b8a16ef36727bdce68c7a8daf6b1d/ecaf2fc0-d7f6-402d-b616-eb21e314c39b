@@ -1,0 +1,385 @@
+// CPRT Distribution for AlphaWorks. Usage governed by terms of AlphaWorks license
+// See www.alphaworks.ibm.com/tech/CPRT/ for more information.
+// Ram Rajamony, IBM Research - Austin.
+// Chet Yoder, Xerox Corp.
+// J.Turiano, Xerox Corp. - edited CPRT_Initialize() to accept arguments.
+// 2/22/06 J.Turiano - edited to pass url to data collector as argument.
+
+// ***Note - This script needs no editing. All variables are passed to the CPRT_Initialize() function below.***
+
+// Variables below accept arguments from CPRT_Initialize()
+var CPRT_AppCode = "";  // application name
+var CPRT_URL = "";      // url to the cprt collector script
+var CPRT_AppDir = "";   // application host location relative to hostname ("" if in root)
+var CPRT_SubCode = "";  // can be used to track specific subsections within application
+
+// These are custom fields that can be used to track other information;
+var CPRT_Res1 = "";
+var CPRT_Res2 = "";
+var CPRT_Res3 = "";
+var CPRT_Res4 = "";
+var CPRT_Res5 = "";
+
+
+/*
+    This function initializes the web page for CPRT by inserting event
+    handlers on all links and forms.
+*/
+function CPRT_Initialize(appcode,url,appdir,subcode,r1,r2,r3,r4,r5)
+{
+	CPRT_AppCode = appcode;
+    CPRT_URL = url;
+    CPRT_AppDir = appdir;       // Relative path to application web site
+    CPRT_SubCode = subcode;
+    CPRT_Res1 = r1;
+    CPRT_Res1 = r2;
+    CPRT_Res1 = r3;
+    CPRT_Res1 = r4;
+    CPRT_Res1 = r5;
+    
+    if (CPRT_AppDir == undefined || CPRT_AppDir == null) {
+        CPRT_AppDir = "";
+    }
+    if (CPRT_SubCode == undefined || CPRT_SubCode == null) {
+        CPRT_SubCode = "";
+    }
+    if (CPRT_Res1 == undefined || CPRT_Res1 == null) {
+        CPRT_Res1 = "";
+    }
+    if (CPRT_Res2 == undefined || CPRT_Res2 == null) {
+        CPRT_Res2 = "";
+    }
+    if (CPRT_Res3 == undefined || CPRT_Res3 == null) {
+        CPRT_Res3 = "";
+    }
+    if (CPRT_Res4 == undefined || CPRT_Res4 == null) {
+        CPRT_Res4 = "";
+    }
+    if (CPRT_Res5 == undefined || CPRT_Res5 == null) {
+        CPRT_Res5 = "";
+    }
+
+//alert("CPRT_Initialize() Start\n\nwindow.location.hostname: " + window.location.hostname + "\n\nwindow.name: " + window.name + "\n\ntypeof window.rt_initialized: " + typeof window.rt_initialized + "\n\n");
+    if (typeof window.rt_initialized == "undefined")
+    {
+        window.rt_initialized = true;
+
+        // Save the onload event handler and insert our own.
+        window.rt_honload = window.onload;
+        window.onload = CPRT_EndDeltaCalc;
+
+// Commented out to prevent sending a message when the back button is pressed.
+//      window.rt_hunload = window.onunload;
+//      window.onunload = CPRT_CheckExit;
+
+        if (typeof window.rt_uniqid == "undefined") {
+            window.rt_uniqid = 42;
+        }
+
+        // Update all links, saving the onclick event handler and inserting our own.
+        for (var i = 0; i < document.links.length; i++) {
+            document.links[i].rt_honclick = document.links[i].onclick;
+            document.links[i].onclick = CPRT_StartDeltaCalc;
+        }
+
+        // Update all forms, saving the onsubmit event handler and inserting our own.
+        for (var i = 0; i < document.forms.length; i++) {
+            document.forms[i].rt_honclick = document.forms[i].onsubmit;
+            document.forms[i].onsubmit = CPRT_StartDeltaCalc;
+        }
+    }
+
+    // Unique ID is the URL of the current document.
+    window.rt_uniqid = CPRT_xform(window.document.URL);
+
+//alert("CPRT_Initialize() End\n\nwindow.location.hostname: " + window.location.hostname + "\n\nwindow.name: " + window.name + "\n\ntypeof window.rt_initialized: " + typeof window.rt_initialized + "\n\n");
+}
+
+/*
+    This function gets called whenever a user clicks on an instrumented link.
+    It saves the current time in the window header, and then calls the onclick
+    event defined for the link.
+*/
+function CPRT_StartDeltaCalc ()
+{
+    // Strip any remaining RT args from the window name.  There should be none.
+
+    var id = window.name.indexOf ('_RTID_');
+    if (id >= 0) {
+        window.name = (id == 0) ? "" : window.name.substring (0, id);
+    }
+
+    // Save the original window name in case we are exiting the site
+    var origname = window.name;
+    // Save the unique ID and start time in the window name
+    window.name = window.name + '_RTID_' + window.rt_uniqid + '_RTST_' + (new Date()).getTime();
+//alert ("CPRT_StartDeltaCalc Begin\n\nwindow.name: " + window.name + "\n\nthis.hostname: " + this.hostname + "\nwindow.location.hostname: " + window.location.hostname);
+
+    // If the current hostname differs from the hostname in the link, we are going to
+    // a different host, so don't save any information in the window name.
+    var this_hostname = CPRT_GetHostName(this);
+    if (CPRT_IsSameHost(this_hostname)) {
+        //alert ("Hostname match on " + this_hostname);
+        window.rt_exitlink = "";
+    }
+    else {
+        //alert ("Hostname MISMATCH on " + this_hostname);
+        // First, restore the window name, so our information is not in it
+        window.name = origname;
+        // Enable the unload function to realize we are exiting the site
+        window.rt_exitlink = this.href;
+    }
+
+    // Call the original event handler stored for this link, if any.
+    // Return the results of the original onclick event handler.
+    var followHref = true;
+    if (typeof this.rt_honclick != "undefined") {
+        if(this.rt_honclick != null)             // New line added
+		{
+			var result = this.rt_honclick();
+           // alert("CPRT+StartDeltaCalc result=" + result);
+			if (typeof result != "undefined") {
+				followHref = result;
+			}
+		}
+		else                                        // New line added
+		{                                           // New line added
+			followHref = null;						// New line added
+		}
+    }
+//alert("CPRT_StartDeltaCalc End\n\nid: " + id + "\nwindow.name: " + window.name + "\nFollowHref: " + followHref);
+    return  true; // followHref;
+}
+
+/*
+    This function gets called when the page loads.  If the previous page was an instrumented page,
+    the start time is saved in the window name.  This function peforms the following steps:
+    1) retrieve the start time from the window name
+    2) calculate the delta between the start time and the current time
+    3) send this information back to the collector server
+    4) call the onload event handler, if one is defined
+*/
+function CPRT_EndDeltaCalc ()
+{
+    var id = window.name.indexOf ('_RTID_');
+    var st = window.name.indexOf ('_RTST_');
+
+//alert("CPRT_EndDeltaCalc Begin\n\nst: " + st + "\nid: " + id + "\n\nwindow.name: " + window.name);
+
+    // If there is a RT start time and unique id in the window name, an
+    // instrumented page called us, so process the page and send the
+    // information back to the collector server.
+
+    if (st >= 0 && id >= 0)
+    {
+        var origname = window.name;     // For debug only
+        var now = new Date();
+        var deltat = 0;    
+        
+        // Get the start time of when the user clicked the link to load this page.
+        var t0 = parseInt (window.name.substring (st+6, window.name.length), 10);
+        if (t0 == 0 || ((typeof isNaN == "function") && isNaN(t0))) {
+            deltat = "error-" + t0;
+        }
+        else {
+            t0 = window.name.substring (st+6, window.name.length);
+            var temp0 = now.getTime() - window.rt_ldstart;
+            var temp1 = now.getTime() - t0;
+            deltat = temp0 + "," + temp1;
+        }   
+
+        // Get the unique page id of the page that was requested.
+        var idstring = window.name.substring (id+6, st);
+
+        // Clear the start time and unique id from the window name.
+        window.name = (id == 0) ? "" : window.name.substring (0, id);
+
+        // Create the list of arguments to be passed back to the collector server.
+        var fname = CPRT_URL;
+        fname = fname + "?appcode=" + CPRT_AppCode;
+        fname = fname + "&subcode=" + CPRT_SubCode;
+        fname = fname + "&Delta=" + deltat;
+//      fname = fname + "&origwname=" + origname;
+//      fname = fname + "&now=" + now.getTime();
+//      fname = fname + "&t0=" + t0;
+//      fname = fname + "&newwname=" + window.name;
+//      fname = fname + "&idstring=" + idstring;
+//      fname = fname + "&rt_uniqid=" + window.rt_uniqid;
+//      fname = fname + "&version=rtarlv0.js";
+        fname = fname + "&referrer=" + window.document.referrer;
+        fname = fname + "&webpage=" + window.location.href;
+        fname = fname + "&UserCountry=" + navigator.browserLanguage;
+        fname = fname + "&res1=" + CPRT_Res1;
+        fname = fname + "&res2=" + CPRT_Res2;
+        fname = fname + "&res3=" + CPRT_Res3;
+        fname = fname + "&res4=" + CPRT_Res4;
+        fname = fname + "&res5=" + CPRT_Res5;
+
+//alert("idstring="+idstring+"\n\nrt_uniqid="+window.rt_uniqid+"\n\nreferrer="+CPRT_xform(window.document.referrer));
+        // Don't treat as bad data if the referrer is blank.  This seems to happen
+        // when the links contain an onclick event handler.
+        if (idstring == window.rt_uniqid || (idstring != CPRT_xform(window.document.referrer) && ("" != window.document.referrer))) {
+            fname = fname + "&BAD_OR_SELF_DELTA";
+        }
+
+//alert("CPRT_EndDeltaCalc\n\nURL: " + fname);
+
+        // Send the arguments to the collector server.
+        window.rt_cgi = new Image();
+        window.rt_cgi.src = fname;
+    }
+
+    // Call any onload event handler, if defined.
+    if (typeof window.rt_honload != "undefined") {
+        try
+        {
+            window.rt_honload();
+        }
+        catch (e)
+        {
+            // do  nothing.
+        }
+    }
+//alert("CPRT_EndDeltaCalc End\n\nst: " + st + "\nid: " + id + "\n\nwindow.name: " + window.name);
+}
+
+function CPRT_xform (s)
+{
+    p = s.replace (/[^a-zA-Z0-9]/g, "_");
+    return p;
+}
+
+function CPRT_WaitForXmit ()
+{
+    var num = 0, prevwait = 0, temp, start;
+
+    start = (new Date()).getTime();
+    while (1)
+    {
+        num++;
+        for (j = 0; j < 4000; j++) ;
+        temp = (new Date()).getTime();
+        if ((temp - start) >= 500)      // Wait for 500 milliseconds
+            break;
+        prevwait = temp - start;
+    }
+    // window.name="num_" + num + "_realwait_" + (temp - start) + "_prevwait_" + prevwait;
+    //alert ("CPRT_WaitForXmit\n\n num: " + num);
+}
+
+function CPRT_CheckExit ()
+{
+    var zz;
+
+    if (typeof window.rt_exitlink == "undefined")
+        zz = "Unknown-location";
+    else if (window.rt_exitlink != "")
+        zz = window.rt_exitlink;
+    else // if (window.rt_exitlink == "")
+        return;
+
+    var fname = CPRT_URL + "?EXITLINK=" + zz;
+    var xx = new Image();
+    xx.src = fname;
+    CPRT_WaitForXmit();
+}
+
+function CPRT_GetHostName(obj)
+{
+    var hostname = "";
+
+    if (typeof obj.hostname != "undefined") {
+        // This is a link, just get the hostname from the link object.
+        hostname = obj.hostname;
+    }
+    else if (typeof obj.action != "undefined") {
+        // This is a form, parse the hostname from the action URL.
+        var action = obj.action;
+        var start = action.indexOf("://");
+        start = (start == -1) ? 0 : start += "://".length
+
+        var stop = action.indexOf(":", start);          // Look for port separator after hostname
+        if (-1 == stop) {
+            stop = action.indexOf("/", start);          // Look for start of URI after hostname
+            if (-1 == stop) {
+                stop = action.indexOf("\\", start);     // Look for start of URI after hostname
+                if (-1 == stop) {
+                    stop = action.length;               // Return the entire string
+                }
+            }
+        }
+        if (0 == start && 0 == stop) {
+            // This is a relative form action URL, so get
+            // the hostname from the window location's hostname
+            hostname = window.location.hostname;
+        }
+        else {
+            hostname = action.substr(start, (stop-start));
+        }
+    }
+//    alert("hostname: " + hostname);
+    return hostname;
+}
+
+// Determines base hostname (hostname + base dir) match with link url base hostname
+function CPRT_IsSameHost(hostname)
+{
+    var this_hostname = hostname + CPRT_AppDir;
+    var link_hostname = window.location.hostname + window.location.pathname;
+    // Determine levels of sub directories from hostname to check (i.e. /app/cic - 2 levels)
+    var level = getDirLevel(CPRT_AppDir);
+    
+    // Extract link to match from full url (format: hostname/app/app_dir_path)
+    link_hostname = extract_url(link_hostname,level);
+
+    //alert ("this_hostname:" + this_hostname + "link_hostname:" + link_hostname);
+    if( this_hostname.match(link_hostname) && this_hostname.length==link_hostname.length ) {
+      return true;
+    }
+    else {
+      return false;
+    }
+}
+
+// Extract base hostmame from link full pathname. Level of subdirectory indicated by 2nd arg
+function extract_url (s,n) 
+{
+  var str = s;
+  var start = 0;
+  var end;
+  for (i=0;i<=n;i++) {
+    start = str.indexOf("/",start);
+    if (start==-1) {
+      end = str.length;
+      break;
+    }
+    else {
+      start++;
+    }
+    end = start-1;
+  }
+  str = str.substring(0,end);
+//alert("extracted url is " + str);  //////////////////////////////
+  return str;  
+}
+
+// Get levels of directories to return
+function getDirLevel (s)
+{
+  var arr = new Array();
+  if( (s != "") && (s != null) && (s != undefined) ){
+    arr = s.match(/\//g);
+  }
+  if (!arr) {
+    var level = 0;
+  }
+  else {
+      var level = arr.length;
+  }
+//alert("level is " + level); /////////////////////////////////////
+  return level;  
+}
+    
+// This code gets run when the script is first included on the page.
+//alert("Loading cprt.js");
+window.rt_ldstart = (new Date()).getTime();

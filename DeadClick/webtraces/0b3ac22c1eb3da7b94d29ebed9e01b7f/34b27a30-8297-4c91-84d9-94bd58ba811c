@@ -1,0 +1,165 @@
+/*
+Copyright (c) 2018 Isarta Inc. All Rights Reserved.
+For more informations: info@isarta.com
+*/
+
+// Variables globales
+var jobs;
+var unseen = 0;
+var jobCount = 0;
+var grisPastille = '#bebebe';
+
+// Scrollbar stylisée
+const ps = new PerfectScrollbar('#listeEmploisInbox', {
+	suppressScrollX: true
+});
+
+// MÀJ de l'entête de la liste des emplois
+function headerUnseen() {
+	var headerTemp;
+	
+	if (unseen > 0) {
+		$('#pastilleInbox').text(unseen);
+		$('#pastilleInbox').show();
+	} else {
+		$('#pastilleInbox').hide();
+	}		
+
+	if (unseen < 2 ) {
+		headerTemp = $('#headerSingulierTemp').html();
+	} else {
+		headerTemp = $('#headerPlurielTemp').html();
+	}
+
+	var headerRendered = Mustache.render(headerTemp, {
+		unseen: unseen,
+		jobCount: jobCount,
+	});
+
+	$('#headerInbox').html(headerRendered);
+}
+
+
+$(document).ready(function() {
+	$(document).on('click', function(e) {
+		var lien  = e.currentTarget.activeElement;
+		var login = lien.dataset.login;
+	
+		// Afficher l'emploi cliqué comme vu
+		if (login) {
+			for (var i = 0; i < jobs.length; i++) {
+				if (jobs[i].login === login && !jobs[i].viewed) {
+					console.log('Emploi non vu');
+	
+					// Rang du résultat de recherche
+					var searchRow = $('.search-row[data-login="' + login + '"]').parent().parent();
+					searchRow.find($('td[class*="listing-des-offres"]')).addClass('viewed-gauche-gris');
+					searchRow.find($('td[class*="ponderationListing"]')).addClass('viewed-gris');
+					searchRow.find($('td[class*="EtoileFavori"]')).addClass('viewed-gris');
+					searchRow.find($('td[class*="lstBody21"]')).addClass('viewed-droite-gris');
+	
+					// Rang de la pastille
+					var pastilleRow = $('.pastille-row[data-login="' + login + '"]').parent().parent();
+					pastilleRow.find($('.tableau-inbox-description')).addClass('lien-inbox-viewed');
+					
+					// MÀJ de l'entête de la liste des emplois
+					if (unseen > 0) unseen--;
+					headerUnseen();
+					
+					break;
+				}
+			}
+		}
+	
+		// Cacher la liste si on clique à l'extérieur
+		if ($('#containerInbox').has(e.target).length === 0 && $('#usagerInbox, #pastilleInbox').is(e.target) === false) {
+			$('#containerInbox').hide();
+		}
+	});
+	
+	// Afficher la liste
+	$('#usagerInbox, #pastilleInbox').click(function() {
+		if ($('#containerInbox').is(':visible')) {
+			$('#containerInbox').hide();
+		} else {
+			$.post('/cgi-bin/emplois/pm.cgi', {
+				action: 'update_pastille'
+			}, function(result) {
+				console.log(result);
+			});
+	
+			$('#pastilleInbox').css('background', grisPastille);
+			$('#containerInbox').show();
+		}
+	});
+	
+	// Afficher la scrollbar si on est dans la liste
+	$('#listeEmploisInbox').hover(function() {
+		ps.update();
+	});
+
+	// Obtenir la liste des emplois
+	$.post('/cgi-bin/emplois/pm.cgi', {
+		action: 'pastille'
+	}, function(result) {
+		if (result.status === 'success') {
+			// Offir de mettre à jour 
+			var lastUpdate = result.data.lastUpdate;
+			var lastUpdateLimit = 182;
+
+			if (lastUpdate > lastUpdateLimit) {
+				$('#lastUpdateCountInbox').text(lastUpdate);
+				$('#lastUpdateGroupInbox').show();
+			}
+
+			// Mettre la pastille en gris si il n'y a pas de nouveaux emplois
+			var newJobs = result.data.newJobs;
+			if (newJobs === 0) $('#pastilleInbox').css('background', grisPastille);
+
+			// MÀJ de l'entête de la liste des emplois
+			jobs     = result.data.jobs;
+			jobCount = jobs.length;
+			unseen   = parseInt(result.data.unseen);
+			
+			headerUnseen();
+
+			if (jobCount > 0) {
+				// Ajouter les éléments à la liste
+				for (var i = 0; i < jobCount; i++) {
+					var login       = jobs[i].login;
+					var compagnie   = jobs[i].compagnie;
+					var poste       = jobs[i].poste;
+					var lieu        = jobs[i].lieu;
+					var pourcentage = jobs[i].pourcentage;
+					var viewed      = parseInt(jobs[i].viewed);
+					var ligneBas    = (i === jobCount - 1 ? 'border-bottom: 0;' : '');
+
+					var lienInbox = '';
+					if (viewed) {
+						lienInbox = 'lien-inbox-viewed';
+					}
+
+					var jobTemp = $('#jobTemp').html();
+					var jobRendered = Mustache.render(jobTemp, {
+						lienInbox:   lienInbox,
+						ligneBas:    ligneBas,
+						pourcentage: pourcentage,
+						login:       login,
+						poste:       poste,
+						compagnie:   compagnie,
+						lieu:        lieu,
+					});
+
+					$('#emploisInbox').append(jobRendered);
+				}
+			} else {
+				//Aucun emplpois
+				$('#listeEmploisInbox').hide();
+				$('#toutAfficherInbox').css('border-top', '0');
+			}
+		} else {
+			// Erreur de requête
+			console.log(result);
+		}
+	});
+});

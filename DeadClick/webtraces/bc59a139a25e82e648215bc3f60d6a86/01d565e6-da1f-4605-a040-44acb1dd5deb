@@ -1,0 +1,241 @@
+
+	 
+     function updateFooterCart(value) {
+    	 htmlCart.reload(true);
+    	 htmlCart.maximize() ;
+     }
+
+	// animation function 
+	// open / close flash container
+	function openFooterCartContainer () {
+		document.getElementById('footercart-container').style.height = 135+'px';
+	}
+	
+	function closeFooterCartContainer () {
+		document.getElementById('footercart-container').style.height = 33+'px';
+	}	
+	
+var listMode	= true;
+var processNumber	= 1;
+
+jQuery(document).ready(function() {
+	/**
+	 * @desc ajout d'un produit a
+	 * la liste d'un mariée 
+	 */
+	jQuery('.addtolist').each(function() {
+		var url	= jQuery(this).attr('href');
+		jQuery(this).removeAttr('href')
+					.click(function() {
+
+			processNumber++;
+			htmlCart.displayLoadingMessage();
+			jQuery.ajax({
+				type: 'POST',
+				url: url,
+				dataType: 'text',
+				async: true,
+				success: function(msg) {
+					processNumber--;
+					updateFooterCart(msg);
+				},
+				error: function(msg) {
+				}
+			});
+		});
+	});
+	jQuery('.buttonAddListToList').hide();
+	jQuery('.spanAddListToList').click(function() {
+		processNumber++;
+		jQuery.ajax({
+			type: 'POST',
+			url: jQuery('.formAddListToList').attr('action').replace('/addThemeList/', '/addAjaxThemeList/'),
+			data: 'category_id=' + jQuery('#category_id').val(),
+			dataType: 'text',
+			async: true,
+			success: function(msg) {
+				processNumber--;
+				updateFooterCart(msg);
+			},
+			error: function(msg) {
+			}
+		});
+	})
+		.show();
+	/**
+	 * @desc ajout d'un produit au 
+	 * panier d'un invité
+	 */
+	jQuery('.inputaddtocart').hide();
+	jQuery('.addtocart').show();
+	jQuery('.addtocart').each(function() {		
+		var url	= jQuery(this).attr('href');
+		jQuery(this).removeAttr('href').click(function() {
+			processNumber++;
+			htmlCart.displayLoadingMessage();
+			jQuery.ajax({
+				type: 'POST',
+				url: url.replace('/add/', '/addAjax/'),
+				data: getProductGuestData(),
+				dataType: 'text',
+				async: true,
+				success: function(msg) {
+					processNumber--;
+					var error	= new RegExp('.*<error>([0-9]*)</error>.*', 'gi');
+					/*var isError	= error.exec(msg);
+					if (isError[1] == 1)
+					{
+						var expres	= new RegExp('.*<message><!\\\[CDATA\\\[(.*)\]\]></message>.*', 'gi');
+						var test	= expres.exec(msg);						
+						if (test[1] != 'undefined' && test[1] != '')	{
+							jQuery.fancybox({
+								'content'			: test[1],
+								'autoDimensions'	: false,
+								'titleShow'			: false,
+								'onComplete'		: function() { jQuery('#fancybox-inner').css('top', '0').css('overflow', 'inherit').css('left', '0'); },
+								'width'             : 491,
+								'height'            : 220
+							});
+	//						alert(test[1]);
+						}
+					}
+//					jQuery.fancybox({
+//						'href'				: url.replace('/add/', '/confirmAddToCart/') + '?' + getProductGuestData(),
+//						'autoDimensions'	: false,
+//						'titleShow'			: false
+//					});*/
+					updateFooterCart(msg);
+				},
+				error: function(msg) {
+				}
+			});		
+		});
+	});	
+	
+	/**
+	 * @desc RECHERCHE COUPLES
+	 */
+	jQuery('.input_search_customer').focus(function() {
+		if (jQuery(this).val() == 'Rechercher un couple') {
+			jQuery(this).val('');
+		}
+	}).blur(function() {
+		if (jQuery(this).val() == '') {
+			jQuery(this).val('Rechercher un couple');
+		}		
+	});
+	
+	/**
+	 * @desc ajoute adresse email dans champs email en filigranne
+	 */
+	jQuery('#email').css('color', 'gray')
+					.focus(function() {
+		if (jQuery(this).val() == 'adresse email') {
+			jQuery(this).val('');
+			jQuery(this).css('color', 'black');
+		}
+		
+	}).blur(function() {
+		if (jQuery(this).val() == '') {
+			jQuery(this).val('adresse email');
+			jQuery(this).css('color', 'gray');
+		}
+	});
+});
+	
+function getProductCoupleData()
+{
+	var _return	= '';
+	if (listMode == false) {
+		var priceOriginal	= jQuery('#backoffice_price_original').val();
+		var price			= jQuery('#backoffice_price').val();
+		var qty				= jQuery('#backoffice_qty').val();
+		if (price != priceOriginal && !empty(parseFloat(price)) && !isNaN(parseFloat(price)))
+		{
+			_return	+= 'backoffice_price=' + parseFloat(price.replace(',', '.'));
+		}
+		else
+		{
+			jQuery('#backoffice_price').val('');
+		}
+		_return	+= '&';
+		if (!isNaN(parseFloat(qty)) && !empty(parseFloat(qty)))
+		{
+			_return	+= 'backoffice_qty=' + qty;
+		}
+		else
+		{
+			_return	+= 'backoffice_qty=1' ;
+		}
+		_return	+= '&backoffice_review=' + jQuery('#backoffice_review').val();
+		_return	+= '&name=' + jQuery('#name').val();
+		_return	+= '&flag_produit=' + jQuery('#flag_produit').val();
+		_return += '&description=' + jQuery('#description').val();
+	}
+	return _return;
+}
+
+/**
+ * @desc Récupération de la quantité OU du montant du don
+ */
+function getProductGuestData()
+{
+	var _return = '';
+	if (jQuery('#qty').size() > 0 && jQuery('#custom_price').size() > 0) {
+		var qty 			= jQuery('#qty').val();
+		var itemId 			= jQuery('#item_id').val();
+		var custom_price 	= jQuery('#custom_price').val();
+		_return += 'item_id='+itemId+'&';
+		if (custom_price && !empty(parseFloat(custom_price)) && !isNaN(parseFloat(custom_price))) 
+		{
+			_return += 'custom_price=' + parseFloat(custom_price.replace(",", "."));
+		}
+		else if (qty && !empty(parseFloat(qty)) && !isNaN(parseFloat(qty))) 
+		{
+			_return += 'qty=' + qty;
+		}
+		else
+		{
+			_return	+= 'qty=1' ;
+		}
+	}
+	return _return;
+}
+
+function empty (mixed_var) {
+    // !No description available for empty. @php.js developers: Please update the function summary text file.
+    // 
+    // version: 911.1619
+    // discuss at: http://phpjs.org/functions/empty    // +   original by: Philippe Baumann
+    // +      input by: Onno Marsman
+    // +   bugfixed by: Kevin van Zonneveld (http://kevin.vanzonneveld.net)
+    // +      input by: LH
+    // +   improved by: Onno Marsman    // +   improved by: Francesco
+    // +   improved by: Marc Jansen
+    // +   input by: Stoyan Kyosev (http://www.svest.org/)
+    // *     example 1: empty(null);
+    // *     returns 1: true    // *     example 2: empty(undefined);
+    // *     returns 2: true
+    // *     example 3: empty([]);
+    // *     returns 3: true
+    // *     example 4: empty({});    // *     returns 4: true
+    // *     example 5: empty({'aFunc' : function () { alert('humpty'); } });
+    // *     returns 5: false
+    
+    var key;    
+    if (mixed_var === "" ||
+        mixed_var === 0 ||
+        mixed_var === "0" ||
+        mixed_var === null ||        mixed_var === false ||
+        typeof mixed_var === 'undefined'
+    ){
+        return true;
+    } 
+    if (typeof mixed_var == 'object') {
+        for (key in mixed_var) {
+            return false;
+        }        return true;
+    }
+ 
+    return false;
+}

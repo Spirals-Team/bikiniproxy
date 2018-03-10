@@ -1,0 +1,405 @@
+/**
+ * MegaMenu
+ * copy any changes made to this function to megamenu.js
+ */
+
+(function($j) {
+
+    // IE8 and less doesn't support getBoundingClientRect().width
+    var getWidth = function(el) {
+        return el.getBoundingClientRect().right - el.getBoundingClientRect().left;
+    };
+
+
+    var MegaMenu = function() {
+
+        // For storing the calculated menu height
+        var menuHeight = 0;
+
+        var $activeMenuIndex = null;
+
+        var _keydown = function(event, items) {
+            if (event.altKey || event.ctrlKey) {
+                return;
+            }
+
+            var keyCode = {
+                    ALT: 18,
+                    BACKSPACE: 8,
+                    CAPS_LOCK: 20,
+                    COMMA: 188,
+                    COMMAND: 91,
+                    COMMAND_LEFT: 91,
+                    COMMAND_RIGHT: 93,
+                    CONTROL: 17,
+                    DELETE: 46,
+                    DOWN: 40,
+                    END: 35,
+                    ENTER: 13,
+                    ESCAPE: 27,
+                    HOME: 36,
+                    INSERT: 45,
+                    LEFT: 37,
+                    MENU: 93,
+                    NUMPAD_ADD: 107,
+                    NUMPAD_DECIMAL: 110,
+                    NUMPAD_DIVIDE: 111,
+                    NUMPAD_ENTER: 108,
+                    NUMPAD_MULTIPLY: 106,
+                    NUMPAD_SUBTRACT: 109,
+                    PAGE_DOWN: 34,
+                    PAGE_UP: 33,
+                    PERIOD: 190,
+                    RIGHT: 39,
+                    SHIFT: 16,
+                    SPACE: 32,
+                    TAB: 9,
+                    UP: 38,
+                    WINDOWS: 91
+                },
+                length = items.length,
+                currentIndex = items.index(event.target),
+                toFocus = false;
+
+            switch (event.keyCode) {
+                case keyCode.RIGHT:
+                case keyCode.DOWN:
+                    toFocus = items[(currentIndex + 1) % length];
+                    break;
+                case keyCode.LEFT:
+                case keyCode.UP:
+                    toFocus = items[(currentIndex - 1 + length) % length];
+                    break;
+                case keyCode.SPACE:
+                case keyCode.ENTER:
+                    _clickHandler({
+                        target: event.target
+                    }, event.target);
+                    event.preventDefault();
+            }
+
+            if (toFocus) {
+                //$j( event.target ).attr( "tabIndex", -1 );
+                //$j( toFocus ).attr( "tabIndex", 0 );
+                toFocus.focus();
+                return false;
+            }
+
+            return true;
+        };
+
+        /**
+         * If CSS Transitions are available, animate drop down menu via classes. Otherwise fallback to jQuery
+         * @param  {[type]} $el                Element to apply transitions on
+         * @param  {[type]} direction       Takes 'Up', 'Down', 'show'. If not provided, element reverts to default state (hidden)
+         */
+        var toggleDropDown = function($el, direction) {
+            var downClass = 'slideDown';
+            var showClass = 'show';
+            var transitions = Modernizr.csstransitions;
+
+            if ((direction === 'Up') || (direction === 'Down')) {
+                if (transitions) {
+                    $el
+                        .removeClass(downClass + ' ' + showClass)
+                        .show(0, function(){
+                            if (direction === 'Up') {
+                                $el.css('height', 0);
+                                setTimeout(function(){
+                                    $el.hide();
+                                }, 700);
+                            } else {
+                                $el.addClass(downClass);
+                                setTimeout(function(){
+                                    if (menuHeight  > 0 ) {
+                                        $el.css('height', menuHeight + 'px');
+                                    }
+                                }, 0);
+                            }
+                        });
+                } else {
+                    if (menuHeight  > 0 ) {
+                        $el.addClass(downClass).css('height', menuHeight + 'px');
+                    }
+                    $el['slide'+direction]('slow');
+                }
+            } else if (direction && (direction.toLowerCase() === 'show')) {
+                if (menuHeight  > 0 ) {
+                    $el.addClass(downClass).css('height', menuHeight + 'px');
+                }
+                $el
+                    .removeClass(downClass)
+                    .addClass(showClass)
+                    .show();
+            } else {
+                $el
+                    .css('height', 0)
+                    .removeClass(downClass + ' ' + showClass)
+                    .hide();
+            }
+        };
+
+        var _clickHandler = function(event, target) {
+
+            if ($activeMenuIndex != null) {
+                if ($j(target).parent().index() === $activeMenuIndex) {
+                    // slide menu closed
+                    $j(target)
+                        .attr('aria-selected', false)
+                        .removeClass('active');
+
+                    var $menuItem = $j('#megamenu > div').eq($activeMenuIndex);
+
+                    $menuItem
+                        .attr({
+                            'aria-expanded': false,
+                            'aria-hidden': true
+                        })
+                        .stop(true, true)
+
+                    toggleDropDown($menuItem, 'Down');
+
+                    $activeMenuIndex = null;
+                } else {
+                    // toggle menu content visibility
+                    $j('#megamenu > .l1Items a')
+                        .attr('aria-selected', false)
+                        .removeClass('active');
+
+                    var $menuItem = $j('#megamenu > div').eq($activeMenuIndex);
+
+                    $menuItem
+                        .attr({
+                            'aria-expanded': false,
+                            'aria-hidden': true
+                        })
+
+                    toggleDropDown($menuItem);
+
+                    $activeMenuIndex = $j(target).parent().index();
+                    $menuItem = $j('#megamenu > div').eq($activeMenuIndex);
+
+                    $j(target)
+                        .attr('aria-selected', true)
+                        .addClass('active');
+
+                    $menuItem
+                        .attr({
+                            'aria-expanded': true,
+                            'aria-hidden': false
+                        });
+
+                    toggleDropDown($menuItem, 'show');
+                }
+            } else {
+                // slide open menu
+                $activeMenuIndex = $j(target).parent().index();
+                var $menuItem = $j('#megamenu > div').eq($activeMenuIndex);
+
+                $j(target)
+                    .attr('aria-selected', true)
+                    .addClass('active');
+
+                $menuItem
+                    .attr({
+                        'aria-expanded': true,
+                        'aria-hidden': false
+                    })
+                    .stop(true, true)
+
+                toggleDropDown($menuItem, 'Down');
+            }
+        };
+
+        var _hoverHandler = function(event, target) {
+
+            $j('#megamenu > .l1Items a')
+                .attr('aria-selected', false)
+                .removeClass('active');
+
+            if ($activeMenuIndex != null) {
+
+                var $menuItem = $j('#megamenu > div').eq($activeMenuIndex);
+
+                $menuItem
+                    .attr({
+                        'aria-expanded': false,
+                        'aria-hidden': true
+                    });
+
+                toggleDropDown($menuItem);
+
+                $activeMenuIndex = $j(target).parent().index();
+
+                $j(target)
+                    .attr('aria-selected', true)
+                    .addClass('active');
+
+                $menuItem = $j('#megamenu > div').eq($activeMenuIndex);
+
+                $menuItem
+                    .attr({
+                        'aria-expanded': true,
+                        'aria-hidden': false
+                    });
+
+                toggleDropDown($menuItem, 'show');
+
+            } else {
+                $activeMenuIndex = $j(target).parent().index();
+                var $menuItem = $j('#megamenu > div').eq($activeMenuIndex);
+
+                $j(target)
+                    .attr('aria-selected', true)
+                    .addClass('active');
+
+                $menuItem
+                    .attr({
+                        'aria-expanded': true,
+                        'aria-hidden': false
+                    })
+                    .stop(true, true);
+
+                toggleDropDown($menuItem, 'Down');
+            }
+        };
+
+        var items = $j('#megamenu > .l1Items > li a');
+
+        $j('#megamenu').bind('mouseleave', function(e) {
+            // slide menu closed
+            $j(items)
+                .attr('aria-selected', false)
+                .removeClass('active');
+
+            var $menuItem = $j('#megamenu > div').eq($activeMenuIndex);
+
+            $menuItem
+                .attr({
+                    'aria-expanded': false,
+                    'aria-hidden': true
+                })
+                .stop(true, true);
+
+            toggleDropDown($menuItem, 'Up');
+
+            $activeMenuIndex = null;
+        });
+
+        items
+        //.attr('href','javascript:;')    remove href from root level if js enabled
+            .removeClass('disabled') //remove disabled class if js enabled
+            // .bind('mouseenter', function(e){
+            //  _hoverHandler( { target: e.currentTarget }, e.currentTarget );
+            // })
+            //          .bind('mouseleave', function(e){
+            //  _hoverHandler( { target: e.currentTarget }, e.currentTarget );
+            // })
+            .hoverIntent(function(e) {
+                    //stuff to do on mouse enter
+                    _hoverHandler({
+                        target: e.currentTarget
+                    }, e.currentTarget);
+                },
+                function(e) {
+                    //stuff to do on mouse leave
+                    // Don't fire hover again - just let the mouse leave event handle this
+                    //_hoverHandler( { target: e.currentTarget }, e.currentTarget );
+                })
+            .bind('keydown', function(e) {
+                return _keydown(e, items);
+            })
+            .bind('focus blur mouseover mouseout', function(e) {
+                if (e.type == 'mouseover' || e.type == 'focus') {
+                    $j(this).addClass('hover');
+                } else {
+                    $j(this).removeClass('hover');
+                }
+            });
+
+        $j('#megamenu .button-close').bind('click', function() {
+            items.eq($activeMenuIndex).trigger('click');
+        });
+
+
+        // Full width top-level menu
+        /*var nav_max_width = getWidth($j('#megamenu')[0]), nav_item_width = 0, lastItem, lastItemWidth;
+
+        $j('#megamenu .l1Items > li').each(function() {
+            nav_item_width += getWidth($j(this)[0]);
+        });
+
+        lastItem = $j('#megamenu .l1Items > li').last()[0];
+        lastItemWidth = getWidth(lastItem);
+        $j('#megamenu .l1Items > li').last().width( Math.floor(lastItemWidth+(nav_max_width-nav_item_width)) );*/
+
+        // Equal heights for l2Cols
+        $j('#megamenu > div').each(function() {
+            var submenu = $j(this);
+
+            toggleDropDown(submenu, 'show'); // show otherwise display:none prevents getting dimensions
+
+            // Add bottom padding to .smcontent so it doesn't run into .l1Footer
+            submenu.find('.smcontent').css('padding-bottom', submenu.find('.l1Footer').outerHeight(true));
+
+            if ($j('.l2Cols > li', this).length < 4) {
+                $j('.l2Cols > li', this).css({
+                    'width': 'auto',
+                    'padding-left': '25px'
+                });
+
+                toggleDropDown(submenu);
+
+                return;
+            }
+
+
+            var l2items = $j('.l2Cols > li', this),
+                counter = 0;
+
+            while (l2items.slice(counter, counter + 4).length > 0) {
+                var items = l2items.slice(counter, counter + 4),
+                    max_height = 0;
+                // find max_height
+                items.each(function(i) {
+                    var h = $j(this).height();
+                    if (h > max_height) {
+                        max_height = h;
+                    }
+                    // reset left padding if its the first column in a row
+                    if (i === 0) {
+                        $j(this).css('padding-left', 0);
+                    }
+                });
+                // 1290 - Removed buffer for max height as there's already a 30px padding taken into account - Keeping track of the largest menu size here for transition purposes
+                items.css('min-height', max_height + 'px');
+                var tempMenuHeight = $j(items[0]).parent().parent().outerHeight();
+
+                if (tempMenuHeight > menuHeight) {
+                    menuHeight = tempMenuHeight;
+                }
+                counter += 4;
+            }
+            toggleDropDown(submenu);
+        });
+
+
+        // round promo image corners
+        $j('#megamenu .smpromo a div:has(img)')
+            .addClass('image')
+            .css('float', 'left')
+            .find('img').css('display', 'block')
+            .end()
+            .cornerz({
+                radius: 15,
+                background: '#666666',
+                fixIE: true
+            });
+
+    };
+
+    $j(function() {
+        MegaMenu();
+    });
+
+})(jQuery);

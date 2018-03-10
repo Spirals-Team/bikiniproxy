@@ -1,0 +1,495 @@
+// ProductCart App
+var app = angular.module('productcart', ['productcart.facets']);
+
+app.config(['$compileProvider', '$locationProvider', function ($compileProvider, $locationProvider) {
+    //$compileProvider.urlSanitizationWhitelist(/^\s*((https?|ftp|mailto|tel):)|.*?/);
+    //$compileProvider.aHrefSanitizationWhitelist(/^\s*((https?|ftp|mailto|tel):)|.*?/);
+}]);
+app.filter('unsafe', ['$sce', function($sce) {
+    return function(text) {
+        return $sce.trustAsHtml(text);
+    };
+}])
+app.directive('a', function () {
+    return {
+        restrict: 'E',
+        link: function (scope, element, attrs) {
+            var relExternal = attrs.rel && attrs.rel.split(/\s+/).indexOf('external') >= 0;
+            var relInternal = attrs.rel && attrs.rel.split(/\s+/).indexOf('internal') >= 0;
+            if (!('target' in attrs) && !(relExternal || 'external' in attrs) && !(relInternal || 'internal' in attrs)) {
+                attrs.$set('target', '_self');
+            }
+        }
+    };
+});
+
+// Bootstrap
+angular.element(document).ready(function () {
+    angular.bootstrap(document, ['productcart']);
+});
+
+// START: SERVICES
+app.factory('httpRequest', ['$q', '$http', function ($q, $http) {
+    
+    var mycache={};
+    var key = 'cache';
+    
+    return {
+        loadAsync: function (endpoint, payload, cache) {
+
+            var defer = $q.defer();
+            
+            if (mycache[key] && cache==true) {
+                defer.resolve(mycache[key]);
+            } else {
+                var httpRequest = $http({
+                    method: 'POST',
+                    url: endpoint,
+                    data: payload,
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+                }).success(function (data, status) {
+                    mycache[key] = data;
+                    defer.resolve(mycache[key]);
+                });
+            }
+            
+            return defer.promise;
+
+        }
+    }
+}]);
+
+app.service('pcService', ['$rootScope', 'httpRequest', 'currencyFilter', function ($rootScope, httpRequest, currencyFilter) {
+
+    return {   
+         
+        getShoppingCart: function (s, c) {
+            httpRequest.loadAsync('service.asp', '', c).then(function (data) {
+                data.checkoutStage = s
+                data = currencyFilter(data);
+                $rootScope.$broadcast('handleBroadcast', data);
+            });  
+        },
+        getSyndicationItems: function (c) {
+            httpRequest.loadAsync('pcSyndication_GetItems.asp', '', c).then(function (data) {
+                data = currencyFilter(data);
+                $rootScope.$broadcast('handleSyndicationItems', data);
+            });  
+        },
+        getProductList: function (s, c) {
+            httpRequest.loadAsync(pcRootUrl + '/includes/apps/pcSearch/search.asp?' + s, '', c).then(function (data) {
+                data = currencyFilter(data);
+                $rootScope.$broadcast('handleProductList', data);
+            });  
+        },
+        getOrderDetails: function (c) {
+            httpRequest.loadAsync('service_orders.asp', '', c).then(function (data) {
+                data = currencyFilter(data);
+                $rootScope.$broadcast('handleOrderDetails', data);
+            });  
+        }   
+        
+    }
+    
+}]);
+// END: SERVICES
+
+
+// START: PRIMARY CONTROLLER
+app.controller('serviceCtrl', ['$scope', '$http', '$timeout', '$log', '$compile', 'httpRequest', 'pcService', function($scope, $http, $timeout, $log, $compile, httpRequest, pcService) {     
+    function init() {
+        pcService.getShoppingCart('', false); 
+    };
+    init();
+}]);
+// END: PRIMARY CONTROLLER
+
+
+// START: CURRENCY FILTER
+app.filter("currency", [function () {
+    return function (val) {
+        
+        try {
+
+            symbol = val.currencySymbol;
+    
+            if (val.decimal == ",") {
+    
+                var myDecimal = ",";
+    
+                accounting.settings = {
+                    currency: {
+                        symbol: symbol, // default currency symbol is '$'
+                        format: "%s %v", // controls output: %s = symbol, %v = value/number (can be object: see below)
+                        decimal: ",", // decimal point separator
+                        thousand: ".", // thousands separator
+                        precision: 2 // decimal places
+                    },
+                    number: {
+                        precision: 0, // default precision on numbers is 0
+                        thousand: ".",
+                        decimal: ","
+                    }
+                }
+    
+            } else {
+    
+                var myDecimal = ".";
+    
+                accounting.settings = {
+                    currency: {
+                        symbol: symbol, // default currency symbol is '$'
+                        format: "%s %v", // controls output: %s = symbol, %v = value/number (can be object: see below)
+                        decimal: ".", // decimal point separator
+                        thousand: ",", // thousands separator
+                        precision: 2 // decimal places
+                    },
+                    number: {
+                        precision: 0, // default precision on numbers is 0
+                        thousand: ",",
+                        decimal: "."
+                    }
+                }
+    
+            }
+    
+            var priceArray = [];
+    
+            angular.forEach(val.shoppingcartrow, function (value, key) {
+    
+                if ((value.UnitPrice !== '') && (value.UnitPrice !== undefined)) {
+                    priceArray.push(accounting.unformat(value.UnitPrice, myDecimal));
+                }        
+                if ((value.RowPrice !== '') && (value.RowPrice !== undefined)) {
+                    priceArray.push(accounting.unformat(value.RowPrice, myDecimal));
+                }  
+                
+                // productoptions
+                angular.forEach(value.productoptions, function (value, key) {
+                    if ((value.unitprice !== '') && (value.unitprice !== undefined)) {
+                        priceArray.push(accounting.unformat(value.unitprice, myDecimal));
+                    }
+                    if ((value.price !== '') && (value.price !== undefined)) {
+                        priceArray.push(accounting.unformat(value.price, myDecimal));
+                    }
+                });
+                // discounts   
+                angular.forEach(val.discounts, function (value, key) {
+                    if (value) {
+                        if ((value.price !== '') && (value.price !== undefined)) {
+                            priceArray.push(accounting.unformat(value.price, myDecimal));
+                        }
+                    }
+                });
+                // productSubTotal              
+                if ((value.productSubTotal !== '') && (value.productSubTotal !== undefined)) {
+                    priceArray.push(accounting.unformat(value.productSubTotal, myDecimal));
+                }
+                // xSellBundleDiscount             
+                if ((value.xSellBundleDiscount !== '') && (value.xSellBundleDiscount !== undefined)) {
+                    priceArray.push(accounting.unformat(value.xSellBundleDiscount, myDecimal));
+                }
+                // xSellBundleSubTotal          
+                if ((value.xSellBundleSubTotal !== '') && (value.xSellBundleSubTotal !== undefined)) {
+                    priceArray.push(accounting.unformat(value.xSellBundleSubTotal, myDecimal));
+                }
+                // itemQuantityDiscountRowTotal
+                if ((value.itemQuantityDiscountRowTotal !== '') && (value.itemQuantityDiscountRowTotal !== undefined)) {
+                    priceArray.push(accounting.unformat(value.itemQuantityDiscountRowTotal, myDecimal));
+                }
+                // additionalCharges
+                angular.forEach(value.additionalCharges, function (value, key) {
+                    if ((value.total !== '') && (value.total !== undefined)) {
+                        priceArray.push(accounting.unformat(value.total, myDecimal));
+                    }
+                });
+                // itemDiscountRowTotal
+                if ((value.itemDiscountRowTotal !== '') && (value.itemDiscountRowTotal !== undefined)) {
+                    priceArray.push(accounting.unformat(value.itemDiscountRowTotal, myDecimal));
+                }
+                // btoConfiguration
+                angular.forEach(value.btoConfiguration, function (value, key) {
+                    if ((value.BToConfigPrice !== '') && (value.BToConfigPrice !== undefined)) {
+                        priceArray.push(accounting.unformat(value.BToConfigPrice, myDecimal));
+                    }
+                });
+    
+            });
+    
+            // promotions
+            angular.forEach(val.promotions, function (value, key) {
+                if ((value.price !== '') && (value.price !== undefined)) {
+                    priceArray.push(accounting.unformat(value.price, myDecimal));
+                }
+            });
+    
+            // categoryDiscountTotal
+            if ((val.categoryDiscountTotal !== '') && (val.categoryDiscountTotal !== undefined)) {
+                priceArray.push(accounting.unformat(val.categoryDiscountTotal, myDecimal));
+            }
+            
+            // subTotalBeforeDiscounts
+            if ((val.subTotalBeforeDiscounts !== '') && (val.subTotalBeforeDiscounts !== undefined)) {
+                priceArray.push(accounting.unformat(val.subTotalBeforeDiscounts, myDecimal));
+            }
+    
+            // subtotal
+            if ((val.subtotal !== '') && (val.subtotal !== undefined)) {
+                priceArray.push(accounting.unformat(val.subtotal, myDecimal));
+            }
+    
+            // total
+            if ((val.total !== '') && (val.total !== undefined)) {
+                priceArray.push(accounting.unformat(val.total, myDecimal));
+            }
+    
+            // paymentTotal
+            if ((val.paymentTotal !== '') && (val.paymentTotal !== undefined)) {
+                priceArray.push(accounting.unformat(val.paymentTotal, myDecimal));
+            }
+    
+            // rewardPointsUsedTotal
+            if ((val.rewardPointsUsedTotal !== '') && (val.rewardPointsUsedTotal !== undefined)) {
+                priceArray.push(accounting.unformat(val.rewardPointsUsedTotal, myDecimal));
+            }
+    
+            // rewardPointsAccrued
+            //if ((val.rewardPointsAccrued !== '') && (val.rewardPointsAccrued !== undefined)) {
+            //    priceArray.push(accounting.unformat(val.rewardPointsAccrued, myDecimal));
+            //}
+    
+            // giftWrapTotal
+            if ((val.giftWrapTotal !== '') && (val.giftWrapTotal !== undefined)) {
+                priceArray.push(accounting.unformat(val.giftWrapTotal, myDecimal));
+            }
+    
+            // shipmentTotal
+            if ((val.shipmentTotal !== '') && (val.shipmentTotal !== undefined)) {
+                priceArray.push(accounting.unformat(val.shipmentTotal, myDecimal));
+            }
+    
+            // serviceHandlingFee
+            if ((val.serviceHandlingFee !== '') && (val.serviceHandlingFee !== undefined)) {
+                priceArray.push(accounting.unformat(val.serviceHandlingFee, myDecimal));
+            }
+    
+            // tax.amount
+            angular.forEach(val.taxes, function (value, key) {
+                if (value) {
+                    if ((value.amount !== '') && (value.amount !== undefined)) {
+                        priceArray.push(accounting.unformat(value.amount, myDecimal));
+                    }
+                }
+            });
+    
+            // giftCert.amount
+            angular.forEach(val.giftCerts, function (value, key) {
+                if (value) {
+                    if ((value.amount !== '') && (value.amount !== undefined)) {
+                        priceArray.push(accounting.unformat(value.amount, myDecimal));
+                    }
+                }
+            });
+    
+            // vatTotal
+            if ((val.vatTotal !== '') && (val.vatTotal !== undefined)) {
+                priceArray.push(accounting.unformat(val.vatTotal, myDecimal));
+            }
+    
+            // rewardPoints
+            if ((val.rewardPoints !== '') && (val.rewardPoints !== undefined)) {
+                priceArray.push(accounting.unformat(val.rewardPoints, myDecimal));
+            }
+    
+    
+            var priceList = [];
+            if (val.decimal == ",") {
+                priceList = accounting.formatColumn(priceArray);
+            } else {
+                priceList = accounting.formatColumn(priceArray);
+            }
+    
+    
+    
+            var b = 0;
+            angular.forEach(val.shoppingcartrow, function (value, key) {
+    
+                if ((value.UnitPrice !== '') && (value.UnitPrice !== undefined)) {
+                    value.UnitPrice = priceList[b];
+                    b++;
+                }        
+                if ((value.RowPrice !== '') && (value.RowPrice !== undefined)) {
+                    value.RowPrice = priceList[b];
+                    b++;
+                }  
+    
+    
+                // productoptions
+                angular.forEach(value.productoptions, function (value, key) {
+                    if ((value.unitprice !== '') && (value.unitprice !== undefined)) {
+                        value.unitprice = priceList[b];
+                        b++;
+                    }
+                    if ((value.price !== '') && (value.price !== undefined)) {
+                        value.price = priceList[b];
+                        b++;
+                    }
+                });
+                // discounts
+                angular.forEach(val.discounts, function (value, key) {
+                    if (value) {
+                        if ((value.price !== '') && (value.price !== undefined)) {
+                            value.price = priceList[b];
+                            b++;
+                        }
+                    }
+                });
+                // productSubTotal
+                if ((value.productSubTotal !== '') && (value.productSubTotal !== undefined)) {
+                    value.productSubTotal = priceList[b];
+                    b++;
+                }
+                // xSellBundleDiscount
+                if ((value.xSellBundleDiscount !== '') && (value.xSellBundleDiscount !== undefined)) {
+                    value.xSellBundleDiscount = priceList[b];
+                    b++;
+                }
+                // xSellBundleSubTotal
+                if ((value.xSellBundleSubTotal !== '') && (value.xSellBundleSubTotal !== undefined)) {
+                    value.xSellBundleSubTotal = priceList[b];
+                    b++;
+                }
+                // itemQuantityDiscountRowTotal
+                if ((value.itemQuantityDiscountRowTotal !== '') && (value.itemQuantityDiscountRowTotal !== undefined)) {
+                    value.itemQuantityDiscountRowTotal = priceList[b];
+                    b++;
+                }
+                // additionalCharges
+                angular.forEach(value.additionalCharges, function (value, key) {
+                    if ((value.total !== '') && (value.total !== undefined)) {
+                        value.total = priceList[b];
+                        b++;
+                    }
+                });
+                // itemDiscountRowTotal
+                if ((value.itemDiscountRowTotal !== '') && (value.itemDiscountRowTotal !== undefined)) {
+                    value.itemDiscountRowTotal = priceList[b];
+                    b++;
+                }
+                // btoConfiguration
+                angular.forEach(value.btoConfiguration, function (value, key) {
+                    if ((value.BToConfigPrice !== '') && (value.BToConfigPrice !== undefined)) {
+                        value.BToConfigPrice = priceList[b];
+                        b++;
+                    }
+                });
+    
+            });
+    
+            // promotions
+            angular.forEach(val.promotions, function (value, key) {
+                if ((value.price !== '') && (value.price !== undefined)) {
+                    value.price = priceList[b];
+                    b++;
+                }
+            });
+    
+            // categoryDiscountTotal
+            if ((val.categoryDiscountTotal !== '') && (val.categoryDiscountTotal !== undefined)) {
+                val.categoryDiscountTotal = priceList[b];
+                b++;
+            }
+            
+            // subTotalBeforeDiscounts
+            if ((val.subTotalBeforeDiscounts !== '') && (val.subTotalBeforeDiscounts !== undefined)) {
+                val.subTotalBeforeDiscounts = priceList[b];
+                b++;
+            }
+    
+            // subtotal
+            if ((val.subtotal !== '') && (val.subtotal !== undefined)) {
+                val.subtotal = priceList[b];
+                b++;
+            }
+    
+            // total
+            if ((val.total !== '') && (val.total !== undefined)) {
+                val.total = priceList[b];
+                b++;
+            }
+    
+            // paymentTotal
+            if ((val.paymentTotal !== '') && (val.paymentTotal !== undefined)) {
+                val.paymentTotal = priceList[b];
+                b++;
+            }
+    
+            // rewardPointsUsedTotal
+            if ((val.rewardPointsUsedTotal !== '') && (val.rewardPointsUsedTotal !== undefined)) {
+                val.rewardPointsUsedTotal = priceList[b];
+                b++;
+            }
+    
+            // rewardPointsAccrued
+            //if ((val.rewardPointsAccrued !== '') && (val.rewardPointsAccrued !== undefined)) {
+            //    val.rewardPointsAccrued = priceList[b];
+            //    b++;
+            //}
+    
+            // giftWrapTotal
+            if ((val.giftWrapTotal !== '') && (val.giftWrapTotal !== undefined)) {
+                val.giftWrapTotal = priceList[b];
+                b++;
+            }
+    
+            // shipmentTotal
+            if ((val.shipmentTotal !== '') && (val.shipmentTotal !== undefined)) {
+                val.shipmentTotal = priceList[b];
+                b++;
+            }
+    
+            // serviceHandlingFee
+            if ((val.serviceHandlingFee !== '') && (val.serviceHandlingFee !== undefined)) {
+                val.serviceHandlingFee = priceList[b];
+                b++;
+            }
+    
+            // tax.amount
+            angular.forEach(val.taxes, function (value, key) {
+                if (value) {
+                    if ((value.amount !== '') && (value.amount !== undefined)) {
+                        value.amount = priceList[b];
+                        b++;
+                    }
+                }
+            });
+    
+            // giftCert.amount
+            angular.forEach(val.giftCerts, function (value, key) {
+                if (value) {
+                    if ((value.amount !== '') && (value.amount !== undefined)) {
+                        value.amount = priceList[b];
+                        b++;
+                    }
+                }
+            });
+    
+            // vatTotal
+            if ((val.vatTotal !== '') && (val.vatTotal !== undefined)) {
+                val.vatTotal = priceList[b];
+                b++;
+            }
+    
+            // rewardPoints
+            if ((val.rewardPoints !== '') && (val.rewardPoints !== undefined)) {
+                val.rewardPoints = priceList[b];
+                b++;
+            }
+
+        } catch(err) {
+        
+        }
+        return val
+    };
+}]);
+// END: CURRENCY FILTER

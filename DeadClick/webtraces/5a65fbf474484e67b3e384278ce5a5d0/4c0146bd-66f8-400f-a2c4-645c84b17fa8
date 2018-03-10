@@ -1,0 +1,493 @@
+(function() {
+    var $ = jQuery || SERVICE_PATTERN_CHAT_CONFIG.$;
+
+    var prepareRequest = function(cp, endpoint, method) {
+        var url = cp.url + '/' + endpoint;
+        var xhrOptions = { type: method, url: url, headers: {Authorization: 'MOBILE-API-140-327-PLAIN appId="' + cp.appId + '", clientId="' + cp.clientId + '"' }};
+        if (cp.crossDomain) {
+            xhrOptions.crossDomain = true;
+            xhrOptions.xhrFields = {withCredentials: true};
+        }
+        return xhrOptions;
+    };
+
+    var sendXhr = function(cp, endpoint, method, data) {
+        var xhrOptions = prepareRequest(cp, endpoint, method);
+        if (data) {
+            if (data.toString() === '[object FormData]') {
+                xhrOptions.data = data;
+                xhrOptions.contentType = false;
+                xhrOptions.processData = false;
+            } else {
+            xhrOptions.data = JSON.stringify(data);
+                xhrOptions.contentType = 'application/json; charset=utf-8';
+                xhrOptions.dataType = 'json';
+        }
+        }
+        return $.ajax(xhrOptions);
+    };
+
+
+    var checkAvailability = function(cp) {
+        var endpoint = 'availability?tenantUrl=' + encodeURIComponent(cp.tenantUrl);
+        return sendXhr(cp, endpoint, 'GET');
+    };
+
+    var getActiveChats = function(cp) {
+        var getActiveChatsEndpoint = 'chats/active?tenantUrl=' + encodeURIComponent(cp.tenantUrl);
+        return sendXhr(cp, getActiveChatsEndpoint, 'GET');
+    };
+
+    var getExpectedParameters = function(cp) {
+        var getParametersEndpoint = 'parameters?tenantUrl=' + encodeURIComponent(cp.tenantUrl);
+        return sendXhr(cp, getParametersEndpoint, 'GET');
+    };
+
+    var uploadFiles = function(cp, formData) {
+        var uploadFilesEndpoint = 'files?tenantUrl=' + encodeURIComponent(cp.tenantUrl);
+        return sendXhr(cp, uploadFilesEndpoint, 'POST', formData);
+    };
+
+    var downloadFile = function(cp, fileId) {
+        var downloadFileEndpoint = 'files/' + encodeURIComponent(fileId) + '?tenantUrl=' + encodeURIComponent(cp.tenantUrl);
+        return sendXhr(cp, downloadFileEndpoint, 'GET');
+    };
+
+    var logEvent = function(o, eventType, party, msg, timestamp) {
+        var event = {};
+        event.timestamp = timestamp;
+        if (eventType == 'chat_session_party_joined' || eventType == 'chat_session_party_left') {
+            if (party && party.type == 'internal') {
+                event.type = eventType;
+                event.fromClass = 'agent';
+                event.fromName = party.displayName;
+            }
+        }
+
+        if (eventType == 'chat_session_message_in') {
+            event.type = 'chat_session_message';
+            if (party && party.type == 'scenario') {
+                event.fromClass = 'scenario';
+                event.fromName = (party && party.displayName) ? party.displayName : '';
+            } else {
+                event.fromClass = 'agent';
+                event.fromName = party ? party.displayName : 'Rep';
+            }
+            event.msg = msg;
+        }
+        if (eventType == 'chat_session_message_out') {
+            event.type = 'chat_session_message';
+            event.fromClass = 'me';
+            event.fromName = o.displayName;
+            event.msg = msg;
+        }
+        if (eventType == 'chat_session_ended') {
+            event.type = 'chat_session_ended';
+            event.fromClass = 'scenario';
+            event.fromName = o.entryName;
+        }
+
+        if (event.type) {
+            o.uiCallbacks.onLogEvent(event);
+        }
+    };
+
+    var createSessionHandler = function(cp, r) {
+        var o = {};
+        o.parties = {};
+        o.displayName = "me";
+        o.status = r.state;
+        o.sessionId = r.chat_id;
+        o.msgId = 1;
+        o.cp = cp;
+
+        var sendEvent = function(event) {
+            var endpoint = 'chats/' + o.sessionId + '/events?tenantUrl=' + encodeURIComponent(cp.tenantUrl);
+            return sendXhr(cp, endpoint, 'POST', {events:[event]});
+        };
+
+
+        o.handleEvent = function(msg) {
+            var party;
+
+            if (typeof console !== 'undefined') {
+                console.log('Event received: ' + JSON.stringify(msg));
+            }
+
+            if (msg.event == 'chat_session_info') {
+                o.serviceName = msg.service_name;
+
+            } else if (msg.event == 'chat_session_status') {
+                if (msg.state == 'failed') {
+                    o.sessionEnded = true;
+                    o.uiCallbacks.onSessionDisconnect();
+                } else if (msg.state == 'queued') {
+                    o.uiCallbacks.onChatQueued();
+                } else if (msg.state == 'connected') {
+                    o.uiCallbacks.onChatConnected();
+                }
+
+            } else if (msg.event == 'chat_session_ended') {
+                o.sessionEnded = true;
+                o.uiCallbacks.onSessionEnded();
+
+            } else  if(msg.event == 'chat_session_typing') {
+                o.uiCallbacks.onSessionTyping(o.parties[msg.party_id]);
+            } else  if(msg.event == 'chat_session_not_typing') {
+                o.uiCallbacks.onSessionNotTyping(o.parties[msg.party_id]);
+            }
+            else if (msg.event == 'chat_session_party_joined') {
+            	var p = {};
+            	p.id = msg.party_id;
+            	p.firstName = msg.first_name;
+            	p.lastName = msg.last_name;
+            	p.displayName = msg.display_name;
+                p.type = msg.type;
+            	o.parties[p.id] = p;
+                if (p.type == 'scenario') {
+                    o.scenarioParty = p;
+                }
+                if (p.type == 'internal') {
+                    o.internalParty = p;
+                }
+                logEvent(o, msg.event, p);
+
+            } else if (msg.event == 'chat_session_party_left') {
+                party = o.parties[msg.party_id];
+                logEvent(o, msg.event, party);
+                o.parties[msg.party_id] = undefined;
+
+            } else if (msg.event == 'chat_session_message') {
+                if (msg.party_id == o.sessionId) { // that's customer
+                    logEvent(o, 'chat_session_message_out', null, msg.msg, msg.timestamp);
+                } else {
+                    party = o.parties[msg.party_id];
+                    if (party) {
+                        logEvent(o, 'chat_session_message_in', party, msg.msg, msg.timestamp);
+                    }
+                }
+
+            } else if (msg.event == 'chat_session_form_show') {
+                o.uiCallbacks.onFormShow(msg);
+            } else if (msg.event == 'chat_session_signaling') {
+
+                var type = msg.data.type;
+                if(type == 'CALL_REJECTED') {
+
+                } else if(type == 'OFFER_CALL') {
+                    o.webRTCSession(msg.data.sdp, msg.data.offerVideo, msg.party_id);
+                } else if(type == 'ANSWER_CALL') {
+                    o.webRTC.answerReceived(msg.data.sdp);
+                } else if(type == 'ICE_CANDIDATE') {
+                    o.webRTC.addIceCandidate(msg.data);
+                } else if(type == 'END_CALL') {
+                    o.webRTC.closeConnection();
+                }
+            }
+        };
+
+        o.getHistory = function() {
+            var historyEndpoint = 'chats/' + o.sessionId + '/history?tenantUrl=' + encodeURIComponent(cp.tenantUrl);
+            return sendXhr(cp, historyEndpoint, "GET").pipe(function(history) {
+                handleEvents(history, o);
+            });
+        };
+
+        o.send = function(msg) {
+            logEvent(o, 'chat_session_message_out', null, msg);
+            sendEvent({event: 'chat_session_message', msg: msg, msg_id: '' + o.msgId});
+            o.msgId = o.msgId + 2;
+        };
+
+        o.sendFormData = function(formRequestId, formName, formData) {
+			var msg = {event: 'chat_session_form_data', form_request_id: formRequestId, form_name: formName, data: formData};
+            if (typeof console !== 'undefined') {
+                console.log('Message sent: ' + JSON.stringify(msg));
+            }
+            sendEvent(msg);
+        };
+
+        o.sendTyping = function() {
+            sendEvent({event: 'chat_session_typing'});
+        };
+
+        o.sendNotTyping = function() {
+            sendEvent({event: 'chat_session_not_typing'});
+        };
+
+        o.endSession = function() {
+			var msg = {event: 'chat_session_end'};
+            if (typeof console !== 'undefined') {
+                console.log('Message sent: ' + JSON.stringify(msg));
+            }
+            sendEvent(msg);
+        };
+
+        o.disconnectSession = function() {
+            var msg = {event: 'chat_session_disconnect'};
+            if (typeof console !== 'undefined') {
+                console.log('Message sent: ' + JSON.stringify(msg));
+            }
+            sendEvent(msg);
+        };
+
+        o.fileUploaded = function(fileId, fileType) {
+            sendEvent({event: 'chat_session_file', msg_id: '' + o.msgId, file_id: fileId, file_type: fileType});
+            o.msgId = o.msgId + 2;
+        };
+
+        o.webRTCSignaling = function(party_id) {
+
+            var requestCall = function(offerVideo) {
+                send({type: "REQUEST_CALL", offerVideo: offerVideo});
+            };
+
+            var endCall = function() {
+                send({type: "END_CALL"});
+            };
+
+            var answerCall = function(sdp) {
+                send({type: "ANSWER_CALL", sdp: sdp});
+            };
+
+            var offerCall = function(sdp) {
+                console.log("send offer");
+                send({type: "OFFER_CALL", sdp: sdp});
+            };
+
+            var sendIceCandidate = function(candidate) {
+                send({type: "ICE_CANDIDATE", candidate: candidate.candidate, sdpMid: candidate.sdpMid, sdpMLineIndex: candidate.sdpMLineIndex});
+            };
+
+            var send = function(data) {
+                sendEvent({event: 'chat_session_signaling', msg_id: '' + o.msgId, destination_party_id: party_id, data: data});
+                o.msgId = o.msgId + 2;
+            };
+
+            return {
+                requestCall : requestCall,
+                answerCall : answerCall,
+                offerCall : offerCall,
+                sendIceCandidate : sendIceCandidate,
+                endCall : endCall
+            };
+        };
+
+        o.webRTCSession = function(remoteSdp, offerVideo, party_id) {
+
+            window.PeerConnection = window.mozRTCPeerConnection || window.webkitRTCPeerConnection;
+            window.IceCandidate = window.mozRTCIceCandidate || window.RTCIceCandidate;
+            window.SessionDescription = window.mozRTCSessionDescription || window.RTCSessionDescription;
+            window.navigator.getUserMedia = navigator.getUserMedia || navigator.mozGetUserMedia || navigator.webkitGetUserMedia;
+
+            var signaling = o.webRTCSignaling(party_id);
+
+            var eh = function (err) { console.error(err); };
+
+            var pc = new PeerConnection({iceServers : [{"url" : "stun:stun.l.google.com:19302"}]});
+            pc.onicecandidate = function(event) {
+                console.log("onicecandidate %o", event);
+                if(!!event.candidate) {
+                    signaling.sendIceCandidate(event.candidate);
+                }
+            };
+            pc.onaddstream =  function(event) {
+                console.log("onaddstream %o", event);
+                o.uiCallbacks.onAddStream(URL.createObjectURL(event.stream));
+            };
+
+            var hasSDP = false;
+            var iceCandidateList = [];
+
+            navigator.getUserMedia(
+                {audio:true, video:false},
+                function(stream) {
+                    pc.addStream(stream);
+                    o.uiCallbacks.onAddLocalStream(URL.createObjectURL(stream));
+                    if(!remoteSdp) {
+                        console.log("create offer");
+                        pc.createOffer(function (data) {
+                            pc.setLocalDescription(data, function() {
+                                hasSDP = true;
+                                signaling.offerCall(data.sdp);
+                            }, eh);
+                        }, eh);
+                    } else {
+                        console.log("createAnswer");
+                        offerReceived(remoteSdp);
+                        pc.createAnswer(function (data) {
+                            pc.setLocalDescription(data, function() {
+                                hasSDP = true;
+                                iceCandidateList.forEach(function(e) {
+                                   addIceCandidate(e)
+                                });
+                                signaling.answerCall(data.sdp);
+                            }, eh);
+                        }, eh);
+                    }
+                }, eh);
+
+
+            var answerReceived = function(sdp) {
+                console.log("answer received set remote description ");
+                pc.setRemoteDescription(new SessionDescription({type: "answer", sdp: sdp}), function(){
+                    console.log('setRemoteDescription success');
+                }, eh);
+            };
+
+            var offerReceived = function(sdp) {
+                console.log("offerReceived set remote description ");
+                pc.setRemoteDescription(new SessionDescription({type: "offer", sdp: sdp}), function(){
+                    console.log('setRemoteDescription success');
+                }, eh);
+            };
+
+            var addIceCandidate = function(candidate) {
+                console.log("addIceCandidate %o", candidate);
+                if(hasSDP) {
+                    pc.addIceCandidate(new IceCandidate(candidate), function() {
+                        console.log('addIceCandidate success');
+                    }, eh);
+                } else {
+                    iceCandidateList.push(candidate);
+                }
+            };
+
+            var closeConnection = function() {
+                try {
+                    pc.close();
+                    signaling.endCall();
+                } catch (e) {
+
+                }
+                pc = undefined;
+            };
+
+            o.webRTC = {
+                offerReceived : offerReceived,
+                answerReceived : answerReceived,
+                addIceCandidate : addIceCandidate,
+                closeConnection : closeConnection
+            };
+
+            return o.webRTC;
+        };
+
+        var noop = function() {};
+        o.assignUICallbacks = function(a) {
+            var cb  = a || {};
+            o.uiCallbacks = {};
+            o.uiCallbacks.onChatQueued = cb.onChatQueued || noop;
+            o.uiCallbacks.onChatConnected = cb.onChatConnected || noop;
+            o.uiCallbacks.onSessionEnded = cb.onSessionEnded || noop;
+            o.uiCallbacks.onLogEvent = cb.onLogEvent || noop;
+            o.uiCallbacks.onSessionTyping = function(party) { if (party && cb.onSessionTyping) cb.onSessionTyping(party); };
+            o.uiCallbacks.onSessionNotTyping = function(party) { if (party && cb.onSessionNotTyping) cb.onSessionNotTyping(party); };
+            o.uiCallbacks.onSessionDisconnect = cb.onSessionDisconnect || noop;
+            o.uiCallbacks.onFormShow = cb.onFormShow || noop;
+            o.uiCallbacks.onAddStream = cb.onAddStream || noop;
+            o.uiCallbacks.onAddLocalStream = cb.onAddLocalStream || noop;
+        };
+
+        o.reassignUICallbacks = function(a) {
+
+			if(!o.uiCallbacks)
+			{
+				o.assignUICallbacks(a);
+				return;
+			}
+
+            var cb  = a || {};
+
+			if(cb.onChatQueued)
+				o.uiCallbacks.onChatQueued = cb.onChatQueued;
+
+			if(cb.onChatConnected)
+				o.uiCallbacks.onChatConnected = cb.onChatConnected;
+
+			if(cb.onSessionEnded)
+				o.uiCallbacks.onSessionEnded = cb.onSessionEnded;
+
+			if(cb.onLogEvent)
+				o.uiCallbacks.onLogEvent = cb.onLogEvent;
+
+			if(cb.onSessionTyping)
+				o.uiCallbacks.onSessionTyping = function(party) { if (party) cb.onSessionTyping(party); };
+
+			if(cb.onSessionNotTyping)
+				o.uiCallbacks.onSessionNotTyping = function(party) { if (party) cb.onSessionNotTyping(party); };
+
+			if(cb.onSessionDisconnect)
+				o.uiCallbacks.onSessionDisconnect = cb.onSessionDisconnect;
+
+			if(cb.onFormShow)
+				o.uiCallbacks.onFormShow = cb.onFormShow;
+			if(cb.onAddStream)
+				o.uiCallbacks.onAddStream = cb.onAddStream;
+        };
+
+        o.assignUICallbacks(null);
+
+
+        startPoll(cp, o);
+
+        return o;
+    };
+
+    var handleEvents = function(r, session) {
+        if (r.events) {
+            for (var i = 0, n = r.events.length; i < n; ++i) {
+                session.handleEvent(r.events[i]);
+            }
+        }
+    };
+
+    var startPoll = function(cp, session) {
+        var lastPollRequest = null;
+        var poll = function() {
+            var timeout = window.setTimeout(function() {
+                if (lastPollRequest && !session.sessionEnded) {
+                    lastPollRequest.abort();
+                    lastPollRequest = null;
+                }
+                timeout = null;
+                poll();
+            }, 13000);
+            var endpoint = 'chats/' + session.sessionId + '/events?tenantUrl=' + encodeURIComponent(cp.tenantUrl);
+
+            lastPollRequest = sendXhr(cp, endpoint, 'GET');
+            return lastPollRequest.done(function(r) {
+                handleEvents(r, session);
+                if (timeout) {
+                    window.clearTimeout(timeout);
+                    if (!session.sessionEnded) {
+                        poll();
+                    }
+                }
+            });
+        };
+
+        poll();
+    };
+
+    var createSession = function(cp) {
+        var endpoint = 'chats?tenantUrl=' + encodeURIComponent(cp.tenantUrl);
+        return sendXhr(cp, endpoint, 'POST', {
+            phone_number: cp.phoneNumber,
+            parameters: cp.parameters
+        }).pipe(function(r) {
+            r.session = createSessionHandler(cp, r);
+            return r;
+        });
+    };
+
+    $.chat = {
+        createSession: createSession,
+        checkAvailability: checkAvailability,
+        getActiveChats: getActiveChats,
+        getExpectedParameters: getExpectedParameters,
+        uploadFiles: uploadFiles,
+        downloadFile: downloadFile
+    }
+
+})();

@@ -1,0 +1,1 @@
+define(["jquery","underscore","libs/plugins/jquery.responsive-paging.min"],function(a,b){var c={defaults:{selector:".responsive-paging"},init:function(d){return d=b.extend({},c.defaults,d),a(d.selector).paging({indicatorClass:"carousel-paging"})}};return c})

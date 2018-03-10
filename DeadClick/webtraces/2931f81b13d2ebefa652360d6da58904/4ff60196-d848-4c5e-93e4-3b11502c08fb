@@ -1,0 +1,97 @@
+/*
+	ThemePacific Ajax Magamenu
+	URL : http://themepacific.com/   	
+	Author:	Raja CRN
+	Released under the MIT and GPL licenses.Copyright 2013
+	Version 1.1
+*/
+
+jQuery(document).ready(function() {
+	 (function() {
+				var i=0;
+				var tpcrn_megamenu_active = false;
+				var tpcrn_slide_box_container = jQuery('#tpcrn_slide_window-container');
+		jQuery('.megabar li a').hover(function(e){
+				 jQuery('.megabar li a').removeClass('active');
+				 jQuery(this).addClass('active');
+		 });
+						
+		jQuery('.megabar li').filter('.category').each(function(){
+			 jQuery(this).addClass('parent');
+			 jQuery(this).attr('data-cat_id', i);
+			 i++;		 
+		 }); 
+
+		jQuery('.megabar li').mouseover( function(e){
+		  var target2 = jQuery(this).data('cat_id');
+		 cal_sw_2(target2)
+					 
+		}); 
+		 function tpcrn_show_slide(value) {
+				   // jQuery('#tpcrn_slide_content').animate({ top: value }, 400);
+					jQuery('#tpcrn_slide_content').css({ top: value }).slideDown();
+		}			 
+		 function cal_sw_2(target2){
+			var topval = 0;
+			jQuery(".megabar li.category.tpcrn_ok").each(function() { 
+			switch(target2) {
+				  case   jQuery(this).data('cat_id'):
+						 tpcrn_show_slide(topval);
+						 
+				 break;
+			}
+			topval=topval-250;
+			});
+		}
+		  
+		jQuery('.megabar li a').delayed('mouseover', 300, function(e){
+			if(!jQuery(this).parent('.category').length){   
+			  tpcrn_slide_box_container.removeClass('open').addClass('closed');
+			  tpcrn_slide_box_container.slideUp(100); 
+			  tpcrn_megamenu_active = false;
+ 
+ 			}
+		  
+			else{
+					if(!tpcrn_megamenu_active) {
+ 								 tpcrn_slide_box_container.slideDown(200);
+								 tpcrn_slide_box_container.removeClass('closed').addClass('open');
+								 tpcrn_megamenu_active = true;
+								  
+								  
+						  }
+						 }
+		});
+		
+
+				
+		jQuery('#magatopnav').mouseleave(
+			function(e){
+			jQuery('.megabar li a').stopDelayed('mouseover');
+			 jQuery('.megabar li a').removeClass('active');
+				 //if(tpcrn_megamenu_active) {
+					 if (tpcrn_slide_box_container.hasClass('open')) {
+						 tpcrn_slide_box_container.slideUp(200);
+						 tpcrn_slide_box_container.removeClass('open').addClass('closed');   
+					 }
+					  tpcrn_megamenu_active = false;
+					 
+				 //}
+		});    
+		jQuery('.tpcrn-follow-menu').mouseover(
+			function(e){
+			jQuery('.megabar li a').stopDelayed('mouseover');
+			 jQuery('.megabar li a').removeClass('active');
+				 //if(tpcrn_megamenu_active) {
+					 if (tpcrn_slide_box_container.hasClass('open')) {
+						 tpcrn_slide_box_container.slideUp(700);
+						 tpcrn_slide_box_container.removeClass('open').addClass('closed');   
+					 }
+ 					  tpcrn_megamenu_active = false;
+					 
+				 //}
+		});
+	 
+	})();
+});
+ 

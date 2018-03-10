@@ -1,0 +1,37 @@
+function autocomplete2() {
+		$("#searchfor").on("keyup",function(){
+			if ($("#searchfor").val()!='') {
+				$("#header form .searchresults").load("mysearch.asp?searchfor=" + encodeURI($("#searchfor").val()) );
+				$("#header form .searchresults").fadeIn(200);
+			}
+			
+		}).on("focusout",function(){
+			$("#header form .searchresults").fadeOut(200);
+		});
+	}
+	function func_quicklook(catid){
+	$('.overpanel').load('/quicklook.asp?catid=' +catid)
+	$('.overpanel').show();
+	}	
+$(document).ready(function() {
+
+	
+	/* Start Functions */
+	autocomplete2();
+	$('.addtocompare, .compare').click(function(){
+	$('#light').load('/compare.asp');
+		$("#light").show();
+			return false;
+		}
+	)
+	
+});
+function checkit(id) {
+	var result='';
+  if ($('#compare'+id).is(':checked')) {
+    $.get('comparecheck.asp?a=add&catid=' + id, function(data){ if (data!='' ){alert(data);$('#compare'+id).removeAttr('checked')}});
+  } else {
+    $.get('comparecheck.asp?a=remove&catid=' + id);
+  }
+
+} 

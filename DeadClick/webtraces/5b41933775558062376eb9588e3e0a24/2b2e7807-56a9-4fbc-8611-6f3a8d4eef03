@@ -1,0 +1,1 @@
+define(["jquery"],function(a){var b={$share:a(".entry-share-buttons li > a"),init:function(){this.$share.click(function(b){b.preventDefault(),a(this).toggleClass("expanded")})}};return b})

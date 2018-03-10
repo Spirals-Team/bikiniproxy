@@ -1,0 +1,77 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Marriott</title>
+<link href="gmim_0317_styles.css" rel="stylesheet" type="text/css">
+<script type="text/javascript">
+var clickTag = "https://www.moments.marriottrewards.com/"; </script>
+    <script type="text/javascript">
+    
+      (function() {
+        var relegateNavigation = '';
+        var handleClickTagMessage = function(e) {
+          try {
+            var eventData = JSON.parse(e.data);
+          } catch (err) {
+            return;
+          }
+          if (eventData.isInitClickTag) {
+            if (eventData.clickTags) {
+              for (var i = 0; i < eventData.clickTags.length; i++) {
+                var clkTag = eventData.clickTags[i];
+                window[clkTag.name] = clkTag.url;
+              }
+            } else if (eventData.clickTag) {
+              window.clickTag = eventData.clickTag;
+            }
+            relegateNavigation = eventData.relegateNavigation;
+          }
+        };
+
+        if (open.call) {
+          window.open = function(open) {
+            return function(url, name, features) {
+              if (relegateNavigation === 'parent') {
+                var message = {'clickTag': url, 'isPostClickTag': true};
+                parent.postMessage(JSON.stringify(message), '*');
+              } else {
+                var args = [url, name];
+                if (features) {
+                  args.push(features);
+                }
+                open.apply(window, args);
+              }
+            };
+          }(window.open);
+        }
+
+        if (window.addEventListener) {
+          window.addEventListener(
+              'message', handleClickTagMessage, false);
+        } else {
+          window.attachEvent('onmessage', handleClickTagMessage);
+        }
+      })();
+    
+  </script></head>
+
+<body>
+<div id="adContainer">
+        <a href="javascript:void(0);" onclick="window.open(clickTag);"><span></span></a>
+
+    <div id="party"></div>
+        <div id="logo2"></div>
+        <div id="point"></div>
+    <div id="go"></div>
+    <div id="all"></div>
+    <div id="text"></div>
+
+
+
+<div id="cta">
+<a href="javascript:window.open(window.clickTag)"><img src="gmim_0317_cta.png" width="185" height="33" style="display:block; border:none;"></a>
+</div>
+</div>
+</body>
+</html>

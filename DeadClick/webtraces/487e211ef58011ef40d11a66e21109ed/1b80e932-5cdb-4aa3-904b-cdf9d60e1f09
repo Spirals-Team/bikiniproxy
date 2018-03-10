@@ -1,0 +1,58 @@
+var sendindEmail = false;
+$(document).ready(function () {
+    $("#submit_btn").on('click', function (e) {
+        e.preventDefault();
+        //check valid email
+        var x = document.forms["contact"]["email"].value;
+        var atpos = x.indexOf("@");
+        var dotpos = x.lastIndexOf(".");
+        var msg = "";
+        if (atpos < 1 || dotpos < atpos + 2 || dotpos + 2 >= x.length) {
+            msg = "You must enter a valid e-mail address\n";
+        }
+        $("#contact_form").find("input").each(function () {
+            if ($(this).data("req")) {
+                if ($(this).val() == "") {
+                    msg += "You must enter a " + $(this).data("fieldname") + "\n";
+                }
+            }
+        })
+        if (msg != "") {
+            alert(msg);
+            return
+        }
+        if (!sendindEmail) {
+
+            $("#submit_btn").prop("disabled", "disabled");
+            sendindEmail = true;
+            var postdata = {
+                Name: $('#contact-name').val(),
+                Email: $('#contact-email').val(),
+                Number: $('#number-address').val(),
+                Area: $('#area-address').val(),
+                Town: $('#town-address').val(),
+                PostCode: $('#postcode-address').val(),
+                County: $('#county-address').val(),
+                Country: $('#country-address').val(),
+                Subject: $('#SubjectType').val(),
+                Other: $('#info-other').val(),
+            };
+
+            $.ajax({
+                type: "POST",
+                url: "/Home/ContactEmail",
+                contentType: "application/json;charset=utf-8",
+                data: JSON.stringify(postdata),
+                success: function (result) {
+                    $("#contact_form").html("");
+                    $("<div/>").text("Email Sent").addClass("alert alert-success").appendTo($("#contact_form"));
+                },
+                error: function (result) {
+                    $('.email-sent').text('Error, please try again').show();
+                    sendindEmail = false;
+                }
+            });
+        }
+        return false;
+    });
+});

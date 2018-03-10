@@ -1,0 +1,1 @@
+ var dm = document.domain; dm = dm.split('.'); var dmin = Math.min(dm.length,2); dm =dm.splice(  dm.length - dmin,dmin); dm =dm.join('.'); document.cookie='IPE_S_104983=104983;Path=/;domain=' + dm;

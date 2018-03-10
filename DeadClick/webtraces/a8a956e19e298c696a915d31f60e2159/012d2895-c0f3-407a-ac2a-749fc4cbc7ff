@@ -1,0 +1,312 @@
+
+define(function () {
+    'use strict';
+
+    if (typeof window.bbcdotcom === 'undefined' || typeof bbcdotcom.objects === 'undefined') {
+        // Return skeleton if bbcdotcom.objects does not exist
+        return {
+            addEventListeners: function() {},
+            callback: function() {},
+            trackEvent: function() {}
+        };
+    }
+
+    var players = [],
+        vxpPlaylistData = [];
+
+    var reset = function(playerAndData){
+        playerAndData.data = {
+            videoPlaysAutomatically: true
+        };
+        playerAndData.flags.receivedDuration = false;
+        playerAndData.flags.playlistStarted = false;
+        playerAndData.flags.programStarted = false;
+        playerAndData.flags.isPaused = false;
+        playerAndData.flags.isSeeking = false;
+        playerAndData.flags.adRequestOrPlaybackInProgress = false;
+        playerAndData.flags.ended = false;
+        playerAndData.flags.playlistEnded = false;
+        playerAndData.flags.trackProgramStartOnNextTimeupdate = false;
+    };
+
+
+    // metadata.mediaName - set in playlistLoaded DONE
+    // metadata.videoPlaysAutomatically - defaults false on mobile & tablet, true otherwise
+    // and is then set false in userPlay
+    // metadata.playType - not used - see https://jira.dev.bbc.co.uk/browse/BBCCOM-6918
+    // metadata.isLive - grab from playlist onPlaylistLoaded
+
+    var updateMetadata = function(playerAndData) {
+        var settings = playerAndData.player.settings();
+        playerAndData.data.mediaType = playerAndData.player.kind();
+        playerAndData.data.mediaOffset = playerAndData.player.currentTime();
+        playerAndData.data.mediaLength = playerAndData.player.duration();
+        playerAndData.data.mediaPlayerName = playerAndData.player.name();
+        playerAndData.data.adId = null;
+        // WHAT IS THIS DOING?
+        playerAndData.data.mediaId = bbcdotcom.objects('settings.container.0.id');
+    };
+
+
+    var track = function(type, playerAndData, setMediaOffsetToZero) {
+        if (typeof bbcdotcom.analytics === 'undefined') {
+            return false;
+        }
+        updateMetadata(playerAndData);
+        if(setMediaOffsetToZero === true){
+            playerAndData.data.mediaOffset = 0;
+        }
+        bbcdotcom.analytics[type](playerAndData.data);
+    };
+
+    // Old comScore implementation which will be replaced by new implementation ???
+    var trackComscore = function(type) {
+        if (typeof COMSCORE === "undefined") {
+            return;
+        }
+        var site = (bbcdotcom.objects('bbcdotcom.sections')) ? bbcdotcom.sections.getSection() : 'other';
+        var c5 = (type === 'ad') ? '09' : '02';
+        COMSCORE.beacon({
+            c1: 1,
+            c2: '6035051',
+            c3: site,
+            c4: '',
+            c5: c5,
+            c6: '',
+            c15: ''
+        });
+    };
+
+    var checkIfPlaylistHasStarted = function(playerAndData){
+        if(!playerAndData.flags.playlistStarted) {
+            playerAndData.flags.playlistStarted = true;
+            track('startPlaylist', playerAndData);
+        }
+    };
+
+    var updateAdvertMeta = function(event, playerAndData){
+        var index, adKeyword;
+        if(!bbcdotcom.config.isContinuousPlayPage() || vxpPlaylistData.length === 0){
+            return;
+        }
+        index = event.url ? Number(event.url.replace('playlist_', '')) : Number(document.getElementsByClassName('vxp-carousel__item--selected')[0].getAttribute('data-index'));
+        adKeyword = vxpPlaylistData[index].advert.adCampaignKeyword;
+        if (adKeyword !== bbcdotcom.adverts.keyValues.get('keyword')) {
+            if (adKeyword === "" || adKeyword === null || typeof adKeyword === 'undefined') {
+                bbcdotcom.adverts.keyValues.unset('keyword');
+            }
+            else {
+                bbcdotcom.adverts.keyValues.set('keyword', adKeyword);
+            }
+        }
+    };
+
+    var addEventListeners = function (mp) {
+
+        if (typeof mp === 'undefined') {
+            return;
+        }
+
+        var playerAndData = {
+            player: mp,
+            data: {
+                videoPlaysAutomatically: true,
+                bumpVersion: mp.bumpVersion
+            },
+            flags:{
+                playlistStarted: false,
+                programStarted: false,
+                isPaused: false,
+                isSeeking: false,
+                adRequestOrPlaybackInProgress: false,
+                ended: false,
+                playlistEnded: false,
+                trackProgramStartOnNextTimeupdate: false
+            }
+        };
+
+        players.push(playerAndData);
+
+        if(bbcdotcom.config.isContinuousPlayPage() && document.getElementsByClassName('vxp-playlist-data').length === 1){
+            vxpPlaylistData = JSON.parse(document.getElementsByClassName('vxp-playlist-data')[0].innerHTML || '[]');
+        }
+
+        // this would be a useful reset event, but doesn't come out to the page yet...
+        playerAndData.player.bind('playlistLoading', function (event) {
+        });
+
+        playerAndData.player.bind('playlistLoaded', function (event) {
+            reset(playerAndData);
+            playerAndData.data.mediaName = event.playlist.title;
+            // html player is hasAds, flash one is hasAdvert
+            playerAndData.data.hasAds = (event.playlist.hasAds || event.playlist.hasAdvert) || false;
+            updateAdvertMeta(event, playerAndData);
+            // PRESUMPTION!
+            // THAT LAST ITEM IN THE LIST IS A PLAYABLE ONE
+            // (safe for now)
+            var playableItems = event.playlist.items;
+            playerAndData.data.isLive = playableItems[playableItems.length-1].live;
+            playerAndData.data.kind = playableItems[playableItems.length-1].kind;
+        });
+
+        playerAndData.player.bind('userPlay', function (event) {
+            playerAndData.data.videoPlaysAutomatically = false;
+        });
+
+        playerAndData.player.bind('playing', function (event) {
+            checkIfPlaylistHasStarted(playerAndData);
+            // SMPj1 and SMPj2 in combination with js ads plugin give us a 'playing' event before preroll kicks in
+            if(!playerAndData.flags.programStarted && !playerAndData.flags.adRequestOrPlaybackInProgress) {
+                playerAndData.flags.programStarted = true;
+                track('startProgramme', playerAndData, true);
+                trackComscore();
+            }
+            if(playerAndData.flags.isPaused){
+                playerAndData.flags.isPaused = false;
+                track('endPause', playerAndData);
+            }
+        });
+
+
+        // HTML5 video api means we get a 'pause' right before 'ended', so ignore that one
+        playerAndData.player.bind('pause', function (event) {
+            updateMetadata(playerAndData);
+            if((playerAndData.data.mediaOffset + 1) < playerAndData.data.mediaLength) {
+                playerAndData.flags.isPaused = true;
+                track('startPause', playerAndData);
+            }
+        });
+
+        playerAndData.player.bind('loadedmetadata', function (event) {
+            playerAndData.flags.receivedDuration = true;
+            track('duration', playerAndData);
+        });
+
+
+        playerAndData.player.bind('timeupdate', function (event) {
+
+            if(!playerAndData.flags.receivedDuration){
+                playerAndData.flags.receivedDuration = true;
+                track('duration', playerAndData);
+            }
+
+            if(playerAndData.flags.isSeeking){
+                // This is within "timeupdate" in order to get up-to-date positionHead/mediaOffset
+                // NEED TO CHECK IF THIS COULD JUST GO IN 'playing'
+                playerAndData.flags.isSeeking = false;
+                track('endSeek', playerAndData);
+            }
+        });
+
+
+        playerAndData.player.bind('seeking', function (event) {
+            playerAndData.flags.isSeeking = true;
+            track('startSeek', playerAndData);
+        });
+
+
+        // sometimes with SMPj we seem to get an endPlaylist before an endProgramme
+        // this doesnt happen on my simple test pages but does in full news sandbox
+        // todo: find root cause rather than work around
+        // (this hack only works for one programme in a playlist - which is all thats supported for now)
+        playerAndData.player.bind('ended', function (event) {
+            playerAndData.flags.ended = true;
+            track('endProgramme', playerAndData);
+            if(playerAndData.flags.playlistEnded){
+                track('endPlaylist', playerAndData);
+            }
+        });
+
+
+        playerAndData.player.bind('playlistEnded', function (event) {
+            playerAndData.flags.playlistEnded = true;
+            if(playerAndData.flags.ended) {
+                track('endPlaylist', playerAndData);
+            }
+        });
+
+        playerAndData.player.bind('uiinfo', function (event) {
+            playerAndData.data.uiinfo = event;
+            //uiinfo.isFullscreen - true/false
+            //videoHeight
+            //videoWidth
+            track('uiinfo', playerAndData);
+        });
+
+        playerAndData.player.bind('volumechange', function (event) {
+            playerAndData.data.volume = event.volume;
+            track('volumeChange', playerAndData);
+        });
+
+        // some ad errors end up firing this event...
+        playerAndData.player.bind('bbc.smp.plugins.ads.event.AdsPluginExternalEvent.ALL_ADS_COMPLETED', function (event) {
+            playerAndData.flags.adRequestOrPlaybackInProgress = false;
+        });
+
+        playerAndData.player.bind('adsPlugin', function (event) {
+            switch(event.id){
+                case "adRequest":
+                    playerAndData.flags.adRequestOrPlaybackInProgress = true;
+                    checkIfPlaylistHasStarted(playerAndData);
+                    track('adRequest', playerAndData);
+                    break;
+
+                case "adManagerLoaded":
+                    track('adManagerLoaded', playerAndData);
+                    break;
+
+                case "adEnded":
+                    playerAndData.flags.adRequestOrPlaybackInProgress = false;
+                    track('endAdvert', playerAndData);
+                    break;
+
+                case 'adStarted':
+                    checkIfPlaylistHasStarted(playerAndData);
+                    track('startAdvert', playerAndData);
+                    trackComscore("ad");
+                    break;
+
+                case "adError":
+                    playerAndData.flags.adRequestOrPlaybackInProgress = false;
+                    break;
+            }
+        });
+    };
+
+
+    // Used by CP plugin
+    // continuousPlay.mediaStarted is rubbish - happens on playlistload
+    var trackEvent = function(type, data) {
+
+        if (typeof bbcdotcom.analytics === 'undefined') {
+            return false;
+        }
+        var eventData = {},
+            prop;
+
+        // WE ARE GOING TO PRESUME THIS IS THE FIRST PLAYER IN THE LIST
+        // THIS WILL BREAK IF MORE THAN ONE PLAYER IS ON THE PAGE AND ONE OF THE PLAYERS HAS CP
+        // BBCCOM-6953
+        var playerAndData = players[0];
+        updateMetadata(playerAndData);
+        for (prop in playerAndData.data) {
+            eventData[prop] = playerAndData.data[prop];
+        }
+        if (typeof data === 'object') {
+            for (prop in data) {
+                eventData[prop] = data[prop];
+            }
+        }
+        bbcdotcom.analytics.trackEvent(type, eventData);
+    };
+
+
+
+    bbcdotcom.objects('bbcdotcom.av.emp.analytics', 'create');
+    bbcdotcom.av.emp.analytics = {
+        addEventListeners: addEventListeners,
+        callback: track,        // @deprecated may still be used on desktop (bbccom.js)
+        trackEvent: trackEvent  // used by new continuous play instead of trying to use SMP/Bump event bus
+    };
+    return bbcdotcom.av.emp.analytics;
+});

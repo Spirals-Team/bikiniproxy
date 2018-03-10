@@ -1,0 +1,622 @@
+/**
+* 
+
+There are 3 views for live mode:
+- video with full linescore and kicker
+- video with kicker and blurb
+- truncated linescore, kicker and blurb
+
+
+Display logic:
+
+if a video is present in the data file:
+	-if blurb is empty, use template #1 (video, kicker, full linescore)
+	-if blurb exists, use template #2 (video, kicker, blurb)
+                
+if a video is not present:
+	-use template #3 (truncated linescore, kicker, blurb)
+
+For all live views: if the kicker is not present, display the current score.
+
+
+**/
+
+
+/*
+	@VERIFY: 
+	3. Display delays/postponed on the top area on all live modes (currently says Final)
+	4. video thumbnail and truncated line score should have the same footprint (currently doesn't, text wraps differently)
+*/
+
+
+;bam.mediawall.game = (function(window, document, $, undefined, bam){	
+
+	/**
+	**************** Private ****************
+	*/
+	
+	var $doc = $(document),		
+		CORE = bam.mediawall,
+		_$curPanel,
+		_curIndex = 0, // current panel index
+		_curGameID,
+		_curGame = {},
+		_curGameObj = {},
+		_curMode = "",
+		_curStatus = "",
+		_easing="easeOutCirc",
+		_config={}, // copied at init from CORE	
+		_log=function(msg){			
+			if (CORE.debug && typeof console !== "undefined" && !!console.log && !!console.dir) {
+				if (typeof msg === "string") console.log("bam.mediawall.game: "+msg);
+				else if (typeof msg === "object") console.dir(msg);
+				else console.log(msg);			
+			}	
+		},	
+		
+		/**
+		 * 
+		 * _get
+		 * @private
+		 * Cached jQuery selector getter
+		 */
+		_get = function(selector) {
+			return _get.cache[selector] = _get.cache[selector]||$(selector);
+		},
+		
+		
+			
+		_getLinescoreURL = function(){	
+			var out="", base="/gdcross/components/game/", month, year, day, sportcode, gameday;
+			if(!!_curGameID) {
+				year = _curGameID.substring(0,4);
+				month = _curGameID.substring(5,7);
+				day = _curGameID.substring(8,10);
+				sportcode = _curGameID.substring(21,24);
+				gameday = _curGameID.replace(/\//g,"_").replace(/-/g,"_");			
+				out = base + sportcode + "/year_" + year + "/month_" + month + "/day_" + day + "/gid_" + gameday + "/linescore.json";			
+			}			
+			return out;
+		},
+		
+		
+		_loadGame = function(cb){
+			$.ajax({
+				url:		_getLinescoreURL(),
+				//url:		"/scripts/homepage/y2011/linescore.json",
+				//url:		"/shared/components/mediawall/v3.1/linescore.json",
+				type:		"get",
+				dataType:	"json",
+				timeout: 	5000,						
+				error: 		function(xhr) {
+					_log("Error: " + xhr.status + " " + xhr.statusText);
+					clearInterval(_heartbeat);	
+				},
+				success: 	function(response) {	
+					if(response.data && response.data.game){
+						_curGameObj = response.data.game;
+						_setStatusAndMode();						
+						_update();	
+						if($.isFunction(cb)) cb();		
+					}			
+				}	
+			});
+			// @TODO: trigger game data loaded event for external binding?
+		},
+		
+
+		_setStatusAndMode = function(){
+			// set status
+			if (_curGameObj.status === "Suspended" && !!_curGameObj.resume_date) {
+				// if the game has been suspended, but the resume date is today, change _curStatus to "Pre-Game"	
+				// @TODO: if(!bam.getFlipDisplayDate) add daystart to today	
+				var rDate = _curGameObj.resume_date,
+					today = (!!bam.getFlipDisplayDate) ? bam.getFlipDisplayDate() : new Date(),
+					todayStr = bam.datetime.formatDate(today,"yyyy/MM/dd");					
+				_log("Invoking logic for SUSP/RES: resume date="+rDate+", today="+todayStr);
+                _curStatus = rDate === todayStr ? "Pre-Game" : "Suspended";
+			} else {
+				_curStatus = _curGameObj.status;
+			}
+			// set mode
+			if (_curStatus === "Warmup" || _curStatus === "Delayed Start" || _curStatus === "In Progress" || _curStatus === "Delayed" || _curStatus === "Replay") { 
+				_curMode = "live"; 
+			} else if(_curStatus === "Preview" || _curStatus === "Pre-Game") { 		
+				_curMode = "preview";
+			} else if(_curStatus === "Suspended" && !_curGameObj.resume_date) {
+                _curMode = "suspended-noresume";
+            }else {
+				_curMode = "final";
+			}
+
+		},
+		
+	
+		
+		// replaces or appends c_id value for gameday links
+		_addClubParam = function(link){
+			var out = oldvalue = "", 
+				flag="c_id=", 
+				newvalue="c_id=" + (window.club || "mlb"), 
+				idx=link.indexOf(flag),
+				prefix = (~link.indexOf("?")) ? "&" : "";
+			if(~idx) {		
+				oldvalue = link.substr(idx,8);		
+				out = link.replace(oldvalue,newvalue);		
+			}else{
+				out = link + prefix + newvalue;
+			}	
+			return out;	
+		},
+		
+		
+		// replaces or appends c_id value for launchPlayer links
+		_formatPlayerLink = function(link){
+			var split, last = "";		
+			if(~link.indexOf("c_id:")) {
+				return link;
+			}else{
+				split = link.split(",");		
+				last = split.pop();		
+				split.push("c_id:'" + (window.club || 'mlb') + "'");
+				split.push(last);
+				return split.toString();
+			}	
+		},
+		
+	
+		
+		_changeIt = function($elem, newVal, fade){
+			if($elem.html() !== newVal){			
+				if(fade!==false){
+					$elem.html(newVal).show();						
+				}else{
+					$elem.fadeOut("slow",function(){
+						$(this).html(newVal).fadeIn();					
+					});
+				}				
+			}						
+		},
+	
+		
+		_writeKicker = function(){
+			var newHTML="", $kicker = _$curPanel.find(".mw_kicker a"), reason = _curGameObj.reason, resumeDate = _curGameObj.resum_date,
+				awayRunsNum = _curGameObj.away_team_runs*1,
+				homeRunsNum = _curGameObj.home_team_runs*1;
+			// @TODO: DRY this up
+			if(_curMode==="preview"){
+				newHTML = _curGameObj.away_team_name + " @ " + _curGameObj.home_team_name;
+			} else if(_curMode==="live"){
+				newHTML = (_curGameObj.top_inning === "Y") ? "Top " : "Bot ";
+				newHTML += _curGameObj.inning;
+				newHTML += ": ";					
+				if(awayRunsNum >= homeRunsNum) {
+					newHTML += _curGameObj.away_team_name;
+					newHTML += " " + _curGameObj.away_team_runs;
+					newHTML += ", " + _curGameObj.home_team_name;
+					newHTML += " " + _curGameObj.home_team_runs;
+				} else {						
+					newHTML += _curGameObj.home_team_name;
+					newHTML += " " + _curGameObj.home_team_runs;
+					newHTML += ", " + _curGameObj.away_team_name;
+					newHTML += " " + _curGameObj.away_team_runs;
+				}
+            }else if(_curMode==="final" || _curMode==="suspended-noresume"){
+				newHTML = "FINAL: ";				
+				if(awayRunsNum > homeRunsNum) {
+					newHTML += _curGameObj.away_team_name;
+					newHTML += " " + _curGameObj.away_team_runs;
+					newHTML += ", " + _curGameObj.home_team_name;
+					newHTML += " " + _curGameObj.home_team_runs;
+				} else {						
+					newHTML += _curGameObj.home_team_name;
+					newHTML += " " + _curGameObj.home_team_runs;
+					newHTML += ", " + _curGameObj.away_team_name;
+					newHTML += " " + _curGameObj.away_team_runs;
+				}
+				
+				if(_curStatus === "Postponed" || _curStatus === "Cancelled" || _curStatus === "Forfeit"){
+					newHTML = _curStatus.toUpperCase();					
+					if(!!reason) newHTML += ": " + reason;	
+				}else if(_curStatus === "Suspended"){				
+					// susp, show resumed if exists
+					newHTML = _curStatus.toUpperCase();					
+					// @TODO: make this date prettier. resumeDate is formeatted like so: "2011/03/16"										
+					if(!!resumeDate) newHTML += ": Will resume on " + resumeDate.substr(5);	 
+				}
+			
+			}		
+			_changeIt($kicker, newHTML);	
+		},
+		
+		
+		_writeIndicator = function(){
+			var newHTML="";
+			if(_curMode === "final" && _curGameObj.inning && _curStatus !== "Suspended") {
+				newHTML = "Final";
+				if(_curGameObj.inning !== "9"){
+					newHTML = "F/" + _curGameObj.inning;
+				}
+			} else if(_curMode === "live" && _curGameObj.top_inning && _curGameObj.inning ||
+                      _curGameObj.status === "Suspended" && _curGameObj.top_inning && _curGameObj.inning ){
+				newHTML = (_curGameObj.top_inning === "Y") ? "Top " : "Bot ";
+				newHTML += _curGameObj.inning;			
+			} else {
+				newHTML = "&nbsp;";
+				// @TODO: show time here? should it show home or away time?
+				//newHTML = (isHome) ? _curGameObj.home_time : _curGameObj.away_time;	
+				//newHTML += (isHome) ? _curGameObj.home_ampm: _curGameObj.away_ampm;	
+				//newHTML = newHTML.toLowerCase();
+			}				
+			_changeIt(_$curPanel.find(".mw_linescore_matchup").find("th"), newHTML);			
+		},		
+		
+		
+			
+		_writeLinescore = function(){			
+			var $innings = _$curPanel.find(".mw_linescore_innings"),
+				$row1 = $innings.find("thead tr"),
+				$row2 = $innings.find("tbody tr:first"),
+				$row3 = $innings.find("tbody tr:last"),
+				linescore = $.ensureArray(_curGameObj.linescore),
+				numinnings = linescore.length,
+				numscheduled = _curGameObj.scheduled_innings,
+				lastInning = (numinnings > numscheduled) ? numinnings : numscheduled,
+				home_runs, away_runs, inning, $away_cell, $home_cell, $colhdr,
+				n=0;					
+			for(; n<lastInning; n++){
+				inning = linescore[n];
+				away_runs = (inning && inning.away_inning_runs) ? inning.away_inning_runs : "-";
+				home_runs = (inning && inning.home_inning_runs) ? inning.home_inning_runs : "-";					
+				$colhdr = $row1.find("th:eq("+n+")");
+				$away_cell = $row2.find("td:eq("+n+")");
+				$home_cell = $row3.find("td:eq("+n+")");								
+				if(!$colhdr.length) $row1.append("<th>"+(n+1)+"</th>");
+				if(!$away_cell.length) {
+					$row2.append("<td>"+away_runs+"</td>");
+				} else {	
+					_changeIt($away_cell, away_runs);
+				}
+				if(!$home_cell.length) {
+					$row3.append("<td>"+home_runs+"</td>");
+				} else {
+					_changeIt($home_cell, home_runs);	
+				}			
+			}	
+			// extra innings	
+			if(numinnings > numscheduled){
+				// this could fire before the load animation fadeIn has completed. if that happens the table width is inaccessible.
+				// so if there's no width we bind to loadAnimationComplete and wait.
+				_$curPanel.find(".mw_innings_left, .mw_innings_right").show();
+				if($innings.find("table").width()) {
+					_scrollLinescore();
+				} else {
+					CORE.one("loadAnimationComplete",function(){
+						_scrollLinescore();		
+					});
+				}
+			} 	
+		},
+		
+		
+		_scrollLinescore = function(isLeft){
+			var $innings = _$curPanel.find(".mw_linescore_innings"),
+				$table = $innings.find("table"),											
+				farLeft = $innings.width() - $table.width(),
+				newLeft = (!!isLeft) ? 0 : farLeft;							
+			$table.stop(true).animate({ left: newLeft }, {duration:1000,easing: _easing});		
+		},
+		
+		
+		_writeButtons = function(){			
+			var $buttons = _$curPanel.find(".mw_button"),
+				$mlbtv = _$curPanel.find(".mw_button_tv"),
+				$audio = _$curPanel.find(".mw_button_audio"),
+				$gameday = _$curPanel.find(".mw_button_gameday"),
+				$wrap = _$curPanel.find(".mw_button_wrap"),
+				$box = _$curPanel.find(".mw_button_box"),				
+				gd_enabled = (_curGameObj.gameday_sw === "Y" || _curGameObj.gameday_sw === "E" || _curGameObj.gameday_sw === "P"),	
+				isHome = (_curGameObj.home_file_code === window.club),	
+				mlbtv_link = (!!_curGameObj.mlbtv_link) ?  "javascript:void(" + _curGameObj.mlbtv_link + ")" : _config.mediacenterlink,
+				postseason_tv = (!!_curGameObj.postseason_tv) ?  "javascript:void(" + _curGameObj.postseason_tv + ")" : "",
+				audio_link = _curGameObj.home_audio_link || "",
+                team_city = _curGameObj.home_team_city || "",
+                team_name = _curGameObj.home_team_name || "",
+                team_city_abbrev = _curGameObj.home_name_abbrev || "",
+				preview_link = (isHome) ? _curGameObj.home_preview_link || _curGameObj.preview || "" : _curGameObj.away_preview_link || _curGameObj.preview || "",					
+				wrap_link = _curGameObj.wrapup_link || "",											
+				gd_link = "javascript:void(launchGameday({gid:'"+_curGameObj.gameday_link+"', mode:"+(_curMode === "preview" ? "'preview'" : "'gameday'")+", c_id:'" + _config.club + "'}))",  	
+				icon = "<div></div>",			
+				tempGD="";
+									
+			$buttons.hide();			
+			
+			// MiLB branches:
+			// @TODO: consider branching this file
+			if(_config.property === "milb"){
+				if (_config.club!='milb'){
+					isHome = (_curGameObj.home_file_code === _config.club);
+					audio_link = (isHome) ? _curGameObj.home_audio_link || "" : _curGameObj.away_audio_link || "";
+				}
+				if(!!audio_link) audio_link = audio_link;
+				// wait until game is connected before enabling gameday link
+				// @TODO: do gameday links surface elsewhere?
+				gd_enabled = gd_enabled && (_curMode === "live" || _curStatus === "Pre-Game");
+				// milb just links directly to the tv page
+				mlbtv_link = _curGameObj.mlbtv_link || _config.mediacenterlink;
+			}
+			else {
+				if(!!audio_link) audio_link = _formatPlayerLink(audio_link);
+				if(!!preview_link) preview_link = _addClubParam(preview_link);
+				if(!!wrap_link) wrap_link = _addClubParam(wrap_link);
+			}
+	
+			if(_curStatus === "Postponed" || _curStatus === "Cancelled" || _curStatus === "Forfeit") return;
+			if(_curMode === "final"){
+				if(!!wrap_link){				
+					// hide gameday
+					$gameday.hide();					
+					// WRAP
+					$wrap.html(_config.wraptext).attr("href",wrap_link).show();					
+				}else if(_curGameObj.gameday_sw !== "N" && _curStatus !== "Suspended" && _curStatus !== "Postponed"){
+					// GAMEDAY								
+					$gameday.html(icon).append(_config.gamedaytext).attr("href",gd_link).show();
+				}			
+				// BOX
+				$box.html(_config.boxtext).show();	
+			} else {
+				// WATCH
+				$mlbtv.html(icon).append(_config.tvtext).attr("href", mlbtv_link).toggleClass("noTV",!_curGameObj.mlbtv_link);
+				if (!!_curGameObj.mlbtv_link) {
+					$mlbtv.show();
+				}
+				if(gd_enabled){										
+					// LISTEN
+					if(!!audio_link) $audio.html(icon)
+					    .append(_config.audiotext)
+                        .attr("href", "/common/tunein_popup.jsp?ti_id=s"+audio_link+"&city="+team_city+"&team="+team_name+"&abbrev="+team_city_abbrev)
+					    .attr("onclick", "bam.tuneinPopup.show(event)")
+					    .show();
+					// GAMEDAY or PREVIEW
+					if(_curGameObj.gameday_link) {
+						$gameday.html(icon).append(_config.gamedaytext).attr("href",gd_link).show();
+					} else if(!!preview_link) {
+						$gameday.html(_config.previewtext).attr("href",preview_link).show();
+					}														
+				} else if(_config.property === "milb" && _curMode !== "preview"){
+					// show box link during live mode for MiLB games that do not have gameday
+					$box.html(_config.boxtext).show();
+				}			
+			}
+		},
+		
+				
+
+
+		_writeRunners = function(){
+			var $onbase = _$curPanel.find(".mw_bases"),
+				newClass = "mw_bases_" + (_curGameObj.runner_on_base_status || "0");					
+			if(!$onbase.hasClass(newClass))	{
+				$onbase.fadeOut(function(){
+					$(this).removeClass().addClass("mw_bases " + newClass).fadeIn();
+				});
+			}	
+		},
+		
+		
+		_writeOuts = function(){
+			var newHTML = _curGameObj.outs || "0";
+				newHTML += (newHTML==="1") ? " out" : " outs";			
+			_changeIt(_$curPanel.find(".mw_outs"), newHTML);		
+		},
+		
+		
+		// runs, hits, errors
+		_writeRHE = function(){
+			var $rhe = _$curPanel.find(".mw_linescore_rhe");
+			_changeIt($rhe.find("tbody td:eq(0)"), _curGameObj.away_team_runs || "0");	
+			_changeIt($rhe.find("tbody td:eq(1)"), _curGameObj.away_team_hits || "0");	
+			_changeIt($rhe.find("tbody td:eq(2)"), _curGameObj.away_team_errors || "0");				
+			_changeIt($rhe.find("tbody tr:last td:eq(0)"), _curGameObj.home_team_runs || "0");	
+			_changeIt($rhe.find("tbody tr:last td:eq(1)"), _curGameObj.home_team_hits || "0");	
+			_changeIt($rhe.find("tbody tr:last td:eq(2)"), _curGameObj.home_team_errors || "0");	
+		},
+				
+		
+		_writeMatchup = function(){
+			var $matchup = _$curPanel.find(".mw_linescore_matchup");		
+			_changeIt($matchup.find("td:first"), _curGameObj.away_name_abbrev, false);
+			_changeIt($matchup.find("td:last"), _curGameObj.home_name_abbrev, false);		
+		},	
+		
+		
+		_writeStartTime = function(){
+			var $starttime = _$curPanel.find(".mw_starttime"),
+				club = window.club || window.sid,
+				displayTime = _curGameObj.time + _curGameObj.ampm,
+				isGame2 = (_curGameID.substr(_curGameID.length-1,1) === "2"),
+				isTBD = ~_curGameObj.time.indexOf("3:33");										
+			if((club !== "mlb")&& (club !== "milb")){
+				if(club === _curGameObj.home_file_code) {
+					displayTime = _curGameObj.home_time + _curGameObj.home_ampm;
+				} else if(club === _curGameObj.away_file_code) {
+					displayTime = _curGameObj.away_time + _curGameObj.away_ampm;
+				}			
+			}	
+			if (_curGameObj.league === 'AFL' && club === "milb") {
+				var estTime = _curGameObj.time_date.split(" ")[1];
+				displayTime = estTime + _curGameObj.ampm;
+			}
+			if(isTBD){
+				displayTime = (isGame2)?"Game 2":"TBD";
+			}
+            if(_curMode === "suspended-noresume"){
+                displayTime = "SUSP";
+            }
+			$starttime.html(displayTime).show();
+		},
+			
+		
+		/*
+		*
+		*  _update
+		*
+		*/	
+		_update = function(){
+			_log(_curGameObj);
+			var $matchup = _$curPanel.find(".mw_linescore_matchup"),	
+				standardGameStates = ["Warmup","In Progress","Preview","Pre-Game","Game Over","Final","Completed Early"],							
+				newHTML = (~$.inArray(_curStatus, standardGameStates)) ? _curMode : _curStatus,
+				isAutoKicker = _$curPanel.find(".mw_kicker a").hasClass("mw_auto"),
+                panelClass = _curStatus != "Suspended" ? "mw_" + _curMode : "mw_suspended";
+			_$curPanel.addClass(panelClass);
+			
+			// top banner area															
+			if(_curStatus === "Game Over" || _curStatus === "Final" || _curStatus === "Completed Early") {
+				if(!isAutoKicker){
+					newHTML += ": ";
+					if(_curGameObj.away_team_runs*1 > _curGameObj.home_team_runs*1) {
+						newHTML += _curGameObj.away_name_abbrev;
+						newHTML += " " + _curGameObj.away_team_runs;
+						newHTML += ", " + _curGameObj.home_name_abbrev;
+						newHTML += " " + _curGameObj.home_team_runs;
+					} else {						
+						newHTML += _curGameObj.home_name_abbrev;
+						newHTML += " " + _curGameObj.home_team_runs;
+						newHTML += ", " + _curGameObj.away_name_abbrev;
+						newHTML += " " + _curGameObj.away_team_runs;
+					}
+				}
+			}else if(_curStatus === "Delayed Start"){
+				newHTML = (_curGameObj.reason === "Ceremony") ? "Ceremony" : "Delayed";
+			}		
+			_changeIt(_$curPanel.find(".mw_live_banner h3"), newHTML);							
+			if(isAutoKicker)_writeKicker();		
+			_writeIndicator();
+			_writeMatchup();
+			_writeLinescore();
+			_writeButtons();
+			if(_curMode === "final" && _curStatus != "Suspended") {
+				_$curPanel.find(".mw_bases").fadeOut();		
+			} else if(_curMode === "live"){
+				_writeRunners(); 
+				_writeOuts();	
+			} else {				
+				_writeStartTime(); 
+				_writeOuts();	
+			}								
+			_writeRHE();
+		},
+		
+		
+		_heartbeat = null, // polling interval
+		
+		_refreshInterval = 10000,
+		
+		
+	
+
+	
+		/*
+		*
+		*
+		*
+		*
+		* ROOT LEVEL OBJECT
+		*
+		* @public
+		*
+		*
+		*/
+	
+		_self = {				
+			
+			stop: function(){
+				clearInterval(_heartbeat);			
+			},
+			
+			getStatus: function(){
+				return _curStatus;
+			},			
+			getMode: function(){
+				return _curMode;
+			}			
+			
+		};
+		
+	
+	// EVENTS
+	
+	// gamePanelFound is triggered in mediawall.tpl
+	CORE.one("gamePanelFound",function(e,gameday){
+		//_game.init(gameday);		
+		// @TODO: dynamically load bam.mediawall.game js?
+		// @TODO: don't bind any events or do anything unless this fires!
+		_get.cache={};  
+		_config = CORE.getAllConfigs();
+	});	
+	
+	
+	CORE.bind("rotationBegin",function(){			
+		clearInterval(_heartbeat);								
+	});			
+	
+		
+	CORE.bind("rotationEnd",function(){
+		var panelObj, panels = CORE.getConfig("panels");
+		_curIndex = CORE.getCurrentPanelIndex(); 
+		panelObj = panels[_curIndex] || panels[0];		
+		if(!!panelObj && !!panelObj.gameid && panelObj.defkey === "mediawall-game" && panelObj.no_bscore !== "1" ) {	
+			_$curPanel = _get("#media_wall .mw_panel:not('.isClone'):eq("+_curIndex+")");		
+			_curGameID = panelObj.gameid;
+			_log("_curGameID="+_curGameID);
+			_loadGame(function(){
+				_heartbeat = setInterval(_loadGame,_refreshInterval);	
+			});			
+					
+		}	
+	});
+
+	
+	// extra innings scroll
+	$doc.selector = "#media_wall .mw_innings_left, #media_wall .mw_innings_right";  
+	$doc.live("click", function(e) {
+		var isLeft = $(e.target).hasClass("mw_innings_left");
+		_scrollLinescore(isLeft);		
+	});	
+	
+
+	/** 		
+		* TRACKING
+		* 
+		* Click events are delegated to the #media_wall container
+		* Only those whose target has the class "trackThis" are processed
+		* Default track values exist
+		* Custom values can be added in the markup using the following classes:
+		* isDynamic, compName, compActivity, actionGen
+		*  
+		*/	
+			
+	$doc.selector = "#media_wall";  
+	$doc.live("click", function(e) {
+		var isDynamic, compActivity, actionGen, $target = $(e.target);			
+		if($target.hasClass("trackThis")) {				
+			isDynamic 		= ($target.attr("isDynamic") === undefined) ? false : $target.attr("isDynamic");
+			compActivity	= ($target.attr("compActivity") === undefined) ? $target.text() + " Click" : $target.attr("compActivity");
+			actionGen 		= ($target.attr("actionGen") === undefined) ? true : $target.attr("actionGen");
+			bam.tracking.track({
+				async:{
+					isDynamic: isDynamic,		
+					compName: _config.compname,								
+					compActivity: _config.club.toUpperCase() + " Mediawall: " + compActivity,							
+					actionGen: actionGen
+				}
+			}, $target);
+		}									
+	});	
+	
+	$.bindable(_self, "gameLoaded");
+			
+	return _self;	
+		
+})(this, this.document, this.jQuery, undefined, this.bam);

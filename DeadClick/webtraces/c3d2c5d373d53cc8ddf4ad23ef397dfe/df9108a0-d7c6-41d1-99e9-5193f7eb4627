@@ -1,0 +1,670 @@
+<!DOCTYPE HTML>
+<html lang="iw">
+<head>
+<title>Coffee Ripples - Home of the Ripple Maker</title>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<meta name="generator" content="WordPress 4.9.4" /> <!-- leave this for stats please -->
+
+<link rel="shortcut icon" href="http://www.coffeeripples.com/wp-content/themes/coffeeripples/favicon.ico" />
+
+<link rel="stylesheet" href="http://www.coffeeripples.com/wp-content/themes/coffeeripples/style.css" type="text/css" media="screen" />
+
+<link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css">
+
+<link href='https://fonts.googleapis.com/css?family=Montserrat:400,700' rel='stylesheet' type='text/css'>
+<link href='https://fonts.googleapis.com/css?family=Crimson+Text' rel='stylesheet' type='text/css'>
+
+
+
+<link rel="stylesheet" href="http://www.coffeeripples.com/wp-content/themes/coffeeripples/jquery.lightbox.css" type="text/css" media="screen" />
+<link rel="stylesheet" href="http://www.coffeeripples.com/wp-content/themes/coffeeripples/css/hover-min.css" type="text/css" media="screen" />
+
+<link rel="stylesheet" href="http://www.coffeeripples.com/wp-content/themes/coffeeripples/animate.css" type="text/css" media="screen" />
+
+<link rel="stylesheet" href="http://www.coffeeripples.com/wp-content/themes/coffeeripples/responsive.css" type="text/css" media="screen" />
+
+<link rel="pingback" href="http://www.coffeeripples.com/xmlrpc.php" />
+
+<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.6.2/jquery.min.js"></script>
+<script src="http://ajax.googleapis.com/ajax/libs/jqueryui/1.8/jquery-ui.min.js"></script>
+
+<script src="http://www.coffeeripples.com/wp-content/themes/coffeeripples/js/jquery.flexslider.js"></script>
+
+
+
+
+
+<script src="http://www.coffeeripples.com/wp-content/themes/coffeeripples/js/wow.min.js"></script>
+<script>
+new WOW().init();
+</script>
+
+<script src="http://www.coffeeripples.com/wp-content/themes/coffeeripples/js/jquery.lightbox.min.js"></script>
+
+
+
+
+
+
+<script type="text/javascript">
+function sendToSalesForce() {
+
+    var firstName = $('input[name=first-name]').val();
+    var lastName = $('input[name=last-name]').val();
+    var companyName = $('input[name=company-name]').val();
+    var email = $('input[name=your-email]').val();
+    var phone = $('input[name=phone]').val();
+    var website = $('input[name=company-website]').val();
+    var subject = $('input[name=subject]').val();
+    var message = $('input[name=your-message]').val();
+    var orgid = $('input[name=orgid]').val();
+    var retURL = $('input[name=retURL]').val();
+    var submit = $('input[name=submit]').val();
+
+    data = {
+        "00N2400000GsGWS": firstName,
+        "00N2400000GsGjn": lastName,
+        "email": email,
+        "company": companyName,
+        "phone": phone,
+        "00N2400000Gs580": website,
+        "subject": subject,
+        "description": message,
+        "submit": submit,
+        "orgid": orgid,
+        "retURL": retURL
+    };
+
+    jQuery.ajax({
+        type: "POST",
+        dataType: "jsonp",
+        url: 'https://www.salesforce.com/servlet/servlet.WebToLead?encoding=UTF-8',
+        data: data
+
+    }).done(function() {
+
+    });
+
+}
+</script>
+
+
+<script type="text/javascript">
+$(document).ready(function(){
+  $('.flexslider').flexslider({
+		animation: 'fade',
+		initDelay: 6000,
+		slideshowSpeed: 3000
+});
+	$('header a.lightbox').click(function(e) {
+    e.preventDefault();
+  $('.video').html('<div class="videowrapper"><span></span><iframe width="100%" height="500px" src="https://www.youtube.com/embed/l6LNBlHpLRs?modestbranding=1&autoplay=1&rel=0&amp;controls=0&amp;showinfo=0&amp;wmode=transparent" frameborder="0" allowfullscreen></iframe>');
+  $('span.closeVideo').addClass('active');
+});
+
+
+
+        $(".entry ul.teams li").hover(function(){
+            $.data(this, "timer", setTimeout($.proxy(function() {
+               $(".entry ul.teams li span.description").fadeIn();
+            }, this), 1000));
+        },
+        function() {
+            clearTimeout($.data(this, "timer"));
+            $(".entry ul.teams li span.description").fadeOut();
+        });
+
+$('span.closeVideo').click(function(e) {
+    e.preventDefault();
+  $('.video').html('');
+  $(this).removeClass('active');
+});
+
+
+$('.faqTitle').each(function () {
+    var original = $(this).text();
+    var new_version = original.split('&').join('<span class="space">&</span>');
+    $(this).html(new_version)
+});
+$('ul#filters li span').each(function () {
+    var original = $(this).text();
+    var new_version = original.split('&').join('<i class="space">&</i>');
+    $(this).html(new_version)
+});
+
+            var bodyHeight = $("body").height();
+            $('#menu').height(bodyHeight);
+	    $('#menu .right').height(bodyHeight);
+
+
+$(".menuButton").click(function() { 
+    $(this).toggleClass("active");
+    $("#menu").toggleClass("active");
+    $(".login").toggleClass("active");
+	$(".order-button").toggleClass("active");
+    $(this).text(function(i, v){
+               return v === 'Menu' ? 'Close' : 'Menu'
+    })
+});
+
+$("#menu .left").click(function() { 
+    $('.menuButton').toggleClass("active");
+    $("#menu").toggleClass("active");
+    $(".login").toggleClass("active");
+$(".order-button").toggleClass("active");
+   $('.menuButton').text(function(i, v){
+               return v === 'Menu' ? 'Close' : 'Menu'
+    })
+});
+
+
+
+    $('.portfolio-wrapper .question').click(function () {
+      $('.portfolio-wrapper .answer').removeClass('active');
+      $('.portfolio-wrapper .question').removeClass('active');
+      $(this).next('div').toggleClass('active');
+      $(this).toggleClass('active');
+    });
+
+$('a.scroll,.properties .clearfix li span a, #back-to-top').click(function(){
+    $('html, body').animate({
+        scrollTop: $( $.attr(this, 'href') ).offset().top
+    }, 1200,'easeInCirc');
+    return false;
+});
+
+});
+</script>
+
+
+
+
+<script type="text/javascript">
+$(function(){ // document ready
+
+
+if ($(".order-button").length && $(window).width() > 768 ) { 
+
+$(window).scroll(function(){ 
+          var windowTop = $(window).scrollTop(); 
+
+if (windowTop>150) {
+   if (!$(".order-button").hasClass("sticky")) {
+
+       $(".order-button").addClass("x");
+	setTimeout(function(){ 
+        $(".order-button").addClass("sticky");
+       }, 300);
+}
+} else {
+   if ($(".order-button").hasClass("sticky")) {
+	$(".order-button").fadeOut(300);
+
+	setTimeout(function(){ 
+        $(".order-button").removeClass("x").removeClass("sticky").fadeIn(300);
+       }, 300);
+    }
+}
+
+});
+
+}
+
+
+   if ($('#leftSection').length && $(window).width() > 768 ) { 
+      var el = $('#leftSection');
+      var stickyTop = $('#leftSection').offset().top; // returns number
+      var stickyHeight = $('#leftSection').height();
+
+      $(window).scroll(function(){ // scroll event
+          var limit = $('footer').offset().top - stickyHeight - 20;
+
+          var windowTop = $(window).scrollTop(); // returns number
+
+          if (stickyTop < windowTop){
+             el.css({ position: 'fixed', top: 0 });
+	     el.addClass("fixedElement");
+          }
+          else {
+             el.css('position','absolute');
+	     el.removeClass("fixedElement");
+          }
+
+          if (limit < windowTop) {
+          var diff = limit - windowTop;
+          el.css({top: diff});
+          }
+        });
+   }
+});
+</script>
+
+
+
+
+
+<script type="text/javascript">
+$(document).ready(function(){
+    $('section[data-type="background"]').each(function(){
+        var $bgobj = $(this); // создаем объект
+        $(window).scroll(function() {
+            var yPos = -($(window).scrollTop() / $bgobj.data('speed')); // вычисляем коэффициент 
+            // Присваиваем значение background-position
+            var coords = 'center '+ yPos + 'px';
+            // Создаем эффект Parallax Scrolling
+            $bgobj.css({ backgroundPosition: coords });
+        });
+    });
+});
+</script>
+
+
+
+
+
+<script type="text/javascript">
+$(document).ready(function(){
+	var offset = 600,
+		//browser window scroll (in pixels) after which the "back to top" link opacity is reduced
+		offset_opacity = 1200,
+		//duration of the top scrolling animation (in ms)
+		scroll_top_duration = 700,
+		//grab the "back to top" link
+		$back_to_top = $('#back-to-top');
+
+	//hide or show the "back to top" link
+	$(window).scroll(function(){
+		( $(this).scrollTop() > offset ) ? $back_to_top.addClass('cd-is-visible') : $back_to_top.removeClass('cd-is-visible cd-fade-out');
+		if( $(this).scrollTop() > offset_opacity ) { 
+			$back_to_top.addClass('cd-fade-out');
+		}
+	});	
+    });
+</script>
+
+<script>
+  	jvcf7_loading_url= "http://www.coffeeripples.com/wp-content/plugins/contact-form-7/images/ajax-loader.gif";
+    jvcf7_invalid_field_design = "theme_1";
+	jvcf7_show_label_error = "errorMsgshow";
+  </script>
+<!-- This site is optimized with the Yoast SEO plugin v5.7.1 - https://yoast.com/wordpress/plugins/seo/ -->
+<meta name="description" content="Enrich the coffee experience with the Ripple Maker. Print the full range of human emotions. In coffee, on coffee."/>
+<link rel="canonical" href="http://www.coffeeripples.com/" />
+<meta property="og:locale" content="en_US" />
+<meta property="og:type" content="website" />
+<meta property="og:title" content="Coffee Ripples - Home of the Ripple Maker" />
+<meta property="og:description" content="Enrich the coffee experience with the Ripple Maker. Print the full range of human emotions. In coffee, on coffee." />
+<meta property="og:url" content="http://www.coffeeripples.com/" />
+<meta property="og:site_name" content="Coffeeripples" />
+<meta name="twitter:card" content="summary" />
+<meta name="twitter:description" content="Enrich the coffee experience with the Ripple Maker. Print the full range of human emotions. In coffee, on coffee." />
+<meta name="twitter:title" content="Coffee Ripples - Home of the Ripple Maker" />
+<script type='application/ld+json'>{"@context":"http:\/\/schema.org","@type":"WebSite","@id":"#website","url":"http:\/\/www.coffeeripples.com\/","name":"Coffeeripples","potentialAction":{"@type":"SearchAction","target":"http:\/\/www.coffeeripples.com\/?s={search_term_string}","query-input":"required name=search_term_string"}}</script>
+<script type='application/ld+json'>{"@context":"http:\/\/schema.org","@type":"Organization","url":"http:\/\/www.coffeeripples.com\/","sameAs":[],"@id":"#organization","name":"Steam CC ltd","logo":"http:\/\/www.coffeeripples.com\/wp-content\/uploads\/2015\/12\/facebook.png"}</script>
+<!-- / Yoast SEO plugin. -->
+
+<link rel='dns-prefetch' href='//s.w.org' />
+		<script type="text/javascript">
+			window._wpemojiSettings = {"baseUrl":"https:\/\/s.w.org\/images\/core\/emoji\/2.4\/72x72\/","ext":".png","svgUrl":"https:\/\/s.w.org\/images\/core\/emoji\/2.4\/svg\/","svgExt":".svg","source":{"concatemoji":"http:\/\/www.coffeeripples.com\/wp-includes\/js\/wp-emoji-release.min.js?ver=4.9.4"}};
+			!function(a,b,c){function d(a,b){var c=String.fromCharCode;l.clearRect(0,0,k.width,k.height),l.fillText(c.apply(this,a),0,0);var d=k.toDataURL();l.clearRect(0,0,k.width,k.height),l.fillText(c.apply(this,b),0,0);var e=k.toDataURL();return d===e}function e(a){var b;if(!l||!l.fillText)return!1;switch(l.textBaseline="top",l.font="600 32px Arial",a){case"flag":return!(b=d([55356,56826,55356,56819],[55356,56826,8203,55356,56819]))&&(b=d([55356,57332,56128,56423,56128,56418,56128,56421,56128,56430,56128,56423,56128,56447],[55356,57332,8203,56128,56423,8203,56128,56418,8203,56128,56421,8203,56128,56430,8203,56128,56423,8203,56128,56447]),!b);case"emoji":return b=d([55357,56692,8205,9792,65039],[55357,56692,8203,9792,65039]),!b}return!1}function f(a){var c=b.createElement("script");c.src=a,c.defer=c.type="text/javascript",b.getElementsByTagName("head")[0].appendChild(c)}var g,h,i,j,k=b.createElement("canvas"),l=k.getContext&&k.getContext("2d");for(j=Array("flag","emoji"),c.supports={everything:!0,everythingExceptFlag:!0},i=0;i<j.length;i++)c.supports[j[i]]=e(j[i]),c.supports.everything=c.supports.everything&&c.supports[j[i]],"flag"!==j[i]&&(c.supports.everythingExceptFlag=c.supports.everythingExceptFlag&&c.supports[j[i]]);c.supports.everythingExceptFlag=c.supports.everythingExceptFlag&&!c.supports.flag,c.DOMReady=!1,c.readyCallback=function(){c.DOMReady=!0},c.supports.everything||(h=function(){c.readyCallback()},b.addEventListener?(b.addEventListener("DOMContentLoaded",h,!1),a.addEventListener("load",h,!1)):(a.attachEvent("onload",h),b.attachEvent("onreadystatechange",function(){"complete"===b.readyState&&c.readyCallback()})),g=c.source||{},g.concatemoji?f(g.concatemoji):g.wpemoji&&g.twemoji&&(f(g.twemoji),f(g.wpemoji)))}(window,document,window._wpemojiSettings);
+		</script>
+		<style type="text/css">
+img.wp-smiley,
+img.emoji {
+	display: inline !important;
+	border: none !important;
+	box-shadow: none !important;
+	height: 1em !important;
+	width: 1em !important;
+	margin: 0 .07em !important;
+	vertical-align: -0.1em !important;
+	background: none !important;
+	padding: 0 !important;
+}
+</style>
+<link rel='stylesheet' id='contact-form-7-css'  href='http://www.coffeeripples.com/wp-content/plugins/contact-form-7/includes/css/styles.css?ver=4.9.1' type='text/css' media='all' />
+<link rel='stylesheet' id='jvcf7_style-css'  href='http://www.coffeeripples.com/wp-content/plugins/jquery-validation-for-contact-form-7/css/jvcf7_validate.css?ver=4.9.4' type='text/css' media='all' />
+<link rel='stylesheet' id='popup-maker-site-css'  href='http://www.coffeeripples.com/wp-content/plugins/popup-maker/assets/css/site.min.css?ver=1.6.6' type='text/css' media='all' />
+<link rel='stylesheet' id='A2A_SHARE_SAVE-css'  href='http://www.coffeeripples.com/wp-content/plugins/add-to-any/addtoany.min.css?ver=1.13' type='text/css' media='all' />
+<script type='text/javascript' src='http://www.coffeeripples.com/wp-includes/js/jquery/jquery.js?ver=1.12.4'></script>
+<script type='text/javascript' src='http://www.coffeeripples.com/wp-includes/js/jquery/jquery-migrate.min.js?ver=1.4.1'></script>
+<script type='text/javascript' src='http://www.coffeeripples.com/wp-content/plugins/thrive-visual-editor/editor/js/compat.min.js?ver=1.500.16'></script>
+<script type='text/javascript' src='http://www.coffeeripples.com/wp-content/plugins/add-to-any/addtoany.min.js?ver=1.0'></script>
+<link rel='https://api.w.org/' href='http://www.coffeeripples.com/wp-json/' />
+<link rel="EditURI" type="application/rsd+xml" title="RSD" href="http://www.coffeeripples.com/xmlrpc.php?rsd" />
+<link rel="wlwmanifest" type="application/wlwmanifest+xml" href="http://www.coffeeripples.com/wp-includes/wlwmanifest.xml" /> 
+<link rel='shortlink' href='http://www.coffeeripples.com/' />
+<link rel="alternate" type="application/json+oembed" href="http://www.coffeeripples.com/wp-json/oembed/1.0/embed?url=http%3A%2F%2Fwww.coffeeripples.com%2F" />
+<link rel="alternate" type="text/xml+oembed" href="http://www.coffeeripples.com/wp-json/oembed/1.0/embed?url=http%3A%2F%2Fwww.coffeeripples.com%2F&#038;format=xml" />
+
+<script type="text/javascript">
+var a2a_config=a2a_config||{};a2a_config.callbacks=a2a_config.callbacks||[];a2a_config.templates=a2a_config.templates||{};
+</script>
+<script type="text/javascript" src="http://static.addtoany.com/menu/page.js" async="async"></script>
+<!-- Facebook Pixel Code -->
+<script>
+!function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;
+n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;
+t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,
+document,'script','https://connect.facebook.net/en_US/fbevents.js');
+fbq('init', '436895023131103'); // Insert your pixel ID here.
+fbq('track', 'PageView');
+</script>
+<noscript><img height="1" width="1" style="display:none"
+src="https://www.facebook.com/tr?id=436895023131103&ev=PageView&noscript=1"
+/></noscript>
+<!-- DO NOT MODIFY -->
+<!-- End Facebook Pixel Code -->
+ <script id='pixel-script-poptin' src='https://cdn.popt.in/pixel.js?id=29ae976f581cd' async=true></script><script id='pixel-script-poptin' src='https://cdn.popt.in/pixel.js?id=29ae976f581cd' async=true></script> <style type="text/css">.ttfm1{font-family: 'Roboto' !important;font-weight: 400 !important;}.ttfm1 input, .ttfm1 select, .ttfm1 textarea, .ttfm1 button {font-family: 'Roboto' !important;font-weight: 400 !important;}.ttfm1.bold_text,.ttfm1 .bold_text,.ttfm1 b,.ttfm1 strong{font-weight: 500 !important;}.ttfm1.bold_text,.ttfm1 .bold_text,.ttfm1 b,.ttfm1 strong input, .ttfm1.bold_text,.ttfm1 .bold_text,.ttfm1 b,.ttfm1 strong select, .ttfm1.bold_text,.ttfm1 .bold_text,.ttfm1 b,.ttfm1 strong textarea, .ttfm1.bold_text,.ttfm1 .bold_text,.ttfm1 b,.ttfm1 strong button {font-weight: 500 !important;}</style><script type="text/javascript">
+        setTimeout(function(){var a=document.createElement("script");
+        var b=document.getElementsByTagName('script')[0];
+        a.src=document.location.protocol+"//script.crazyegg.com/pages/scripts/0052/5002.js";
+        a.async=true;a.type="text/javascript";b.parentNode.insertBefore(a,b)}, 1);
+        </script>
+      	<style id="pum-styles" type="text/css" media="all">
+	/* Popup Google Fonts */
+@import url('//fonts.googleapis.com/css?family=Acme|Montserrat');
+
+/* Popup Theme 1443: Framed Border */
+.pum-theme-1443, .pum-theme-framed-border { background-color: rgba( 255, 255, 255, 0.50 ) } 
+.pum-theme-1443 .pum-container, .pum-theme-framed-border .pum-container { padding: 18px; border-radius: 0px; border: 20px outset #dd3333; box-shadow: 1px 1px 3px 0px rgba( 2, 2, 2, 0.97 ) inset; background-color: rgba( 255, 251, 239, 1.00 ) } 
+.pum-theme-1443 .pum-title, .pum-theme-framed-border .pum-title { color: #000000; text-align: left; text-shadow: 0px 0px 0px rgba( 2, 2, 2, 0.23 ); font-family: inherit; font-size: 32px; line-height: 36px } 
+.pum-theme-1443 .pum-content, .pum-theme-framed-border .pum-content { color: #2d2d2d; font-family: inherit } 
+.pum-theme-1443 .pum-content + .pum-close, .pum-theme-framed-border .pum-content + .pum-close { height: 20px; width: 20px; left: auto; right: -20px; bottom: auto; top: -20px; padding: 0px; color: #ffffff; font-family: Acme; font-size: 20px; line-height: 20px; border: 1px none #ffffff; border-radius: 0px; box-shadow: 0px 0px 0px 0px rgba( 2, 2, 2, 0.23 ); text-shadow: 0px 0px 0px rgba( 0, 0, 0, 0.23 ); background-color: rgba( 0, 0, 0, 0.55 ) } 
+
+/* Popup Theme 1442: Cutting Edge */
+.pum-theme-1442, .pum-theme-cutting-edge { background-color: rgba( 0, 0, 0, 0.50 ) } 
+.pum-theme-1442 .pum-container, .pum-theme-cutting-edge .pum-container { padding: 18px; border-radius: 0px; border: 1px none #000000; box-shadow: 0px 10px 25px 0px rgba( 2, 2, 2, 0.50 ); background-color: rgba( 30, 115, 190, 1.00 ) } 
+.pum-theme-1442 .pum-title, .pum-theme-cutting-edge .pum-title { color: #ffffff; text-align: left; text-shadow: 0px 0px 0px rgba( 2, 2, 2, 0.23 ); font-family: Sans-Serif; font-size: 26px; line-height: 28px } 
+.pum-theme-1442 .pum-content, .pum-theme-cutting-edge .pum-content { color: #ffffff; font-family: inherit } 
+.pum-theme-1442 .pum-content + .pum-close, .pum-theme-cutting-edge .pum-content + .pum-close { height: 24px; width: 24px; left: auto; right: 0px; bottom: auto; top: 0px; padding: 0px; color: #1e73be; font-family: inherit; font-size: 32px; line-height: 24px; border: 1px none #ffffff; border-radius: 0px; box-shadow: -1px 1px 1px 0px rgba( 2, 2, 2, 0.10 ); text-shadow: -1px 1px 1px rgba( 0, 0, 0, 0.10 ); background-color: rgba( 238, 238, 34, 1.00 ) } 
+
+/* Popup Theme 1441: Hello Box */
+.pum-theme-1441, .pum-theme-hello-box { background-color: rgba( 0, 0, 0, 0.75 ) } 
+.pum-theme-1441 .pum-container, .pum-theme-hello-box .pum-container { padding: 30px; border-radius: 80px; border: 14px solid #81d742; box-shadow: 0px 0px 0px 0px rgba( 2, 2, 2, 0.00 ); background-color: rgba( 255, 255, 255, 1.00 ) } 
+.pum-theme-1441 .pum-title, .pum-theme-hello-box .pum-title { color: #2d2d2d; text-align: left; text-shadow: 0px 0px 0px rgba( 2, 2, 2, 0.23 ); font-family: Montserrat; font-size: 32px; line-height: 36px } 
+.pum-theme-1441 .pum-content, .pum-theme-hello-box .pum-content { color: #2d2d2d; font-family: inherit } 
+.pum-theme-1441 .pum-content + .pum-close, .pum-theme-hello-box .pum-content + .pum-close { height: auto; width: auto; left: auto; right: -30px; bottom: auto; top: -30px; padding: 0px; color: #2d2d2d; font-family: inherit; font-size: 32px; line-height: 28px; border: 1px none #ffffff; border-radius: 28px; box-shadow: 0px 0px 0px 0px rgba( 2, 2, 2, 0.23 ); text-shadow: 0px 0px 0px rgba( 0, 0, 0, 0.23 ); background-color: rgba( 255, 255, 255, 1.00 ) } 
+
+/* Popup Theme 1440: Enterprise Blue */
+.pum-theme-1440, .pum-theme-enterprise-blue { background-color: rgba( 0, 0, 0, 0.70 ) } 
+.pum-theme-1440 .pum-container, .pum-theme-enterprise-blue .pum-container { padding: 28px; border-radius: 5px; border: 1px none #000000; box-shadow: 0px 10px 25px 4px rgba( 2, 2, 2, 0.50 ); background-color: rgba( 255, 255, 255, 1.00 ) } 
+.pum-theme-1440 .pum-title, .pum-theme-enterprise-blue .pum-title { color: #315b7c; text-align: left; text-shadow: 0px 0px 0px rgba( 2, 2, 2, 0.23 ); font-family: inherit; font-size: 34px; line-height: 36px } 
+.pum-theme-1440 .pum-content, .pum-theme-enterprise-blue .pum-content { color: #2d2d2d; font-family: inherit } 
+.pum-theme-1440 .pum-content + .pum-close, .pum-theme-enterprise-blue .pum-content + .pum-close { height: 28px; width: 28px; left: auto; right: 8px; bottom: auto; top: 8px; padding: 4px; color: #ffffff; font-family: inherit; font-size: 20px; line-height: 20px; border: 1px none #ffffff; border-radius: 42px; box-shadow: 0px 0px 0px 0px rgba( 2, 2, 2, 0.23 ); text-shadow: 0px 0px 0px rgba( 0, 0, 0, 0.23 ); background-color: rgba( 49, 91, 124, 1.00 ) } 
+
+/* Popup Theme 1439: Light Box */
+.pum-theme-1439, .pum-theme-lightbox { background-color: rgba( 0, 0, 0, 0.60 ) } 
+.pum-theme-1439 .pum-container, .pum-theme-lightbox .pum-container { padding: 18px; border-radius: 3px; border: 8px solid #000000; box-shadow: 0px 0px 30px 0px rgba( 2, 2, 2, 1.00 ); background-color: rgba( 255, 255, 255, 1.00 ) } 
+.pum-theme-1439 .pum-title, .pum-theme-lightbox .pum-title { color: #000000; text-align: left; text-shadow: 0px 0px 0px rgba( 2, 2, 2, 0.23 ); font-family: inherit; font-size: 32px; line-height: 36px } 
+.pum-theme-1439 .pum-content, .pum-theme-lightbox .pum-content { color: #000000; font-family: inherit } 
+.pum-theme-1439 .pum-content + .pum-close, .pum-theme-lightbox .pum-content + .pum-close { height: 30px; width: 30px; left: auto; right: -24px; bottom: auto; top: -24px; padding: 0px; color: #ffffff; font-family: inherit; font-size: 24px; line-height: 26px; border: 2px solid #ffffff; border-radius: 30px; box-shadow: 0px 0px 15px 1px rgba( 2, 2, 2, 0.75 ); text-shadow: 0px 0px 0px rgba( 0, 0, 0, 0.23 ); background-color: rgba( 0, 0, 0, 1.00 ) } 
+
+/* Popup Theme 1438: Default Theme */
+.pum-theme-1438, .pum-theme-default-theme { background-color: rgba( 255, 255, 255, 1.00 ) } 
+.pum-theme-1438 .pum-container, .pum-theme-default-theme .pum-container { padding: 18px; border-radius: 0px; border: 1px none #000000; box-shadow: 1px 1px 3px 0px rgba( 2, 2, 2, 0.23 ); background-color: rgba( 249, 249, 249, 1.00 ) } 
+.pum-theme-1438 .pum-title, .pum-theme-default-theme .pum-title { color: #000000; text-align: left; text-shadow: 0px 0px 0px rgba( 2, 2, 2, 0.23 ); font-family: inherit; font-weight: inherit; font-size: 32px; font-style: normal; line-height: 36px } 
+.pum-theme-1438 .pum-content, .pum-theme-default-theme .pum-content { color: #8c8c8c; font-family: inherit; font-weight: inherit; font-style: normal } 
+.pum-theme-1438 .pum-content + .pum-close, .pum-theme-default-theme .pum-content + .pum-close { height: auto; width: auto; left: auto; right: 0px; bottom: auto; top: 0px; padding: 8px; color: #ffffff; font-family: inherit; font-weight: inherit; font-size: 12px; font-style: normal; line-height: 14px; border: 1px none #ffffff; border-radius: 0px; box-shadow: 0px 0px 0px 0px rgba( 2, 2, 2, 0.23 ); text-shadow: 0px 0px 0px rgba( 0, 0, 0, 0.23 ); background-color: rgba( 0, 183, 205, 1.00 ) } 
+
+
+	
+		</style>
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-69119935-1', 'auto');
+  ga('send', 'pageview');
+
+</script>
+
+
+</head>
+<body id='top' class="home page-template page-template-page-home page-template-page-home-php page page-id-765 elementor-default">
+<div class="preload" style="width: 0px; height: 0px; overflow: hidden; position: absolute; left:0; top:0;">
+header.post a.lightbox {
+<img alt="" src="http://www.coffeeripples.com/wp-content/themes/coffeeripples/gfx/play-btn-on.png">
+
+</div>
+<span class='closeVideo'>close</span>
+<a href="#top" id="back-to-top" title="Back to top" style='display:none'></a>
+<section id='menu'>
+	<div class='left'></div>
+	<div class='right'><div class="menu-main-container"><ul id="menu-main" class="menu"><li id="menu-item-117" class="menu-item menu-item-type-post_type menu-item-object-page menu-item-117"><a href="http://www.coffeeripples.com/who-serves-ripples">Who’s Serving Ripples?</a></li>
+<li id="menu-item-80" class="menu-item menu-item-type-post_type menu-item-object-post menu-item-80"><a href="http://www.coffeeripples.com/ripplemaker">The Ripple Maker</a></li>
+<li id="menu-item-1294" class="menu-item menu-item-type-post_type menu-item-object-page menu-item-1294"><a href="http://www.coffeeripples.com/events">Events</a></li>
+<li id="menu-item-952" class="menu-item menu-item-type-post_type menu-item-object-page menu-item-952"><a href="http://www.coffeeripples.com/coffee-ripples-app">Coffee Ripples app</a></li>
+<li id="menu-item-23" class="menu-item menu-item-type-taxonomy menu-item-object-category menu-item-23"><a href="http://www.coffeeripples.com/in-the-news">In the News</a></li>
+<li id="menu-item-20" class="menu-item menu-item-type-post_type menu-item-object-page menu-item-20"><a href="http://www.coffeeripples.com/faq">Frequently Asked Questions</a></li>
+<li id="menu-item-162" class="menu-item menu-item-type-taxonomy menu-item-object-category menu-item-162"><a href="http://www.coffeeripples.com/blog">Blog</a></li>
+<li id="menu-item-204" class="menu-item menu-item-type-post_type menu-item-object-page menu-item-204"><a href="http://www.coffeeripples.com/about">About Us</a></li>
+<li id="menu-item-21" class="menu-item menu-item-type-post_type menu-item-object-page menu-item-21"><a href="http://www.coffeeripples.com/contact-us">Contact Us</a></li>
+<li id="menu-item-1476" class="menu-item menu-item-type-post_type menu-item-object-page menu-item-1476"><a href="http://www.coffeeripples.com/careers">Careers</a></li>
+</ul></div></div>
+</section>
+<div id='container'>
+
+
+
+
+	
+
+	<span class='menuButton' style='color:#2d0600;background:url(http://www.coffeeripples.com/wp-content/uploads/2015/09/menu_dark.png)'>Menu</span>
+	<a href='http://app.coffeeripples.com' style='color:#2d0600;border-right:1px solid #2d0600' class='login'>Login</a>
+<a href='http://www.coffeeripples.com/purchase-form-rm1' class='order-button'>Order</a>	<header class='hp'  style="background:url(http://www.coffeeripples.com/wp-content/uploads/2015/12/main_slider-1-1.jpg);" >
+	<div class='video'></div>
+	<a href='#intro' class='scroll'><span></span></a>
+	<div class='in'>
+	
+		<span class='logo'><a href='http://www.coffeeripples.com' style='background:url()'></a></span>
+		<a href="#" class="lightbox"></a>
+		<div class="intro-text">
+			<h1></h1>
+		</div>
+	</div>
+	</header>
+		<div class="coffeelogos">
+		<div class="in">
+			<a href="/?cat=3"><h2>Making Ripples in the News</h2></a>
+
+		<div class='flexslider'>
+		<ul class='slides'>
+				<li>
+						
+			<a href='http://www.coffeeripples.com/in-the-news' class="hvr-float-shadow"><img src="http://www.coffeeripples.com/wp-content/uploads/2017/10/dailymeal.png" class="grayscale grayscale-fade" alt="" border='0'></a>
+		
+						
+			<a href='http://www.coffeeripples.com/in-the-news' class="hvr-float-shadow"><img src="http://www.coffeeripples.com/wp-content/uploads/2015/12/foodandwine.png" class="grayscale grayscale-fade" alt="" border='0'></a>
+		
+						
+			<a href='http://www.coffeeripples.com/in-the-news' class="hvr-float-shadow"><img src="http://www.coffeeripples.com/wp-content/uploads/2017/10/fox.png" class="grayscale grayscale-fade" alt="" border='0'></a>
+		
+						
+			<a href='http://www.coffeeripples.com/in-the-news' class="hvr-float-shadow"><img src="http://www.coffeeripples.com/wp-content/uploads/2017/10/cnn.png" class="grayscale grayscale-fade" alt="" border='0'></a>
+		
+						
+			<a href='http://www.coffeeripples.com/in-the-news' class="hvr-float-shadow"><img src="http://www.coffeeripples.com/wp-content/uploads/2017/10/cosmopolitan-logo1-e1452612137763.png" class="grayscale grayscale-fade" alt="" border='0'></a>
+		
+						
+			<a href='http://www.coffeeripples.com/in-the-news' class="hvr-float-shadow"><img src="http://www.coffeeripples.com/wp-content/uploads/2017/10/The-Blend-WHITE-1-1.png" class="grayscale grayscale-fade" alt="" border='0'></a>
+		
+					</li>
+				<li>
+						
+			<a href='http://www.coffeeripples.com/in-the-news' class="hvr-float-shadow"><img src="http://www.coffeeripples.com/wp-content/uploads/2016/06/thetelegraph.png" class="grayscale grayscale-fade" alt="" border='0'></a>
+		
+						
+			<a href='http://www.coffeeripples.com/in-the-news' class="hvr-float-shadow"><img src="http://www.coffeeripples.com/wp-content/uploads/2017/10/forbes.png" class="grayscale grayscale-fade" alt="" border='0'></a>
+		
+						
+			<a href='http://www.coffeeripples.com/in-the-news' class="hvr-float-shadow"><img src="http://www.coffeeripples.com/wp-content/uploads/2017/10/unnamed.png" class="grayscale grayscale-fade" alt="" border='0'></a>
+		
+						
+			<a href='http://www.coffeeripples.com/in-the-news' class="hvr-float-shadow"><img src="http://www.coffeeripples.com/wp-content/uploads/2017/10/time_HP.png" class="grayscale grayscale-fade" alt="" border='0'></a>
+		
+						
+			<a href='http://www.coffeeripples.com/in-the-news' class="hvr-float-shadow"><img src="http://www.coffeeripples.com/wp-content/uploads/2017/10/04.png" class="grayscale grayscale-fade" alt="" border='0'></a>
+		
+						
+			<a href='http://www.coffeeripples.com/in-the-news' class="hvr-float-shadow"><img src="http://www.coffeeripples.com/wp-content/uploads/2017/10/dailymeal.png" class="grayscale grayscale-fade" alt="" border='0'></a>
+		
+					</li>
+				<div id='clear'></div>
+		</ul>
+		</div>
+		</div>
+	</div>
+
+	<div class='intro' id='intro'>
+		<img src="http://www.coffeeripples.com/wp-content/uploads/2015/12/niv_new.jpg">
+		
+		<div class='in'>
+		<div class='half'>
+		<h2>The Ripples Effect</h2>
+		<p><span style="font-size: 12.5pt; font-family: 'Arial',sans-serif;">R</span><span style="font-size: 12.5pt; font-family: 'Arial',sans-serif;">ipples</span><span style="font-size: 12.5pt; font-family: 'Arial',sans-serif;"> helps you deliver daily smiles to customers by adding fun, personalized images to their beverage, generating an emotional response. </span></p>
+<p style="background-image: initial; background-position: initial; background-size: initial; background-repeat: initial; background-origin: initial; background-clip: initial;"><span style="font-size: 12.5pt;"><span style="font-family: Arial, sans-serif;">Your customers will get a kick out of Ripples when they see their own selfies, favorite quotes, or special messages and images on their drinks. </span></span></p>
+<p style="background-image: initial; background-position: initial; background-size: initial; background-repeat: initial; background-origin: initial; background-clip: initial;"><span style="font-size: 12.5pt;"><span style="font-family: Arial, sans-serif;">The Ripple Maker is a revolutionary printer that adds beautiful high-resolution images and messages onto frothy drinks, from lattes to nitro-brewed coffee and cocktails.</span></span></p>
+		<br>
+		<a href='http://www.coffeeripples.com/ripplemaker' class='readMore animateBg'>Read more</a>
+		</div>
+		</div>
+		
+	</div>
+
+	<div class="images">
+		<div class='left'>
+		<ul>	
+
+					<li class="first animate wow slideInUp"><img src="http://www.coffeeripples.com/wp-content/uploads/2015/12/con011-1.jpg"></li>
+
+					<li class="first animate wow slideInUp"><img src="http://www.coffeeripples.com/wp-content/uploads/2015/12/hpImg4.jpg"></li>
+
+		
+		</ul>
+		</div>
+		<div class='right'>
+		<ul>	
+
+					<li class="first animate wow slideInUp"><img src="http://www.coffeeripples.com/wp-content/uploads/2015/12/machina2.jpg"></li>
+
+					<li class="first animate wow slideInUp"><img src="http://www.coffeeripples.com/wp-content/uploads/2015/12/hpBottomR.jpg"></li>
+
+		
+		</ul>
+		</div>
+		<div id='clear'></div>
+	</div>
+	<footer>
+
+		<ul class='top'>
+
+					<li class='order'>
+			<span>Order</span>
+						<a href='http://www.coffeeripples.com/purchase-form-rm1'>See full details ></a>
+			</li>
+
+		
+					<li class='share'>
+			<span>Share</span>
+						<ul class='footerShare'>
+			<li class="share">
+			<a href='http://www.facebook.com/drinkripples' class="facebook" target='_blank'></a>
+			<a href='http://www.twitter.com/drinkripples' class="twitter" target='_blank'></a>
+			<a href="https://www.pinterest.com/coffeeripples/" class="pinterest" target='_blank'></a>
+			<a href='http://www.instagram.com/drinkripples' class="instgram" target='_blank'></a>
+			</li>
+			</ul>
+			</li>
+
+		
+					<li class='contact'>
+			<span>Contact Us</span>
+						<a href='http://www.coffeeripples.com/contact-us'>go to contact page ></a>
+			</li>
+
+		
+		</ul>
+
+		<ul class='bottom'>
+			<li class='left'>
+			<a href='https://www.youtube.com/channel/UCYmTo85zngNRLN1LZ1kgj0g' class='youtube' target='_blank'></a>
+			<a href='http://www.facebook.com/drinkripples'' class='facebook' target='_blank'></a>
+			<a href='http://www.instagram.com/drinkripples' class='instgram' target='_blank'></a>
+			<a href='https://www.pinterest.com/coffeeripples/' class='pinterest' target='_blank'></a>
+			<a href='https://www.linkedin.com/company/steam-cc-parent-of-ripples?trk=top_nav_home' class='linkedin' target='_blank'></a>
+			<a href='http://www.twitter.com/drinkripples' class='twitter' target='_blank'></a>
+			</li>
+			<li class='center'>
+				<div class="menu-main-container"><ul id="menu-main-1" class="menu"><li class="menu-item menu-item-type-post_type menu-item-object-page menu-item-117"><a href="http://www.coffeeripples.com/who-serves-ripples">Who’s Serving Ripples?</a></li>
+<li class="menu-item menu-item-type-post_type menu-item-object-post menu-item-80"><a href="http://www.coffeeripples.com/ripplemaker">The Ripple Maker</a></li>
+<li class="menu-item menu-item-type-post_type menu-item-object-page menu-item-1294"><a href="http://www.coffeeripples.com/events">Events</a></li>
+<li class="menu-item menu-item-type-post_type menu-item-object-page menu-item-952"><a href="http://www.coffeeripples.com/coffee-ripples-app">Coffee Ripples app</a></li>
+<li class="menu-item menu-item-type-taxonomy menu-item-object-category menu-item-23"><a href="http://www.coffeeripples.com/in-the-news">In the News</a></li>
+<li class="menu-item menu-item-type-post_type menu-item-object-page menu-item-20"><a href="http://www.coffeeripples.com/faq">Frequently Asked Questions</a></li>
+<li class="menu-item menu-item-type-taxonomy menu-item-object-category menu-item-162"><a href="http://www.coffeeripples.com/blog">Blog</a></li>
+<li class="menu-item menu-item-type-post_type menu-item-object-page menu-item-204"><a href="http://www.coffeeripples.com/about">About Us</a></li>
+<li class="menu-item menu-item-type-post_type menu-item-object-page menu-item-21"><a href="http://www.coffeeripples.com/contact-us">Contact Us</a></li>
+<li class="menu-item menu-item-type-post_type menu-item-object-page menu-item-1476"><a href="http://www.coffeeripples.com/careers">Careers</a></li>
+</ul></div>			</li>
+	
+			<li class='right'>
+				<a href='http://stratigo.com' class='credit' target='_blank'></a>
+			</li>
+		</ul>
+		<ul class='credit'>
+			<li>© Steam CC 2018</li>
+			<li><a href='http://www.coffeeripples.com/terms-of-use'>Terms of Use</a></li>
+<li><a href='http://www.coffeeripples.com/terms-conditions/privacy-policy'>Privacy Policy</a></li>
+		</ul>
+	</footer>
+</div>
+<script type="text/javascript">
+_linkedin_data_partner_id = "68564";
+</script><script type="text/javascript">
+(function(){var s = document.getElementsByTagName("script")[0];
+var b = document.createElement("script");
+b.type = "text/javascript";b.async = true;
+b.src = "https://snap.licdn.com/li.lms-analytics/insight.min.js";
+s.parentNode.insertBefore(b, s);})();
+</script>
+<noscript>
+<img height="1" width="1" style="display:none;" alt="" src="https://dc.ads.linkedin.com/collect/?pid=68564&fmt=gif" />
+</noscript><div id="tve_notification_box"></div>        <style type="text/css" id="hustle-cc-styles"></style>
+        
+<!-- DO NOT COPY THIS SNIPPET! &mdash; HubSpot Identification Code -->
+<script type="text/javascript">
+(function(d,w) {
+w._hsq = w._hsq || [];
+w._hsq.push(["setContentType", "standard-page"]);
+})(document, window);
+</script>
+<!-- End of HubSpot Identification Code &mdash; DO NOT COPY THIS SNIPPET! -->
+
+<!-- Start of Async HubSpot Analytics Code for WordPress v1.2.1 -->
+<script type="text/javascript" id="hs-script-loader" async defer src="//js.hs-scripts.com/3886622.js"></script>
+<!-- End of Async HubSpot Analytics Code -->
+<script type='text/javascript'>
+/* <![CDATA[ */
+var lightbox_type = [""];
+var ajaxUrl = "http:\/\/www.coffeeripples.com\/wp-admin\/admin-ajax.php";
+/* ]]> */
+</script>
+<script type='text/javascript' src='http://www.coffeeripples.com/wp-content/plugins/lightbox/js/frontend/custom.js?ver=1.0'></script>
+<script type='text/javascript' src='http://www.coffeeripples.com/wp-includes/js/jquery/jquery.form.min.js?ver=4.2.1'></script>
+<script type='text/javascript' src='http://www.coffeeripples.com/wp-content/plugins/jquery-validation-for-contact-form-7/js/jquery.validate.min.js?ver=4.9.4'></script>
+<script type='text/javascript' src='http://www.coffeeripples.com/wp-content/plugins/jquery-validation-for-contact-form-7/js/jquery.jvcf7_validation.js?ver=4.9.4'></script>
+<script type='text/javascript'>
+/* <![CDATA[ */
+var tve_dash_front = {"ajaxurl":"http:\/\/www.coffeeripples.com\/wp-admin\/admin-ajax.php","is_crawler":""};
+/* ]]> */
+</script>
+<script type='text/javascript' src='http://www.coffeeripples.com/wp-content/plugins/thrive-visual-editor/thrive-dashboard/js/dist/frontend.min.js?ver=1.0.43'></script>
+<script type='text/javascript' src='http://www.coffeeripples.com/wp-content/plugins/page-links-to/js/new-tab.min.js?ver=2.9.8'></script>
+<script type='text/javascript' src='http://www.coffeeripples.com/wp-includes/js/wp-embed.min.js?ver=4.9.4'></script>
+
+</body>
+</html>

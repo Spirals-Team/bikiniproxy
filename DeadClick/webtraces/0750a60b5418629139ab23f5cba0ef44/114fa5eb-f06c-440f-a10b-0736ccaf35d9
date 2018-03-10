@@ -1,0 +1,45 @@
+<!doctype html>
+<html>
+  <body>
+    <script>
+      (function(){
+        function escapeForHtml(str){
+          if (!str) return str
+          return str
+            .replace(/\&/g, '&amp;')
+            .replace(/\</g, '&lt;')
+            .replace(/\>/g, '&gt;')
+            .replace(/\"/g, '&quot;')
+            .replace(/\'/g, '&#x27;')
+            .replace(/\//g, '&#x2F;')
+        }
+
+        var regexChars = /[.*+?^${}()|[\]\\]/g;
+        function escapeForRegex(str) {
+          return str.replace(regexChars, "\\$&");
+        }
+
+        function parseQueryString(){
+          var ret = {}, parts = location.search.substring(1).split('&');
+          for (var i = parts.length; i--;) {
+            var vardef = parts[i].split('='), varname = vardef[0], value = vardef[1];
+            ret[varname] = unescape(value);
+          }
+          return ret;
+        }
+
+        var queryParams = parseQueryString();
+
+        var markup = "<script type=\"text/javascript\"> _linkedin_data_partner_id = \"95098\"; </scr"+"ipt><script type=\"text/javascript\"> (function(){var s = document.getElementsByTagName(\"script\")[0]; var b = document.createElement(\"script\"); b.type = \"text/javascript\";b.async = true; b.src = \"https://snap.licdn.com/li.lms-analytics/insight.min.js\"; s.parentNode.insertBefore(b, s);})(); </scr"+"ipt> <noscript> <img height=\"1\" width=\"1\" style=\"display:none;\" alt=\"\" src=\"https://dc.ads.linkedin.com/collect/?pid=95098&fmt=gif\" /> </noscript>";
+
+        for (var name in queryParams){
+          var regex = new RegExp('%' + escapeForRegex(name) + '%', 'ig');
+          markup = markup.replace(regex, 
+            escapeForHtml(queryParams[name]));
+        }
+
+        document.write(markup)
+      })();
+    </script>
+  </body>
+</html>

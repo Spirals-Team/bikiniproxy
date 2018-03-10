@@ -1,0 +1,100 @@
+// LAZY LOAD
+$("img.lazy").lazyload({
+    effect : "fadeIn"
+});
+    
+
+// Jcaroussel
+function change_image(mon_image,cadre_image,nombre_vignette)
+{
+	document.getElementById('grande_image').style.visibility='visible';
+	document.getElementById('grande_image').src=mon_image;
+	
+	for(i=0;i<nombre_vignette;i++)
+	{
+		mondiv = 'petite_image_'+i;
+		document.getElementById(mondiv).className = 'vignetteposition';
+	}
+	document.getElementById(cadre_image).className = 'vignetteposition-select';
+}
+jQuery(document).ready(function() { jQuery('#mycarousel').jcarousel(); });
+
+// SLIDE CHIOTS A LA UNE
+$(document).ready(function() {
+		Reference = $(".carrousel li:first-child");
+		NbElement = $(".carrousel li").length;
+	$(".carrousel")
+		.wrap('<div class="carrousel-conteneur"></div>')
+		.css("width", (Reference.width() * NbElement) );
+	$(".carrousel-conteneur")
+		.width(  Reference.width()  )
+		.height( Reference.height() )
+		.css("overflow", "hidden");
+		
+	if(NbElement > 1){
+		$(".carrousel-conteneur")
+		.after(''
+			+	'<div class="carrousel-pagination">'
+			+	'<button type="button" class="carrousel-prev">Précédent</button>'
+			+	'<button type="button" class="carrousel-next">Suivant</button>'
+			+	'</div>'
+			+	'');
+		}
+});
+/*
+$(document).ready(function() {
+	$(".carrousel-conteneur")
+		.width(  Reference.width()  )
+		.height( Reference.height() )
+		.css("overflow", "hidden")
+		.after(''
+			+	'<div class="carrousel-pagination">'
+			+	'<button type="button" class="carrousel-prev">Précédent</button>'
+			+	'<button type="button" class="carrousel-next">Suivant</button>'
+			+	'</div>'
+			+	'');
+});
+*/
+$(document).ready(function() {
+		Cpt = 0;
+		$(" button.carrousel-next").click(function() {
+			if(Cpt < (NbElement-1) ) {
+				Cpt++;
+				$(".carrousel").animate({
+					marginLeft : - (Reference.width() * Cpt)
+				});
+			}
+		});
+		$(" button.carrousel-prev").click(function() {
+			if(Cpt > 0) {
+				Cpt--;
+				$(".carrousel").animate({
+					marginLeft : - (Reference.width() * Cpt)
+				});
+			}
+		});
+});
+
+// BOUTON RETOUR HAUT
+$(function(){
+  $('#btn_up').click(function() {
+    $('html,body').animate({scrollTop: 0}, 'slow');
+  });
+
+  $(window).scroll(function(){
+     if($(window).scrollTop()<300){
+        $('#btn_up').fadeOut();
+     }else{
+        $('#btn_up').fadeIn();
+     }
+  });
+});
+
+
+
+// code-trigger & Thumbeffects
+$(document).ready(function() {
+    $('.code-trigger').click(function(){
+		$(this).next().slideToggle();
+	});
+});

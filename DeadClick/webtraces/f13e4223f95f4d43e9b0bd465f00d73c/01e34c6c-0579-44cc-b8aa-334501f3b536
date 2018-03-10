@@ -1,0 +1,20 @@
+var app = angular.module('filters', []);
+
+app.filter('removeLeadingZero', function(){
+	return function(input){
+		// if input is empty abort mission.
+		if(typeof(input) == 'undefined') return input
+		
+		// get substring of first two chars.
+		// get substring of rest - 1
+		// get subtring of last char.
+		var bldg_code = input.substring(0, 2);
+		var room_num = input.substring(2, input.length - 1);
+		var room_type = input.substring(input.length - 1, input.length);
+		
+		var room_num_formatted = parseInt(room_num, 10);
+		room_num_formatted = isNaN(room_num_formatted)? room_num: room_num_formatted;
+		
+		return bldg_code + room_num_formatted + room_type;
+	}
+});

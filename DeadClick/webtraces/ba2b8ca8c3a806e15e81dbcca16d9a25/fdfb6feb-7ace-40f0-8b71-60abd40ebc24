@@ -1,0 +1,444 @@
+/******/ (function(modules) { // webpackBootstrap
+/******/ 	// The module cache
+/******/ 	var installedModules = {};
+/******/
+/******/ 	// The require function
+/******/ 	function __webpack_require__(moduleId) {
+/******/
+/******/ 		// Check if module is in cache
+/******/ 		if(installedModules[moduleId])
+/******/ 			return installedModules[moduleId].exports;
+/******/
+/******/ 		// Create a new module (and put it into the cache)
+/******/ 		var module = installedModules[moduleId] = {
+/******/ 			exports: {},
+/******/ 			id: moduleId,
+/******/ 			loaded: false
+/******/ 		};
+/******/
+/******/ 		// Execute the module function
+/******/ 		modules[moduleId].call(module.exports, module, module.exports, __webpack_require__);
+/******/
+/******/ 		// Flag the module as loaded
+/******/ 		module.loaded = true;
+/******/
+/******/ 		// Return the exports of the module
+/******/ 		return module.exports;
+/******/ 	}
+/******/
+/******/
+/******/ 	// expose the modules object (__webpack_modules__)
+/******/ 	__webpack_require__.m = modules;
+/******/
+/******/ 	// expose the module cache
+/******/ 	__webpack_require__.c = installedModules;
+/******/
+/******/ 	// __webpack_public_path__
+/******/ 	__webpack_require__.p = "/js/";
+/******/
+/******/ 	// Load entry module and return exports
+/******/ 	return __webpack_require__(0);
+/******/ })
+/************************************************************************/
+/******/ ([
+/* 0 */
+/***/ function(module, exports, __webpack_require__) {
+
+	module.exports = __webpack_require__(1);
+
+
+/***/ },
+/* 1 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+	
+	Object.defineProperty(exports, "__esModule", {
+		value: true
+	});
+	
+	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }(); // adapters
+	
+	
+	var _appnexus = __webpack_require__(2);
+	
+	var _appnexus2 = _interopRequireDefault(_appnexus);
+	
+	var _districtm = __webpack_require__(4);
+	
+	var _districtm2 = _interopRequireDefault(_districtm);
+	
+	var _rubicon = __webpack_require__(5);
+	
+	var _rubicon2 = _interopRequireDefault(_rubicon);
+	
+	var _sekindo = __webpack_require__(6);
+	
+	var _sekindo2 = _interopRequireDefault(_sekindo);
+	
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+	
+	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+	
+	var AdLogix = function () {
+		function AdLogix(props) {
+			var _this = this;
+	
+			_classCallCheck(this, AdLogix);
+	
+			this.adapters = {};
+			this.bidsBackHandler = props && props.bidsBackHandler ? props.bidsBackHandler : this.defaultBidsBackHandler;
+	
+			['appnexus', 'districtm', 'rubicon', 'sekindo'].map(function (code) {
+				_this.adapters[code] = _this.loadAdapter(code);
+			});
+	
+			if (!props || !props.disableEmbedPrebid) this.embedPrebid();
+		}
+	
+		/**
+	  * Embed prebid.js
+	  */
+	
+	
+		_createClass(AdLogix, [{
+			key: 'embedPrebid',
+			value: function embedPrebid() {
+				var pbjsEl = document.createElement("script");
+				pbjsEl.type = "text/javascript";
+				pbjsEl.async = true;
+				pbjsEl.src = "//dz2fz0bgyq9tn.cloudfront.net/prebid-0.16.0-v1.js";
+				var pbjsTargetEl = document.getElementsByTagName("head")[0];
+				pbjsTargetEl.insertBefore(pbjsEl, pbjsTargetEl.firstChild);
+			}
+	
+			/**
+	   * Load adapter that matches the given code.
+	   * @return Returns BaseAdapter instance if there is an adapter for the given code, otherwise returns null
+	   */
+	
+		}, {
+			key: 'loadAdapter',
+			value: function loadAdapter(code) {
+				switch (code.toLowerCase()) {
+					case 'appnexus':
+						return new _appnexus2.default();
+	
+					case 'districtm':
+						return new _districtm2.default();
+	
+					case 'rubicon':
+						return new _rubicon2.default();
+	
+					case 'sekindo':
+						return new _sekindo2.default();
+	
+					default:
+						return null;
+				};
+			}
+	
+			/**
+	   * Build adUnit information
+	   * @return Returns null if there are no bidders for the given code and sizes, otherwise returns bids object
+	   */
+	
+		}, {
+			key: 'getBids',
+			value: function getBids(code, sizes) {
+				var _this2 = this;
+	
+				var bids = [];
+	
+				Object.keys(this.adapters).map(function (bidder) {
+					var adapter = _this2.adapters[bidder];
+					var bidderParams = adapter.getBidderParams(code, sizes);
+	
+					if (bidderParams) {
+						bids.push({ bidder: bidder, params: bidderParams });
+					}
+				});
+	
+				return bids.length ? bids : null;
+			}
+	
+			/**
+	   * @param codesSizes an array of objects, with each object containing a code and sizes
+	   */
+	
+		}, {
+			key: 'getAdUnits',
+			value: function getAdUnits(codesSizes) {
+				var _this3 = this;
+	
+				var adunits = [];
+	
+				codesSizes.map(function (codesSizesEntry) {
+					codesSizesEntry.bids = _this3.getBids(codesSizesEntry.code, codesSizesEntry.sizes);
+	
+					if (codesSizesEntry.bids) adunits.push(codesSizesEntry);
+				});
+	
+				return adunits;
+			}
+		}, {
+			key: 'defaultBidsBackHandler',
+			value: function defaultBidsBackHandler(bidResponses) {
+				console.log("== defaultBidsBackHandler ==");
+				console.log(bidResponses);
+				console.log("==/defaultBidsBackHandler ==");
+			}
+		}]);
+	
+		return AdLogix;
+	}();
+	
+	exports.default = AdLogix;
+	;
+	
+	window.adlogix = new AdLogix();
+
+/***/ },
+/* 2 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+	
+	Object.defineProperty(exports, "__esModule", {
+		value: true
+	});
+	
+	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+	
+	var _BaseAdapter2 = __webpack_require__(3);
+	
+	var _BaseAdapter3 = _interopRequireDefault(_BaseAdapter2);
+	
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+	
+	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+	
+	function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
+	
+	function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
+	
+	var AppNexus = function (_BaseAdapter) {
+		_inherits(AppNexus, _BaseAdapter);
+	
+		function AppNexus() {
+			_classCallCheck(this, AppNexus);
+	
+			return _possibleConstructorReturn(this, (AppNexus.__proto__ || Object.getPrototypeOf(AppNexus)).call(this, 'appnexus'));
+		}
+	
+		_createClass(AppNexus, [{
+			key: 'getBidderParams',
+			value: function getBidderParams(sizes) {
+				return this.isEnabled() ? { placementId: "7643367" } : null;
+			}
+		}]);
+	
+		return AppNexus;
+	}(_BaseAdapter3.default);
+	
+	exports.default = AppNexus;
+	;
+
+/***/ },
+/* 3 */
+/***/ function(module, exports) {
+
+	'use strict';
+	
+	Object.defineProperty(exports, "__esModule", {
+		value: true
+	});
+	
+	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+	
+	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+	
+	var BaseAdapter = function () {
+		function BaseAdapter(bidderCode) {
+			_classCallCheck(this, BaseAdapter);
+	
+			var pbjs_bidders = window.location.search.indexOf('pbjs_bidders=');
+	
+			if (pbjs_bidders > -1) {
+				// Rip out the bidders pbjs_bidders=bidder1,bidder2,...,bidderN
+				this.pbjs_bidders = window.location.search.slice(pbjs_bidders + 13).split('&')[0];
+			} else {
+				this.pbjs_bidders = 'all';
+			}
+	
+			// Set the bidder code
+			this.bidderCode = bidderCode;
+		}
+	
+		_createClass(BaseAdapter, [{
+			key: 'getBidderParams',
+			value: function getBidderParams(sizes) {}
+		}, {
+			key: 'isEnabled',
+			value: function isEnabled() {
+				return this.pbjs_bidders && (this.pbjs_bidders == 'all' || this.pbjs_bidders.indexOf(this.bidderCode) > -1);
+			}
+		}]);
+	
+		return BaseAdapter;
+	}();
+	
+	exports.default = BaseAdapter;
+	;
+
+/***/ },
+/* 4 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+	
+	Object.defineProperty(exports, "__esModule", {
+		value: true
+	});
+	
+	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+	
+	var _BaseAdapter2 = __webpack_require__(3);
+	
+	var _BaseAdapter3 = _interopRequireDefault(_BaseAdapter2);
+	
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+	
+	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+	
+	function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
+	
+	function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
+	
+	var DistrictM = function (_BaseAdapter) {
+		_inherits(DistrictM, _BaseAdapter);
+	
+		function DistrictM() {
+			_classCallCheck(this, DistrictM);
+	
+			return _possibleConstructorReturn(this, (DistrictM.__proto__ || Object.getPrototypeOf(DistrictM)).call(this, 'districtm'));
+		}
+	
+		_createClass(DistrictM, [{
+			key: 'getBidderParams',
+			value: function getBidderParams(sizes) {
+				return this.isEnabled() ? { placementId: "9905584" } : null;
+			}
+		}]);
+	
+		return DistrictM;
+	}(_BaseAdapter3.default);
+	
+	exports.default = DistrictM;
+	;
+
+/***/ },
+/* 5 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+	
+	Object.defineProperty(exports, "__esModule", {
+		value: true
+	});
+	
+	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+	
+	var _BaseAdapter2 = __webpack_require__(3);
+	
+	var _BaseAdapter3 = _interopRequireDefault(_BaseAdapter2);
+	
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+	
+	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+	
+	function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
+	
+	function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
+	
+	var Rubicon = function (_BaseAdapter) {
+		_inherits(Rubicon, _BaseAdapter);
+	
+		function Rubicon() {
+			_classCallCheck(this, Rubicon);
+	
+			return _possibleConstructorReturn(this, (Rubicon.__proto__ || Object.getPrototypeOf(Rubicon)).call(this, 'rubicon'));
+		}
+	
+		_createClass(Rubicon, [{
+			key: 'getBidderParams',
+			value: function getBidderParams(sizes) {
+				// Site: 17463, Zone: 48599
+				var domain = window.location.hostname;
+	
+				return this.isEnabled() ? {
+					accountId: '1019',
+					siteId: '17463',
+					zoneId: '48599',
+					// let the rubicon sizes be derived from the adunit sizes
+					keywords: [domain],
+					inventory: { vsdomain: domain }
+				} : null;
+			}
+		}]);
+	
+		return Rubicon;
+	}(_BaseAdapter3.default);
+	
+	exports.default = Rubicon;
+	;
+
+/***/ },
+/* 6 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+	
+	Object.defineProperty(exports, "__esModule", {
+		value: true
+	});
+	
+	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+	
+	var _BaseAdapter2 = __webpack_require__(3);
+	
+	var _BaseAdapter3 = _interopRequireDefault(_BaseAdapter2);
+	
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+	
+	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+	
+	function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
+	
+	function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
+	
+	var Sekindo = function (_BaseAdapter) {
+		_inherits(Sekindo, _BaseAdapter);
+	
+		function Sekindo() {
+			_classCallCheck(this, Sekindo);
+	
+			return _possibleConstructorReturn(this, (Sekindo.__proto__ || Object.getPrototypeOf(Sekindo)).call(this, 'sekindo'));
+		}
+	
+		_createClass(Sekindo, [{
+			key: 'getBidderParams',
+			value: function getBidderParams(sizes) {
+				return this.isEnabled() ? { spaceId: "72492" } : null;
+			}
+		}]);
+	
+		return Sekindo;
+	}(_BaseAdapter3.default);
+	
+	exports.default = Sekindo;
+	;
+
+/***/ }
+/******/ ]);
+//# sourceMappingURL=adlogix.js.map

@@ -1,0 +1,94 @@
+<html> 
+<head> 
+<!-- ADRIME SCREENAD META DATA (don't edit/remove) -->
+<!-- SCRVERSION: screenad_interface_1.0.3 -->
+<!-- SCRFORMAT: banner -->
+<!-- SCRWIDTH: 728 -->
+<!-- SCRHEIGHT: 90 -->
+<!-- SCRDATE: 24-08-15 -->
+<script src="//media.adrcdn.com/scripts/jquery.min.js"></script>
+<script type="text/javascript" src="//media.adrcdn.com/scripts/screenad_interface_1.0.3_scrambled.js"></script>
+<link rel="stylesheet" type="text/css" href="style.css">
+<script type="text/javascript">
+	$(document).ready(function(){
+        var initLoadScript = false;
+        var cappingHandler;
+        
+        // Template Settings ( Edit as needed ) 
+        var haveCapping = false; // Set to false if the video autoplay should be on every times an user see the ad. 
+        
+        // Video Settings.
+        var settings = {
+            width : 728,
+            height : 90,
+            reference : 'video', // This reference is used for event names. Only alphanumerical characters and underscores are allowed. Defaults to 'video'.
+            prependTo : document.getElementById('videoContainer'), // alternatively, use appendTo
+            controls : false,
+            poster : 'CONQUETE_NEXT-STEP-728x90.gif',
+            loop : 3, // defaults to false
+            autoplay : true, // defaults to false (only works on desktop)
+            // muted : true, // it's recommended to omit this parameter *
+            videoFiles : [
+        // Add video formats as needed.        
+                {'src':'CADRES_CONQUETE_NEXT_STEP_728x90.mp4','type':'video/mp4'}
+        //     ,{'src':'video.webm','type':'video/webm'}
+        //     ,{'src':'video.ogv','type':'video/ogg'}
+        //     ,{'src':'video.m4v'}
+            ]
+        };
+    
+        initCookieCheck();
+            
+        function initCookieCheck() {
+            var url = (window.location != window.parent.location) ? document.referrer : document.location;
+            // live or in previewer with debugger
+            if (!screenad.isPreviewer && haveCapping || screenad.isPreviewer && url.indexOf("adrime_watcher") > -1) {
+                cappingHandler = '7562098'
+                handleCookie();
+            } else {
+                loadPlayer();
+            }
+        }
+        
+        function handleCookie() {
+            // creatCookie functions Script
+            if (!initLoadScript) {
+                initLoadScript = true;
+                var insertScript = "var ele = document.createElement('script');var oHead = document.getElementsByTagName('head')[0]; ele.type = 'text/javascript';var scr = 'function AdrSetCookie(value, cookieDuration){adrCap = parseInt(value); adrID=" + cappingHandler + "; var today=new Date(); var year = today.getYear();if (year < 2000) year = year + 1900;  document.cookie = adrID+\"=\"+adrCap+\";expires=\"+new Date(year,today.getMonth(),today.getDate()+cookieDuration).toGMTString()+\";path=/;\";}function AdrGetCookie(){ adrID =" + cappingHandler + ";  adrCap = document.cookie.match(\"(^|;) ?" + cappingHandler + "=([^;]*)(;|$)\"); adrCap = (adrCap)?parseInt(unescape(adrCap[2])):0; return adrCap}';ele.text = scr;oHead.appendChild(ele);";
+                screenad.executeScript(insertScript, cookieCreated);
+            }
+        }
+        
+        function cookieCreated() {
+            setTimeout(function() {
+                screenad.executeScript("AdrGetCookie()", initGetCookie)
+            }, 150);
+        }
+        
+        function initGetCookie(cappedCookie) {
+            if (cappedCookie == 1) {
+                settings.autoplay = false;
+            } 
+            loadPlayer();
+        }
+        
+        function loadPlayer(){
+			var myVideo = new screenad.video.VideoPlayer (settings);        
+			$('#stageContent').css({
+				'height' : $('#videoContainer > video').innerHeight()-35,
+				'top' : 0
+			});        
+			screenad.executeScript('AdrSetCookie(1,24)');
+        }        
+        // add your code below ------------------------------------------------------------------------
+        
+	});
+</script>
+</head>
+<body>
+	<div id="videoContainer"></div>
+    <div id="stageContent" onClick="screenad.click();">
+		<div id="stageBackground"></div>
+    </div>
+</body>  
+</html>

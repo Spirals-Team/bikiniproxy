@@ -1,0 +1,597 @@
+/* 20150109 1322 mbrewer
+ * Removed as it is causing JS problem in all environments. siteDomain is not defined. Don't believe this is needed.
+ if(siteDomain != null && siteDomain == "mywebmd")
+{
+	//Added try catch block to prevent development errors 11/10/2008
+	try
+	{
+		document.domain = "webmd.com";
+	}
+	catch(err)
+	{
+		//do nothing
+	};
+}*/
+var conditionName, conditionValue;
+
+function FindDrugs(query, callback)
+{
+	if(query.length == 0)
+	{
+		callback(null);
+		return;
+	}
+	
+	//return items from browser cache if it exists
+	//removed this because if slow latency causes error in cache
+	/*if(cache[query])
+	{
+		callback(cache[query][0]);
+		return;
+	}*/
+
+	//FDBCacheAjax.GetDrugs(query, callback);
+	WebMD.Drugs.Web.Services.AutoCompleteService.GetProducts(query, callback);
+	//WebMD.Drugs.Web.Service.drugService.GetDrugs(query, callback);
+}
+
+function FindDrugsHTML(query, callback)
+{
+	if(query.length == 0)
+	{
+		callback(null);
+		return;
+	}
+		
+	//return items from browser cache if it exists
+	//removed this because if slow latency causes error in cache
+	/*if(cache[query])
+	{
+		callback(cache[query][0]);
+		return;
+	}*/
+
+	return FDBCacheAjax.GetDrugsHTML(query, callback);
+
+}
+
+function ReportUserRatingAbuse(userReviewId, visitorId, comment)
+{
+	//FDBUserRatingAjax.ReportAbuse(userReviewId, visitorId, comment, ReportAbuseCallback);
+	WebMD.Drugs.Web.drugs.service.UserRatingAjax.ReportAbuse(userReviewId, visitorId, comment, ReportAbuseCallback);
+
+	return false;
+}
+
+function ReportAbuseCallback(result)
+{
+	if(result == null)
+		alert("null result");
+	else
+		alert("abuse reported, awaiting html");
+}
+
+function RefreshCaptcha()
+{
+	//FDBUserRatingAjax.GetNewCAPTCHA(RefreshCapthchaCallBack);
+	WebMD.Drugs.Web.drugs.service.UserRatingAjax.GetNewCAPTCHA(RefreshCapthchaCallBack);
+
+	return false;
+}
+
+function RefreshCapthchaCallBack(result)
+{
+	if(result.d == null)
+		alert("Sorry unable to refresh, communication error.");
+	else
+	{
+		var img = document.getElementById("captchaImage");
+		var url = img.src.split("&");
+		var newUrl = url[0] + "&" + url[1] + "&id=" + result.d;
+		img.src = newUrl;
+		document.getElementById("cypherText").value = result.d;
+	}
+}
+
+function FoundHelpFul(userName, userReviewId, isHelpFul)
+{
+	//FDBUserRatingAjax.FoundHelpful(userName, userReviewId, isHelpFul, FoundHelpFulCallBack);
+	WebMD.Drugs.Web.drugs.service.UserRatingAjax.FoundHelpful(userName, userReviewId, isHelpFul, FoundHelpFulCallBack);
+
+	return false;
+}
+
+function FoundHelpFulCallBack(result)
+{
+	if(result.d == null)
+		alert("Sorry unable to vote, communication error.");
+	else
+	{
+		//hide the vote buttons for the item that just came back
+		var voteSpan = document.getElementById(result.d[0] + "_Vote");
+		if(voteSpan)
+		{
+			voteSpan.className = "voted";
+			voteSpan.innerHTML = "Thank you for voting.";
+		}
+	}
+}
+
+function setRate(quest, star) {
+	var star_pos=new Array("20%","40%","60%","80%","100%")
+	
+	if (quest == 1) {
+	var txt_value = new Array("Ineffective","Somewhat Ineffective","Somewhat Effective","Effective","Very Effective");
+	} else if (quest == 2) {
+	var txt_value = new Array("Difficult","Somewhat Difficult","Somewhat Easy","Easy to Use","Very Easy to Use");
+	} else if (quest == 3) {
+	var txt_value = new Array("Not Satisfied","Somewhat Dissatisfied","Somewhat Satisfied","Satisfied","Very Satisfied");
+	}
+	
+	var star_value = star + 1;
+	var form_value = "rate" + quest;
+	var text_value = "txt_value" + quest;
+	
+	if (!document.getElementById("catCurr"+quest)) return false;
+	if (!document.getElementById("txtRate"+quest)) return false;
+	
+	var cur_sRate = document.getElementById("catCurr"+quest);
+	var cur_tRate = document.getElementById("txtRate"+quest);
+	
+	cur_sRate.style.width = star_pos[star];
+	cur_sRate.innerHTML = "Current Rating: " + star_value;
+	cur_tRate.innerHTML = txt_value[star];
+	cur_tRate.className = "txtRateSelected " + txt_value[star];
+	document.submitRatings.elements[form_value].value = star_value;
+	return false;
+}
+
+function txtRate(quest, star, e) {
+	if (quest == 1) {
+	var txt_value = new Array("Ineffective","Somewhat Ineffective","Somewhat Effective","Effective","Very Effective");
+	} else if (quest == 2) {
+	var txt_value = new Array("Difficult","Somewhat Difficult","Somewhat Easy","Easy to Use","Very Easy to Use");
+	} else if (quest == 3) {
+	var txt_value = new Array("Not Satisfied","Somewhat Dissatisfied","Somewhat Satisfied","Satisfied","Very Satisfied");
+	}
+	if (!document.getElementById("txtRate"+quest)) return false;
+	
+	var cur_tRate = document.getElementById("txtRate"+quest);
+	var class_name = cur_tRate.className;
+	var set_value = remove(class_name, 'txtRateSelected ');
+	
+	if (e == 0) {
+		cur_tRate.innerHTML = txt_value[star];
+	} else if (e == 1) {
+		if (class_name.indexOf('txtRateSelected') != -1)  {
+			cur_tRate.innerHTML = set_value;
+		} else if (class_name == 'txtRate'){
+			cur_tRate.innerHTML = "";
+		}
+	}
+}
+
+/* monograph toggle function */
+function toggle(targetId) {
+	if (!document.getElementById(targetId)) return false;
+	var target = document.getElementById(targetId);
+	
+	if(target.style.display!="none"){
+	target.style.display="none";
+	} else {
+	target.style.display="block";
+	}
+}
+
+/* function to toggle visibility */
+function togglesign( targetId, signId ,textId ) {
+ if ( document.getElementById ) {
+
+ target = document.getElementById( targetId );
+	 if (signId != '') {sign = document.getElementById( signId );}
+		 if ( target.style.display == "none" ) {
+			target.style.display = "";
+				if (sign) {sign.src = sign.src.replace('plusSign','minusSign');}
+			} else {
+				target.style.display = "none";
+				 if (sign) {sign.src = sign.src.replace('minusSign','plusSign');}
+			 }
+	 }
+	 if (textId != '') {
+	 	text = document.getElementById( textId );		
+		if (text.innerHTML == 'See All Matches') {
+			text.innerHTML = 'Collapse';
+		}
+		else if (text.innerHTML == 'Collapse') {
+			text.innerHTML = 'See All Matches';
+		}
+	 }
+}
+
+function addLoadEvent(func) {
+  var oldonload = window.onload;
+  if (typeof window.onload != 'function') {
+    window.onload = func;
+  } else {
+    window.onload = function() {
+      oldonload();
+      func();
+    }
+  }
+}
+
+function remove(s, t) {
+  i = s.indexOf(t);
+  r = "";
+  if (i == -1) return s;
+  r += s.substring(0,i) + remove(s.substring(i + t.length), t);
+  return r;
+}
+
+function initRate() {
+	if (!document.getElementsByTagName) return false;
+	if (!document.getElementById) return false;
+	if (!document.getElementById("submitRatings")) return false;
+	var form = document.getElementById("submitRatings");
+	
+	var ul = form.getElementsByTagName("ul");
+	if (ul.length < 1) return false;
+	var lists = new Array();
+
+	for (var i=0; i<ul.length; i++) {
+		var current_ul = ul[i];
+		var temp = i + 1;
+		if (current_ul.childNodes.length < 1) continue;
+		var links = current_ul.getElementsByTagName("a");
+		for ( var x=0; x < links.length; x++) {
+		links[x].onclick = makeMouseClick(i,x);
+		links[x].onmouseover = makeMouseOver(i,x);
+		links[x].onmouseout = makeMouseOut(i,x);
+		} 	
+	}  
+
+	function makeMouseClick(i,x) {
+	i = (i*1) + 1;
+	    return function() { return setRate(i,x);};
+	}
+	
+	function makeMouseOver(i,x) {
+	i = (i*1) + 1;
+	    return function() { txtRate(i,x,0);};
+	} 
+	
+	function makeMouseOut(i,x) {
+	i = (i*1) + 1;
+	    return function() { txtRate(i,5,1);};
+	} 		
+} 
+
+function switchForm(el) {
+	showForm(el.value);
+}
+
+function showForm(formName) {
+	var form = document.getElementById("submitRatings");
+	form.className = 'show' + formName;
+}
+
+function CheckValidForm()
+{
+	var valid = true;
+	var errorMsg = "";
+	var errorCtn = "";
+	//this checks all the requiredFields are filled in
+	//condition
+	if(document.getElementById("conditionDropDown").value < 0)
+	{
+		MissingValue("condition-ec");
+		errorMsg = "Please select the condition you're treating via the pull-down list.";
+		errorCtn = "condition-ec";
+		valid = false;
+	}
+	else
+	{
+		ValueSelected("condition-ec");
+	}
+
+	//stars
+	if(!ValidateField("rateValue1", "rc1-ec"))
+	{
+		if(errorMsg.length == 0)
+		{
+			errorMsg = "Please fill-in star reviews for all three questions.";
+			errorCtn = "rc1-ec";
+		}
+
+		valid = false;
+	}
+
+	if(!ValidateField("rateValue2", "rc2-ec"))
+	{
+		if(errorMsg.length == 0)
+		{
+			errorMsg = "Please fill-in star reviews for all three questions.";
+			errorCtn = "rc2-ec";
+		}
+
+		valid = false;
+	}
+
+	if(!ValidateField("rateValue3", "rc3-ec"))
+	{
+		if(errorMsg.length == 0)
+		{
+			errorMsg = "Please fill-in star reviews for all three questions.";
+			errorCtn = "rc3-ec";
+		}
+
+		valid = false;
+	}
+
+	//the captcha
+	if(!ValidateField("CapChar", "capChar-ec"))
+	{
+		if(errorMsg.length == 0)
+		{
+			errorMsg = "Please enter the text from picture.";
+			errorCtn = "codeGraphic";
+		}
+
+		valid = false;
+	}
+
+	//agreement checkbox
+	if(!document.getElementById("agreeChk").checked)
+	{
+		if(errorMsg.length == 0)
+		{
+			errorMsg = "You must check terms and conditions box before continuing.";
+			errorCtn = "agreement";
+		}
+		MissingValue("agreement");
+		valid = false;
+	}
+
+	if(!valid)
+	{
+		window.location.href = "#" + errorCtn;
+		alert(errorMsg);
+	}
+
+	return valid;
+}
+
+function ValidateField(field, fieldContainer)
+{
+	var valid = false;
+	if(document.getElementById(field).value <= 0)
+	{
+		MissingValue(fieldContainer);
+	}
+	else
+	{
+		ValueSelected(fieldContainer);
+		valid = true;
+	}
+	return valid;
+}
+
+function MissingValue(sectionName)
+{
+	var section = document.getElementById(sectionName);
+	section.className = AddMissingError(section.className);
+}
+
+function ValueSelected(sectionName)
+{
+	var section = document.getElementById(sectionName);
+	section.className = RemoveMissingError(section.className);
+}
+
+function AddMissingError(classValue)
+{
+	//strip all values of error from the class
+	var classValue = RemoveMissingError(classValue);
+	//append error
+	classValue += " error";
+	return classValue;
+}
+
+function RemoveMissingError(classValue)
+{
+	classValue = classValue.replace("error", "");
+	return trim(classValue);
+}
+
+function trim(str)
+{
+	return str.replace(/^\s+|\s+$/g,"");
+}
+
+//Changed to use new combined service for drugs and vitamins 11/10/2008
+function GetUserReviewSummary(repositoryId,primaryId, secondaryId, secondaryIdValue)
+{
+	if(conditionValue != secondaryId)
+		WebMD.Drugs.Web.Services.UserRatingService.GetUserReviewSummary(repositoryId, primaryId, secondaryId, secondaryIdValue, GetUserReviewSummaryCallback);
+		//WebMD.Drugs.Web.drugs.service.UserRatingAjax.GetUserReviewSummary(primaryId, secondaryId, secondaryIdValue, GetUserReviewSummaryCallback);
+		//FDBUserRatingAjax.GetUserReviewSummary(primaryId, secondaryId, secondaryIdValue, GetUserReviewSummaryCallback);
+
+	return false;
+}
+
+function GetUserReviewSummaryCallback(result)
+{
+	if(result == null)
+		alert("Sorry unable to get summary, communication error.");
+	else
+	{
+	    //Link removed [Juan Romero]
+		//show the link for total reviews for condition
+		//var conditionsLink = document.getElementById("conditionsReviewLink"); 
+		//conditionsLink.innerHTML = result[2] + " review";
+		//if(result[2] > 1)
+		//	conditionsLink.innerHTML += "s";
+		//conditionValue =  result[0];
+		//conditionsLink.href = drugUrl + conditionValue;
+		//conditionName = result[1];
+
+		//document.getElementById("ctnReviews").style.display = "block";
+
+		//Added logic to account for conditions with no reviews [Juan Romero].
+		//show the rating values
+		
+		eval(result);
+		
+		if(result.hasOwnProperty('d'))
+		{
+		    ShowStarRating("EffectivenessSummary", result.d[3]);
+		    //alert('[' + result[3] + ']');
+		    if(result.d[3])
+		    document.getElementById("EffectivenessSummaryValue").innerHTML = "(" + parseFloat(result.d[3]).toFixed(2) + ")";
+		    else
+		        document.getElementById("EffectivenessSummaryValue").innerHTML = "";
+    		
+		    ShowStarRating("EaseOfUseSummary", result.d[4]);
+		    if(result.d[4])
+		    document.getElementById("EaseOfUseSummaryValue").innerHTML = "(" + parseFloat(result.d[4]).toFixed(2) + ")";
+		    else
+			    document.getElementById("EaseOfUseSummaryValue").innerHTML = "";
+    			
+		    ShowStarRating("SideEffectsSummary", result.d[5]);
+		    if(result.d[5])
+		    document.getElementById("SideEffectsSummaryValue").innerHTML = "(" + parseFloat(result.d[5]).toFixed(2) + ")";
+		    else
+			    document.getElementById("SideEffectsSummaryValue").innerHTML = "";
+		}
+	}
+}
+
+function ShowStarRating(summaryName, value)
+{
+	var obj = document.getElementById(summaryName);
+	if(obj)
+	{
+		obj.style.width = Math.round(20 * value) + "px";
+	}
+}
+
+function checkMaxLength(obj)
+{
+	var maxLength = obj.getAttribute("maxlength");
+	var currentLength = obj.value.length;
+	if(currentLength > maxLength)
+		obj.value = obj.value.substring(0, maxLength);
+	
+	var charsRemaining = maxLength - obj.value.length;
+	if(charsRemaining < 0)
+		charsRemaining = 0;
+	document.getElementById("currentCharCount").innerHTML = charsRemaining;
+}
+
+//Changed to use new combined web service so it passes repository Id now [Juan Romero] 11/10/2008
+function LoadInitialUserReviewSummary(repositoryId, primaryId)
+{
+	//this will load the summary review with the first item on the list
+	//Changed element name since combos where combined [Juan Romero]
+	var obj = document.getElementById("conditionFilter");
+
+	if(obj == null)
+		return false;
+
+	GetUserReviewSummary(repositoryId, primaryId, obj.value, obj.options[obj.selectedIndex].text);
+}
+
+function openPopup(theUrl,w,h) 
+{
+	var left = (screen.availWidth - w)/2;
+	var top = (screen.availHeight - h)/2;
+	  
+	var args = "scrollbars,resizable" + ",width=" + w + ",height=" + h + ",top=" 
+		+ top + ",left= " + left;
+	
+	var win = window.open(theUrl, 'popup', args );
+	
+	/* If the window already existed, bring it to the front */
+	if (win) { win.focus(); }
+	
+	return false;
+}
+
+//This function tracks the sort by combo box of the user ratings pages.
+function TrackReviewSort(value)
+{
+	if(value == "2")
+		linkNumber = "mh";
+	else if(value == "3")
+		linkNumber = "mr";
+	else if(value == "4")
+		linkNumber = "ra";
+	else if(value == "5")
+		linkNumber = "hs";
+	else if(value == "6")
+		linkNumber = "ls";
+
+	debugger;
+	wmdTrack("dr-sortby_" + linkNumber);
+}
+
+function ShowInsightsModule()
+{
+	try
+	{
+		document.getElementById('content_disclaimer').style.cssText  = 'display:block !important';
+	}catch(ex)
+	{
+		//alert(ex.message);
+		//do nothing
+	}
+}
+function FindNaturalTreatments(query, callback)
+{
+    if(query.length == 0)
+	{
+		callback(null);
+		return;
+	}
+	
+	WebMD.Drugs.Web.Services.AutoCompleteService.GetNaturalTreatments(query, callback);
+}
+
+function FindBootDrugs(query, callback)
+{
+    if(query.length == 0)
+	{
+		callback(null);
+		return;
+	}
+	
+	WebMD.Drugs.Web.Services.AutoCompleteService.GetBootDrugs(query, callback);
+}
+
+
+function FindBootConditions(query, callback)
+{
+    if(query.length == 0)
+	{
+		callback(null);
+		return;
+	}
+	
+	WebMD.Drugs.Web.Services.AutoCompleteService.GetBootConditions(query, callback);
+}
+
+function FindDrugPillImprints(query, callback)
+{
+   // alert(query);
+    if(query.length == 0)
+	{
+		callback(null);
+		return;
+	}
+	
+	WebMD.Drugs.Web.Services.AutoCompleteService.GetFDBDrugPillImprints(query, callback);
+	//alert(callback);
+}
+
+
+

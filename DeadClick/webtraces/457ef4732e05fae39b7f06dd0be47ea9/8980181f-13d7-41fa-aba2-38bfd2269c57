@@ -1,0 +1,271 @@
+/*=========================================
+ * animatedModal's scripts
+=========================================*/
+
+function initLayer(buttons, focus, fnBeforeClose) {
+    return $(buttons).animatedModal({
+        animatedIn: 'zoomIn',
+        animatedOut: 'bounceOut',
+        color: 'rgba(70, 85, 105, 0.91)',/*'#39BEB9',*/
+        animationDuration: '.5s',
+        afterOpen: function () {
+            $(focus).focus();
+        },
+        beforeClose: fnBeforeClose || function () { }
+    });
+}
+
+/*========================================
+ * Webkit detection because animations SVG 
+   in different browsers
+=========================================*/
+var isWebkit = 'WebkitAppearance' in document.documentElement.style;
+
+if (isWebkit) {
+    webkitAnimation();
+} else {
+    nonwebkit();
+}
+
+
+/*========================================
+ * Animation for webkit with velocity.js
+=========================================*/
+function webkitAnimation() {
+    $("#browser-container")
+          .velocity(
+            {
+                top: -40
+            }, 900,
+            "easeInOutExpo"
+          )
+          .velocity(
+            {
+                top: -20
+            }, 700,
+             "easeOutExpo"
+          );
+
+
+    $("#btn-openModal")
+        .velocity(
+            {
+                opacity: 1
+            },
+            {
+                delay: 800
+            }
+        );
+
+
+    $("#cursor")
+      .delay(900) // animation delay 
+      // movimento do cursor a 'carregar'
+      .velocity(
+        {
+            translateX: 0,
+            translateY: -40
+        }
+      )
+      .delay(200) // faz um delay
+      //faz o movimento do cursor para trÃ¡s 
+      .velocity(
+        {
+            translateY: -5,
+            scaleY: 0.9
+        },
+        {
+            duration: 100,
+            // mal comeÃ§a a animaÃ§Ã£o faz a animaÃ§Ã£o de botÃ£o pressionado.
+            begin: function () {
+                $("#btn-openModal")
+                     // animaÃ§Ã£o do botÃ£o quando Ã© pressionado 
+                     .velocity(
+                       {
+                           scale: 0.9
+                       }, 110
+                     )
+                     .velocity(
+                       "reverse",
+                       {
+                           duration: 110
+                       }
+                     );
+            }
+        }
+      )
+      .velocity(
+            {
+                translateY: -40,
+                scaleY: 1
+            },
+            {
+                duration: 100,
+                // quando os movimentos do cursor e do botao estÃ£o concluidos dispara a animaÃ§Ã£o da modal
+                complete: function () {
+                    $("#modal")
+                        .velocity(
+                            {
+                                scale: 0
+                            }
+                        )
+                        .velocity(
+                            {
+                                opacity: 1,
+                                scale: 1
+                            },
+                            // Quando a animaÃ§Ã£o da modal estÃ¡ no inicio dispara a animaÃ§Ã£o do botÃ£o fechar modal
+                            {
+                                duration: 200,
+                                begin: function () {
+                                    $("#modal-btn-close")
+                                        .delay(100)
+                                        .velocity("transition.expandIn", { opacity: 1, stagger: 250 });
+                                    $("#el-01")
+                                        .delay(200)
+                                        .velocity("transition.expandIn", { opacity: 1, stagger: 250 });
+                                    $("#el-02")
+                                        .delay(250)
+                                        .velocity("transition.expandIn", { opacity: 1, stagger: 250 });
+
+                                    $("#el-03")
+                                        .delay(350)
+                                        .velocity("transition.expandIn", { opacity: 1, stagger: 250 });
+
+                                }
+                            }
+                        );
+                }
+
+            }
+        );
+
+}
+
+function nonwebkit() {
+
+
+    $("#browser-container")
+          .velocity(
+            {
+                top: -40
+            }, 900,
+            "easeInOutExpo"
+          )
+          .velocity(
+            {
+                top: -20
+            }, 700,
+             "easeOutExpo"
+          );
+
+
+    $("#btn-openModal")
+        .velocity(
+            {
+                opacity: 1
+            },
+            {
+                delay: 800
+            }
+        );
+
+
+    $("#cursor")
+      .delay(900) // animation delay 
+      // movimento do cursor a 'carregar'
+      .velocity(
+        {
+            translateX: 0,
+            translateY: -40
+        }
+      )
+      .delay(200) // faz um delay
+      //faz o movimento do cursor para trÃ¡s 
+      .velocity(
+        {
+            translateY: -5,
+            scaleY: 0.9
+        },
+        {
+            duration: 100,
+            // mal comeÃ§a a animaÃ§Ã£o faz a animaÃ§Ã£o de botÃ£o pressionado.
+            begin: function () {
+                $("#btn-openModal")
+                     // animaÃ§Ã£o do botÃ£o quando Ã© pressionado 
+                     .velocity(
+                       {
+                           scale: 0.9
+                       }, 110
+                     )
+                     .velocity(
+                       "reverse",
+                       {
+                           duration: 110
+                       }
+                     );
+            }
+        }
+      )
+      .velocity(
+            {
+                translateY: -40,
+                scaleY: 1
+            },
+            {
+                duration: 100,
+                // quando os movimentos do cursor e do botao estÃ£o concluidos dispara a animaÃ§Ã£o da modal
+                complete: function () {
+                    $("#modal")
+                        .velocity(
+                            {
+                                scale: 0
+                            }
+                        )
+                        .velocity(
+                            {
+                                opacity: 1,
+                                scale: 1
+                            },
+                            // Quando a animaÃ§Ã£o da modal estÃ¡ no inicio dispara a animaÃ§Ã£o do botÃ£o fechar modal
+                            {
+                                duration: 200,
+                                begin: function () {
+                                    $("#modal-btn-close")
+                                        .delay(100)
+                                        .velocity("transition.slideLeftIn", { opacity: 1, stagger: 250 });
+                                    $("#el-01")
+                                        .delay(200)
+                                        .velocity("transition.slideLeftIn", { opacity: 1, stagger: 250 });
+                                    $("#el-02")
+                                        .delay(250)
+                                        .velocity("transition.slideLeftIn", { opacity: 1, stagger: 250 });
+
+                                    $("#el-03")
+                                        .delay(350)
+                                        .velocity("transition.slideLeftIn", { opacity: 1, stagger: 250 });
+
+                                }
+                            }
+                        );
+                }
+
+            }
+        );
+
+}
+
+/*=========================================
+ * WOW.JS
+=========================================*/
+$(document).ready(function () {
+    var wow = new WOW(
+      {
+          boxClass: 'wow',      // animated element css class (default is wow)
+          animateClass: 'animated', // animation css class (default is animated)
+          offset: 0,          // distance to the element when triggering the animation (default is 0)
+          mobile: false        // trigger animations on mobile devices (true is default)
+      }
+    );
+    wow.init();
+});

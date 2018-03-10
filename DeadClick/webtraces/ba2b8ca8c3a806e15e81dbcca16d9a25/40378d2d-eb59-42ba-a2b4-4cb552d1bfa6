@@ -1,0 +1,294 @@
+// VERSION 1.1
+
+(function () {
+    var site = 6291, // Site ID
+        DEBUG = false; // Enable debug mode
+
+    // ===== UPDATE MAPPING BELOW =====
+    // =CONCATENATE("'",LOWER(TRIM(A1)),"': '",LOWER(TRIM(B1)),"',")
+    var mapping = {
+        '/yourtoronto/traffic.html': 'traffic',
+        '/yourtoronto/the_fixer': 'the_fixer',
+        '/yourtoronto/reviews.html': 'reviews',
+        '/yourtoronto/education': 'schools',
+        '/yourtoronto/citynights': 'city_nights',
+        '/yourtoronto': 'your_toronto',
+        '/videos.html': 'videos',
+        '/sports/tennis': 'tennis',
+        '/sports/soccer': 'soccer',
+        '/sports/skating': 'figure_skating',
+        '/sports/lacrosse': 'lacrosse',
+        '/sports/hockey': 'hockey',
+        '/sports/golf': 'golf',
+        '/sports/football': 'football',
+        '/sports/doug_smiths_sports_blog.html': 'doug_smiths_blog_(basketball)',
+        '/sports/curling': 'curling',
+        '/sports/breakaway_blog.html': 'breakaway_blog_(hockey)',
+        '/sports/blue_jays_baseball_blog.html': 'the_bullpen_(baseball)',
+        '/sports/basketball': 'basketball',
+        '/sports/baseball': 'baseball',
+        '/sports/amateur': 'amateur',
+        '/sports': 'sports',
+        '/special_features.html': 'special_features',
+        '/projects': 'projects',
+        '/photos/toronto_star_photo_blog': 'photo_blog',
+        '/photos/the_daily_beast_by_wanda_goodwin': 'the_daily_beast',
+        '/photos/on_assignment': 'on_assignment',
+        '/photos/from_the_photo_desk': 'from_the_photo_desk',
+        '/photos': 'photos',
+        '/partner_content': 'partner_content',
+        '/opinion/public_editor': 'public_editor',
+        '/opinion/letters_to_the_editors': 'readers_letters',
+        '/opinion/editorials': 'editorials',
+        '/opinion/editorial_cartoon': 'editorial_cartoon',
+        '/opinion/corrections': 'corrections',
+        '/opinion/commentary': 'commentary',
+        '/opinion': 'opinion',
+        '/obituaries.html': 'obituaries',
+        '/news/world': 'world',
+        '/news/starweather': 'starweather',
+        '/news/queenspark': 'queens_park',
+        '/news/privacy-blog': 'privacy_blog',
+        '/news/investigations': 'investigations',
+        '/news/immigration': 'immigration',
+        '/news/gta': 'gta',
+        '/news/crime': 'crime',
+        '/news/city-hall-blog': 'city_hall_blog',
+        '/news/canada': 'canada',
+        '/news': 'news',
+        '/life/travel': 'travel',
+        '/life/technology': 'technology',
+        '/life/parent': 'parent',
+        '/life/homes': 'homes',
+        '/life/health_wellness': 'health_and_wellness',
+        '/life/food_wine': 'food_and_wine',
+        '/life/fashion_style': 'fashion_and_style',
+        '/life': 'life',
+        '/flyers': 'flyers',
+        '/entertainment/visualarts': 'visual_arts',
+        '/entertainment/television': 'television',
+        '/entertainment/stage': 'stage',
+        '/entertainment/music': 'music',
+        '/entertainment/movies': 'movies',
+        '/entertainment/books': 'books',
+        '/entertainment': 'entertainment',
+        '/diversions/horoscope': 'horoscopes',
+        '/diversions': 'diversions',
+        '/classifieds': 'classifieds',
+        '/business/tech_news': 'tech_news',
+        '/business/real_estate': 'real_estate',
+        '/business/personal_finance': 'personal_finance',
+        '/business/economy': 'economy',
+        '/business': 'business',
+        '/blogs': 'blogs',
+        '/bigideas': 'big_ideas',
+        '/autos': 'autos',
+        '/about/subscribe.html': 'subscription',
+        '/about/starinternships.html': 'star_internships',
+        '/about/sitemap.html': 'sitemap',
+        '/about/privacy.html': 'privacy_policy',
+        '/about/newsreleases.html': 'news_releases',
+        '/about/history.html': 'our_history',
+        '/about/faq.html': 'faq',
+        '/about/contactus.html': 'contact_us',
+        '/about/atkinson.html': 'atkinson_principles',
+        '/about': 'about_us',
+        '/sponsored_sections/valueyourhome.html': 'mattamy_valueyourhome',
+    };
+    var topics = [
+['transport'],
+['toronto_maple_leafs'],
+['toronto'],
+['television'],
+['technology_internet'],
+['stephen_harper'],
+['sports'],
+['social_issues'],
+['security'],
+['provinces_and_territories_of_canada'],
+['politics_of_canada'],
+['politics'],
+['political_geography'],
+['political'],
+['ontario'],
+['omar_khadr'],
+['northeast_division'],
+['national_hockey_league'],
+['medicine'],
+['maple_leaf_sports_entertainment'],
+['law_crime'],
+['law'],
+['labor'],
+['kathleen_wynne'],
+['john_tory'],
+['human_interest'],
+['hospitality_recreation'],
+['governmental_civilian'],
+['government'],
+['food & wine'],
+['environment'],
+['entertainment_culture'],
+['entertainment'],
+['education'],
+['economy_of_canada'],
+['economic'],
+['disaster_accident'],
+['canadian'],
+['canada'],
+['business_finance'],
+['behavior'],
+['baseball', {'r':3947, 'b':'6652:600'}],
+['annotation'],
+['american'],
+['basketball', {'r':3951}],
+['football', {'r':3949}],
+['hockey', {'r':3950}],
+['soccer', {'r':3948}],
+['black_friday', {'b':'10216:400'}],
+['cyber_monday', {'b':'10219:400'}],
+['hanukkah', {'b':'10222:400'}],
+['halloween', {'b':'6448:400'}],
+['christmas_present', {'b':'10210:400'}],
+['christmas_gift', {'b':'10210:400'}],
+['hanukkah_present', {'b':'10210:400'}],
+['hanukkah_gift', {'b':'10210:400'}],
+['holiday_gift', {'b':'10210:400'}],
+['christmas', {'b':'6449:400'}],
+['boxing_day', {'b':'6453:400'}],
+    ];
+    var homepageName = '/';
+
+    //====================== Do not modify =============================
+    var url = window.location.pathname.toLowerCase();
+
+    // Make o2 call
+    function makeCall(keywords, breadcrumb) {
+        var i, er, s, src, page;
+
+        if (!!keywords && keywords.length > 0) {
+            src = '//o2.eyereturn.com/?site=' + site;
+
+            page = '&page=';
+            if (keywords.length === 1) {
+                page += encodeURIComponent(keywords[0]);
+            } else {
+                page += encodeURIComponent(keywords[keywords.length - 2]);
+            }
+            src += page;
+
+            for (i = 0; i < keywords.length; i++) {
+                src += '&level' + (i + 1) + '=' + encodeURIComponent(keywords[keywords.length - i - 1]);
+            }
+            if (breadcrumb !== '' && breadcrumb !== '/' && breadcrumb !== '.html') {
+                src += '&bc=' + encodeURIComponent(breadcrumb);
+            }
+
+            er = document.createElement('script');
+            er.type = 'text/javascript';
+            er.async = true;
+            er.src = src;
+            s = document.getElementsByTagName('script')[0];
+            s.parentNode.insertBefore(er, s);
+        }
+
+        if (keywords.length === 3) {
+            src = '//o2.eyereturn.com/?site=' + site;
+
+            page = '&page=';
+            page += encodeURIComponent(keywords[0]);
+            src += page;
+
+            er = document.createElement('script');
+            er.type = 'text/javascript';
+            er.async = true;
+            er.src = src;
+            s = document.getElementsByTagName('script')[0];
+            s.parentNode.insertBefore(er, s);
+        }
+    }
+
+    function run() {
+        var key,
+            keywords = [],
+            breadcrumb = '',
+            tags = TheStar.tags, // Map topics
+            i,
+            j,
+            tag,
+            topic;
+
+        if (!!tags && tags.length > 0) {
+            for (i = 0; i < tags.length; i++) {
+                tag = tags[i].split('/');
+                tag = tag[tag.length - 1];
+                for (j = 0; j < topics.length; j++) {
+                    topic = topics[j][0];
+                    if (tag === topic) {
+                        keywords.push(topic);
+						if (topics[j].length == 2)
+						{
+							if (!!topics[j][1].r)
+								new Image().src = "https://p3.eyereturn.com/seg/?r=" + topics[j][1].r + ":4838400";
+							if (!!topics[j][1].b)
+								new Image().src = "https://p3.eyereturn.com/seg/?b=" + topics[j][1].b;
+						}
+                        break;
+                    }
+                }
+            }
+        }
+
+        // Map URL to keyword
+        if (!!url && url.length !== 0) {
+            for (key in mapping) {
+                if (mapping.hasOwnProperty(key)) {
+                    // Find the matching key in the map
+                    if (url.indexOf(key) === 0) {
+                        keywords.push(mapping[key]);
+                        if (keywords.length === 1) {
+                            // Put the rest of the URL into breadcrumb
+                            if (url.length > key.length) {
+                                breadcrumb = url.substring(key.length, url.length);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // Fallback keyword
+        if (keywords.length === 0) {
+            if (url === "/") {
+                keywords.push('homepage');
+            } else {
+                keywords.push('other');
+            }
+            breadcrumb = url.substring(homepageName.length, url.length);
+        }
+
+        // =========================================
+        // ============== Custom code ==============
+        // =========================================
+
+        // DEBUG
+        if (!!DEBUG) {
+            console.log('url: ' + url);
+            console.log('keywords: ' + keywords);
+            console.log('breadcrumb: ' + breadcrumb);
+        }
+
+        makeCall(keywords, breadcrumb);
+    }
+
+    // Expose functions
+    if (window.eyereturnTag === undefined || window.eyereturnTag === null) {
+        window.eyereturnTag = {
+            run: run
+        };
+    }
+
+    run();
+    //====================== Do not modify =============================
+}());
+
+new Image().src = 'https://cm.g.doubleclick.net/pixel?google_nid=eyereturn_dmp&google_cm';

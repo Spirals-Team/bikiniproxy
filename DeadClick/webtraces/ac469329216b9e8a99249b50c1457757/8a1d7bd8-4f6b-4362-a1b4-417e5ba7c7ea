@@ -1,0 +1,360 @@
+function AjaxCall(ajaxurl, Method, DataType) {
+    var AjaxResponse;
+    $.ajax({
+        cache: false,
+        async: false,
+        type: Method,
+        url: ajaxurl,
+        dataType: DataType,
+        success: function (response) {
+            AjaxResponse = response;
+        }
+    });
+
+    return AjaxResponse;
+}
+
+function AjaxCall(ajaxurl, Method, DataType, data, contenttype) {
+    var AjaxResponse;
+    $.ajax({
+        cache: false,
+        async:false,
+        type: Method,
+        url: ajaxurl,
+        dataType: DataType,
+        contentType: contenttype,
+        data:data,
+        success: function (response) {
+            AjaxResponse = response;
+        },
+        error: function (error) {
+            debugger;
+        }
+    });
+
+    return AjaxResponse;
+}
+function createOption(ddl, text, value) {
+    var opt = document.createElement('option');
+    opt.value = value;
+    opt.text = text;
+    ddl.options.add(opt);
+}
+
+function AjaxLoadText(ajaxurl, obj) {
+    $("#" + obj).val("");
+    var AjaxResponse = AjaxCall(ajaxurl, "GET", "JSON");
+    if (AjaxResponse != undefined) {
+        $("#" + obj + "").val(AjaxResponse);
+    }
+    //$("#" + obj + "").val(AjaxResponse);
+    //$("#" + obj).text(AjaxResponse);
+    //$("#" + obj).html(AjaxResponse);
+}
+
+function AjaxDropDown(ajaxurl, dropDown) {
+    $('#' + dropDown).empty();
+    var oobj = new Option("--Select--", "");
+    $("#" + dropDown).append(oobj);
+
+    var AjaxResponse = AjaxCall(ajaxurl, "GET", "JSON");
+    for (i = 0; i < AjaxResponse.length; i++) {
+        var oobj = new Option(AjaxResponse[i].Text, AjaxResponse[i].Value);
+        $("#" + dropDown).append(oobj);
+    }
+}
+
+function ViewCart(ViewUrl) {
+    var GetPartialView = AjaxCall(ViewUrl, "GET", "html");
+    $(".cart-product").html(GetPartialView);
+    
+}
+function ViewCartAjax(ViewUrl) {
+    var GetPartialView = AjaxCall(ViewUrl, "GET", "html");
+    $("#myCartItems").html(GetPartialView);
+}
+function DeleteCartItem(obj, Url, ProductId) {
+    
+    var Qty = 1;
+    $(obj).parent().parent().parent().remove();
+    var res = AjaxCall(Url, 'POST', 'JSON', '{Id:"' + ProductId + '",Qty:' + Qty + '}', 'application/json');
+    
+}
+function DeleteCartItemDesktop(obj, Url, ProductId) {
+    
+    var Qty = 1;
+    $(obj).parent().parent().remove();
+    var res = AjaxCall(Url, 'POST', 'JSON', '{Id:"' + ProductId + '",Qty:' + Qty + '}', 'application/json');
+    if ($('.mycart').find('input[type="hidden"]').length == 0)
+    {
+        $('#emptyMessage').show();
+        $('#contentDiv').hide();
+        $(".green-btn").hide();
+        $(".grey-btn").hide();
+    }
+}
+
+
+
+
+function ContinueShopping(url) {
+    window.location = url;
+}
+
+function CheckOut(CheckOutUrl) {
+    window.location = CheckOutUrl;
+    //var GetPartialView = AjaxCall(ViewUrl, "GET", "html");
+    //$(".cart-product").html(GetPartialView);
+}
+
+function AddtoCart(Url, ProductId) {
+    var Qty = 1;
+    //debugger;
+    if ( $('#txtqty').val() !=undefined && $('#txtqty').val() != "" && $('#txtqty').val() != "0") {
+        var Qty = $('#txtqty').val();
+       // debugger;
+        var res = AjaxCall(Url, 'POST', 'JSON', '{Id:"' + ProductId + '",Qty:' + Qty + '}', 'application/json');
+        //alert(res);
+        if (res == true) {
+            //alert('This product has been added to cart');
+        }
+    }
+    else {
+        if ($('#txtqty').val() != undefined) {
+            alert('Please enter Qty for Product');
+            $('#txtqty').focus();
+        }
+        else {
+            var res = AjaxCall(Url, 'POST', 'JSON', '{Id:"' + ProductId + '",Qty:' + Qty + '}', 'application/json');
+            
+            $("i[data-id='"+ ProductId + "']").addClass("pro-added");
+        }
+    }
+}
+
+function UpdateCart(Url) {
+    var Cart = [];
+    $(".onlycart").each(function () {
+        var pId = $(this).find("input[type='hidden']").val();
+        var PQty = $(this).find("input[name='pqty']").val();
+        var Cartobj = {};
+        Cartobj.ProductID = pId;
+        Cartobj.Qty = PQty;
+        Cart.push(Cartobj);
+    });
+    var jsonCart = JSON.stringify(Cart);
+    var res = AjaxCall(Url, 'POST', 'JSON', jsonCart, 'application/json');
+    if (res == true) {
+        //alert('Your cart has been updated');
+    }
+}
+
+function UpdateCartDesktop(Url) {
+    var Cart = [];
+    $(".mycart tr").not(":first").each(function () {
+        var pId = $(this).find("input[type='hidden']").val();
+        var PQty = $(this).find("input[name='pqty']").val();
+        var Cartobj = {};
+        Cartobj.ProductID = pId;
+        Cartobj.Qty = PQty;
+        Cart.push(Cartobj);
+    });
+    var jsonCart = JSON.stringify(Cart);
+    var res = AjaxCall(Url, 'POST', 'JSON', jsonCart, 'application/json');
+    if (res == true) {
+        //alert('Your cart has been updated');
+    }
+}
+
+function UpdateEasyShopToCart(Url) {
+    var Cart = [];
+    $(".wishlist tr").each(function () {
+        
+        var pId = $(this).find("input[type='hidden']").val();
+        var PQty = $(this).find("input[name='pqty']").val();
+        var Cartobj = {};
+        Cartobj.ProductID = pId;
+        Cartobj.Qty = PQty;
+        Cart.push(Cartobj);
+    });
+    var jsonCart = JSON.stringify(Cart);
+    var res = AjaxCall(Url, 'POST', 'JSON', jsonCart, 'application/json');
+    if (res == true) {
+       // alert('Your cart has been updated');
+    }
+}
+
+function RemoveFavorite(obj, ProductId, Url) {
+    var Dataobj = {};
+    Dataobj.ProductID = ProductId;
+    var jsonobj = JSON.stringify(Dataobj);
+    var res = AjaxCall(Url, 'POST', 'JSON', jsonobj, 'application/json');
+    //if (res == true) {
+    alert(res);
+    DeleteCartItemDesktop(obj);
+    //}
+}
+function AddtoWishList(Url, ProductId) {
+    var obj = {};
+    obj.ProductID = ProductId;
+    var jsonobj = JSON.stringify(obj);
+    var res = AjaxCall(Url, 'POST', 'JSON', jsonobj, 'application/json');
+    //if (res == true) {
+    alert(res);
+    window.location.reload();
+    //}
+}
+function split(val) {
+    return val.split(/,\s*/);
+}
+function extractLast(term) {
+    return split(term).pop();
+}
+function AutoCompleteMultiple(ObjId, availableTags) {
+    $("#" + ObjId)
+  // don't navigate away from the field on tab when selecting an item
+  .bind("keydown", function (event) {
+      if (event.keyCode === $.ui.keyCode.TAB &&
+          $(this).autocomplete("instance").menu.active) {
+          event.preventDefault();
+      }
+  })
+  .autocomplete({
+      minLength: 0,
+      source: function (request, response) {
+          // delegate back to autocomplete, but extract the last term
+          response($.ui.autocomplete.filter(
+            availableTags, extractLast(request.term)));
+      },
+      focus: function () {
+          // prevent value inserted on focus
+          return false;
+      },
+      select: function (event, ui) {
+          var terms = split(this.value);
+          // remove the current input
+          terms.pop();
+          // add the selected item
+          terms.push(ui.item.value);
+          // add placeholder to get the comma-and-space at the end
+          terms.push("");
+          this.value = terms.join(", ");
+          return false;
+      }
+  });
+}
+
+function LoadAutoComplete(ajaxurl, bindTo) {
+    $('#' + bindTo).val("");
+
+    var AjaxResponse = AjaxCall(ajaxurl, "GET", "JSON");
+    AutoCompleteMultiple(bindTo, AjaxResponse);
+}
+function ShowMessage(msg) {
+    
+    // $('#myModal').modal('hide');
+    //$('#msgModal #myModalLabel').html('Success');
+    //$('#msgModal .modal-body .alert').html('');
+    
+    //$('#msgModal .modal-body .alert').html(msg);
+    
+    $('#notifications').removeClass("alert-error");
+    $('#notifications').addClass("alert-success");
+    $('#notifications').html(msg);
+    $('#notifications').fadeIn();
+    $(document).ready(function () {
+        $('#notifications').click(function () {
+            $(this).fadeOut();
+        });
+        setTimeout(function () {
+            $('#notifications').fadeOut();
+        }, 5000);
+    });
+}
+
+function ShowError(msg) {
+    $('#notifications').removeClass("alert-success");
+    $('#notifications').addClass("alert-error");
+    $('#notifications').html(msg);
+    $('#notifications').fadeIn();
+    $(document).ready(function () {
+        $('#notifications').click(function () {
+            $(this).fadeOut();
+        });
+        setTimeout(function () {
+            $('#notifications').fadeOut();
+        }, 5000);
+    });
+    //$('#msgModal #myModalLabel').html('Error!');
+    //// $('#myModal').modal('hide');
+    //$('#msgModal .modal-body .alert').html('');
+
+    //$('#msgModal .modal-body .alert').html(msg);
+
+     
+    //$('#msgModal').modal('show');
+}
+function Dateformat(date) {
+
+    jsonDate = date;
+    var d = new Date(parseInt(jsonDate.substr(6)));
+    var m, day;
+    m = d.getMonth() + 1;
+    if (m < 10)
+        m = '0' + m
+    if (d.getDate() < 10)
+        day = '0' + d.getDate()
+    else
+        day = d.getDate();
+    var formattedDate = m + "/" + day + "/" + d.getFullYear();
+    var hours = (d.getHours() < 10) ? "0" + d.getHours() : d.getHours();
+    var minutes = (d.getMinutes() < 10) ? "0" + d.getMinutes() : d.getMinutes();
+    var formattedTime = hours + ":" + minutes + ":" + d.getSeconds();
+    formattedDate = formattedDate + " " + formattedTime;
+    return formattedDate;
+}
+function PrintElem(elem) {
+    Popup($(elem).html());
+}
+
+function Popup(data) {
+    var mywindow = window.open('', 'Print', 'height=500,width=800');
+    mywindow.document.write('<html><head><title>my div</title>');
+    mywindow.document.write('<link rel="stylesheet" type="text/css" href="/css/style.css" />');
+    mywindow.document.write('<link rel="stylesheet" type="text/css" href="/css/emanuel.css" />');
+    /*optional stylesheet*/ //mywindow.document.write('<link rel="stylesheet" href="main.css" type="text/css" />');
+    mywindow.document.write('</head><body style="padding:10px;"><img src="/images/logo.png" alt="">');
+    mywindow.document.write(data);
+    mywindow.document.write('</body></html>');
+
+    //mywindow.document.close(); // necessary for IE >= 10
+    //mywindow.focus(); // necessary for IE >= 10
+    
+   // mywindow.print();
+    //mywindow.close();
+
+    return true;
+}
+function CartData(Url) {
+    //debugger;
+    $("i[data-id]").removeClass("pro-added");
+    var res = AjaxCall(Url, 'GET', 'JSON', '', 'application/json');
+    for (i = 0; i < res.length; i++) {
+        var ProductId = res[i];
+        $("i[data-id='" + ProductId + "']").addClass("pro-added");
+    }
+}
+
+
+function OrderStatus(OrderId, Status, Url) {
+    debugger;
+    var Dataobj = {};
+    Dataobj.OrderID = OrderId;
+    Dataobj.Status = Status;
+    var jsonobj = JSON.stringify(Dataobj);
+    var res = AjaxCall(Url, 'POST', 'JSON', jsonobj, 'application/json');
+    if (res == true) {
+        alert('Updated status successfully done');
+        window.location.reload();
+    }
+}

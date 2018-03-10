@@ -1,0 +1,56 @@
+define(['angular/core/services',
+        'angular/core/directives',
+        'angular/security/controllers',
+        'angular/security/services',
+        'angular/security/directives'],
+    function(){
+
+		var securityApp = angular.module('graphdb.framework.security',
+				['toastr',
+				 'ui.bootstrap',
+				 'ngRoute',
+				 'graphdb.framework.security.controllers',
+				 'graphdb.framework.security.directives',
+				 'graphdb.framework.security.services']);
+
+		securityApp.config(['$routeProvider', '$locationProvider', '$menuItemsProvider', '$httpProvider', function($routeProvider, $locationProvider, $menuItemsProvider, $httpProvider) {
+
+			$httpProvider.interceptors.push('$unauthorizedInterceptor');
+
+		    $routeProvider.when('/users', {
+				templateUrl : 'v/8.4.0-TR02/js/angular/security/templates/users.html',
+				controller : 'UsersCtrl',
+				title: 'Users and Access',
+				helpInfo: 'The Users and Access view is used to manage the users and their access to the GraphDB repositories. '
+				            + 'You can also enable or disable the security of the entire Workbench. '
+				            + 'When disabled, everyone has full access to the repositories and the admin functionality. '
+			}).when('/user/create', {
+				templateUrl : 'v/8.4.0-TR02/js/angular/security/templates/user.html',
+				controller : 'AddUserCtrl',
+				title: 'Create new user'
+			}).when('/login',{
+				templateUrl : 'v/8.4.0-TR02/pages/login.html',
+				controller : 'LoginCtrl',
+				title: 'Login'
+			}).when('/user/:userId', {
+				templateUrl : 'v/8.4.0-TR02/js/angular/security/templates/user.html',
+				controller : 'EditUserCtrl',
+				title: 'Edit user'
+			}).when('/change-password', {
+				templateUrl : 'v/8.4.0-TR02/js/angular/security/templates/user.html',
+				controller : 'ChangeUserPasswordCtrl',
+				title: 'Change password'
+			}).when('/accessdenied', {
+				templateUrl : 'v/8.4.0-TR02/pages/accessdenied.html',
+				title: 'Access Denied'
+			});
+
+			$menuItemsProvider.addItem({label : 'Setup', href : '#', order : 5, role : 'ROLE_USER', icon: "icon-settings"});
+			$menuItemsProvider.addItem({label : 'Users and Access', href : 'users', order : 2, parent : 'Setup', role: 'ROLE_ADMIN'});
+
+		    // use the HTML5 History API
+		    $locationProvider.html5Mode(true);
+		}]);
+
+		return securityApp;
+});

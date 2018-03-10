@@ -1,0 +1,34 @@
+// bookmark v2 2009-12-02 12:25:00
+BookMark = function(o){
+	this._site = o.site;
+	this._storyid = o.storyid;
+	this._sectionid = o.sectionid;
+	this._url = "http://news.bbc.co.uk" + o.url;
+	this._edition = o.edition;
+	this._headline;
+	if(newsi.hasDOM()){
+		this._init();
+	}
+};
+
+BookMark.prototype._init = function(){
+	var metaTags = document.getElementsByTagName("meta");
+	
+	for (var i = 0; i < metaTags.length; i++) {
+	    var tag = metaTags[i];
+	    var tagType = metaTags[i].getAttribute("name");
+	    if (tagType == "Headline"){
+			this._headline = metaTags[i].getAttribute("content");
+	    }
+	}
+
+	bbc.fmtj.common.bookmarks.createBookmarks({
+		container: "#socialBookMarks",
+		site: this._site,
+		headline: this._headline,
+		storyId: this._storyid,
+		sectionId: this._sectionid,
+		url: this._url,
+		edition: this._edition
+	});
+};

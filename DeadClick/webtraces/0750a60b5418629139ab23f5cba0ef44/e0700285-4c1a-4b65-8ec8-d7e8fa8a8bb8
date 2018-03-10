@@ -1,0 +1,614 @@
+_satellite.pushBlockingScript(function(event, target, $variables){
+  //console.log('Inside Data Manager API');
+var digitalDataConfig = {
+	pageInstanceID: {
+				defaultValue: function() {
+					return document.title;
+                },
+				loadAt: "DOMReady",
+				rules: function(v) {
+					return v.toLowerCase();
+                },
+				dataType: "string"
+    },
+    page: {
+		pageInfo: {
+			pageName: {
+				defaultValue: function() { 
+					return document.title;
+				},
+				loadAt: "DOMReady",
+				rules: function(v) {
+					return v.toLowerCase();
+				},
+				dataType: "string"
+			},
+			destinationURL: {
+				defaultValue: function() { 
+					return document.location;
+				},
+				loadAt: "DOMReady",
+				rules: function(v) { return(v); },
+				dataType: "string"
+			},
+			referringURL: {
+				defaultValue: function() { 
+					return document.referrer;
+                },
+				loadAt: "DOMReady",
+				rules: function(v) { return(v); },
+				dataType: "string"
+            },
+            sysEnv: {
+				defaultValue: "dev",
+				loadAt: "DOMReady",
+				rules: function(v) { return(v); },
+				dataType: "string"
+			},
+            language: {
+				defaultValue: "en",
+				loadAt: "DOMReady",
+				rules: function(v) { return(v); },
+				dataType: "string"
+			},
+            breadCrumbs: {
+				defaultValue: "",
+				loadAt: "DOMReady",
+				rules: function(v) { return(v); },
+				dataType: "string"
+			}
+		},
+		category: {
+			department: {
+				defaultValue: "",
+				loadAt: "DOMReady",
+				rules: function(v) { return(v); },
+				dataType: "string"
+			},
+			primaryCategory: {
+				defaultValue: "",
+				loadAt: "DOMReady",
+				rules: function(v) {
+					return v.toLowerCase();
+				},
+				dataType: "string"
+			},
+			subCategory1: {
+				defaultValue: "",
+				loadAt: "DOMReady",
+				rules: function(v) { return(v); },
+				dataType: "string"
+			},
+			subCategory2: {
+				defaultValue: "",
+				loadAt: "DOMReady",
+				rules: function(v) { return(v); },
+				dataType: "string"
+			},
+            pageType: {
+				defaultValue: "",
+				loadAt: "DOMReady",
+				rules: function(v) { return(v); },
+				dataType: "string"
+			}
+		},
+		attributes: {
+			userAgent: {
+				defaultValue: function() { 
+					return navigator.userAgent;
+				},
+				loadAt: "DOMReady",
+				rules: function(v) { return(v); },
+				dataType: "string"
+			}
+		},
+        internalSearch: {
+			internalSearchTerm: {
+				defaultValue: "",
+				loadAt: "DOMReady",
+				rules: function(v) { return(v); },
+				dataType: "string"
+			},
+            internalSearchNumResults: {
+				defaultValue: "",
+				loadAt: "DOMReady",
+				rules: function(v) { return(v); },
+				dataType: "string"
+			},
+            internalSearchRefinements: []
+		}
+    },
+    product: {
+		productInfo: {
+			productID: {
+				defaultValue: "",
+				loadAt: "DOMReady",
+				rules: function(v) { return(v); },
+				dataType: "string"
+			},
+            productName : {
+                defaultValue: "",
+				loadAt: "DOMReady",
+				rules: function(v) { return(v); },
+				dataType: "string"
+			}
+		},
+		
+		category: {
+			primaryCategory: {
+				defaultValue: "",
+				loadAt: "DOMReady",
+				rules: function(v) { return(v); },
+				dataType: "string"
+			}
+            
+		}
+	},
+    event: [],
+	user: {
+		profile: {
+			profileID: {
+				defaultValue: "no user ID available",
+				loadAt: "DOMReady",
+				rules: function(v) { return(v); },
+				dataType: "string"
+			},
+			language: {
+				defaultValue: function (l){
+            var lan=(location.pathname).split("/")[4];
+          if(lan.indexOf(".htm")>-1)
+            lan=lan.split(".")[0];
+          	return lan},
+				loadAt: "DOMReady",
+				rules: function(v) { return(v); },
+				dataType: "string"
+			},
+            profileInfo: {
+                profileID: {
+                    defaultValue: "no user ID available",
+                    loadAt: "DOMReady",
+                    rules: function(v) { return(v); },
+                    dataType: "string"
+                },
+            }
+		}
+	},
+	version: {
+		defaultValue: "1.0",
+		dataType: "string",
+		loadAt: "init"
+	}
+
+};
+ 
+ 
+//--------------------- DO NOT ALTER ANYTHING BELOW THIS LINE ----------------- //
+function digitalDataManager(ini) {
+ 
+    /**
+     * Version number for the API
+     * @type string
+     */
+    var $apiVersion = '1.0';
+ 
+    /**
+     * Configuration object for the data layer.
+     * Contains all variable configuration and behavior settings.
+     * @type {Object Literal}
+     */
+    var $config = ini;
+ 
+    /**
+     * List of allowed configuration parameters for variable configuration
+     * @type {Array}
+     */
+    var $allowedInConfig = [
+        'defaultValue',
+        'loadAt',
+        'rules',
+        'dataType'
+    ];
+ 
+    /**
+     * List of required configuration parameters for variable configuration
+     * @type {Array}
+     */
+    var $requiredInConfig = [
+        'dataType'
+    ];
+ 
+    /**
+     * Self reference for access throughout the digitalDataManager object.
+     * @type object
+     */
+    var $me = this;
+ 
+    /**
+     * The Data Layer.
+     * @type object literal
+     */
+    var $data = {
+        //events: [], // default container for events
+    };
+    
+    // public, outputs the DataManager object and its $data member to console.
+	this.dumpObject = function() { 
+		console.log( $data );
+	}
+ 
+    this.pullValue = function(param) {
+        var cursor = $data;
+        var nodes = (!param || param === "$data") ? "" : param.split(".");
+        for (var i = 0; i < nodes.length; i++) {
+            if (typeof cursor[nodes[i]] !== 'undefined') {
+                cursor = cursor[nodes[i]];
+            } else {
+                cursor = undefined;
+                break;
+            }
+        }
+        if (typeof cursor === 'undefined') {
+            cfg = $me.getConfig(param).defaultValue;
+            if (typeof cfg === 'function') {
+                cursor = cfg();
+            } else {
+                cursor = cfg;
+            }
+        }
+        return typeof cursor === "string" ? cursor.toLowerCase() : cursor;
+    }
+ 
+    this.pushValue = function(param, val) {
+        if ( findChar('.attributes.', param) > -1 || findChar('product.', param) > -1 || findChar('.item.', param) > -1|| findChar('event.', param) > -1 ) {
+            return writeToDataLayer(param, val);
+        } else if ($me.getConfig(param) !== false) {
+            log('Setting governed variable ' + param + '.');
+            var cfg = $me.getConfig(param);
+            if (cfg) {
+                if (typeof val === cfg.dataType) {
+                    log('Data type is correct.');
+                    if (typeof cfg.rules === 'function') {
+                        log('Processing business rules for ' + param + '.');
+                        return writeToDataLayer(param, cfg.rules(val));
+                    } else {
+                        log('No business rules defined for ' + param + '.');
+                        return writeToDataLayer(param, val);
+                    }
+                } else {
+                    throw ('Incorrect data type set in configuration for ' + param + '. Data type ' + cfg.dataType + ' was expected.');
+                }
+            }
+        } else {
+            throw ('pushValue: Data value not written to data layer (' + param + ').');
+        }
+    }
+ 
+    this.getConfig = function(param) {
+        if (typeof param === 'undefined') { // if no parameter is passed, return the entire variable configuration.
+            return $config;
+        } else if (typeof param === 'string') { // if a string is passed, try to find it in the variable configuration.
+            if ( findChar('.attributes.', param) > -1 || findChar('product.', param) > -1 || findChar('.item.', param) > -1|| findChar('event.', param) > -1 ) {
+                log('No configuration required for ' + param + '. Ungoverned parameters (*.attributes.*) do not require configuration.')
+                return false;
+            } else {
+                var cfg = $config;
+                var bits = param.split('.');
+                for (var i = 0; i < bits.length; i++) {
+                    if (typeof cfg[bits[i]] !== 'undefined') {
+                        cfg = cfg[bits[i]]; // configuration path is found. continue.
+                    } else {
+                        throw ('getConfig: configuration path "' + param + '" is not found.'); // configuration path is not found. return false.
+                    }
+                } // done iterating through the parameter path.
+                if (validateConfig(cfg)) {
+                    return cfg;
+                } else {
+                    throw ('getConfig: variable configuration for ' + param + ' did not validate.');
+                }
+                return (cfg); // configuration is found for the variable. return it.
+            }
+        } else {
+            throw ('getConfig requires either no parameter or a string indicating the data manager location.');
+        }
+    }
+ 
+    /*
+    this.pushEvent = function(evtAction, evtName, evtDetails) {
+        //console.log('Inside Push Event');
+        var evt = {
+            eventAction: evtAction,
+            eventName: evtName,
+            eventDetails: evtDetails
+        }
+ 
+        $data.events.push(evt);
+        //console.log('Before trigerring' + evt.eventAction + evt.eventName);
+        jQuery(document).trigger('analyticsTrigger', [evt.eventName, evt]);
+        //console.log('After trigerring');
+    }
+    */
+    
+    this.pushEvent = function(eid,edata) {  
+		try {
+            jQuery(document).trigger('analyticsTrigger', [eid, edata]);
+		}catch(e){
+			warn(e);
+			return false;
+		}
+	}
+ 
+  this.pushData = function(a,b) {  
+		try {
+            if (typeof window.CustomEvent === 'function' ) {
+               var e = new CustomEvent('analyticsTrigger', { 'detail': [a, b] } );
+            }  else {
+               var e = document.createEvent('CustomEvent');
+               e.initCustomEvent('analyticsTrigger', true, true, [a, b]);
+            }
+               document.dispatchEvent(e);
+		}catch(e){
+			warn(e);
+			return false;
+		}
+	}
+ 
+    this.show = function() {
+        return $data;
+    }
+ 
+    this.showConfig = function() {
+        console.log($config); // TODO: make this cross-browser friendly
+    }
+ 
+    this.clearVar = function(param) {
+        if (typeof param === 'undefined') {
+            throw ('clearVar: argument is not defined');
+        } else if (typeof param === 'string') {
+            if (param === '_all') {
+                $data = {};
+                //$data.events = {};
+                //$data.components = {};
+            } else {
+                deleteData(param);
+            }
+        } else if (typeof param === 'object') {
+            for (var k in param) {
+                clearVar(param[k]);
+            }
+        } else {
+            throw ('clearVar: argument is not understood');
+        }
+        initializeDataLayer();
+        return true;
+    }
+ 
+    var initializeDataLayer = function() {
+        if (typeof $data.events === 'undefined') $data.events = [];
+        //if( typeof $data.components === 'undefined' ) $data.components = [];
+        //if( typeof $config === 'undefined' ) $config = {};
+        setPageLocation();
+    }
+ 
+    var deleteData = function(param) {
+        var nodes = param.split('.');
+        var cursor = $data;
+        for (var i = 0; i < nodes.length - 1; i++) {
+            if (!cursor[nodes[i]]) {
+                cursor[nodes[i]] = {};
+            }
+            cursor = cursor[nodes[i]];
+        }
+        delete cursor[nodes[nodes.length - 1]];
+        return (true);
+    };
+ 
+    var setPageLocation = function() {
+        $data._pageLocation = new Object();
+        var loc = $data._pageLocation; // alias the object to make coding easier
+ 
+        //grab the URL from the Window in the DOM
+        loc.windowURL = window.location.href;
+        //parse the destination URL into its components
+        bits = /^(?:(?![^:@]+:[^:@\/]*@)([^:\/?#.]+):)?(?:\/\/)?((?:(([^:@]*)(?::([^:@]*))?)?@)?([^:\/?#]*)(?::(\d*))?)(((\/(?:[^?#](?![^?#\/]*\.[^?#\/.]+(?:[?#]|$)))*\/?)?([^?#\/]*))(?:\?([^#]*))?(?:#(.*))?)/.exec(loc.windowURL);
+        loc.source = bits[0];
+        loc.protocol = bits[1];
+        loc.authority = bits[2];
+        loc.userInfo = bits[3];
+        loc.user = bits[4];
+        loc.password = bits[5];
+        loc.host = bits[6];
+        loc.port = bits[7];
+        loc.relative = bits[8];
+        loc.path = bits[9];
+        loc.directory = bits[10];
+        loc.file = bits[11];
+        loc.query = bits[12] ? bits[12] : undefined;
+        loc.anchor = bits[13];
+ 
+        //parse the domain to capture the subdomain
+        //appends "www" where there is no subdomain
+        var domainBits = loc.host.split('.');
+        if (domainBits.length < 3) { // TODO: Add more exception handling to be more precise about when to prepend "www"
+            loc.host = "www." + loc.host;
+            loc.subdomain = "www";
+        } else {
+            loc.subdomain = domainBits.slice(0, domainBits.length - 2).join('.');
+        }
+ 
+        return loc;
+    };
+ 
+    var addPageLoadHandlers = function() {
+        if (window.addEventListener) { // W3C standard
+            //window.addEventListener( 'load', function() { _loadDefaultsPageLoad(); }, false ); // NB **not** 'onload'
+            window.addEventListener('load', function() {
+                pushPageLoadEvent();
+            }, false); // NB **not** 'onload'
+        } else if (window.attachEvent) { // Microsoft
+            //window.attachEvent( 'onload', _loadDefaultsPageLoad() );
+            window.attachEvent('onload', pushPageLoadEvent());
+        }
+    }
+ 
+    var pushPageLoadEvent = function() {
+        //$me.pushEvent('load', 'pageLoad');
+        //$me.pushEvent('load','pageLoad',{'pageName': 'Name of Page',pageType:'Type of Page','siteSection':'Section of the Site','userLocation':'Location of the user','signedIn':'User Signed In Flag','referringPartner':'Traffic coming from','campaignID':'ID of the campaign'});
+    }
+ 
+    var writeToDataLayer = function(param, val) {
+        var nodes = param.split('.');
+ 
+        var cursor = $data;
+        for (var i = 0; i < nodes.length - 1; i++) {
+            if (!cursor[nodes[i]]) {
+                cursor[nodes[i]] = {};
+            }
+            cursor = cursor[nodes[i]];
+        }
+        cursor[nodes[nodes.length - 1]] = val;
+      _satellite.notify("DMFPush: "+param+": "+val);
+        return (cursor[nodes[nodes.length - 1]]);
+    }
+ 
+    var log = function(msg) {
+        if (typeof console === 'object' && localStorage.getItem('$dmf.settings.debugMode') === 'true') {
+            console.log("DM" + " -> " + msg);
+        }
+    }
+ 
+    var warn = function(msg) {
+        if (msg.stack) {
+            console.warn("DM: WARNING" + " -> " + msg.stack);
+        } else {
+            console.warn("DM: WARNING" + " -> " + msg);
+        }
+    }
+ 
+    var makeSafe = function(name, fn) {
+        return function() {
+            try {
+                log(name + ': function start.');
+                var result = fn.apply(this, arguments);
+                log(name + ': function end.');
+                return result;
+            } catch (e) {
+                warn(e);
+                return false;
+            }
+        };
+    }
+ 
+    /**
+     * Utility function for finding a character in a string
+     * @param  {string} x     The patern to look for inside the string
+     * @param  {string} str   The string to match against
+     * @param  {string} start The starting position to begin the search
+     * @return {integer}       The number of characters from start of the match. Returns -1 if the pattern is not found.
+     */
+    var findChar = function(x, str, start) {
+        if (typeof start === 'undefined') start = 0;
+ 
+        for (var i = start; i <= str.length; i++) {
+            if (str[i] === x[0]) {
+                var matched = true;
+                for (var n = 0; n < x.length; n++) {
+                    if (str[i + n] === x[n]) {} else {
+                        matched = false;
+                    }
+                }
+                if (matched === true) {
+                    return i;
+                }
+            }
+        }
+        return -1;
+    }
+ 
+    this.isValidConfig = function(p) {
+        var cfg = $config;
+        var bits = p.split('.');
+        for (var i = 0; i < bits.length; i++) {
+            if (typeof cfg[bits[i]] !== 'undefined') {
+                cfg = cfg[bits[i]]; // configuration path is found. continue.
+            } else {
+                return false; // configuration path is not found. return false.
+            }
+        } // done iterating through the parameter path.
+        if (validateConfig(cfg)) {
+            return true; // if this is a valid config, return true.
+        } else {
+            return false; // if config is not valid, return false.
+        }
+        return false; // bottom-line default is false.
+    }
+ 
+    var validateConfig = function(cfg) {
+        for (var cfgKey in cfg) { // iterate through configuration keys to ensure that only allowed keys exist
+            var cfgKeyFound = false;
+            for (var i = 0; i < $allowedInConfig.length; i++) {
+                if (cfgKey === $allowedInConfig[i]) {
+                    cfgKeyFound = true;
+                }
+            }
+            if (cfgKeyFound === false) {
+                warn('validateConfig: variable configuration does not validate. Configuration parameter "' + cfgKey + '" is not allowed.');
+                return false;
+            }
+        }
+ 
+        for (var reqKey = 0; reqKey < $requiredInConfig.length; reqKey++) { // iterate through required keys to ensure that they are contained in the configuration.
+            var reqKeyFound = false;
+            for (var cfgKey in cfg) {
+                if (cfgKey === $requiredInConfig[reqKey]) {
+                    reqKeyFound = true;
+                }
+            }
+            if (reqKeyFound === false) {
+                warn('validateConfig: variable configuration does not validate. Configuration parameter ' + $requiredInConfig[reqKey] + ' is required and was not found.');
+                return false;
+            }
+        }
+        return (true);
+ 
+    }
+ 
+    this.debug = function(debugMode) {
+        localStorage.setItem('$dmf.settings.debugMode', debugMode);
+    }
+ 
+    this.doSessionStorage = function(fn) { // TODO: IMPORTANT! Update to use Xauth server technique: http://www.nczonline.net/blog/2010/09/07/learning-from-xauth-cross-domain-sessionStorage/
+        return function() {
+            if (typeof(sessionStorage) !== "undefined") {
+                //if( sessionStorage.getItem( cacheDebugMode ) === 'true' ) console.log( 'DD: doSessionStorage: session storage is supported' ); // don't use squawk - infinite recursion!
+                return fn.apply(this, arguments);
+                return true;
+            } else {
+                throw ('doSessionStorage: sessionStorage not supported on this browser.');
+                //return false; // if sessionStorage is not supported, then silently fail.
+            }
+        };
+    };
+ 
+    var init = function() {
+ 
+        // wrap all public functions with exception handling
+        for (obj in $me) {
+            $me[obj] = makeSafe(obj, $me[obj]);
+        }
+        initializeDataLayer();
+        addPageLoadHandlers(); // attach page load handling function
+    }
+ 
+    init();
+ 
+}
+ 
+dmf = new digitalDataManager(digitalDataConfig);
+digitalData = new digitalDataManager(digitalDataConfig);
+
+//if(jQuery) {
+ //   jQuery(document).on( "analyticsTrigger", function( event, event_id, event_data ) {
+         
+  //  });
+//}
+});

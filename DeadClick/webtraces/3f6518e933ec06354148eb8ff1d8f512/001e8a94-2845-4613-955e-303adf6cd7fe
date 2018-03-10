@@ -1,0 +1,153 @@
+(function (win, doc) {
+
+  if ('undefined' === typeof console) {
+    console = {};
+  }
+
+  if ('undefined' === typeof console.log) {
+    console.log = function() {
+      //nothing;
+    }
+  }
+
+  var __Aol__ = (typeof __Aol__ !== 'undefined' && typeof __Aol__ === 'object') ? __Aol__ : {};
+
+  __Aol__.hasTouch = !!("ontouchstart" in window) || !!("ontouchstart" in document.documentElement);
+
+  __Aol__.viewportWidth = document.documentElement.clientWidth;
+
+  __Aol__.viewportHeight = document.documentElement.clientHeight;
+
+  __Aol__.screenWidth = window.screen.width;
+
+  __Aol__.screenHeight = window.screen.height;
+  
+  __Aol__.addEvent = function (elem, event, fn) {
+    if (elem.addEventListener) {
+      elem.addEventListener(event, fn, false);
+    } else {
+      elem.attachEvent("on" + event, function() {
+        return fn.call(elem, window.event);   
+      });
+    }
+  };
+
+  //__Aol__.deviceType = function() {
+  __Aol__.activeLayout = function() {
+    var _this = this;
+    _this.w = document.documentElement.clientWidth;
+    
+    if ( _this.w < 1000 && _this.w >= 768 )
+      return 'tablet';
+
+    else if ( _this.w < 768 && _this.w >= 480 )
+      return 'wide-phone';
+
+    else if ( _this.w < 480 )
+      return 'phone';
+
+    return 'desktop';
+  };
+
+  __Aol__.deviceOrientation = function() {
+    var o = window.orientation;
+    if (typeof o !== 'undefined' && parseInt(o) !== 90 && parseInt(o) !== -90) {
+      return 'portrait';
+    }
+    return 'landscape';
+  };
+
+  __Aol__.onResizeEnd = function(resizeDuration, callback) {
+    var len = parseInt(arguments.length),
+      rd = 1000,
+      cb = function(){};
+    
+    if (len >= 1) {
+      if (typeof arguments[0] === 'number') {
+        rd = arguments[0];
+        cb = (len === 2) ? arguments[1] : cb;
+      } else {
+        cb = arguments[0] || cb;
+      }
+    }
+
+    if (typeof this.timer !== 'undefined') clearTimeout(this.timer);
+
+    this.timer = setTimeout(function() {
+      callback();
+    }, rd);
+  };
+  //create a public object;
+  window.DI = __Aol__;
+
+}(window, document));
+
+
+/*! matchMedia() polyfill - Test a CSS media type/query in JS */
+window.matchMedia || (window.matchMedia = function() {
+  "use strict";
+
+  // For browsers that support matchMedium api such as IE 9 and webkit
+  var styleMedia = (window.styleMedia || window.media);
+
+  // For those that don't support matchMedium
+  if (!styleMedia) {
+    var style       = document.createElement('style'),
+      script      = document.getElementsByTagName('script')[0],
+      info        = null;
+
+    style.type  = 'text/css';
+    style.id    = 'matchmediajs-test';
+
+    script.parentNode.insertBefore(style, script);
+
+    // 'style.currentStyle' is used by IE <= 8 and 'window.getComputedStyle' for all other browsers
+    info = ('getComputedStyle' in window) && window.getComputedStyle(style, null) || style.currentStyle;
+
+    styleMedia = {
+      matchMedium: function(media) {
+        var text = '@media ' + media + '{ #matchmediajs-test { width: 1px; } }';
+
+        // 'style.styleSheet' is used by IE <= 8 and 'style.textContent' for all other browsers
+        if (style.styleSheet) {
+          style.styleSheet.cssText = text;
+        } else {
+          style.textContent = text;
+        }
+
+        // Test if media query is true or false
+        return info.width === '1px';
+      }
+    };
+  }
+
+  return function(media) {
+    return {
+      matches: styleMedia.matchMedium(media || 'all'),
+      media: media || 'all'
+    };
+  };
+
+}());
+
+window.matchDevice || (window.matchDevice = function() {
+
+  // Allowed devices : phone, wide-phone, tablet, desktop
+  var map = {
+    'desktop': 'only screen and (min-width:1000px)',
+    'tablet': 'only screen and (max-width:999px) and (min-width:768px)',
+    'phone': 'only screen and (max-width:479px)',
+    'wide-phone': 'only screen and (min-width: 480px) and (max-width: 767px)'
+  };      
+
+  return function(device) {
+    var info = false;
+    if ( map.hasOwnProperty(device) ) {
+      if ( matchMedia(map[device]).matches ) {
+        info = true;
+      }
+    }
+    return info;
+  };
+
+}());

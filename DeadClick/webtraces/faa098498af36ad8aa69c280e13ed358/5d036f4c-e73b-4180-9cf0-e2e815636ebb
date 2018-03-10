@@ -1,0 +1,3274 @@
+$pdk.ns("$pdk.plugin.freewheel.admanager");
+$pdk.plugin.freewheel.admanager.AdManager = $pdk.extend(function(){},
+{
+	// TODO: what's _rendererManifest?
+	constructor: function()
+	{
+		this.ready = false;
+	},
+
+	initialize: function(controller, slotManager, display)
+	{
+		this.controller = controller;
+		this.slotManager = slotManager;
+	},
+
+	resetsEvents: function()
+	{
+		return true;
+	},
+
+    bind:function (scope, method)
+    {
+        var args = Array.prototype.slice.call(arguments);
+        args.shift();
+        method = args.shift();
+        return function ()
+        {
+            return method.apply(scope, args.concat(Array.prototype.slice.call(arguments)));
+        };
+    },
+
+    getAdInfo: function(slot, adId, creativeId)
+    {
+    	var adInfo = {};
+
+		return adInfo;
+    },
+
+	setServer: function(server)
+	{
+
+	},
+
+	setNetwork: function(network)
+	{
+
+	},
+
+	refresh: function() // is called newContext in JS
+	{
+
+	},
+
+	// context functions
+	dispose: function()
+	{
+
+	},
+
+	setKeyValue: function(key, value)
+	{
+
+	},
+
+	addKeyValue: function(key, value)
+	{
+
+	},
+
+	// todo: does this make sense?
+	setContentVideoElement: function(videoElement)
+	{
+
+	},
+
+	setProfile: function(profile)
+	{
+
+	},
+
+	setSiteSection: function(siteSection, siteSectionNetworkId, random, something, fallbackSiteSectionId)
+	{
+
+	},
+
+	setVideoAsset: function(customId, duration, networkId, location, autoPlayType, random, something, fallbackVideoAssetId)
+	{
+
+	},
+
+	setVisitor: function(visitor)
+	{
+
+	},
+
+	setParameter: function(name, value, scope)
+	{
+
+	},
+
+	addEventListener: function(name, callback)
+	{
+
+	},
+
+	addTemporalSlot: function(id, type, time)
+	{
+
+	},
+
+	getTemporalSlots: function()
+	{
+
+	},
+
+	getSlotByCustomId: function(id)
+	{
+
+	},
+
+	setAdPlayState: function(paused)
+	{
+
+	},
+
+	setAdVolume: function(volume)
+	{
+
+	},
+
+	setVideoState: function(state)
+	{
+
+	},
+
+	getVideoDisplaySize: function()
+	{
+
+	},
+
+	setVideoDisplaySize: function(left, top, width, height, position)
+	{
+
+	},
+
+	scanSlotsOnPage: function()
+	{
+
+	},
+
+	setRequestMode: function(mode)
+	{
+
+	},
+
+	submitRequest: function(timeoutSeconds)
+	{
+
+	},
+
+	setVisitorHttpHeader: function(name, value)
+	{
+		
+	}
+
+});$pdk.ns("$pdk.plugin.freewheel.admanager");
+$pdk.plugin.freewheel.admanager.NativeAdManager = $pdk.extend($pdk.plugin.freewheel.admanager.AdManager,
+{
+	// TODO: what's _rendererManifest?
+	constructor: function(url, controller, callback)
+	{
+		this.controller = controller;
+	},
+
+	initialize: function(controller, slotManager, display)
+	{
+		$pdk.plugin.freewheel.admanager.NativeAdManager.superclass.initialize.call(this, controller, slotManager, display);
+
+		if (display && display.parentNode)
+		{
+			display.parentNode.removeChild(display);
+		}
+
+		this._slots = null;
+	},
+
+	cleanup: function()
+	{
+
+	},
+
+	resetsEvents: function()
+	{
+		return false;
+	},
+
+    getAdInfo: function(slot, adId, creativeId, parameters)
+    {
+    	var adInfo = this.controller.callLayerFunction("freewheel", "getAdInfo", [slot.getCustomId(), adId, creativeId, parameters]) || {parameters: {}};
+
+		return adInfo;
+    },
+
+	onMediaPause: function(event)
+	{
+//		this.slotManager.pause();
+	},
+
+	setServer: function(server)
+	{
+		this.controller.callLayerFunction("freewheel", "setServer", [server]);
+	},
+
+	setNetwork: function(network)
+	{
+		this.controller.callLayerFunction("freewheel", "setNetwork", [network]);
+	},
+
+	refresh: function() // is called newContext in JS
+	{
+		this.controller.callLayerFunction("freewheel", "refresh", []);
+	},
+
+	// context functions
+	dispose: function()
+	{
+		this.controller.callLayerFunction("freewheel", "dispose", []);
+	},
+
+	setKeyValue: function(key, value)
+	{
+		this.addKeyValue(key, value);
+	},
+
+	addKeyValue: function(key, value)
+	{
+		this.controller.callLayerFunction("freewheel", "addKeyValue", [key, value]);
+	},
+
+	// todo: does this make sense?
+	setContentVideoElement: function(videoElement)
+	{
+		
+	},
+
+	setProfile: function(profile)
+	{
+		this.controller.callLayerFunction("freewheel", "setProfile", [profile]);
+	},
+
+	setSiteSection: function(siteSection, siteSectionNetworkId, random, something, fallbackSiteSectionId)
+	{
+		this.controller.callLayerFunction("freewheel", "setSiteSection", [siteSection, siteSectionNetworkId, random, something, fallbackSiteSectionId]);
+	},
+
+	setVideoAsset: function(customId, duration, networkId, location, autoPlayType, random, something, fallbackVideoAssetId)
+	{
+		this.controller.callLayerFunction("freewheel", "setVideoAsset", [customId, duration, networkId, location, autoPlayType, random, something, fallbackVideoAssetId]);
+	},
+
+	setVisitor: function(visitor)
+	{
+		this.controller.callLayerFunction("freewheel", "setVistor", [visitor]);
+	},
+
+	setParameter: function(name, value, scope)
+	{
+		this.controller.callLayerFunction("freewheel", "setParameter", [name, value, scope]);
+	},
+
+	// TODO this won't work
+	addEventListener: function(name, callback)
+	{
+		$pdk.ns("$pdk.plugin.freewheel.admanager.callbacks");
+		
+		var temp = "callback_" + Math.floor(Math.random()*10000000);
+		var me = this;
+		$pdk.plugin.freewheel.admanager.callbacks[temp] = function()
+		{
+			if (arguments[0].type === "201")
+			{
+				arguments[0].type = "defaultImpression";
+			}
+
+			if (arguments && arguments.length)
+			{
+				if (arguments[0].adId)
+				{
+					var slot = me.getSlotByCustomId(arguments[0].slotCustomId);
+					var adInfo = me.getAdInfo(slot, ""+arguments[0].adId, null, null);
+					arguments[0].adInstance = adInfo;
+					arguments[0].adInstance.slot = slot;
+				}
+				else if (arguments && arguments.length && arguments[0].slotCustomId)
+				{
+					arguments[0].slot = me.getSlotByCustomId(arguments[0].slotCustomId);
+				}
+			}
+
+			callback.apply(null, arguments);
+		};
+		this.controller.callLayerFunction("freewheel", "addAdManagerEventListener", [name, "$pdk.plugin.freewheel.admanager.callbacks." + temp]);
+	},
+
+	addTemporalSlot: function(id, type, time)
+	{
+		this.controller.callLayerFunction("freewheel", "addTemporalSlot", [id, type, time]);
+	},
+
+	// TODO: turn into SlotProxy array
+	getTemporalSlots: function()
+	{
+		if (this._slots)
+		{
+			return this._slots;
+		}
+		else
+		{
+			this._slots = [];
+		}
+
+		var l = this.controller.callLayerFunction("freewheel", "getTemporalSlotsLength", []);
+
+		for (var i = 0; i<l; i++)
+		{
+			this._slots.push(new $pdk.plugin.freewheel.admanager.SlotProxy(i, this.controller));
+		}
+
+		window._slots = this._slots;
+
+		return this._slots;
+		//return this.controller.callLayerFunction("freewheel", "getTemporalSlots", []);
+	},
+
+	// TODO: turn into SlotProxy
+	getSlotByCustomId: function(id)
+	{
+		if (!this._slots)
+		{
+			this.getTemporalSlots();
+		}
+
+		return this._slots[this.controller.callLayerFunction("freewheel", "getSlotIndexByCustomId", [id])];
+	},
+
+	setAdVolume: function(volume)
+	{
+		this.controller.callLayerFunction("freewheel", "setAdVolume", [volume]);
+	},
+
+	setAdPlayState: function(paused)
+	{
+		this.controller.callLayerFunction("freewheel", "setAdPlayState", [paused]);
+	},
+
+	setVideoState: function(state)
+	{
+		this.controller.callLayerFunction("freewheel", "setVideoState", [state]);
+	},
+
+    setVideoAssetCurrentTimePosition: function(time)
+    {
+		this.controller.callLayerFunction("freewheel", "setVideoAssetCurrentTimePosition", [time]);
+    },
+
+	getVideoDisplaySize: function()
+	{
+		var sz = this.controller.callLayerFunction("freewheel", "getVideoDisplaySize", []);
+
+		if (sz)
+		{
+			return JSON.parse();
+		}
+		else
+		{
+			return {top: 0, left: 0, width: 0, height: 0};
+		}
+	},
+
+	setVideoDisplaySize: function(left, top, width, height, position)
+	{
+		this.controller.callLayerFunction("freewheel", "setVideoDisplaySize", [left, top, width, height, position]);
+	},
+
+	setRequestMode: function(mode)
+	{
+		this.controller.callLayerFunction("freewheel", "setRequestMode", [mode]);
+	},
+
+	submitRequest: function(timeoutSeconds)
+	{
+		this.controller.callLayerFunction("freewheel", "submitRequest", [timeoutSeconds]);
+	},
+
+	setVisitorHttpHeader: function(name, value)
+	{
+		this.controller.callLayerFunction("freewheel", "setVisitorHttpHeader", [name, value]);
+	}
+
+});$pdk.ns("$pdk.plugin.freewheel.admanager");
+$pdk.plugin.freewheel.admanager.FlashAdManager = $pdk.extend($pdk.plugin.freewheel.admanager.NativeAdManager,
+{
+	// TODO: what's _rendererManifest?
+	constructor: function(url, controller, callback, adManagerLoaderUrl, adManagerUrl)
+	{
+		$pdk.plugin.freewheel.admanager.FlashAdManager.superclass.constructor(url, controller, callback);
+		this.ready = false;
+		this._callback = callback;
+		var me = this;
+		
+		this.addEventListener("urn:theplatform:freewheel:ready", function(ready) {
+			if (ready) {
+				me.ready = true;
+				me._callback.call();
+			}
+		});
+
+		if (url)
+		{
+			url = url.replace('{ext}', 'swf').replace('{runtime}', 'flash');
+		}
+
+		var params = (url ? "adManagerUrl="+escape(url) : "");
+		
+		if (adManagerLoaderUrl)
+		{
+			controller.loadLayer("flash", "freewheel", adManagerLoaderUrl + (adManagerLoaderUrl.indexOf("?") > 0 ? "&" : "?") + params);
+		}
+		else
+		{
+			controller.loadLayer("flash", "freewheel", $pdk.scriptRoot + "/swf/FreeWheelAdManagerLoader.swf?" + params);
+		}
+
+		$pdk.ns("tv.freewheel");
+
+		// These are here to avoid an asynchronous load of a bunch of constants, when we don't need the rest of AdManager.js
+		// swang@freewheel.tv says we can copy these into our own code and they won't change.
+		// I left "version" in there so we can quickly see if there's no ones
+		tv.freewheel.SDK = {  
+		   "version":"js-5.15.0.1-r10575-201406260803",
+		   "LOG_LEVEL_QUIET":0,
+		   "LOG_LEVEL_INFO":1,
+		   "LOG_LEVEL_DEBUG":2,
+		   "PLATFORM_IS_WINDOWSPHONE":false,
+		   "PLATFORM_IS_IPAD":false,
+		   "PLATFORM_IS_IPHONE_IPOD":false,
+		   "PLATFORM_IE_MOBILE_VERSION":0,
+		   "PLATFORM_IOS_VERSION":0,
+		   "PLATFORM_ANDROID_VERSION":0,
+		   "PLATFORM_IS_SAFARI":true,
+		   "PLATFORM_IS_MOBILE":false,
+		   "PLATFORM_ID":"Desktop",
+		   "PLATFORM_EVENT_CLICK":"click",
+		   "MOBILE_EVENT_DRAG":"touchmove",
+		   "PLATFORM_SEND_REQUEST_BY_FORM":false,
+		   "PLATFORM_HIDE_AND_SHOW_CONTENT_VIDEO_BY_MOVE_POSITION":false,
+		   "PLATFORM_HIDE_AND_SHOW_CONTENT_VIDEO_BY_SET_DISPLAY":true,
+		   "PLATFORM_SUPPORT_PLAY_MIDROLL_BY_CURRENT_VIDEO_ELEMENT":false,
+		   "PLATFORM_AUTO_SEEK_AFTER_MIDROLL":false,
+		   "PLATFORM_NOT_SUPPORT_OVERLAY_AD":false,
+		   "PLATFORM_FILL_VIDEO_POOL_FOR_MIDROLL":false,
+		   "PLATFORM_NOT_SUPPORT_MIDROLL_AD":false,
+		   "PLATFORM_NOT_SUPPORT_VIDEO_AD":false,
+		   "PLATFORM_DETECT_FULL_SCREEN_FOR_MIDROLL":false,
+		   "PLATFORM_NOT_SUPPORT_CLICK_FOR_VIDEO":false,
+		   "PLATFORM_NOT_FIRE_CLICK_WHEN_AD_VIDEO_PAUSED":false,
+		   "PLATFORM_WAIT_WHEN_AD_VIDEO_TIMEOUT":false,
+		   "PLATFORM_VIDEO_DOESNOT_SUPPORT_TIMEUPDATE":false,
+		   "PLATFORM_PLAY_DUMMY_VIDEO_FOR_PREROLL":false,
+		   "PLATFORM_NOT_WAIT_FOR_ERROR_WHEN_PLAY_DUMMY_VIDEO_FOR_PREROLL":false,
+		   "PLATFORM_SUPPORT_VIDEO_START_DETECT_TIMEOUT":true,
+		   "PLATFORM_NOT_SUPPORT_OVERLAY_CLICK_WHEN_CONTROLS_IS_TRUE":false,
+		   "RENDERER_STATE_INIT":1,
+		   "RENDERER_STATE_STARTING":2,
+		   "RENDERER_STATE_STARTED":3,
+		   "RENDERER_STATE_COMPLETING":4,
+		   "RENDERER_STATE_COMPLETED":5,
+		   "RENDERER_STATE_FAILED":6,
+		   "TRANSLATOR_STATE_INIT":1,
+		   "TRANSLATOR_STATE_STARTING":2,
+		   "TRANSLATOR_STATE_STARTED":3,
+		   "TRANSLATOR_STATE_COMPLETING":4,
+		   "TRANSLATOR_STATE_COMPLETED":5,
+		   "TRANSLATOR_STATE_FAILED":6,
+		   "EVENT_AD":"adEvent",
+		   "EVENT_SLOT_IMPRESSION":"slotImpression",
+		   "EVENT_SLOT_END":"slotEnd",
+		   "EVENT_AD_IMPRESSION":"defaultImpression",
+		   "EVENT_AD_IMPRESSION_END":"adEnd",
+		   "EVENT_AD_QUARTILE":"quartile",
+		   "EVENT_AD_FIRST_QUARTILE":"firstQuartile",
+		   "EVENT_AD_MIDPOINT":"midPoint",
+		   "EVENT_AD_THIRD_QUARTILE":"thirdQuartile",
+		   "EVENT_AD_COMPLETE":"complete",
+		   "EVENT_AD_CLICK":"defaultClick",
+		   "EVENT_AD_MUTE":"_mute",
+		   "EVENT_AD_UNMUTE":"_un-mute",
+		   "EVENT_AD_COLLAPSE":"_collapse",
+		   "EVENT_AD_EXPAND":"_expand",
+		   "EVENT_AD_PAUSE":"_pause",
+		   "EVENT_AD_RESUME":"_resume",
+		   "EVENT_AD_REWIND":"_rewind",
+		   "EVENT_AD_ACCEPT_INVITATION":"_accept-invitation",
+		   "EVENT_AD_CLOSE":"_close",
+		   "EVENT_AD_MINIMIZE":"_minimize",
+		   "EVENT_ERROR":"_e_unknown",
+		   "EVENT_RESELLER_NO_AD":"resellerNoAd",
+		   "INFO_KEY_CUSTOM_ID":"customId",
+		   "INFO_KEY_MODULE_TYPE":"moduleType",
+		   "MODULE_TYPE_EXTENSION":"extension",
+		   "MODULE_TYPE_RENDERER":"renderer",
+		   "MODULE_TYPE_TRANSLATOR":"translator",
+		   "INFO_KEY_ERROR_CODE":"errorCode",
+		   "INFO_KEY_ERROR_INFO":"errorInfo",
+		   "INFO_KEY_ERROR_MODULE":"errorModule",
+		   "ERROR_IO":"_e_io",
+		   "ERROR_TIMEOUT":"_e_timeout",
+		   "ERROR_NULL_ASSET":"_e_null-asset",
+		   "ERROR_ADINSTANCE_UNAVAILABLE":"_e_adinst-unavail",
+		   "ERROR_UNKNOWN":"_e_unknown",
+		   "ERROR_MISSING_PARAMETER":"_e_missing-param",
+		   "ERROR_NO_AD_AVAILABLE":"_e_no-ad",
+		   "ERROR_PARSE":"_e_parse",
+		   "ERROR_INVALID_VALUE":"_e_invalid-value",
+		   "ERROR_INVALID_SLOT":"_e_invalid-slot",
+		   "ERROR_NO_RENDERER":"_e_no-renderer",
+		   "ERROR_DEVICE_LIMIT":"_e_device-limit",
+		   "ERROR_3P_COMPONENT":"_e_3p-comp",
+		   "ERROR_UNSUPPORTED_3P_FEATURE":"_e_unsupp-3p-feature",
+		   "ERROR_SECURITY":"_e_security",
+		   "ERROR_UNMATCHED_SLOT_SIZE":"_e_slot-size-unmatch",
+		   "INFO_KEY_URL":"url",
+		   "INFO_KEY_SHOW_BROWSER":"showBrowser",
+		   "INFO_KEY_CUSTOM_EVENT_NAME":"customEventName",
+		   "INFO_KEY_NEED_EMPTY_CT":"needEmptyCT",
+		   "EVENT_TYPE_CLICK_TRACKING":"CLICKTRACKING",
+		   "EVENT_TYPE_IMPRESSION":"IMPRESSION",
+		   "EVENT_TYPE_CLICK":"CLICK",
+		   "EVENT_TYPE_STANDARD":"STANDARD",
+		   "EVENT_TYPE_GENERIC":"GENERIC",
+		   "EVENT_TYPE_ERROR":"ERROR",
+		   "EVENT_VIDEO_VIEW":"videoView",
+		   "SHORT_EVENT_TYPE_IMPRESSION":"i",
+		   "SHORT_EVENT_TYPE_CLICK":"c",
+		   "SHORT_EVENT_TYPE_STANDARD":"s",
+		   "SHORT_EVENT_TYPE_ERROR":"e",
+		   "INIT_VALUE_ZERO":"0",
+		   "INIT_VALUE_ONE":"1",
+		   "INIT_VALUE_TWO":"2",
+		   "INFO_KEY_PARAMETERS":"parameters",
+		   "URL_PARAMETER_KEY_ET":"et",
+		   "URL_PARAMETER_KEY_CN":"cn",
+		   "URL_PARAMETER_KEY_INIT":"init",
+		   "URL_PARAMETER_KEY_CT":"ct",
+		   "URL_PARAMETER_KEY_METR":"metr",
+		   "URL_PARAMETER_KEY_CR":"cr",
+		   "URL_PARAMETER_KEY_KEY_VALUE":"kv",
+		   "URL_PARAMETER_KEY_ERROR_INFO":"additional",
+		   "URL_PARAMETER_KEY_ERROR_MODULE":"renderer",
+		   "URL_PARAMETER_KEY_CREATIVE_RENDITION_ID":"reid",
+		   "CAPABILITY_SLOT_TEMPLATE":"sltp",
+		   "CAPABILITY_MULTIPLE_CREATIVE_RENDITIONS":"emcr",
+		   "CAPABILITY_RECORD_VIDEO_VIEW":"exvt",
+		   "CAPABILITY_CHECK_COMPANION":"cmpn",
+		   "CAPABILITY_CHECK_TARGETING":"targ",
+		   "CAPABILITY_FALLBACK_UNKNOWN_ASSET":"unka",
+		   "CAPABILITY_FALLBACK_UNKNOWN_SITE_SECTION":"unks",
+		   "CAPABILITY_FALLBACK_ADS":"fbad",
+		   "CAPABILITY_SLOT_CALLBACK":"slcb",
+		   "CAPABILITY_NULL_CREATIVE":"nucr",
+		   "CAPABILITY_AUTO_EVENT_TRACKING":"aeti",
+		   "CAPABILITY_RENDERER_MANIFEST":"rema",
+		   "CAPABILITY_REQUIRE_VIDEO_CALLBACK":"vicb",
+		   "CAPABILITY_SKIP_AD_SELECTION":"skas",
+		   "SLOT_TYPE_TEMPORAL":"temporal",
+		   "SLOT_TYPE_VIDEOPLAYER_NONTEMPORAL":"videoPlayerNonTemporal",
+		   "SLOT_TYPE_SITESECTION_NONTEMPORAL":"siteSectionNonTemporal",
+		   "TIME_POSITION_CLASS_PREROLL":"PREROLL",
+		   "TIME_POSITION_CLASS_MIDROLL":"MIDROLL",
+		   "TIME_POSITION_CLASS_POSTROLL":"POSTROLL",
+		   "TIME_POSITION_CLASS_OVERLAY":"OVERLAY",
+		   "TIME_POSITION_CLASS_DISPLAY":"DISPLAY",
+		   "TIME_POSITION_CLASS_PAUSE_MIDROLL":"PAUSE_MIDROLL",
+		   "EVENT_REQUEST_COMPLETE":"onRequestComplete",
+		   "EVENT_SLOT_STARTED":"onSlotStarted",
+		   "EVENT_SLOT_ENDED":"onSlotEnded",
+		   "EVENT_CONTENT_VIDEO_PAUSE_REQUEST":"contentVideoPauseRequest",
+		   "EVENT_CONTENT_VIDEO_RESUME_REQUEST":"contentVideoResumeRequest",
+		   "CAPABILITY_STATUS_OFF":0,
+		   "CAPABILITY_STATUS_ON":1,
+		   "PARAMETER_LEVEL_PROFILE":0,
+		   "PARAMETER_LEVEL_GLOBAL":1,
+		   "PARAMETER_LEVEL_OVERRIDE":5,
+		   "PARAMETER_ENABLE_FORM_TRANSPORT":"sdk.enableFormTransport",
+		   "PARAMETER_DESIRED_BITRATE":"desiredBitrate",
+		   "PARAMETER_VIDEO_POOL_SIZE":"sdk.videoPoolSize",
+		   "PARAMETER_PLAY_MIDROLL_BY_CURRENT_VIDEO_ELEMENT":"PARAMETER_PLAY_MIDROLL_BY_CURRENT_VIDEO_ELEMENT",
+		   "PARAMETER_EXTENSION_AD_CONTROL_CLICK_ELEMENT":"extension.ad.control.clickElement",
+		   "PARAMETER_EXTENSION_CONTENT_VIDEO_ENABLED":"extension.contentVideo.enabled",
+		   "PARAMETER_EXTENSION_CONTENT_VIDEO_RESPOND_PAUSE_RESUME":"extension.contentVideo.respondPauseResume",
+		   "PARAMETER_EXTENSION_CONTENT_VIDEO_AUTO_SEEK_BACK":"extension.contentVideo.autoSeekBack",
+		   "PARAMETER_EXTENSION_CONTENT_VIDEO_AUTO_SOURCE_RESTORE":"extension.contentVideo.autoSourceRestore",
+		   "PARAMETER_EXTENSION_VIDEO_STATE_ENABLED":"extension.videoState.enabled",
+		   "PARAMETER_RENDERER_VIDEO_START_DETECT_TIMEOUT":"renderer.video.startDetectTimeout",
+		   "PARAMETER_RENDERER_VIDEO_PROGRESS_DETECT_TIMEOUT":"renderer.video.progressDetectTimeout",
+		   "PARAMETER_RENDERER_VIDEO_ANDROID_DELAY":"renderer.video.android.delay",
+		   "PARAMETER_RENDERER_VIDEO_DISPLAY_CONTROLS_WHEN_PAUSE":"renderer.video.displayControlsWhenPause",
+		   "PARAMETER_RENDERER_VIDEO_CLICK_DETECTION":"renderer.video.clickDetection",
+		   "PARAMETER_RENDERER_VIDEO_PLAY_AFTER_STALLED":"renderer.video.playAfterStalled",
+		   "PARAMETER_EXTENSION_SURVEY_ENABLED":"extension.survey.enabled",
+		   "PARAMETER_RENDERER_HTML_COAD_SCRIPT_NAME":"renderer.html.coadScriptName",
+		   "PARAMETER_RENDERER_HTML_SHOULD_BACKGROUND_TRANSPARENT":"renderer.html.isBackgroundTransparent",
+		   "PARAMETER_RENDERER_HTML_SHOULD_END_AFTER_DURATION":"renderer.html.shouldEndAfterDuration",
+		   "PARAMETER_RENDERER_HTML_AD_LOAD_TIMEOUT":"renderer.html.adLoadTimeout",
+		   "PARAMETER_RENDERER_HTML_PLACEMENT_TYPE":"renderer.html.placementType",
+		   "PARAMETER_RENDERER_HTML_BOOTSTRAP":"renderer.html.bootstrap",
+		   "PARAMETER_RENDERER_HTML_PRIMARY_ANCHOR":"renderer.html.primaryAnchor",
+		   "PARAMETER_RENDERER_HTML_MARGIN_WIDTH":"renderer.html.marginWidth",
+		   "PARAMETER_RENDERER_HTML_MARGIN_HEIGHT":"renderer.html.marginHeight",
+		   "PARAMETER_VPAID_CREATIVE_TIMEOUT_DELAY":"renderer.vpaid.creativeTimeoutDelay",
+		   "PARAMETER_RENDERER_HTML_PLACEMENT_TYPE_INLINE":"inline",
+		   "PARAMETER_RENDERER_HTML_PLACEMENT_TYPE_INTERSTITIAL":"interstitial",
+		   "PARAMETER_RENDERER_HTML_BASEUNIT_INTERSTITIAL":"app-interstitial",
+		   "ID_TYPE_FW":1,
+		   "ID_TYPE_CUSTOM":2,
+		   "ID_TYPE_GROUP":3,
+		   "VIDEO_STATE_PLAYING":1,
+		   "VIDEO_STATE_PAUSED":2,
+		   "VIDEO_STATE_STOPPED":3,
+		   "VIDEO_STATE_COMPLETED":4,
+		   "VIDEO_ASSET_AUTO_PLAY_TYPE_ATTENDED":1,
+		   "VIDEO_ASSET_AUTO_PLAY_TYPE_UNATTENDED":2,
+		   "VIDEO_ASSET_AUTO_PLAY_TYPE_NONE":3,
+		   "VIDEO_ASSET_AUTO_PLAY_TYPE_NON_AUTO_PLAY":3,
+		   "ADUNIT_PREROLL":"preroll",
+		   "ADUNIT_MIDROLL":"midroll",
+		   "ADUNIT_POSTROLL":"postroll",
+		   "ADUNIT_OVERLAY":"overlay",
+		   "METR_MASK_QUARTILE":0,
+		   "METR_MASK_MIDPOINT":1,
+		   "METR_MASK_COMPLETE":2,
+		   "METR_MASK_VOLUME":3,
+		   "METR_MASK_SIZE":4,
+		   "METR_MASK_CONTROL":5,
+		   "METR_MASK_REWIND":6,
+		   "METR_MASK_ACCEPT_INVITATION":7,
+		   "METR_MASK_CLOSE":8,
+		   "METR_MASK_MINIMIZE":9,
+		   "METR_MASK_CLICK":10
+		};
+	},
+
+	onAdManagerLoaderError: function()
+	{
+
+	},
+
+	// TODO: wire this up
+	onAdManagerLoaderLoaded: function()
+	{
+		this.ready = true;
+	}
+
+});
+$pdk.ns("$pdk.plugin.freewheel.admanager");
+$pdk.plugin.freewheel.admanager.JavaScriptAdManager = $pdk.extend($pdk.plugin.freewheel.admanager.AdManager,
+{
+	// TODO: what's _rendererManifest?
+	constructor: function(url, controller, callback)
+	{
+        tpLoadScript(url.replace('{ext}', 'js').replace('{runtime}', 'html5'), this.bind(this, this.onAdManagerLoaded));
+        this._callback = callback;
+	},
+
+	initialize: function(controller, slotManager, display)
+	{
+		$pdk.plugin.freewheel.admanager.JavaScriptAdManager.superclass.initialize.call(this, controller, slotManager, display);
+
+		this.proxy = controller.getVideoProxy();
+        this.cleanCSS = this.proxy._ve.getPlaybackElement().style.cssText;
+        this.proxy.parentNode = display;
+
+        this.setContentVideoElement(this.proxy);
+    },
+
+    cleanup: function()
+    {
+        this.proxy._ve.getPlaybackElement().style.cssText = this.cleanCSS;
+    },
+
+	onAdManagerLoaded: function()
+	{
+		// make sure it really loaded
+		if (typeof tv == "undefined" || typeof tv.freewheel == "undefined" || typeof tv.freewheel.SDK == "undefined" || typeof tv.freewheel.SDK.AdManager == "undefined")
+		{
+            this.ready = false;
+		}
+        else
+        {
+            this._adManager = new tv.freewheel.SDK.AdManager();
+            this.ready = true;
+        }
+
+		this._callback.call();
+	},
+
+    getAdInfo: function(slot, adId, creativeId, parameters)
+    {
+    	var adInfo = {};
+
+    	adInfo.slot = slot;
+    	adInfo.adId = adId;
+    	adInfo.uniqueURL = adInfo.adId.toString();
+
+    	var firstInstance, lastInstance;
+
+    	var adInstances = slot.getAdInstances();
+    	var instanceId;
+			
+		for (var i = 0; i < adInstances.length; i++)
+		{
+			instanceId = adInstances[i].getAdId();
+			if (instanceId == adId)
+			{
+				if (!firstInstance)
+				{
+					firstInstance = adInstances[i];
+				}
+
+				lastInstance = adInstances[i];
+			}
+		}
+
+		if (firstInstance)
+		{
+			adInfo.title = firstInstance.getActiveCreativeRendition().getPrimaryCreativeRenditionAsset().getName();
+			adInfo.category = firstInstance.getRendererController().getParameter("_fw_advertiser_name");
+			adInfo.subCategory = firstInstance.getRendererController().getParameter("_fw_campaign_name");
+
+			adInfo.titleId = firstInstance.getRendererController().getParameter("_fw_ad_title_id");
+			adInfo.advertiserId = firstInstance.getRendererController().getParameter("_fw_advertiser_id");
+			adInfo.siteSectionId = firstInstance.getRendererController().getParameter("_fw_site_section_id");
+			adInfo.siteSectionTag = firstInstance.getRendererController().getParameter("_fw_site_section_tag");
+			adInfo.adUnitName = firstInstance.getRendererController().getParameter("_fw_ad_unit_name");
+
+			adInfo.customData = firstInstance.getRendererController().getParameter("extension.analytics.customData") || firstInstance.getRendererController().getParameter("customData");
+			adInfo.time_position_class = slot.getTimePositionClass();
+			adInfo.base_unit = firstInstance.getActiveCreativeRendition().getBaseUnit();
+			adInfo.content_type = firstInstance.getActiveCreativeRendition().getContentType();
+			adInfo.type = this._getAdType(slot, firstInstance.getActiveCreativeRendition(), adInfo.adUnitName);
+
+			if (parameters && parameters.length)
+			{
+				adInfo.parameters = {};
+				
+				for (i=0; i<parameters.length; i++)
+				{
+					adInfo.parameters[parameters[i]] = firstInstance.getRendererController().getParameter(parameters[i]);
+				}
+			}
+		}
+		else
+		{
+			adInfo.title = "unknown";
+		}
+
+		if (lastInstance)
+		{
+			adInfo.duration = lastInstance.getActiveCreativeRendition().getDuration();
+			adInfo.adURL = lastInstance.getActiveCreativeRendition().getPrimaryCreativeRenditionAsset().getUrl();
+		}
+
+		return adInfo;
+    },
+
+    _getAdType: function(slot, rendition, adUnitName)
+    {
+        var type = "";
+        var timePositionClass = slot.getTimePositionClass();
+        switch (timePositionClass){
+            case tv.freewheel.SDK.TIME_POSITION_CLASS_MIDROLL:
+                if (slot.getTimePosition() == -1){
+                    type = "pause";
+                }
+                else if (rendition.getBaseUnit() == "video-click-to-content")
+                {
+                    type = "interactive";
+                }
+                else
+                {
+                    type = "midroll";
+                }
+                break;
+            
+            case tv.freewheel.SDK.TIME_POSITION_CLASS_PREROLL:
+            case tv.freewheel.SDK.TIME_POSITION_CLASS_POSTROLL:
+                if (adUnitName == "Video Branded Slate"){
+                    type = "brandedslate";
+                }
+                else{
+                    type = timePositionClass == tv.freewheel.SDK.TIME_POSITION_CLASS_PREROLL ? "preroll" : "postroll";
+                }
+                break;
+            
+            case tv.freewheel.SDK.TIME_POSITION_CLASS_OVERLAY:
+                if (adUnitName == "Overlay Bug"){
+                    type = "bug";
+                }
+                else{
+                    type = "overlay";
+                }
+                break;
+            
+            case tv.freewheel.SDK.TIME_POSITION_CLASS_PAUSE_MIDROLL:
+                type = "pause";
+                break;
+            
+            default:
+                break;
+        }
+        return type;
+    }, 
+
+	setServer: function(server)
+	{
+		this._adManager.setServer(server);
+	},
+
+	setNetwork: function(network)
+	{
+		this._adManager.setNetwork(network);
+	},
+
+	refresh: function() // is called newContext in JS
+	{
+		if (this._context)
+		{
+			this.dispose();
+		}
+
+		this._context = this._adManager.newContext();
+	},
+
+	// context functions
+	dispose: function()
+	{
+		this._context.dispose();
+	},
+
+	setKeyValue: function(key, value)
+	{
+		this.addKeyValue(key, value);
+	},
+
+	addKeyValue: function(key, value)
+	{
+		if (Array.isArray(value))
+		{
+			this._context.addKeyValue(key, value.join(","));
+		}
+		else
+		{
+			this._context.addKeyValue(key, value);
+		}
+	},
+
+	// todo: does this make sense?
+	setContentVideoElement: function(videoElement)
+	{
+		this._context.setContentVideoElement(videoElement);
+	},
+
+	setProfile: function(profile)
+	{
+		this._context.setProfile(profile);
+	},
+
+	setSiteSection: function(siteSection, siteSectionNetworkId, random, something, fallbackSiteSectionId)
+	{
+		this._context.setSiteSection(siteSection, siteSectionNetworkId, random, something, fallbackSiteSectionId);
+	},
+
+	setVideoAsset: function(customId, duration, networkId, location, autoPlayType, random, something, fallbackVideoAssetId)
+	{
+		this._context.setVideoAsset(customId, duration, networkId, location, autoPlayType, random, something, fallbackVideoAssetId);
+	},
+
+	setVisitor: function(visitor)
+	{
+		this._context.setVisitor(visitor);
+	},
+
+	setParameter: function(name, value, scope)
+	{
+		this._context.setParameter(name, value, scope);
+	},
+
+	addEventListener: function(name, callback)
+	{
+		this._context.addEventListener(name, callback);
+	},
+
+	addTemporalSlot: function(id, type, time)
+	{
+		this._context.addTemporalSlot(id, type, time);
+	},
+
+	getTemporalSlots: function()
+	{
+		return this._context.getTemporalSlots();
+	},
+
+	getSlotByCustomId: function(id)
+	{
+		return this._context.getSlotByCustomId(id);
+	},
+
+	setAdVolume: function(volume)
+	{
+		if (this.proxy && this.proxy.volume)
+		{
+			this.proxy.volume = volume / 100;
+		}
+	},
+
+	setVolume: function (volume)
+	{
+		this.setAdVolume(volume);
+	},
+
+	setAdPlayState: function(paused)
+	{
+		if (paused)
+		{
+			this.slotManager.slot.pause();
+		}
+		else
+		{
+			this.slotManager.slot.resume();
+		}
+	},
+
+	setVideoState: function(state)
+	{
+		this._context.setVideoState(state);
+	},
+
+    setVideoAssetCurrentTimePosition: function(time)
+    {
+        this._context.setVideoAssetCurrentTimePosition(time);
+    },
+
+	getVideoDisplaySize: function()
+	{
+		return this._context.getVideoDisplaySize();
+	},
+
+	setVideoDisplaySize: function(left, top, width, height, position)
+	{
+		if (this._context)
+		{
+			this._context.setVideoDisplaySize(left, top, width, height, position);
+		}
+	},
+
+	setRequestMode: function(mode)
+	{
+		//this._context.setRequestMode(mode);
+	},
+
+	submitRequest: function(timeoutSeconds)
+	{
+		this._context.submitRequest(timeoutSeconds);
+	},
+
+	setVisitorHttpHeader: function(name, value)
+	{
+		//Not supported by FW in HTML5 :(
+		//this._context.setVisitorHttpHeader(name, value);
+	}
+
+
+});$pdk.ns("$pdk.plugin.freewheel.admanager");
+$pdk.plugin.freewheel.admanager.AdManagerFactory = {};
+$pdk.plugin.freewheel.admanager.AdManagerFactory.create = function(type, url, controller, callback, adManagerLoaderUrl)
+{
+	var am = null;
+
+	if (type == $pdk.plugin.freewheel.admanager.AdManagerFactory.FLASH)
+	{
+		am = new $pdk.plugin.freewheel.admanager.FlashAdManager(url, controller, callback, adManagerLoaderUrl);
+	}
+	else if (type == $pdk.plugin.freewheel.admanager.AdManagerFactory.HTML5)
+	{
+		am = new $pdk.plugin.freewheel.admanager.JavaScriptAdManager(url, controller, callback);
+	}
+
+	return am;
+};
+
+$pdk.plugin.freewheel.admanager.AdManagerFactory.FLASH = "flash";
+$pdk.plugin.freewheel.admanager.AdManagerFactory.HTML5 = "html5";
+$pdk.ns("$pdk.plugin.freewheel.admanager");
+$pdk.plugin.freewheel.admanager.SlotProxy = $pdk.extend(function(){},
+{
+	// used to call methods on slots inside Flash/Silverlight, etc
+	constructor: function(index, controller)
+	{
+		// TODO: set this via native calls to Flash
+		this.index = index;
+		this.controller = controller;
+		this.adUnit = this.controller.callLayerFunction("freewheel", "getSlotAdUnit", [this.index]);
+		this.customId = this.controller.callLayerFunction("freewheel", "getSlotCustomId", [this.index]);
+		this.timePosition = this.controller.callLayerFunction("freewheel", "getSlotTimePosition", [this.index]);
+		this.maxDuration = this.controller.callLayerFunction("freewheel", "getSlotMaxDuration", [this.index]);
+		this.minDuration = this.controller.callLayerFunction("freewheel", "getSlotMinDuration", [this.index]);
+		this.timePositionSequence = this.controller.callLayerFunction("freewheel", "getSlotTimePositionSequence", [this.index]);
+		this.chapterIndex = this.controller.callLayerFunction("freewheel", "getSlotChapterIndex", [this.index]);
+	},
+
+	getTotalDuration: function(someBoolean)
+	{
+		return this.controller.callLayerFunction("freewheel", "getSlotTotalDuration", [this.index, someBoolean]);
+	},
+
+	getPlayheadTime: function(someBoolean)
+	{
+		return this.controller.callLayerFunction("freewheel", "getSlotPlayheadTime", [this.index, someBoolean]);
+	},
+
+	getTimePosition: function()
+	{
+		return this.controller.callLayerFunction("freewheel", "getSlotTimePosition", [this.index]);
+	},
+
+	getTimePositionClass: function()
+	{
+		var c = this.controller.callLayerFunction("freewheel", "getSlotTimePositionClass", [this.index]);
+		return c;
+	},
+
+	getCustomId: function()
+	{
+		return this.controller.callLayerFunction("freewheel", "getSlotCustomId", [this.index]);
+	},
+
+	getAdCount: function()
+	{
+		return this.controller.callLayerFunction("freewheel", "getSlotAdCount", [this.index]);
+	},	
+
+	play: function()
+	{
+		this.controller.callLayerFunction("freewheel", "playSlot", [this.index]);
+	},
+
+	stop: function()
+	{
+		this.controller.callLayerFunction("freewheel", "stopSlot", [this.index]);
+	},
+
+	preload: function()
+	{
+		this.controller.callLayerFunction("freewheel", "preloadSlot", [this.index]);
+	},
+
+	skipCurrentAd: function()
+	{
+		this.controller.callLayerFunction("freewheel", "skipCurrentAdForSlot", [this.index]);
+	}
+
+});$pdk.ns("$pdk.plugin.freewheel.noop");
+$pdk.plugin.freewheel.noop.PdkNoopPlayer = $pdk.extend(function(){}, (function(){
+
+    return {
+
+        _controller: null,
+
+        _volumeSetCallback: null,
+        _muteSetCallback: null,
+        _pauseSetCallback: null,
+
+        _onPlayerPauseListener: null,
+        _onPlayerUnpauseListener: null,
+        _onVolumeChangeListener: null,
+        _onMuteListener: null,
+
+        _active : false,
+
+        constructor: function(controller, volumeSetCallback, muteSetCallback, pauseSetCallback)
+        {
+            this._controller = controller;
+            this._volumeSetCallback = volumeSetCallback;
+            this._muteSetCallback = muteSetCallback;
+            this._pauseSetCallback = pauseSetCallback;
+
+            var me = this;
+            this._onPlayerUnpauseListener = function (e) { me._onPlayerUnpause.apply(me, arguments); };
+            this._onPlayerPauseListener = function (e) { me._onPlayerPause.apply(me, arguments); };
+            this._onVolumeChangeListener = function () { me._onVolumeChange.apply(me, arguments); };
+            this._onMuteListener = function () { me._onMute.apply(me, arguments); };
+
+            this._addPlaybackListeners();
+        },
+
+
+        activate : function()
+        {
+            this._active = true;
+            var volume = this._controller.callFunction("getVolume",[]);
+            if (volume === undefined)
+            {
+                volume = 100;
+            }
+            this._onVolumeChange({data:volume});
+            this._onMute({data:this._controller.callFunction("getMuteState",[]) || false});
+        },
+
+        deactivate : function()
+        {
+            this._active = false;
+        },
+
+        ///////////////////////////////
+        // control player            //
+        ///////////////////////////////
+
+        // clip Clip the currently playing clip in the playlist
+        // pausedAtStart is true when content paused going into an ad break (by seek or tpNext)
+        mediaStarts: function(clip)
+        {
+            if (this._active)
+            {
+                this._controller.dispatchEvent("OnMediaStart", clip);
+            }
+        },
+
+        mediaPause: function(pause, clip, userInitiated)
+        {
+            if (this._active)
+            {
+                this._paused = pause;
+                var mp = {globalDataType: "com.theplatform.pdk.data::MediaPause", clip: clip, userInitiated: !!userInitiated};
+                if (pause)
+                {
+                    this._controller.dispatchEvent("OnMediaPause", mp);
+                }
+                else
+                {
+                    this._controller.dispatchEvent("OnMediaUnpause", mp);
+                }
+            }
+        },
+
+        /**
+         * @param playbackTimeObject Object {currentTime: Number, duration: Number}
+         */
+        mediaPlaying: function(playbackTimeObject)
+        {
+            if (this._active && playbackTimeObject.currentTime >= 0)
+            {
+                var t = playbackTimeObject.currentTime;
+                var d = playbackTimeObject.duration;
+                var pbto = {globalDataType: "com.theplatform.pdk.data::TimeObject",
+                    mediaTime: t,
+                    currentTime: t,
+                    currentTimeAggregate: t,
+                    duration: d,
+                    durationAggregate: d,
+                    percentComplete: (t / d) * 100,
+                    percentCompleteAggregate: (t / d) * 100,
+                    isAggregate: false,
+                    isLive: false};
+                this._controller.dispatchEvent("OnMediaPlaying", pbto);
+            }
+        },
+
+        /**
+         * Calling this after every no op clip in one ad break appears to be a problem.
+         * Best to just call done at the end of the entire ad break.
+         * @param clip empty clip plugin generates to represent a single ad
+         */
+        mediaEnds: function(clip)
+        {
+            if (this._active)
+            {
+                this._controller.endMedia(clip);
+                this._paused = false;
+            }
+        },
+
+        /**
+         * This is when the whole ad break is complete.
+         * End media asynchronously!
+         * @param adBreakPlaylistClip
+         */
+        done: function(adBreakPlaylistClip)
+        {
+            if (this._active)
+            {
+                var controller = this._controller;
+                var _adBreakPlaylistClip = adBreakPlaylistClip;
+                var me = this;
+                // NOTE: Must make this async or else we never hear ALL_ADS_COMPLETED from GIMA.
+                setTimeout(function doneSetTimeoutComplete()
+                {
+                    me.log("on async, call endMedia");
+
+                    // NOTE: for noop, must pass in ad break playlist clip,
+                    // which should be the release playlist ad clip (not the plugin generated injected clip(s)).
+                    // Passing in the playlist clip keeps the pbm (phase1)
+                    // from grabbing its currentClip, which is the plugin generated clip.
+                    me.controller.endMedia(_adBreakPlaylistClip);
+                }, 10);
+            }
+        },
+
+        //////////////////////////////////////
+        // respond to player                //
+        //////////////////////////////////////
+
+
+        _onVolumeChange : function(data)
+        {
+            if (this._active)
+            {
+                this._volumeSetCallback(parseInt(data.data, 10));
+            }
+        },
+
+        _onMute : function(data)
+        {
+            if (this._active)
+            {
+                this._muteSetCallback(data.data);
+            }
+        },
+
+        _onPlayerPause: function(event)
+        {
+            if (this._active)
+            {
+                var s = "PdkNoopPlayer::onPlayerPause";
+                var isFlash = this._controller.component.videoengineruntime === "flash";
+                var p , currentTime, duration;
+
+                if (!isFlash)
+                {
+                    p = this._controller.getVideoProxy();
+                    currentTime = p.currentTime;
+                    duration = p.duration;
+                }
+
+                if ((isFlash||currentTime!==duration)&&!this._paused&&this._pauseSetCallback && this._active)
+                {
+                    this._paused = true;
+                    tpDebug(s+ "- calling pauseSetCallback with True");
+                    this._pauseSetCallback(true, null, event.data.userInitiated);
+                }
+            }
+
+        },
+
+        _onPlayerUnpause:function(event)
+        {
+            var s = "PdkNoopPlayer::onPlayerUnpause";
+            if(this._paused&&this._pauseSetCallback && this._active)
+            {
+                this._paused = false;
+                tpDebug(s+ "- calling pauseSetCallback with False");
+                this._pauseSetCallback(false, null, event.data.userInitiated);
+            }
+        },
+
+        _addPlaybackListeners: function()
+        {
+            this._controller.addEventListener("OnPlayerPause", this._onPlayerPauseListener);
+            this._controller.addEventListener("OnPlayerUnPause", this._onPlayerUnpauseListener);
+            this._controller.addEventListener("OnVolumeChange", this._onVolumeChangeListener);
+            this._controller.addEventListener("OnMute", this._onMuteListener);
+        },
+
+        dispose: function()
+        {
+            this.log("dispose");
+            this._controller = null;
+            this._volumeSetCallback = null;
+            this._muteSetCallback = null;
+            this._pauseSetCallback = null;
+            this._mediaPlayingCallback = null;
+            this._callbackScope = null;
+            this._currentReleasePlaylistAdClip = null;
+            this._onPlayerUnpauseListener = null;
+            this._onPlayerPauseListener = null;
+            this._onVolumeChangeListener = null;
+            this._onMuteListener = null;
+        },
+
+        log: function(msg, level)
+        {
+            if (!level)
+            {
+                level = tpConsts.DEBUG;
+            }
+            var controllerId = this._controller ? this._controller.id : "";
+
+            tpDebug(msg, controllerId, "NoOpPlayer", level);
+    //        dcTrace("PdkNoopPlayer"+msg);
+        }
+
+    };
+}()));
+$pdk.ns("$pdk.plugin.freewheel.slotmanager");
+$pdk.plugin.freewheel.slotmanager.SlotManager = $pdk.extend(function(){},
+{
+    // TODO: what's _rendererManifest?
+    constructor: function(controller, adManager)
+    {
+        this.controller = controller;
+        this.adManager = adManager;
+
+        var me = this;
+
+        this._noopPlayer = new $pdk.plugin.freewheel.noop.PdkNoopPlayer(
+            this.controller,
+            function(){me._mediaSoundLevelSet.apply(me,arguments); },
+            function(){me._mediaMuteSet.apply(me,arguments); },
+            function(){me._mediaPauseSet.apply(me,arguments); }
+        );
+    },
+
+    initialize: function()
+    {
+        this.paused = false;
+        this.muted = false;
+        this.playlist = null;
+        this.clip = null;
+        this._noopPlayer.deactivate();
+        
+        // set up initial mute state
+        if (this.controller.callFunction("getMuteState",[]))
+        {
+            this.adManager.setVolume(0);
+        }
+
+        this.adManager.addEventListener(tv.freewheel.SDK.EVENT_AD, this.bind(this, this._onAdEvent));
+    },
+
+    _onAdEvent: function (e)
+    {
+        // we only care about linear...
+        if (this._isLinearSlot(e.slot))
+        {
+          console.error("onAdEvent: " + e.adInstance.getAdId() + "\t" + e.errorCode + "\t" + e.subType);
+        }
+    },
+
+    _isLinearSlot: function(slot)
+    {
+        return (slot.getTimePositionClass() === tv.freewheel.SDK.TIME_POSITION_CLASS_PREROLL ||
+            slot.getTimePositionClass() === tv.freewheel.SDK.TIME_POSITION_CLASS_MIDROLL ||
+            slot.getTimePositionClass() === tv.freewheel.SDK.TIME_POSITION_CLASS_POSTROLL);
+    },
+
+    _mediaSoundLevelSet : function (level)
+    {
+        if (!this.adManager)
+        {
+            return;
+        }
+
+        this.adManager.setAdVolume(level);
+    },
+
+    // called when mute/unmute is called externally
+    _mediaMuteSet : function (isMuted)
+    {
+        if (!this.adManager)
+        {
+            return;
+        }
+
+        if (isMuted)
+        {
+            this.adManager.setAdVolume(0);
+        }
+        else
+        {
+            this.adManager.setAdVolume(100);
+        }
+    },
+
+    // called when play/pause is called externally
+    // note clip is null, so we use our own
+    _mediaPauseSet : function (pause, clip, userInitiated)
+    {
+        if (!this.adManager || !this.clip || pause === this.paused)
+        {
+            return;
+        }
+
+        this.paused = pause;
+
+        if (pause)
+        {
+            this._stopProgressTimer();
+            this.adManager.setAdPlayState(pause);
+        }
+        else
+        {
+            this._startProgressTimer();
+            this.adManager.setAdPlayState(pause);
+        }
+
+        this._noopPlayer.mediaPause(pause, this.clip, userInitiated);
+    },
+
+    start: function(playlist)
+    {        
+        this._noopPlayer.activate();
+        this.playlist = playlist;
+        this.slot = this.adManager.getSlotByCustomId(playlist.clips[0].baseClip.guid);
+        this.slot.play();
+        this.clip = playlist.clips[0];
+        this._noopPlayer.mediaStarts(this.clip);
+        this._startProgressTimer();
+        this.setIOSPauseListeners(true);
+    },
+
+    stop: function()
+    {
+        if (this.slot)
+        {
+            this.slot.stop();
+        }
+    },
+
+    next: function(clip)
+    {
+        // not used in this impl
+    },
+
+    end: function()
+    {
+        this.setIOSPauseListeners(false);
+        this.clip = null;
+        this._noopPlayer.mediaEnds(this.clip);
+        this._stopProgressTimer();
+        this._noopPlayer.deactivate();
+    },
+
+
+    setIOSPauseListeners : function(turnOn)
+    {
+        if (!$pdk.isIOS)
+        {
+            return;
+        }
+        var _this = this;
+        var p = this.controller.getVideoProxy();
+
+        if (turnOn && !this._onPause)
+        {
+            this._onPause = function()
+            {
+                var paused = p.paused;
+                if (_this._noopPlayer._paused !== paused)
+                {
+                    if (paused)
+                    {
+                        _this.pause();
+                        if (p.ended || Math.abs(p.currentTime - p.duration) < 0.25)
+                        {
+                            return;
+                        }
+                    }
+                    else
+                    {
+                        _this.resume();
+                    }
+                    _this._noopPlayer._paused = paused;
+                    _this._noopPlayer.mediaPause(paused, _this.clip);
+
+                }
+            };
+            p.addEventListener("pause", this._onPause);
+            p.addEventListener("play", this._onPause);
+        }
+        else if (!turnOn && this._onPause)
+        {
+            p.removeEventListener("pause", this._onPause);
+            p.removeEventListener("play", this._onPause);
+            this._onPause = null;
+        }
+
+    },
+
+    isTemporalSlot:function (slot)
+    {
+        if (slot)
+        {
+            return [tv.freewheel.SDK.TIME_POSITION_CLASS_PREROLL,
+                tv.freewheel.SDK.TIME_POSITION_CLASS_MIDROLL,
+                tv.freewheel.SDK.TIME_POSITION_CLASS_POSTROLL].indexOf(slot.getTimePositionClass()) > -1;
+        }
+        return false;
+    },
+
+    createPlaylist:function (slots)
+    {
+        if (!slots)
+        {
+            return null;
+        }
+
+        var playlist = {};
+        playlist.globalDataType = "com.theplatform.pdk.data::Playlist";
+        playlist.baseClips = [];
+        playlist.clips = [];
+
+        for (var i = 0; i < slots.length; i++)
+        {
+            var slot = slots[i];
+
+            var baseClip = {};
+            // this needs to be empty string when not using the video proxy
+            // TODO: change this, it's not elegant
+            baseClip.URL = (this.adManager.proxy ? slot.getCustomId() : "");
+            baseClip.guid = slot.getCustomId();
+
+            //baseClip.id = 
+            baseClip.title = "";
+            baseClip.isAd = true;
+            baseClip.noSkip = this.currentAd && this.currentAd.baseClip ? this.currentAd.baseClip.noSkip : true;
+            baseClip.globalDataType = "com.theplatform.pdk.data::BaseClip";
+
+            var adClip = com.theplatform.pdk.SelectorExported.getInstance(this.controller.scopes.toString()).parseClip(baseClip);
+            adClip.streamType = "empty";
+            adClip.title = "";
+
+            adClip.length = slot.getTotalDuration(true) * 1000;
+            adClip.mediaLength = slot.getTotalDuration(true) * 1000;
+            adClip.clipEnd = slot.getTotalDuration(true) * 1000;
+            baseClip.trueLength = slot.getTotalDuration(true) * 1000;
+
+            playlist.baseClips.push(baseClip);
+            playlist.clips.push(adClip);
+        }
+        return playlist;
+    },
+
+    bind:function (scope, method)
+    {
+        var args = Array.prototype.slice.call(arguments);
+        args.shift();
+        method = args.shift();
+        return function ()
+        {
+            return method.apply(scope, args.concat(Array.prototype.slice.call(arguments)));
+        };
+    },
+
+    pause: function(event)
+    {
+        if (!this.clip || !this.clip.baseClip.isAd)
+        {
+            return;
+        }
+
+        this._stopProgressTimer();
+    },
+
+    resume: function(event)
+    {
+        if (!this.clip || !this.clip.baseClip.isAd)
+        {
+            return;
+        }
+
+        this._startProgressTimer();
+    },
+
+    _startProgressTimer:function()
+    {
+        var me = this;
+        this._stopProgressTimer();
+        this._doProgressTimer();
+        this.progressTimerId = setInterval(function() { me._doProgressTimer(); }, 167);
+    },
+
+    _stopProgressTimer:function()
+    {
+        clearInterval(this.progressTimerId);
+    },
+
+    _doProgressTimer:function()
+    {
+        this._noopPlayer.mediaPlaying({currentTime: this.slot.getPlayheadTime(true) * 1000, duration: this.slot.getTotalDuration(true) * 1000});
+    }
+});$pdk.ns("$pdk.plugin.freewheel.slotmanager");
+$pdk.plugin.freewheel.slotmanager.MultiClipSlotManager = $pdk.extend($pdk.plugin.freewheel.slotmanager.SlotManager,
+{
+    // TODO: what's _rendererManifest?
+    loaded: false,
+    started: false,
+
+    constructor: function(controller, adManager, parameters, timeout)
+    {
+        $pdk.plugin.freewheel.slotmanager.SlotManager.call(this, controller, adManager);
+        this.listeners = false;
+        this.parameters = parameters;
+        this.timeout = timeout;
+    },
+
+    initialize: function()
+    {
+        $pdk.plugin.freewheel.slotmanager.MultiClipSlotManager.superclass.initialize.call(this);
+        // add listeners everytime... adManager has been reset
+        this.clipError = false;
+
+        this.playlist = null;
+        this.clip = null;
+        this._noopPlayer.deactivate();
+
+        if (!this.listeners || this.adManager.resetsEvents())
+        {
+            this.listeners = true;
+            this.adManager.addEventListener(tv.freewheel.SDK.EVENT_SLOT_STARTED, this.bind(this, this._onSlotStarted));
+            this.adManager.addEventListener(tv.freewheel.SDK.EVENT_SLOT_ENDED, this.bind(this, this._onSlotEnded));
+
+            this.adManager.addEventListener(tv.freewheel.SDK.EVENT_ERROR, this.bind(this, this._onAdError));
+
+            this.adManager.addEventListener("defaultImpression", this.bind(this, this._onAdImpression));
+            this.adManager.addEventListener("adEnd", this.bind(this, this._onAdComplete));
+        }
+    },
+
+    start: function(playlist)
+    {
+        this.loaded = true;
+        this.started = false;
+
+        this.playlist = playlist;
+        this.index = -1;
+        this.slot = this.adManager.getSlotByCustomId(playlist.clips[0].baseClip.guid);
+        this.log("starting slot with " + playlist.clips.length + " ads", tpConsts.INFO);
+        this.slot.play();
+    },
+
+    stop: function()
+    {
+        if (this.slot)
+        {
+            this.slot.stop();
+        }
+    },
+
+    next: function(clip)
+    {
+        this.loaded = true;
+        this.started = false;
+        this.clip = clip;
+
+        if (this.slotEnded && this.index < this.playlist.clips.length)
+        {
+            this._doError();
+
+            if (this.index === this.playlist.clips.length)
+            {
+                this.clip = null;
+                this.playlist = null;
+            }
+        }
+    },
+
+    end: function()
+    {
+        this._stopProgressTimer();
+    },
+
+    skipCurrentAd: function()
+    {
+        if (this.slot)
+        {
+            this.log("Skipping Current Ad due to " + (this.timeout / 1000) + " second delay.", tpConsts.INFO);
+            this._endClip();
+            this._startTimeout();
+            this.slot.skipCurrentAd();
+        }
+    },
+
+    _onSlotStarted: function(e)
+    {
+        this.log("Slot Started", tpConsts.INFO);
+        if (!isNaN(this.timeout))
+        {
+            this._startTimeout();
+        }
+        if (this._isLinearSlot(e.slot))
+        {
+            this.slotEnded = false;
+        }
+    },
+
+    _onSlotEnded: function(e)
+    {
+        if (this._isLinearSlot(e.slot))
+        {
+            this.slotEnded = true;
+
+            if (this.playlist && this.playlist.clips)
+            {
+                var leftovers = this.playlist.clips.length - this.index - 1;
+                if (leftovers > 0)
+                {
+                    this.log("Slot Ended with " + leftovers + " unused clips.", tpConsts.INFO);
+                    // if it's already loaded via next(), then we need to skip it.
+                    // otherwise, we'll wait for next() to be called and skip it there
+                    if (this.loaded)
+                    {
+                        this.clip = this.playlist.clips[this.index];
+                        this._doError();
+                    }
+                }
+            }
+
+            this._stopProgressTimer();
+            this.log("Slot Ended", tpConsts.INFO);
+            clearTimeout(this._timeoutId);
+        }
+    },
+
+    _doError: function()
+    {
+        this.index++;
+        this.controller.sendError(
+        {
+            clip: this.clip,
+            title: 'Unused ad from slot'
+        });
+    },
+
+    _isLinearSlot: function(slot)
+    {
+        return (slot.getTimePositionClass() === tv.freewheel.SDK.TIME_POSITION_CLASS_PREROLL ||
+            slot.getTimePositionClass() === tv.freewheel.SDK.TIME_POSITION_CLASS_MIDROLL ||
+            slot.getTimePositionClass() === tv.freewheel.SDK.TIME_POSITION_CLASS_POSTROLL);
+    },
+
+    // this is FW's timeout, not ours.
+    _onAdTimeout: function(e)
+    {
+        this._endClip();
+    },
+
+    _onAdEvent: function (e)
+    {
+        // we only care about linear...
+        if (this._isLinearSlot(e.slot))
+        {
+            if (e.subType === "adInitiated")
+            {
+                //console.error(e.adInstance);
+            }
+            else if (e.subType === tv.freewheel.SDK.EVENT_ERROR)
+            {
+                this._onAdError(e);
+            }
+            else if (e.subType === tv.freewheel.SDK.EVENT_AD_PAUSE)
+            {
+                this._mediaPauseSet(true);
+            }
+        }
+    },
+
+    _onAdImpression: function(e)
+    {
+        clearTimeout(this._timeoutId);
+        var slot = e.adInstance.slot || e.adInstance.getSlot();
+        var timePositionClass = slot.getTimePositionClass();
+
+        if (["PREROLL", "MIDROLL", "POSTROLL"].indexOf(timePositionClass) >= 0)
+        {
+            this.index++;
+            this.adId = e.adInstance.adId || e.adInstance.getAdId();
+            this._startClip();
+        }
+    },
+
+    _onAdComplete: function(e)
+    {
+        this._endClip();
+    },
+
+    _onAdError: function(e)
+    {
+        this._onLinearSlotError(e);
+    },
+
+    _onLinearSlotError: function (e)
+    {
+        this.clipError = true;
+
+        // FW errored before we're even ready...
+        if (!this.loaded && !this.started)
+        {
+            // we just ignore this and handle it at the end (in case there's a backfill during the slot)
+        }
+        else if (this.started)
+        {
+          this.log("Ending clip that has started and errored out...", tpConsts.INFO);
+          this._endClip();
+        }
+        else
+        {
+          this.log("Ignoring clip that never started and errored out...", tpConsts.INFO);
+        }
+    },
+
+    _startTimeout: function()
+    {
+        var me = this;
+        this._timeoutId = setTimeout(function() { me.skipCurrentAd(); }, this.timeout);
+    },
+
+    _startClip: function()
+    {
+        this.clip = this.playlist.clips[this.index];
+
+        if (!this.clip)
+        {
+            this.slot.stop();
+            return;
+        }
+
+        this.clipError = false;
+
+        var adInfo = this.adManager.getAdInfo(this.slot, this.adId, null, this.parameters);
+
+        if (adInfo)
+        {
+            this.clip.title = adInfo.title;
+            this.clip.baseClip.isMid = (adInfo.type == "midroll");
+            this.clip.length = parseInt(adInfo.duration, 10) * 1000;
+            this.clip.mediaLength = parseInt(adInfo.duration, 10) * 1000;
+            this.clip.clipEnd = this.clip.length;
+            this.clip.baseClip.trueLength = parseInt(adInfo.duration, 10) * 1000;
+
+            if (!this.clip.baseClip.contentCustomData)
+            {
+                this.clip.baseClip.contentCustomData = {};
+            }
+
+            this.clip.baseClip.contentCustomData["fw:adId"] = this.adId;
+            this.clip.baseClip.contentCustomData["fw:category"] = adInfo.category;
+            this.clip.baseClip.contentCustomData["fw:subcategory"] = adInfo.subcategory;
+            this.clip.baseClip.contentCustomData["fw:type"] = adInfo.type;
+            this.clip.baseClip.contentCustomData["fw:customData"] = adInfo.customData;
+
+            this.clip.baseClip.contentCustomData["fw:titleId"] = adInfo.titleId;
+            this.clip.baseClip.contentCustomData["fw:advertiserId"] = adInfo.advertiserId;
+            this.clip.baseClip.contentCustomData["fw:siteSectionId"] = adInfo.siteSectionId;
+            this.clip.baseClip.contentCustomData["fw:siteSectionTag"] = adInfo.siteSectionTag;
+
+            this.clip.baseClip.contentCustomData["fw:adurl"] = adInfo.adURL;
+
+            this.clip.baseClip.contentCustomData["fw:time_position_class"] = adInfo.time_position_class;
+            this.clip.baseClip.contentCustomData["fw:base_unit"] = adInfo.base_unit;
+            this.clip.baseClip.contentCustomData["fw:content_type"] = adInfo.content_type;
+
+            if (this.parameters && this.parameters.length)
+            {
+                for (var i=0; i<this.parameters.length; i++)
+                {
+                    this.clip.baseClip.contentCustomData[this.parameters[i]] = adInfo.parameters[this.parameters[i]];
+                }
+            }
+
+            this.controller.updateClip(this.clip);
+        }
+
+        this.started = true;
+
+        this._noopPlayer.activate();
+        this.setIOSPauseListeners(true);
+        this._noopPlayer.mediaStarts(this.clip);
+        this._startProgressTimer();
+    },
+
+    _endClip: function()
+    {
+        if (this.clip)
+        {
+            if (!this._noopPlayer._active)
+            {
+                this._noopPlayer.activate();
+                this._noopPlayer.mediaStarts(this.clip);
+            }
+            this.setIOSPauseListeners(false);
+            this._stopProgressTimer();
+            this._noopPlayer.mediaEnds(this.clip);
+            this._noopPlayer.deactivate();
+            this.clip = null;
+            this.started = false;
+            this.loaded = false;
+        }
+    },
+
+    pause: function(event)
+    {
+        $pdk.plugin.freewheel.slotmanager.MultiClipSlotManager.superclass.pause.call(this, event);
+    },
+
+    resume: function(event)
+    {
+        $pdk.plugin.freewheel.slotmanager.MultiClipSlotManager.superclass.resume.call(this, event);
+    },
+
+    log:function (msg, level)
+    {
+        if (!level)
+        {
+            level = tpConsts.DEBUG;
+        }
+
+        tpDebug(msg, this.controller.id, "FreeWheel", level);
+    },
+
+    createPlaylist:function (slots)
+    {
+        if (!slots)
+        {
+            return null;            
+        }
+
+        var playlist = {};
+        playlist.globalDataType = "com.theplatform.pdk.data::Playlist";
+        playlist.baseClips = [];
+        playlist.clips = [];
+
+        for (var i = 0; i < slots.length; i++)
+        {
+            var slot = slots[i];
+
+            if (!this.isTemporalSlot(slot))
+            {
+                continue;
+            }
+
+            for (var j = 0; j < slot.getAdCount(); j++)
+            {
+                var baseClip = {};
+                if (j === 0)
+                {
+                    // this needs to be empty string when not using the video proxy
+                    // TODO: change this, it's not elegant
+                    baseClip.URL = (this.adManager.proxy ? slot.getCustomId() : "");
+                    baseClip.guid = slot.getCustomId();
+                }
+                else
+                {
+                    // this needs to be empty string when not using the video proxy
+                    // TODO: change this, it's not elegant
+                    baseClip.URL = (this.adManager.proxy ? slot.getCustomId() + ":" + j : "");
+                    baseClip.guid = slot.getCustomId() + ":" + j;
+                }                
+
+                //baseClip.id = 
+                baseClip.title = "";
+                baseClip.isAd = true;
+                baseClip.noSkip = this.currentAd && this.currentAd.baseClip ? this.currentAd.baseClip.noSkip : true;
+                baseClip.globalDataType = "com.theplatform.pdk.data::BaseClip";
+
+                var adClip = com.theplatform.pdk.SelectorExported.getInstance(this.controller.scopes.toString()).parseClip(baseClip);
+                adClip.streamType = "empty";
+                adClip.title = "";
+
+                playlist.baseClips.push(baseClip);
+                playlist.clips.push(adClip);
+            }
+        }
+
+        return playlist;
+    }
+});$pdk.ns("$pdk.plugin.freewheel");
+$pdk.plugin.freewheel.FreeWheel = $pdk.extend(function(){},
+{
+    version:"VERSION_UNKNOWN",
+
+    constructor: function ()
+    {
+        this.adManager = null;
+        this.adManagerError = false;
+        this.setAdsWaiting = false;
+        this.requestPending = false;
+        this.requestSubmitted = false;
+        this.currentAd = null;
+        this.prerollSlots = [];
+        //Use objcet to store non-empty midroll slots
+        this.midrollSlots = {};
+        this.postrollSlots = [];
+        this.currentVideo = null;
+        this.parameters = null;
+        this.bannerScriptName = null;
+        this.controller = null;
+        this.cuePointManager = this.getCuePointManager();
+        this.currentClip = null;
+        this.chapters = null;
+        this.testCustomValue = null;
+        this.isLive = false;
+        this.clipPerAd = true;
+        this.releaseUrl = null;
+        this.hasPrebuffered = false;
+        this.requestTimeout = 5;
+        this.adTimeout = NaN;
+        // a flag to indicate whether OnLoadReleaseUrl event is dispatched to make a distinguish about autoplay non-autoplay mode.
+        this.isOnLoadReleaseUrlInvoked = false;
+
+        // list of FreeWheel custom parameter names, to be copied into each ad's Clip
+        this.adCustomParameters = null;
+
+        this.initVideoDisplayBase();
+
+        //  Consider the two cases:
+        //      1. non-autoplay, player is loaded, then click the play button to start the content video.
+        //      2. non-autoplay, player is loaded, then click on another release in the release list to start another content video
+        //  The event orders are: onLoadReleaseUrl, onReleaseStart. These two cases are the same.
+        //  After looking through the PDK document and some local tests, there is no special event to indicate the release is changed.
+        //  This property is used to check whether the release has changed in "OnReleaseStart" event.
+    },
+
+    initVideoDisplayBase:function ()
+    {
+        // This video display base is located above Video Player.
+        // Currently, it has two use cases:
+        // 1. created as display base of Overlay ad.
+        // 2. interactive element when playing preroll/midroll/postroll, it will be responsible for capturing "click" event.
+        this.videoDisplayBase = document.createElement("div");
+        this.videoDisplayBase.id = "fw-pdk-plugin-video-display-base";
+        this.videoDisplayBase.style.display = "none";
+        //this.videoDisplayBase.style.position = "absolute";
+        //this.videoDisplayBase.style.top = "0px";
+        //this.videoDisplayBase.style.left = "0px";
+        //this.videoDisplayBase.style.zIndex = 100;
+    },
+
+    initialize:function (loadObj)
+    {
+        this.controller = loadObj.controller;
+        this.controller.registerAdPlugIn(this);
+        this.log("FreeWheel plug-in created");
+
+        this.runtime = this.controller.getProperty("videoEngineRuntime") || "html5";
+
+        if (this.runtime == "flash")
+        {
+            this.extension = "swf";
+        }
+        else if (this.runtime == "html5")
+        {
+            this.extension = "js";
+        }
+        else
+        {
+            //
+            this.log(this.runtime+" Runtime not supported by FreeWheel");
+            this.parameters = {};
+            return;
+        }
+
+        if (loadObj.vars.adManagerUrl)
+        {
+            loadObj.vars.adManagerUrl = loadObj.vars.adManagerUrl;
+        }
+
+        if (loadObj.vars.playerProfile)
+        {
+            loadObj.vars.playerProfile = loadObj.vars.playerProfile.replace('{ext}', this.extension).replace('{runtime}', this.runtime);
+        }
+
+        if (loadObj.vars.playerProfileHTML5 && this.runtime == "html5")
+        {
+            loadObj.vars.playerProfile = loadObj.vars.playerProfileHTML5;
+        }
+
+        if (loadObj.vars.playerProfileFlash && this.runtime == "flash")
+        {
+            loadObj.vars.playerProfile = loadObj.vars.playerProfileFlash;
+        }
+
+        if (loadObj.vars.bannerScriptName)
+        {
+            this.bannerScriptName = loadObj.vars.bannerScriptName;
+        }
+
+        if (loadObj.vars.adCustomParameters)
+        {
+            this.adCustomParameters = loadObj.vars.adCustomParameters.split(",");
+        }
+
+        this.loadVars = loadObj.vars;
+        this.parameters = this.getParameters(window.fw_config ? window.fw_config() : null, this.loadVars);
+
+        if (loadObj.vars.testCustomValue)
+        {
+            this.testCustomValue = loadObj.vars.testCustomValue;            
+        } 
+
+        if (loadObj.vars.clipPerAd)
+        {
+            this.clipPerAd = !(loadObj.vars.clipPerAd === "false");
+        }
+
+        if (loadObj.vars.isLive)
+        {
+            this.isLive = (loadObj.vars.isLive === "true");
+        }
+
+        if (loadObj.vars.requestTimeout)
+        {
+            this.requestTimeout = parseInt(loadObj.vars.requestTimeout, 10) || this.requestTimeout;
+        }
+
+        if (loadObj.vars.adTimeout)
+        {
+            this.adTimeout = parseInt(loadObj.vars.adTimeout, 10) || this.adTimeout;
+        }
+
+        if (this.adTimeout < 100)
+        {
+            this.adTimeout = 100;
+        }
+
+        var overlayArea = this.controller.getOverlayArea(); // return value should be a object which have x, y, height and width
+        this.log("initialize overlayArea width:" + overlayArea.width + " height:" + overlayArea.height);
+        if (overlayArea)
+        {
+            this.videoDisplayBase.style.width = overlayArea.width + "px";
+            this.videoDisplayBase.style.height = overlayArea.height + "px";
+        }
+
+        var me = this;      
+
+        this.controller.addEventListener("OnLoadReleaseUrl", this.bind(this, this.onLoadReleaseUrl));
+        this.controller.addEventListener("OnSetReleaseUrl", this.bind(this, this.onSetReleaseUrl));
+        this.controller.addEventListener("OnReleaseStart", this.bind(this, this.onReleaseStart));
+        this.controller.addEventListener("OnReleaseEnd", this.bind(this, this.onReleaseEnd));
+        this.controller.addEventListener("OnReleaseError", this.bind(this, this.onReleaseError));
+
+        // load the AdManager
+        this.adManager = $pdk.plugin.freewheel.admanager.AdManagerFactory.create(this.runtime, this.parameters.adManagerUrl, this.controller, this.bind(this, this.onAdManagerLoaded), this.parameters.adManagerLoaderUrl);
+
+        this.isFlash = (this.runtime == "flash");
+    },
+
+    onAdManagerLoaded:function (event)
+    {
+        if (!this.adManager || !this.adManager.ready)
+        {
+            this.log("onAdManagerLoaded(), failed to load");
+            this.adManagerError = true;
+            if (this.setAdsWaiting)
+            {
+                this.controller.setAds(null);//no ads
+            }
+            return;
+        }
+        
+        // TODO: wire this up
+        if (this.parameters.isDebug)
+        {
+            //tv.freewheel.SDK.setLogLevel(tv.freewheel.SDK.LOG_LEVEL_DEBUG);
+        }
+        else
+        {
+            //tv.freewheel.SDK.setLogLevel(tv.freewheel.SDK.LOG_LEVEL_QUIET);
+        }
+
+        this.log("AdManager successfully loaded.", tpConsts.INFO);
+        
+        this.adManager.setServer(this.parameters.serverUrl);
+        this.adManager.setNetwork(this.parameters.networkId);
+
+        if ($pdk.parentUrl)
+        {
+            this.adManager.setVisitorHttpHeader("referer", $pdk.parentUrl);
+        }
+
+        this.controller.addEventListener("OnClearCurrentRelease", this.bind(this, this.onClearCurrentRelease));
+        this.controller.addEventListener("OnResetPlayer", this.bind(this, this.onClearCurrentRelease));
+
+        this.controller.addEventListener("OnMediaLoadStart", this.bind(this, this.onMediaLoadStart));
+        this.controller.addEventListener("OnMediaStart", this.bind(this, this.onMediaStart));
+        this.controller.addEventListener("OnMediaPlaying", this.bind(this, this.onMediaPlaying));
+        this.controller.addEventListener("OnMediaEnd", this.bind(this, this.onMediaEnd));
+        this.controller.addEventListener("OnOverlayAreaChanged", this.bind(this, this.onOverlayAreaChanged));
+        this.controller.addEventListener("OnMediaAreaChanged", this.bind(this, this.onMediaAreaChanged));
+
+        this.slotManager = (this.clipPerAd ? new $pdk.plugin.freewheel.slotmanager.MultiClipSlotManager(this.controller, this.adManager, this.adCustomParameters, this.adTimeout) : new $pdk.plugin.freewheel.slotmanager.SlotManager(this.controller, this.adManager));
+
+        if (this.requestPending)
+        {
+            this.submitRequest();
+        }
+    },
+
+    getReleaseUrl:function (releaseUrl)
+    {
+        var quoteIndex = releaseUrl.indexOf("?");
+        if (quoteIndex > 0)
+        {
+            releaseUrl = releaseUrl.substr(0, quoteIndex);
+        }
+        return releaseUrl;
+    },
+
+    resetDataForNewRelease:function ()
+    {
+        this.log("resetDataForNewRelease()");
+        this.isOnLoadReleaseUrlInvoked = false;
+        this.midrollSlots = {};
+        this.prerollSlots = [];
+        this.postrollSlots = [];
+        this.hasPrebuffered = false;
+    },
+
+    onOverlayAreaChanged:function ()
+    {
+        var overlayArea = this.controller.getOverlayArea(); // return value should be a object which have x, y, height and width
+        if (overlayArea)
+        {
+            this.log("onOverlayAreaChanged() width:" + overlayArea.width + " height:" + overlayArea.height);
+            this.videoDisplayBase.style.width = overlayArea.width + "px";
+            this.videoDisplayBase.style.height = overlayArea.height + "px";
+        }
+    },
+
+    onMediaAreaChanged:function ()
+    {
+        var mediaArea = this.controller.getMediaArea();
+        if (mediaArea)
+        {
+            if (this.currentClip)
+            {
+                var slot = this.adManager.getSlotByCustomId(this.currentClip.baseClip.guid);
+                if (slot && typeof(slot.getAdInstances) === 'function')
+                {
+                    var ads = slot.getAdInstances(false);
+                    var renderer;
+                    for (var i = 0; i < ads.length; i++)
+                    {
+                        renderer = ads[i].getRendererController().getRenderer();
+                        if (renderer && renderer.vpaidViewmode)
+                        {
+                            renderer.vpaidViewmode = (this.controller.getFullScreenState() ? "fullscreen" : "normal");
+                        }
+                    }
+                }
+            }
+            if (this.adManager && this.adManager.ready)
+            {
+                this.adManager.setVideoDisplaySize(mediaArea.left, mediaArea.top, mediaArea.width, mediaArea.height);
+            }
+        }
+    },
+
+    onSetReleaseUrl:function (event)
+    {
+
+        if (this.adManagerError)
+        {
+            return;//do nothing, it's an error
+        }
+
+        if (this.hasPrebuffered)
+        {
+            this.submitRequest();
+        }
+        else
+        {
+            this.hasPrebuffered = true;
+        }
+
+        this.log("onSetReleaseUrl():" + this.releaseUrl);
+    },
+
+    onLoadReleaseUrl:function (event)
+    {
+
+        if (this.adManagerError)
+        {
+            return;//do nothing, it's an error
+        }
+
+        this.log("onLoadReleaseUrl():" + this.releaseUrl);
+        this.isOnLoadReleaseUrlInvoked = true;
+        var release = event.data;
+        var release_url = this.getReleaseUrl(release.url);
+        if (release_url == this.releaseUrl)
+        {
+            this.log("onLoadReleaseUrl invoked after onReleaseStart, do not send request");
+            this.isOnLoadReleaseUrlInvoked = false;
+            this.releaseUrl = null;
+            return;
+        }
+        this.releaseUrl = release_url;
+
+        this.chapters = release.chapters;
+        var videoAssetCustomId = null;
+
+        if (this.parameters.customVideoAssetOverrideId)
+        {
+            videoAssetCustomId = this.parameters.customVideoAssetOverrideId;
+        }
+        else if (release && this.parameters.customVideoAssetIdField)
+        {
+            // support nested prop in string customVideoAssetIdField
+            var customIdProps = this.parameters.customVideoAssetIdField.split('.');
+
+            for (field in release)
+            {
+                if (field.indexOf("$" > 1))
+                {
+                    if (field.split("$")[1] == customIdProps[0])
+                    {
+                        videoAssetCustomId = release[field];
+                        if (customIdProps[1] && typeof videoAssetCustomId === 'object') {
+                            videoAssetCustomId = videoAssetCustomId[customIdProps[1]];
+                        }
+                    }
+                }
+            }
+            this.log("Trying to get VideoAssetCustomId from release['" + this.parameters.customVideoAssetIdField + "']: " + videoAssetCustomId);
+        }
+
+        if (!videoAssetCustomId && this.testCustomValue)
+        {
+            videoAssetCustomId = this.testCustomValue;
+        }
+
+        if (!videoAssetCustomId && release && release.id)
+        {
+            videoAssetCustomId = release.id.substr(release.id.lastIndexOf("/") + 1);
+            this.log("Use release.id for videoAssetCustomId:" + videoAssetCustomId);
+        }
+
+        var keyValues = null;
+        if (release && this.parameters.keyValuesField)
+        {
+            for (field in release)
+            {
+                if (field.indexOf("$" > 1))
+                {
+                    if (field.split("$")[1] == this.parameters.keyValuesField)
+                    {
+                        keyValues = release[field];
+                    }
+                }
+            }
+            this.log("Getting keyValues from Media ['" + this.parameters.keyValuesField + "']: " + keyValues);
+        }
+
+        this.buildCurrentVideoInfo(videoAssetCustomId, null, keyValues);
+        if (!this.hasPrebuffered)
+        {
+            this.submitRequest();            
+        }
+    },
+
+    onReleaseStart:function (event)
+    {
+        if (this.adManagerError)
+        {
+            return;//we can do nothing
+        }
+
+        this.log("onReleaseStart()");
+        this.hasPrebuffered = false;
+        //this.midRoll
+        var playList = event.data;
+        var releaseUrl = this.getReleaseUrl(playList.releaseURL);
+        this.chapters = playList.chapters.chapters;
+        if (this.isOnLoadReleaseUrlInvoked)
+        {
+            this.log("OnLoadReleaseUrl() has been invoked before");
+            if (releaseUrl == this.releaseUrl)
+            {
+                this.log("return since it's the same release");
+                return;
+            }
+            this.resetDataForNewRelease();
+        }
+        this.releaseUrl = releaseUrl;
+        this.log("chapters.length:" + this.chapters.length);
+        var baseClip = this.getFirstContent(playList);
+        var videoAssetCustomId = null;
+        var keyValues = null;
+        var videoAssetURL = null;
+
+        if (baseClip)
+        {
+            this.setDesiredBitrate(baseClip.bitrate);
+
+            videoAssetURL = baseClip.URL;
+            if (this.parameters.customVideoAssetIdField && baseClip && baseClip.contentCustomData)
+            {
+                videoAssetCustomId = baseClip.contentCustomData[this.parameters.customVideoAssetIdField];
+                if (!videoAssetCustomId && this.parameters.customVideoAssetIdField.indexOf('$') > -1)
+                {
+                    videoAssetCustomId = baseClip.contentCustomData[this.parameters.customVideoAssetIdField.split('$')[1]];
+                }
+                this.log("get videoAssetCustomId:" + videoAssetCustomId + " from customIdField:" + this.parameters.customVideoAssetIdField, tpConsts.INFO);
+            }
+            if (!videoAssetCustomId && this.testCustomValue)
+            {
+                videoAssetCustomId = this.testCustomValue;
+            }
+            if (!videoAssetCustomId && baseClip)
+            {
+                videoAssetCustomId = baseClip.contentID;
+                this.log("get videoAssetCustomId:" + videoAssetCustomId + " from clip.baseClip.contentID");
+            }
+
+            if (this.parameters.keyValuesField && baseClip && baseClip.contentCustomData)
+            {
+                keyValues = baseClip.contentCustomData[this.parameters.keyValuesField];
+                if (!keyValues && this.parameters.keyValuesField.indexOf('$') > -1)
+                {
+                    keyValues = baseClip.contentCustomData[this.parameters.keyValuesField.split('$')[1]];
+                }
+                this.log("Getting keyValues from Media ['" + this.parameters.keyValuesField + "']: " + keyValues);
+            }
+
+        }
+        this.buildCurrentVideoInfo(videoAssetCustomId, videoAssetURL, keyValues);
+        this.submitRequest();
+    },
+
+    getFirstContent:function (playlist)
+    {
+        if (!playlist.baseClips)
+        {
+            return null;
+        }
+
+        var bcs = playlist.baseClips;
+        for (var i = 0; i < bcs.length; i++)
+        {
+            var bc = bcs[i];
+            if (!bc.isAd)
+            {
+                return bc;
+            }
+        }
+    },
+
+    onReleaseEnd:function (event)
+    {
+        this.log("onReleaseEnd()");
+        this.cleanup();
+    },
+
+    onReleaseError: function (event) {
+        this.log("onReleaseError()");
+        this.cleanup();
+    },
+
+    onClearCurrentRelease: function(event) {
+        this.cleanup();
+    },
+
+    cleanup: function() {
+        if (this.slotManager)
+        {
+            this.slotManager.stop();
+        }
+
+        this.resetDataForNewRelease();
+    },
+
+    isAd:function (clip)
+    {
+        return this.isFreeWheelUrl(clip.URL);
+    },
+
+    checkAd:function (clip)
+    {
+        if (!this.isFreeWheelUrl(clip.URL))
+        {
+            this.log("checkAd(), return false for AdManger is null");
+            return false;
+        }
+        if (this.adManagerError)
+        {
+            this.log("checkAd(), return false for AdManger failed to load");
+            return false;
+        }
+        if (!this.checkParameters())
+        {
+            this.log("checkAd() return false for required parameters are missed");
+            return false;
+        }
+        this.log("checkAd()");
+
+        if(this.controller.component.videoengineruntime !== "html5")
+        {
+            clip.isExternal = true;
+            this.controller.modClip(clip);
+        }
+
+        this.currentAd = clip;
+        var me = this;
+        setTimeout(function ()
+        {
+            me.doSetAds();
+        }, 1);
+
+        return true;
+    },
+
+    doSetAds:function ()
+    {
+        if (this.adManagerError||!this.adManager)//sometimes it doesn't get set
+        {
+            this.controller.setAds(null);
+            return;
+        }
+        else if (!this.adManager.ready || this.requestSubmitted)
+        {
+            this.setAdsWaiting = true;
+            return;
+        }
+
+        this.currentClip = null;
+
+        var chapterPosition = this.getChapterPositionFromAd(this.chapters, this.currentAd);
+
+        var retPlaylist;
+        if (chapterPosition === 0)
+        {
+            this.log("setAds(), create prerolls length:" + this.prerollSlots.length, tpConsts.INFO);
+            retPlaylist = this.slotManager.createPlaylist(this.prerollSlots);
+        }
+        else if (chapterPosition == this.chapters.length)
+        {
+            this.log("setAds(), create postrolls length:" + this.postrollSlots.length, tpConsts.INFO);
+            retPlaylist = this.slotManager.createPlaylist(this.postrollSlots);
+        }
+        else if (chapterPosition > 0)
+        {
+            this.log("setAds(), insert midroll slot for chapter " + chapterPosition, tpConsts.INFO);
+            retPlaylist = this.slotManager.createPlaylist(this.midrollSlots[this.generateMidrollCustomId(chapterPosition)]);
+        }
+        this.setAdsWaiting = false;
+        this.currentPlaylist = retPlaylist;
+        this.controller.setAds(retPlaylist);
+    },
+
+    getChapterPositionFromAd : function(chapters, ad)
+    {
+        if (!chapters || chapters.length === 0)
+        {
+            return -1;
+        }
+        for (var i = 0; i < chapters.length; i++)
+        {
+            var chapter = chapters[i];
+            if (chapter.adIndex == ad.clipIndex || chapter.contentIndex > ad.clipIndex)
+            {
+                return i;
+            }
+        }
+        return chapters.length;
+    }
+    ,
+
+    isFreeWheelUrl:function (url)
+    {
+        return (url.indexOf("freewheel.tv") >= 0);
+    },
+
+    checkParameters:function ()
+    {
+        if (!this.parameters.adManagerUrl)
+        {
+            this.log("adManagerUrl is required, return false", tpConsts.WARN);
+            return false;
+        }
+        if (!this.parameters.serverUrl)
+        {
+            this.log("serverUrl is required, return false", tpConsts.WARN);
+            return false;
+        }
+        if (isNaN(this.parameters.networkId) || this.parameters.networkId < 0)
+        {
+            this.log("networkId is required, return false", tpConsts.WARN);
+            return false;
+        }
+        if (!this.parameters.playerProfile)
+        {
+            this.log("playerProfile is required, return false", tpConsts.WARN);
+            return false;
+        }
+        return true;
+    },
+
+    buildCurrentVideoInfo:function (videoAssetCustomId, videoAssetUrl, keyValues)
+    {
+        this.log("buildCurrentVideoInfo()");
+
+        this.currentVideo = {};
+        this.currentVideo.customId = videoAssetCustomId;
+        this.currentVideo.location = videoAssetUrl;
+        this.currentVideo.duration = 0;
+        this.currentVideo.keyValues = keyValues;
+        for (var i = 0; i < this.chapters.length; i++)
+        {
+            var chapter = this.chapters[i];
+            this.currentVideo.duration += chapter.length / 1000;
+        }
+        this.currentVideo.networkId = this.parameters.videoAssetNetworkId;
+        switch (this.parameters.autoPlayType)
+        {
+            case "attended":
+                this.currentVideo.autoPlayType = tv.freewheel.SDK.VIDEO_ASSET_AUTO_PLAY_TYPE_ATTENDED;
+                break;
+            case "unattended":
+                this.currentVideo.autoPlayType = tv.freewheel.SDK.VIDEO_ASSET_AUTO_PLAY_TYPE_UNATTENDED;
+                break;
+            case "nonAutoPlay":
+                this.currentVideo.autoPlayType = tv.freewheel.SDK.VIDEO_ASSET_AUTO_PLAY_TYPE_NON_AUTO_PLAY;
+                break;
+        }
+        this.logObj("currentVideo", this.currentVideo);
+    },
+
+    generateMidrollCustomId:function (index)
+    {
+        return "fw_tp_midroll_" + index;
+    },
+
+    submitRequest:function ()
+    {
+        this.log("Requesting ads", tpConsts.INFO);
+        if (this.adManagerError)
+        {
+            return;
+        }
+
+        if (!this.adManager.ready)
+        {
+            this.requestPending = true;
+            return;
+        }
+
+        this.parameters = this.getParameters(window.fw_config ? window.fw_config() : null, this.loadVars);
+
+        // in case the slot ended event is not dispatched when switch the video content.
+        this.hideVideoDisplayBase();
+        this.adManager.refresh();
+
+        var key, i;
+
+        for (i = 0; i<this.parameters.keyValues.length; i++)
+        {
+            key = this.parameters.keyValues[i];
+            this.adManager.addKeyValue(key[0], key[1]);
+        }
+
+        if (this.currentVideo.keyValues)
+        {
+            keys = this.currentVideo.keyValues.split("&");
+            for (i = 0; i < keys.length; i++)
+            {
+                var keyValuePair = keys[i].split("=");
+                this.adManager.addKeyValue(keyValuePair[0], keyValuePair[1]);
+            }
+        }
+    
+        this.slotManager.initialize();
+        this.adManager.initialize(this.controller, this.slotManager, this.videoDisplayBase);        
+
+        this.adManager.setProfile(this.parameters.playerProfile);
+        this.adManager.setSiteSection(this.parameters.siteSectionId,
+                                    this.parameters.siteSectionNetworkId,
+                                    Math.floor(Math.random() * 9999),
+                                    0,
+                                    this.parameters.fallbackSiteSectionId);
+
+        this.adManager.setVideoAsset( this.currentVideo.customId,
+                                    this.currentVideo.duration,
+                                    this.currentVideo.networkId,
+                                    this.currentVideo.location,
+                                    this.currentVideo.autoPlayType,
+                                    Math.floor(Math.random() * 9999),
+                                    0,
+                                    this.parameters.fallbackVideoAssetId);
+
+        this.adManager.setVisitor(this.getCustomVisitorId());
+        this.adManager.setParameter("wrapperVersion", "ThePlatformJS-" + this.version);
+
+        if (this.bannerScriptName)
+        {
+            this.adManager.setParameter("renderer.html.coadScriptName", this.bannerScriptName, tv.freewheel.SDK.PARAMETER_LEVEL_GLOBAL);
+        }
+
+        this.adManager.setParameter(tv.freewheel.SDK.PARAMETER_RENDERER_VIDEO_DISPLAY_CONTROLS_WHEN_PAUSE, false, tv.freewheel.SDK.PARAMETER_LEVEL_GLOBAL);
+        this.adManager.setParameter(tv.freewheel.SDK.PARAMETER_EXTENSION_CONTENT_VIDEO_ENABLED, false, tv.freewheel.SDK.PARAMETER_LEVEL_GLOBAL);
+        this.adManager.setParameter(tv.freewheel.SDK.PARAMETER_EXTENSION_AD_CONTROL_CLICK_ELEMENT, this.videoDisplayBase.id, tv.freewheel.SDK.PARAMETER_LEVEL_GLOBAL);
+        this.adManager.setParameter(tv.freewheel.SDK.PARAMETER_PLAY_MIDROLL_BY_CURRENT_VIDEO_ELEMENT, true, tv.freewheel.SDK.PARAMETER_LEVEL_GLOBAL);
+        this.adManager.addEventListener(tv.freewheel.SDK.EVENT_REQUEST_COMPLETE, this.bind(this, this.onRequestComplete));
+        this.adManager.addEventListener(tv.freewheel.SDK.EVENT_SLOT_STARTED, this.bind(this, this.onSlotStarted));
+        this.adManager.addEventListener(tv.freewheel.SDK.EVENT_SLOT_ENDED, this.bind(this, this.onSlotEnded));
+        this.adManager.addEventListener(tv.freewheel.SDK.EVENT_CONTENT_VIDEO_PAUSE_REQUEST, this.bind(this, this.onContentVideoPauseRequest));
+        this.adManager.addEventListener(tv.freewheel.SDK.EVENT_CONTENT_VIDEO_RESUME_REQUEST, this.bind(this, this.onContentVideoResumeRequest));
+        this.adManager.addEventListener(tv.freewheel.SDK.EVENT_CONTENT_VIDEO_ATTACH, this.bind(this, this.onContentVideoAttach));
+        this.adManager.addEventListener(tv.freewheel.SDK.EVENT_CONTENT_VIDEO_DETACH, this.bind(this, this.onContentVideoDetach));
+        this.adManager.addEventListener(tv.freewheel.SDK.EVENT_AD_CLICK, this.bind(this, this.onAdClicked));
+        this.adManager.addEventListener(tv.freewheel.SDK.EVENT_AD_IMPRESSION, this.bind(this, this.onAdImpression));
+
+        if (this.isLive)
+        {
+            this.log("preroll");
+            this.adManager.addTemporalSlot("fw_tp_preroll_0", tv.freewheel.SDK.ADUNIT_PREROLL, 0);
+        }
+
+        //Inserting midroll with the startTime of each chapter, except the first chapter
+        for (i = 1; i < this.chapters.length; i++)
+        {
+            this.log("chapters[" + i + "]: (" + this.chapters[i].startTime + "," + this.chapters[i].endTime + ")");
+            this.adManager.addTemporalSlot(this.generateMidrollCustomId(i), tv.freewheel.SDK.ADUNIT_MIDROLL, this.chapters[i].startTime / 1000);
+        }
+
+        for (key in this.parameters.renderers)
+        {
+            this.log("renderer(" + key + "):" + this.parameters.renderers[key]);
+            this.adManager._rendererManifest[key] = this.parameters.renderers[key];
+        }
+
+        // TODO: turn on live
+        if (this.isLive)
+        {
+            this.adManager.setRequestMode("live");
+        }
+        else
+        {
+            this.adManager.setRequestMode("on-demand");
+        }
+
+        this.resize();
+        this.requestSubmitted = true;
+
+        // timeout after <requestTimeout> seconds
+        this.adManager.submitRequest(this.requestTimeout);
+    },
+
+    getCustomVisitorId:function ()
+    {
+        if (!this.parameters.externalCustomVisitor)
+        {
+            return null;
+        }
+        var customVisitorId = null;
+        try
+        {
+            customVisitorId = eval.call(this, "window." + this.parameters.externalCustomVisitor + "()");
+        }
+        catch (error)
+        {
+            this.log("warning: get an error when try to get externalCustomVisitor, message:" + error.message, tpConsts.WARN);
+        }
+        if (!customVisitorId)
+        {
+            this.log("warning: js function " + this.parameters.externalCustomVisitor + "() returns null or empty string", tpConsts.WARN);
+        }
+        this.log("getCustomVisitorId(), return:" + customVisitorId);
+        return customVisitorId;
+    },
+
+    onRequestComplete:function (event)
+    {
+        this.requestSubmitted = false;
+        this.log("Ads request complete", tpConsts.INFO);
+        this.cuePointManager.refresh();
+        var slots = this.adManager.getTemporalSlots();
+
+        for (var i = 0; i < slots.length; i++)
+        {
+            var slot = slots[i];
+
+            if (this.isTemporalSlot(slot) && slot.getAdCount() === 0)
+            {
+                //Empty slots async play, not adding to the playlist
+                this.log("adding temporal slot to cuePointManager: " + slot.getCustomId());
+                this.cuePointManager.addTemporalSlot(slot);
+            }
+            else
+            {
+                switch (slot.getTimePositionClass())
+                {
+                    case tv.freewheel.SDK.TIME_POSITION_CLASS_PREROLL:
+                        if (slot.getAdCount() && slot.getCustomId() !== "_fw_empty_preroll_slot")
+                        {
+                            this.log("adding preroll slot:" + slot.getCustomId() + " to position:" + this.prerollSlots.length, tpConsts.DEBUG);
+                            this.prerollSlots.push(slot);
+                        }
+                        break;
+                    case tv.freewheel.SDK.TIME_POSITION_CLASS_POSTROLL:
+                        if (slot.getAdCount())
+                        {
+                            this.log("adding postroll slot:" + slot.getCustomId() + " to position:" + this.postrollSlots.length, tpConsts.DEBUG);
+                            this.postrollSlots.push(slot);
+                        }
+                        break;
+                    case tv.freewheel.SDK.TIME_POSITION_CLASS_MIDROLL:
+                        if (slot.getAdCount())
+                        {
+                            this.log("adding midroll ads id:" + slot.getCustomId() + " num ads:" + slot.getAdCount(), tpConsts.DEBUG);
+                            this.midrollSlots[slot.getCustomId()] = [slot];
+                        }
+                        break;
+                    case tv.freewheel.SDK.TIME_POSITION_CLASS_OVERLAY:
+                        // MRM-22015 Overlay is disabled until we can correctly render them.
+                        if (slot.getAdCount())
+                        {
+                            this.log("adding overlay ads id:" + slot.getCustomId() + " num ads:" + slot.getAdCount(), tpConsts.DEBUG);
+                            this.cuePointManager.addTemporalSlot(slot);
+                        }
+                        break;
+                }
+            }
+        }
+        if (this.setAdsWaiting)
+        {
+            this.doSetAds();
+        }
+    },
+
+
+    setDesiredBitrate: function (bitrate)
+    {
+        this.log("setDesiredBitrate()" + bitrate);
+        if (bitrate > 0)
+        {
+            this.bitrate = bitrate;
+            if (this.adManager && this.adManager.ready)
+            {
+                //this.adManager.setParameter(tv.freewheel.SDK.PARAMETER_DESIRED_BITRATE, this.bitrate, tv.freewheel.SDK.PARAMETER_OVERRIDE);
+            }
+        }
+    },
+
+    isFreeWheelClip: function(clip)
+    {
+        if (clip.streamType == "empty" && clip.baseClip.guid)
+        {
+            // get the slot id
+            var slotId = clip.baseClip.guid;
+            // remove the ad index if it's there
+            if (slotId.indexOf(":") >= 0)
+            {
+                slotId = slotId.split(":")[0];
+            }
+
+            if (this.adManager.getSlotByCustomId(slotId))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    },
+
+    onMediaLoadStart: function(event)
+    {
+        var clip = event.data;
+        this.log("onMediaLoadStart() clip.streamType = " + clip.streamType + " url:" + clip.URL);
+        var slot;
+        if (this.isFreeWheelClip(clip))
+        {
+            slot = this.adManager.getSlotByCustomId(clip.baseClip.guid);
+            if (slot)
+            {
+                this.log("Playing ad slot:" + slot.getCustomId(), tpConsts.INFO);
+                this.currentClip = clip;
+                this.log("onSlotStarted() dispatch OnMediaStart event");
+                this._hasStarted = true;
+                this.slotManager.start(this.currentPlaylist);
+            }
+            // can't call next if we haven't started. should never happen, but let's be safe
+            else
+            {
+                this.slotManager.next(clip);
+            }
+        }
+        else
+        {
+            if (clip.baseClip && !clip.baseClip.isAd)
+            {
+                slot = this.getPlayableSlotAtTime(clip.startTime / 1000);
+                if (slot)
+                {
+                    slot.play();
+                }
+            }
+        }
+    },
+
+    onMediaStart:function (event)
+    {
+        this.log("onMediaStart");
+        if (this.adManager && event.data)
+        {
+            if (event.data.baseClip.isAd === false)
+            {
+                this.adManager.setVideoState(tv.freewheel.SDK.VIDEO_STATE_PLAYING);
+            }
+            else
+            {
+                this.adManager.setVideoState(tv.freewheel.SDK.VIDEO_STATE_PAUSED);
+            }
+            
+            if (event.data.baseClip.bitrate > 0)
+            {
+                this.setDesiredBitrate(event.data.baseClip.bitrate);
+            }
+        }
+    },
+
+    onMediaPlaying:function (event)
+    {
+        //this.log("onMediaPlaying(): timePosition:" + event.data.currentTimeAggregate);
+        if (!event.data.isAd)
+        {
+            var time = event.data.currentTimeAggregate / 1000;
+
+            this.adManager.setVideoAssetCurrentTimePosition(time);
+
+            var slot = this.getPlayableSlotAtTime(time);
+
+            // PDK-13607: Avoid playing empty preroll slots during content with the JS AdManager.
+            if (slot && !this.isPrerollSlot(slot))
+            {
+                slot.play();
+            }
+        }
+    },
+
+    getPlayableSlotAtTime: function (currentTimeSeconds)
+    {
+        if (this.adManager.ready)
+        {
+            return this.cuePointManager.getPlayableSlot(currentTimeSeconds);
+        }
+    },
+
+    isPrerollSlot: function (slot)
+    {
+        return slot && slot.getTimePositionClass() === tv.freewheel.SDK.TIME_POSITION_CLASS_PREROLL;
+    },
+
+    onMediaEnd:function (event)
+    {
+        // TODO: if FW ad, start timeout for slot.skipCurrentAd()
+    },
+
+    onSlotStarted:function (event)
+    {
+        if (this.isTemporalSlot(event.slot))
+        {
+            this.log("Slot started", tpConsts.INFO);
+            this.showVideoDisplayBase();
+        }
+    },
+
+    onSlotEnded:function (event)
+    {
+        if (this.isTemporalSlot(event.slot))
+        {
+            if (this.currentClip && this.currentClip.baseClip && this.currentClip.baseClip.guid && this.currentClip.baseClip.guid.split(":")[0] !== event.slot.getCustomId())
+            {
+                // This is some sort of invisible temporal slot that shouldn't affect us...
+                return;
+            }
+            
+            this.log("Slot ended", tpConsts.INFO);
+            if (this._hasStarted)
+            {
+                this._hasStarted = false;
+                var me = this;
+                setTimeout(this.bind(this, function ()
+                {
+                    me.slotManager.end();
+                }), 250);
+            }
+            this.hideVideoDisplayBase();
+            this.adManager.cleanup();
+        }
+    },
+
+    onContentVideoPauseRequest:function (event)
+    {
+        this.log("onContentVideoPauseRequest()");
+        //this.controller.pause(true);
+    },
+
+    onContentVideoResumeRequest:function (event)
+    {
+        this.log("onContentVideoResumeRequest()");
+        //this.controller.pause(false);
+    },
+
+    onContentVideoAttach:function (event)
+    {
+        this.log("onContentVideoAttach()");
+    },
+
+    onContentVideoDetach:function (event)
+    {
+        this.log("onContentVideoDetach()");
+    },
+
+    onAdClicked:function (event)
+    {
+        this.log("onAdClicked()");
+        this.controller.dispatchEvent("OnAdvertisementClick", {data: {}});
+    },
+
+    onAdImpression:function (event)
+    {
+        if (!this.currentClip)//there's no currentClip, can't do much
+        {
+            return;
+        }
+        this.log("onAdImpression()");
+        var slot = this.adManager.getSlotByCustomId(this.currentClip.baseClip.guid);
+        var ad;
+        var ads = slot.getAdInstances(false);
+
+        for (var i=0; i<ads.length; i++)
+        {
+            ad = ads[i];
+            if (ad.getAdId() == event.adInstance.getAdId())
+            {
+                if (ad.getCompanionAdInstances)
+                {
+                    var companions = ad.getCompanionAdInstances();
+                    var companion;
+                    if (companions && companions.length > 0)
+                    {
+                        for (var j=0; j<companions.length; j++)
+                        {
+                            companion = companions[j];
+                            if (companion.isRequiredToShow && companion.isRequiredToShow())
+                            {
+                                // exit fullscreen
+                                this.controller.showFullScreen(false);
+                                break;
+                            }
+                        }
+                    }
+                }
+            }            
+        }
+    },
+
+    isSlotMappedToCurrentClip:function (slot)
+    {
+        if (this.currentClip && this.currentClip.baseClip.isAd && this.currentClip.baseClip.guid == slot.getCustomId())
+        {
+            return true;
+        }
+        return false;
+    },
+
+    isTemporalSlot:function (slot)
+    {
+        if (slot)
+        {
+            return [tv.freewheel.SDK.TIME_POSITION_CLASS_PREROLL,
+                tv.freewheel.SDK.TIME_POSITION_CLASS_MIDROLL,
+                tv.freewheel.SDK.TIME_POSITION_CLASS_OVERLAY,
+                tv.freewheel.SDK.TIME_POSITION_CLASS_POSTROLL].indexOf(slot.getTimePositionClass()) > -1;
+        }
+        return false;
+    },
+
+    resize:function ()
+    {
+        var mediaArea = this.controller.getMediaArea();
+        if (this.adManager && mediaArea)
+        {
+            this.logObj("resize() mediaArea", mediaArea);
+
+            //TODO: put this back in...
+            //TODO: hmmm... it works in Flash & HTML5 w/out this...
+            //var videoDisplaySize = this.adManager.getVideoDisplaySize();
+            //this.adManager.setVideoDisplaySize(videoDisplaySize.left, videoDisplaySize.top, mediaArea.width, mediaArea.height, videoDisplaySize.position);
+            //this.videoDisplayBase.style.width = mediaArea.width + "px";
+            //this.videoDisplayBase.style.height = mediaArea.height + "px";
+        }
+    },
+
+    showVideoDisplayBase:function ()
+    {
+        this.log("showVideoDisplayBase");
+        this.videoDisplayBase.style.display = "";
+    },
+
+    hideVideoDisplayBase:function ()
+    {
+        this.log("hideVideoDisplayBase");
+        this.videoDisplayBase.style.display = "none";
+    },
+
+    getParameters:function (jsConfig, loadVars)
+    {
+        this.log("getParameters()");
+
+        if (!jsConfig)
+        {
+            jsConfig = {};
+        }
+        if (!loadVars)
+        {
+            loadVars = {};
+        }
+        this.logObj("jsConfig", jsConfig);
+        this.logObj("loadVars", loadVars);
+
+        var getValue = function (name, defaultValue)
+        {
+            if (name)
+            {
+                return jsConfig[name] ? jsConfig[name] : (loadVars[name] ? loadVars[name] : defaultValue);
+            }
+            return null;
+        };
+
+        var parameters = {};
+        var debug = tpLogLevel == "debug" ? true : false;
+        parameters.isDebug = getValue("isDebug", debug);
+        parameters.adManagerUrl = getValue("adManagerUrl");
+        parameters.adManagerLoaderUrl = getValue("adManagerLoaderUrl");
+        parameters.bannerScriptName = getValue("bannerScriptName");
+        parameters.serverUrl = getValue("serverUrl");
+        parameters.networkId = Number(getValue("networkId"));
+        parameters.playerProfile = getValue("playerProfile");
+        parameters.videoAssetNetworkId = Number(getValue("videoAssetNetworkId"));
+        parameters.siteSectionNetworkId = Number(getValue("siteSectionNetworkId"));
+        parameters.siteSectionId = getValue("siteSectionId");
+        parameters.autoPlayType = getValue("autoPlayType");
+        parameters.fallbackVideoAssetId = Number(getValue("fallbackVideoAssetId"));
+        parameters.fallbackSiteSectionId = Number(getValue("fallbackSiteSectionId"));
+        parameters.customVideoAssetIdField = getValue("customVideoAssetIdField");
+        parameters.customVideoAssetOverrideId = getValue("customVideoAssetOverrideId");
+        parameters.keyValuesField = getValue("keyValuesField");
+        parameters.renderers = getValue("renderers");
+        parameters.externalCustomVisitor = getValue("externalCustomVisitor");
+        parameters.keyValues = [];
+        var keyValues = getValue("keyValues");
+        if (keyValues)
+        {
+            var pairs = keyValues.split("&");
+            for (var i = 0; i < pairs.length; i++)
+            {
+                var pair = pairs[i].split("=");
+                if (pair.length == 2)
+                {
+                    parameters.keyValues.push([unescape(pair[0]),  unescape(pair[1])]);
+                }
+            }
+        }
+        this.logObj("parameters", parameters);
+        return parameters;
+    },
+
+    getCuePointManager:function ()
+    {
+        CuePointManager = Class.extend({
+            init:function ()
+            {
+                this.slots = [];
+            },
+
+            addTemporalSlot:function (slot)
+            {
+                this.slots.push({target:slot});
+            },
+
+            getPlayableSlot:function (timePosition)
+            {
+                var result = null;
+                for (var i = 0; i < this.slots.length; i++)
+                {
+                    var wrapSlot = this.slots[i];
+                    if (!wrapSlot.isPlayed && Math.abs(wrapSlot.target.getTimePosition() - timePosition) < 1)
+                    {
+                        wrapSlot.isPlayed = true;
+                        result = wrapSlot.target;
+                    } else if (wrapSlot.isPlayed && Math.abs(wrapSlot.target.getTimePosition() - timePosition) > 5)
+                    {
+                        wrapSlot.isPlayed = false;
+                    }
+                }
+                return result;
+            },
+
+            refresh:function ()
+            {
+                this.init();
+            }
+        });
+        return new CuePointManager();
+    },
+
+    bind:function (scope, method)
+    {
+        var args = Array.prototype.slice.call(arguments);
+        args.shift();
+        method = args.shift();
+        return function ()
+        {
+            return method.apply(scope, args.concat(Array.prototype.slice.call(arguments)));
+        };
+    },
+
+    logObj:function (objName, obj)
+    {
+        for (var i in obj)
+        {
+            this.log(objName + ": " + i + " = " + obj[i]);
+        }
+    },
+
+    log:function (msg, level)
+    {
+        if (!level)
+        {
+            level = tpConsts.DEBUG;
+        }
+
+        tpDebug(msg, this.controller.id, "FreeWheel", level);
+    },
+
+    getCurrentAdInfo: function()
+    {
+        if (this.adManager && this.slotManager && this.slotManager.slot)
+        {
+            return this.adManager.getAdInfo(this.slotManager.slot, this.slotManager.adId);
+        }
+        else
+        {
+            return null;
+        }
+        
+    },
+
+    getCurrentSlot: function()
+    {
+        if (this.adManager && this.slotManager && this.slotManager.slot)
+        {
+            return this.slotManager.slot;
+        }
+        else
+        {
+            return null;
+        }
+    }
+    
+});
+
+$pdk.plugin.freewheel._instance = new $pdk.plugin.freewheel.FreeWheel();
+tpController.plugInLoaded($pdk.plugin.freewheel._instance, $pdk.plugin.freewheel._instance.videoDisplayBase);

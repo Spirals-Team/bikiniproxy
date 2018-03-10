@@ -1,0 +1,120 @@
+(function() {
+    let fplayerScript = document.createElement("SCRIPT");
+    fplayerScript.src = 'https://cdnjs.cloudflare.com/ajax/libs/flowplayer/7.1.2/flowplayer.js';
+    fplayerScript.type = 'text/javascript';
+    document.getElementsByTagName("head")[0].appendChild(fplayerScript);
+
+    window.fbAsyncInit = function() {
+    FB.init({
+      appId            : '685756558116580',
+      autoLogAppEvents : true,
+      xfbml            : true,
+      version          : 'v2.10'
+    });
+    FB.AppEvents.logPageView();
+  };
+
+  (function(d, s, id){
+     var js, fjs = d.getElementsByTagName(s)[0];
+     if (d.getElementById(id)) {return;}
+     js = d.createElement(s); js.id = id;
+     js.src = "//connect.facebook.net/en_US/sdk.js";
+     fjs.parentNode.insertBefore(js, fjs);
+   }(document, 'script', 'facebook-jssdk'));
+
+
+    // Load the script
+    var script = document.createElement("SCRIPT");
+    script.src = 'https://cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js';
+    script.type = 'text/javascript';
+    script.onload = function() {
+        var $ = window.jQuery;
+        $.each($('noscript'), function (idx, elm) {
+            var sib = $(elm).next();
+            if (sib.is('img')) {
+                var defImage = $($(elm).text())[0];
+                sib.attr('src', $(defImage).attr('src'));
+            }
+        });
+        $('.nav-hover').find('a[title="More"]').click(function () {
+            $('.global-header-nav-more').toggleClass('nav-more-show');
+
+        });
+        $('.global-header-menu-icon').click(function () {
+            $(this).children().toggle();
+            $('.global-header-dropdown').toggle();
+
+        });
+            $('.voc-news-article .voc-video-overlay').click(function () {
+                let youTubeVid;
+                if (typeof __REACT_ENGINE__ !== 'undefined') {
+                    youTubeVid = __REACT_ENGINE__['articles'][0]["video_meta"]["youtube_override"];
+                } else {
+                    youTubeVid = $($('#react-engine-props')[0]).text().match(/"youtube_override":.+?(?=")/g)[0].split('":')[1].replace('"','');
+                }
+                if (youTubeVid) {
+                    let frameHolder = $(this).parent().next();
+                    let id = $(frameHolder).attr('id');
+                    let iframe = $('<iframe>', {
+                        src: youTubeVid,
+                        id: id,
+                        frameborder: 0
+                    });
+                    $(frameHolder).replaceWith(iframe);
+                    $(this).parent().hide();
+                } else {
+                    $('.voc-video-overlay').hide('fast', function () {
+                        let vid = $('.flow-player-container').find('video')[0];
+                        $(vid).attr('controls', true);
+                        vid.play();
+                    });
+                }
+            });
+
+        const fbIframe = $('<iframe name="f280b1f44d7dbc" width="1000px" height="1000px" frameborder="0" allowtransparency="true" allowfullscreen="true" scrolling="no" title="fb:like Facebook Social Plugin" src="https://www.facebook.com/v2.4/plugins/like.php?action=like&amp;app_id=685756558116580&amp;channel=http%3A%2F%2Fstaticxx.facebook.com%2Fconnect%2Fxd_arbiter%2Fr%2F5oivrH7Newv.js%3Fversion%3D42%23cb%3Df217bc7dab61c%26domain%3Dwww.vocativ.com%26origin%3Dhttp%253A%252F%252Fwww.vocativ.com%252Ff29ced4eb3f0c28%26relation%3Dparent.parent&amp;container_width=0&amp;href=https%3A%2F%2Fwww.facebook.com%2Fvocativ&amp;layout=button&amp;locale=en_US&amp;sdk=joey&amp;share=false&amp;show_faces=false" style="border: none; visibility: visible; width: 51px; height: 20px;" class=""></iframe>');
+        const twIframe = $('<iframe id="twitter-widget-0" scrolling="no" frameborder="0" allowtransparency="true" class="twitter-follow-button twitter-follow-button-rendered" title="Twitter Follow Button" src="http://platform.twitter.com/widgets/follow_button.534c17036beb62f94dbf2b30b59dc118.en.html#dnt=false&amp;id=twitter-widget-0&amp;lang=en&amp;screen_name=vocativ&amp;show_count=false&amp;show_screen_name=false&amp;size=m&amp;time=1506511512084" style="position: static; visibility: visible; width: 65px; height: 20px"></iframe>');
+        $('.fb-like').append(fbIframe);
+        $('#twitter-follow-nav .twitter-follow-button').replaceWith(twIframe);
+
+        let fbShareBtn = $('i.fa-facebook').parent();
+        let twShareBtn = $('i.fa-twitter').parent();
+        let twText = '';
+        if (typeof _REACT_ENGINE__ !== 'undefined') {
+            twText = __REACT_ENGINE__['articles'][0]["twitter_title"] || document.title;
+        } else {
+            twText = document.title + "\n" + window.location.href;
+        }
+        let twUrl = 'https://twitter.com/intent/tweet?text=' + encodeURIComponent(twText) +'&related=vocativ';
+        $(fbShareBtn).click(function () {
+            const url = window.location.href;
+
+        // Facebook share
+        window.FB.ui({
+            method: 'share',
+            href: url,
+            display:'popup'
+        }, function(response) {});
+        });
+        $(twShareBtn).click(function () {
+            window.open(twUrl, 'twitter', _getPopupOpts());
+        });
+
+        let _getPopupOpts=  function() {
+        // XXX: Maybe abstract away if reused by other share components.
+        const windowWidth = window.innerWidth || document.documentElement.clientWidth || document.body.clientWidth;
+        const windowHeight = window.innerHeight || document.documentElement.clientHeight || document.body.clientHeight;
+
+        const status = 1;
+        const width = 575;
+        const height = 255;
+        const left = (windowWidth - width) / 2;
+        const top = (windowHeight - height) / 2;
+
+        return `status=${status},width=${width},height=${height},top=${top},left=${left}`;
+    };
+
+
+
+    };
+    document.getElementsByTagName("head")[0].appendChild(script);
+})();

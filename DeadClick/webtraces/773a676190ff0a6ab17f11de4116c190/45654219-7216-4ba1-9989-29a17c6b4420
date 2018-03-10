@@ -1,0 +1,25 @@
+
+    function PopulateCriticalAlertBanner() {
+        jQuery.getJSON("http://translink.ca/emergencytakeover/service.asmx/GetCriticalMessage?callback=?", function (data) {
+            if (data.d != null) {
+                var $message = data.d.Message;
+                var $moreLinkUrl = data.d.MoreLinkURL;
+
+                jQuery('#critical-alert-banner #message').html($message);
+
+                if ($moreLinkUrl !== '') {
+                    jQuery('#critical-alert-banner #alert-link').attr('href', $moreLinkUrl);
+                } else {
+                    jQuery('#critical-alert-banner #alert-link').hide();
+                }
+
+                jQuery('#critical-alert-banner-container').show();
+            }
+        });
+    }
+
+	jQuery(document).ready(function () {
+                //critical alerts
+                PopulateCriticalAlertBanner();
+            });
+

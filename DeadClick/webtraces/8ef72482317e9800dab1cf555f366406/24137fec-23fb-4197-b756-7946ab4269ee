@@ -1,0 +1,297 @@
+
+//$(window).ready(function(){
+//  $("#news_aggregator").news_aggregator();
+//  $(".audio_player").addAudioPlayer();
+//});
+
+
+(function($){
+
+// News Aggregator ===========================================================  
+$.fn.news_aggregator = function() {
+    
+    var feedDiv = $(this);
+    
+    function init() {
+        displayLoadingScreen();
+    }
+    function displayLoadingScreen() {
+	if($.browser.msie && parseInt($.browser.version, 10) >= 7){
+
+	        feedDiv.empty();
+	        var loading = $('<div id="feed_loader"><h2>Fetching Latest News...Stand by...</h2></div>');
+	        feedDiv.prepend(loading);
+			fetchRSS();
+	
+	
+	
+	
+	}
+	else{
+
+			 feedDiv.fadeOut(250, function() {
+		        feedDiv.empty();
+
+		        var loading = $('<div id="feed_loader"><h2>Fetching Latest News...Stand by...</h2></div>');
+
+		        feedDiv.prepend(loading);
+
+			        feedDiv.fadeIn(250, function() {
+			          fetchRSS();
+			        });
+		      });
+		
+	}
+    }
+
+
+    function fetchRSS() {
+      // console.log("fetchRSS");
+      var pipesURL = "http://pipes.yahoo.com/pipes/pipe.run?_id=e4e5606dacea727e7d9f6b396495134b&_render=json";
+      
+       		if ($.browser.msie && parseInt($.browser.version, 10) >= 8 && window.XDomainRequest) {
+				var now = new Date();
+				var xdr = new XDomainRequest();
+			//	alert(pipesURL + "&_random=" + now);
+				xdr.open("get", pipesURL + "&_random=" + now);
+		        	var xdr = new XDomainRequest();
+	       			xdr.open("get", pipesURL);
+	       			xdr.onload = function() {
+	       			  json = 'json = '+xdr.responseText; // the string now looks like..  json = { ... };
+	       			  eval(json); // json is now a regular JSON object
+	       			  displayRSS(json.value.items); // parse using same function as for jQuery's success event
+	       			}
+	       			xdr.send();
+	       		} else {
+	      $.ajax({
+	        url: pipesURL,
+			type: 'get',
+	        dataType: 'jsonp',
+			cache: 'false',
+			jsonp: '_callback',
+	        success: function (data){
+
+		          	displayRSS(data.value.items);
+
+			},
+	        error: function(xhr, status, errorThrown) {
+
+		  	
+				var error = $('<div id="feed_error"><h2>There was an error accessing the the news. Please try again.</h2></div>');
+	          	feedDiv.prepend(error);
+	          	feedDiv.fadeIn(250);
+	        }
+	      });
+		}
+      
+    }
+    
+    function displayRSS(items) {
+      //console.log("displayRSS");
+      //empty div
+      feedDiv.empty();
+      
+      //clone div and hide for new entries
+      var newFeedDiv = feedDiv.clone();
+      newFeedDiv.css({"opacity": 1});
+      newFeedDiv.css({"display": "none"});
+            
+      var entries = "";
+      for (var i in items) {
+        
+        var item = items[i];
+        var date = setDateObj(item.pubDate);
+        
+
+		var excerptReg = new RegExp("<br \/>\s*<br \/>", "g");
+		var excerptArray = excerptReg.exec(item.description);
+		excerptArray = excerptReg.exec(item.description);
+
+
+		var description = item.description;
+
+
+
+		// if(item.description.match(excerptReg) && item.description.match(excerptReg).length > 1){
+			
+			description = item.description.substring(0,500);
+			
+		// }
+		//If the description is short, remove the copyright line
+		// else{
+			// alert("Short!");
+			// var lastparagraphArray;
+			// 		var lastparagraph = new RegExp("<p>.*</p>");
+			// 		lastparagraphArray = lastparagraph.exec(description);
+			// 					lastparagraphArray = lastparagraph.exec(description);
+			// while((lastparagraphArray = lastparagraph.exec(description)) != null){
+			// 
+			// }
+			// if(lastparagraphArray != null){
+			// description = description.substring(0,lastparagraph.lastIndex-lastparagraphArray[0].length);
+			// }
+		// }
+
+        var entry_wrapper = $('<div class="journal-entry-wrapper post-text"></div>');
+        var entry = $('<div id="id'+i+'" class="journal-entry"></div>');
+        var entry_date1 = $('<div class="journal-entry-float-day"><span class="name">'+getHumanDay(date.getDay())+'</span></div><div class="journal-entry-float-date"><span class="month">'+getHumanMonth(date.getMonth())+'</span><span class="date">'+date.getDate()+'</span><span class="year">'+date.getFullYear()+'</span></div>');
+        var entry_text = $('<div class="journal-entry-text"></div>');
+        var entry_title = $('<h2 class="title"><a class="journal-entry-navigation-current" href="'+item.link+'">'+item.title+'</a></h2>');
+        var entry_date2 = $('<div class="journal-entry-tag journal-entry-tag-post-title"><span class="posted-on">'+getHumanDay(date.getDay())+', '+getHumanMonth(date.getMonth())+' '+date.getDate()+' '+date.getFullYear()+' '+getHumanTime(date.getHours(), date.getMinutes())+'</span></div>');
+        var entry_body = $('<div class="body"></div>').html(description + "...</p>");
+        var read_more = $('<p class="journal-read-more-tag"><a href="'+item.link+'">Read More</a> | <a class=".comments" href="' + item.link + '#disqus_thread">Comments</a></p>');
+        
+        var entry_tag_post = $('<div class="journal-entry-tag journal-entry-tag-post-body"></div>');
+        var entry_tag_post_line1 = $('div class="journal-entry-tag-post-body-line1"></div>');
+        var entry_tag_post_line2 = $('div class="journal-entry-tag-post-body-line2"></div>');
+        var entry_tag_post_line3 = $('div class="journal-entry-tag-post-body-line3"></div>');
+
+        var share_item = $('<a class="share_item" href="'+item.link+'" title="'+item.title+'">Share</a>');
+        var email_item = $('<a class="email_item" href="'+item.link+'" title="'+item.title+'">Email</a>');
+        
+        var clear_div = $('<div class="clearer"></div>');
+
+        //entry_tag_post.append(share_item);
+        //entry_tag_post.append(" | ");
+        //entry_tag_post.append(email_item);
+      
+        entry_body.append(read_more);        
+        entry_text.append(entry_title);
+        entry_text.append(entry_date1);
+        entry_text.append(entry_body);
+        entry.append(entry_text);
+
+        entry_tag_post.append(entry_tag_post_line1);
+        entry_tag_post.append(entry_tag_post_line2);
+        entry_tag_post.append(entry_tag_post_line3);
+        entry.append(entry_tag_post)
+        
+        entry.append(clear_div);
+        
+        
+        entry_wrapper.prepend(entry);
+        
+        newFeedDiv.append(entry_wrapper);
+        
+      }
+      
+      feedDiv.stop(true,true).fadeOut(250, function() {
+        feedDiv.replaceWith(newFeedDiv);
+        //$(".share_item").addShareMenu();
+		$(".thumbnail-caption").css("width", "145px");
+		$(".thumbnail-image-float-left img").css("width", "145px");
+        newFeedDiv.stop(true, true).fadeIn();
+      })
+      
+      
+    }
+    
+	function excerptDescription(text){
+		
+	}
+
+    function setDateObj(dateStr) {
+      var date = new Date(dateStr);
+      return date;
+    }
+    
+    function getHumanMonth(index) {
+      var monthsOfYear = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+      return monthsOfYear[index];
+    }
+    
+    function getHumanDay(index) {
+      var daysOfWeek = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
+      return daysOfWeek[index];
+    }
+        
+    function getHumanTime(hour, minutes) {
+      if (hour > 12) {
+        dayNight = "pm";
+        hour = hour - 12;
+      } else {
+        dayNight = "am";
+        if(hour == 00)  {
+          hour = 12;
+        }     
+      }
+      
+      var humanTime = hour+":"+minutes+dayNight;
+      return humanTime;
+    }
+    
+    if ($(this).size() > 0) {
+        init();
+    }
+    
+};
+
+// Audio Player ===========================================================
+
+$.fn.addAudioPlayer = function() {    
+    function init() {
+      el.each(function(index,item){
+        $(item).attr("id", "audio_link"+(index+1));
+        addFlashAudioPlayer($(item));
+      })        
+    }
+    
+    function addFlashAudioPlayer(el) {
+      var vars = "path="+el.attr('href')+"%26title="+el.attr('title')+"%26caption="+el.attr('rel');
+      
+      //console.log(vars);
+      var newID = el.attr("id");
+      newID = newID.replace("audio_link","audio_player");
+
+      var flashDiv = $('<div id="'+newID+'"></div>');
+      
+      flashDiv.html("<p>You need Adobe Flash in order to view this content.</p><p><a href='http://www.adobe.com/go/getflashplayer'><img src='http://www.adobe.com/images/shared/download_buttons/get_flash_player.gif' alt='Get Adobe Flash player' /></a></p>");
+    	
+      el.replaceWith(flashDiv);
+      
+    	var flashvars = {
+      		playervars:vars
+      };
+
+    	var params = {
+    		menu: "false",
+    		scale: "noscale"
+    	};
+
+    	var attributes = {};
+
+    	swfobject.embedSWF("/storage/assets/swf/AudioPlayer.swf", flashDiv.attr("id"), "500", "65", "10.0.0", "/storage/assets/swf/expressInstall.swf", flashvars, params, attributes);
+    }
+        
+    if ($(this).size() > 0) {
+        var el = $(this);
+        init();
+    }
+};
+
+// Social Plugins ===========================================================
+
+$.fn.addShareMenu = function() {
+  
+  function init() {
+    el.each(function(index,item){
+      attachShareMenu($(item));
+    })
+  }
+  
+  function attachShareMenu(item) {
+    item.bind("click", function(event){
+      event.preventDefault();
+      //alert("share this item!");
+      Squarespace.Interaction.shareLink(this,$(this).attr("href"),$(this).attr("title"));
+    })
+  }
+  
+  
+  if ($(this).size() > 0) {
+      var el = $(this);
+      init();
+  }
+}
+
+})(jQuery);

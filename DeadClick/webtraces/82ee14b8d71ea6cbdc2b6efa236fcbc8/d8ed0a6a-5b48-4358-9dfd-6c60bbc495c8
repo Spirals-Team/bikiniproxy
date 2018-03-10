@@ -1,0 +1,946 @@
+/**
+ * Data Library that provides consistent interface to various data models.
+ * API provides powerful features to access and manipulate data
+ * @author Sam Tsvilik
+ * @version 0.1
+ * @requires bam, jQuery, jquery.bindable, jquery.loadble, class, storage, xml-2.0, jpath-2.0
+ * @name Data
+ * @namespace Data module functionality
+ */
+(function($, bam, NULL, undef) {
+	"use strict";
+	/**
+	 * @lends Data
+	 */
+	var STRING = 'string',
+		NUMBER = 'number',
+		OBJECT = "object",
+		APS = Array.prototype.slice,
+		APC = Array.prototype.concat,
+		module;
+
+	/**
+	 * Isolate - preserves original cached version of a module
+	 * This prevents overrides of registered modules through context
+	 */
+
+	var isolate = (function() {
+		function F() {}
+
+		return function(obj) {
+			if (typeof(obj) === "function") {
+				return obj;
+			} else if (typeof(obj) === OBJECT) {
+				F.prototype = obj;
+				return $.extend({}, new F());
+			}
+		};
+	})();
+	/**
+	 * Ensures that object is an Array, if not it converts it to one
+	 * @param  {Object} o Object to be evaluated as an Array
+	 * @returns {Array} Object argument as an Array
+	 * @private
+	 */
+
+	function toArray(o) {
+		return o instanceof Array ? o : (o === NULL || o === undef) ? [] : [o];
+	}
+
+	/**
+	 * Creates an Index map to all the rows
+	 * @private
+	 */
+
+	function indexRows() {
+		this.__index__.length = 0;
+		//Index rows
+		for (var i = 0, l = this.__data__.length; l > i; i++) {
+			this.__data__[i].__rowIndex__ = i;
+			this.__index__[i] = this.__data__[i];
+		}
+		return this;
+	}
+
+	/**
+	 * Function to sort on multiple columns (runs in a scope of the DataStore instance)
+	 * @private
+	 */
+
+	function sortMultiple( /*colObj1, colObj2*/ ) {
+		var columns = APS.apply(arguments),
+			opt, out, _a, _b;
+
+		if (this.__data__.length && columns && columns.length) {
+			this.__data__.sort(function(a, b) {
+				//Looping through multiple columns to sort
+				for (var c = 0; opt = columns[c]; c++) {
+					_a = typeof(opt) === STRING ? a[opt] : opt.column ? a[opt.column] : NULL;
+					_b = typeof(opt) === STRING ? b[opt] : opt.column ? b[opt.column] : NULL;
+					if (_a !== NULL && _b !== NULL) {
+						if (opt.type && opt.type === 'text') {
+							_a = _a && _a + '';
+							_b = _b && _b + '';
+						} else if (opt.type && opt.type === NUMBER) {
+							_a = _a && +_a;
+							_b = _b && +_b;
+						} else if (opt.type && opt.type === 'date') {
+							_a = _a && $.type(_a) === 'date' && !isNaN(_a) && _a.valueOf();
+							_b = _b && $.type(_b) === 'date' && !isNaN(_b) && _b.valueOf();
+						}
+						/* Compare values
+						 * In multi-column sort, instead of returning value right-away,
+						 * we break the for-loop to set initial sorting order and continue
+						 */
+						if ((opt.order || 'asc') === 'desc') {
+							if (_a < _b) {
+								out = 1;
+								break;
+							} else if (_b < _a) {
+								out = -1;
+								break;
+							} else {
+								out = 0;
+							}
+						} else {
+							if (_a < _b) {
+								out = -1;
+								break;
+							} else if (_b < _a) {
+								out = 1;
+								break;
+							} else {
+								out = 0;
+							}
+						}
+					}
+				}
+				return out;
+			});
+		}
+	}
+
+	bam.require(["class", "storage", "xml-2.0", "jpath-2.0", "object"]).done(
+
+	function(ctx) {
+		module = {
+			/**
+			 * Base DataStore provides basic functionality to get, filter, sort data
+			 * @name DataStore
+			 * @class DataStore Encapsulates a data model unit and provides an API to access and manipulate data
+			 * @property {Object} status Contains properties that change throughout the lifecycle of the DataStore
+			 * @property {Object} config Contains DataStore configuration settings
+			 * @param  {Array} data (optional) Array of row objects or arrays
+			 * @param  {Object} opt Initialization options
+			 * @param  {int} opt.pageSize Page size used for pagination
+			 */
+			DataStore: ctx["class"].extend({
+				/**
+				 * @lends DataStore.prototype
+				 */
+
+				/** @constructs */
+				init: function(data, opt) {
+					//Two dimensional Array that represents r
+					//ows of data
+					this.__data__ = toArray(data);
+					this.__index__ = [];
+					this.config = {
+						pageSize: 10
+					};
+					this.status = {
+						page: 1,
+						pageCount: 0,
+						sortedColumn: NULL,
+						sortOrder: 'asc',
+						currentRange: {
+							start: 0,
+							end: 0
+						}
+					};
+					if ($.type(opt) === OBJECT) {
+						$.extend(this.config, opt);
+					}
+					//Calculate page count
+					if (data && data.length) {
+						this.status.pageCount = Math.ceil(data.length / this.config.pageSize);
+						this.status.currentRange.end = data.length;
+					}
+					//Index rows
+					indexRows.apply(this);
+					//Make DataProvider bindable
+					$.bindable(this);
+				},
+				/**
+				 * Set configuration after init
+				 * @returns {this}
+				 */
+				setConfig: function(opt) {
+					if ($.type(opt) === OBJECT) {
+						$.extend(this.config, opt);
+					}
+					return this;
+				},
+				/**
+				 * Returns all or subset of rows
+				 * Optional arguments:
+				 * @param {Number} start Starting index
+				 * @param {Number} end Ending index
+				 * @returns {Array} Array of rows that fit between start and end range
+				 */
+				getRows: function( /*[start, [end]] (all)*/ ) {
+					var args = APS.apply(arguments);
+					return args.length ? APS.apply(this.__data__, args) : this.__data__;
+				},
+				/**
+				 * Returns a row of data by it's __rowIndex__
+				 * Note: Row index does not change after sort!
+				 * @param {Number} index Row index value
+				 * @returns {Object | Array} Row that matches index position
+				 */
+				getByRowIndex: function(index) {
+					index = (index < 0) ? 0 : Math.min(index, this.__data__.length - 1);
+					return this.__index__[index];
+				},
+				/**
+				 * Sorts data
+				 * @param {Object} opt Sorting options
+				 * @example
+				 *		column: index <number> | name <string> - column to sort data by
+				 *		order: 'asc' | 'desc' - sort order
+				 *		type: 'text' | 'number' | 'date' - datatype to sort by
+				 *	@returns {this}
+				 */
+				sort: function( /*opt*/ ) {
+					var args = APS.apply(arguments),
+						max = args.length,
+						opt = max ? $.type(args[0]) === 'object' ? args[0] : $.type(args[0]) === 'string' ? {
+							column: args[0]
+						} : NULL : NULL;
+
+					if (max > 1) {
+						this.trigger("onBeforeSort", [args]);
+						sortMultiple.apply(this, arguments);
+						this.trigger("onSort", [args]);
+					} else {
+						if (opt) {
+							this.trigger("onBeforeSort", [opt]);
+							this.status.sortedColumn = opt.column || NULL;
+							this.status.sortOrder = opt.order || NULL;
+							if (this.__data__.length) {
+								var _a, _b;
+								this.__data__.sort(function(a, b) {
+									_a = typeof(opt) === STRING ? a[opt] : opt.column ? a[opt.column] : NULL;
+									_b = typeof(opt) === STRING ? b[opt] : opt.column ? b[opt.column] : NULL;
+									if (_a !== NULL && _b !== NULL) {
+										if (opt.type && opt.type === 'text') {
+											_a = _a && _a + '';
+											_b = _b && _b + '';
+										} else if (opt.type && opt.type === NUMBER) {
+											_a = _a && +_a;
+											_b = _b && +_b;
+										} else if (opt.type && opt.type === 'date') {
+											_a = _a && $.type(_a) === 'date' && !isNaN(_a) && _a.valueOf();
+											_b = _b && $.type(_b) === 'date' && !isNaN(_b) && _b.valueOf();
+										}
+										//Compare values
+										return ((opt.order || 'asc') === 'desc' ? -1 : 1) * (
+										_a > _b ? 1 : _b > _a ? -1 : 0);
+									}
+									return 0;
+								});
+								this.trigger("onSort", [opt]);
+							}
+						}
+					}
+					return this;
+				},
+				/**
+				 * Returns a paged range
+				 * @param {Number} page Starting page (default: 1)
+				 * @param {Number} pageSize Number of rows per page
+				 * @returns {Array} An array or rows that fall in to a page range
+				 */
+				getPage: function(page, pageSize) {
+					pageSize = typeof(pageSize) === NUMBER && !isNaN(pageSize) ? pageSize : this.config.pageSize;
+
+					var max = this.__data__.length,
+						pageCount = Math.ceil(max / pageSize) || 1,
+						start, end;
+
+					page = (typeof(page) === NUMBER && !isNaN(page)) ? (page > 0 && page <= pageCount) ? page : 1 : 1;
+
+					this.status.page = page;
+					this.status.pageCount = pageCount;
+
+					if (max && pageCount) {
+						start = (page - 1) * pageSize;
+						end = start + pageSize;
+						this.status.currentRange = {
+							start: (start + 1),
+							end: Math.min(end, max)
+						};
+						return this.getRows(start, end);
+					}
+
+					return NULL;
+				},
+				/**
+				 * Note: Remote datasets should return value specified by the service and not local buffer length
+				 * @returns {Number} Returns total rows count
+				 */
+				count: function() {
+					return this.__data__.length;
+				},
+				/**
+				 * Filter Data
+				 * @param {String} expr String expression (jpath format)
+				 * @example "*[field=value]" or "field_name"
+				 * @returns {Array} - of matched values or NULL
+				 */
+				filter: function(expr, fn) {
+					return ctx.jpath.filter(this.__data__, expr, fn);
+				},
+
+				/**
+				 * Inserts a row
+				 * @param {Object | Array} row An object or an array of values to represent a row
+				 * @returns {this}
+				 */
+				insertRow: function(row) {
+					if ($.isArray(row) || typeof(row) === OBJECT) {
+						//Append a new row
+						Array.prototype.push.apply(this.__data__, [row]);
+						//Set the reference in the index
+						Array.prototype.push.apply(this.__index__, [this.__data__[this.__data__.length - 1]]);
+					}
+					return this;
+				},
+
+				/**
+				 * Sums all values in a column
+				 * @param {String | int} column Column name or index
+				 * @returns {Number} Sum of of all values in the column
+				 */
+				sum: function(column) {
+					var max = this.__data__.length,
+						buff = 0,
+						row, value;
+					while (max--) {
+						row = this.__data__[max];
+						if (column in row) {
+							value = +row[column];
+							if (!isNaN(value)) {
+								buff += value;
+							}
+						}
+					}
+					return buff;
+				},
+				/**
+				 * Average of all values in a column
+				 * @param {String | int} column Column name or index
+				 * @returns {Number} Average column value
+				 */
+				avg: function(column) {
+					var max = this.__data__.length,
+						count = 0,
+						buff = 0,
+						row, value;
+					while (max--) {
+						row = this.__data__[max];
+						if (column in row) {
+							value = +row[column];
+							if (!isNaN(value)) {
+								count++;
+								buff += value;
+							}
+						}
+					}
+					return buff / count;
+				},
+				/**
+				 * Max value in the column
+				 * @param {String | int} column Column name or index
+				 * @returns {Number} Maximum column value
+				 */
+				max: function(column) {
+					var max = this.__data__.length,
+						buff = [],
+						row, value;
+					while (max--) {
+						row = this.__data__[max];
+						if (column in row) {
+							value = +row[column];
+							if (!isNaN(value)) {
+								Array.prototype.push.apply(buff, [value]);
+							}
+						}
+					}
+					return Math.max.apply(NULL, buff);
+				},
+				/**
+				 * Min value in the column
+				 * @param {String | int} column Column name or index
+				 * @returns {Number} Minimal column value
+				 */
+				min: function(column) {
+					var max = this.__data__.length,
+						buff = [],
+						row, value;
+					while (max--) {
+						row = this.__data__[max];
+						if (column in row) {
+							value = +row[column];
+							if (!isNaN(value)) {
+								Array.prototype.push.apply(buff, [value]);
+							}
+						}
+					}
+					return Math.min.apply(NULL, buff);
+				},
+				/**
+				 * Unique values from a single column
+				 * @param {String | int} column Column name or index
+				 * @returns {Array} returns an array or unique column values
+				 */
+				unique: function(column) {
+					var allColumnValues = this.filter(column),
+						max = allColumnValues.length ? allColumnValues.length : 0,
+						hash = {},
+						buff = [],
+						value;
+
+					allColumnValues.sort();
+					for (var i = 0; max > i; i++) {
+						value = allColumnValues[i];
+						if (value in hash) continue;
+						else {
+							Array.prototype.push.apply(buff, [value]);
+							hash[value] = !0;
+						}
+					}
+					return buff;
+				},
+				/**
+				 * Saves data to browsers local storage
+				 * @param  {Object}  opt options used by store library to save data
+				 * @returns {this}
+				 */
+				saveToStorage: function(opt) {
+					var _opt, store = {
+						data: this.__data__,
+						index: this.__index__
+					};
+					if (ctx.storage.isAvailable) {
+						if (typeof(opt) === OBJECT) {
+							_opt = $.extend(opt);
+							$.extend(_opt, {
+								value: store
+							});
+							ctx.storage.set.apply(ctx.storage, [_opt]);
+						} else if (typeof(opt) === STRING) {
+							ctx.storage.set(opt, store);
+						}
+					} else {
+						throw new Exception("Browser does not support local storage.");
+					}
+				},
+				/**
+				 * Loads data from local storage
+				 * @returns {this}
+				 */
+				loadFromStorage: function() {
+					if (ctx.storage.isAvailable) {
+						var stored = ctx.storage.get.apply(ctx.storage, arguments);
+						if (stored) {
+							this.__data__ = stored.data;
+							this.__index__ = stored.index;
+						} else {
+							throw new Exception("Stored data is unavailable or expired.");
+						}
+					} else {
+						throw new Exception("Browser does not support local storage.");
+					}
+				},
+				/**
+				 * Concatinates rows from another DataStore or just two-dimmensional array
+				 * @param  {DataStore | Array[Object]}  itemN items to be appended to this DataStore
+				 * @returns {this}
+				 */
+				concat: function( /* item, [item1, item2, n] */ ) {
+					var args = APS.apply(arguments),
+						src;
+
+					for (var i = 0; src = args[i]; i++) {
+						if (src) {
+							if (src instanceof module.DataStore) {
+								this.__data__ = APC.apply(this.__data__, [src.__data__]);
+							} else if ($.isArray(src)) {
+								this.__data__ = APC.apply(this.__data__, [src]);
+							}
+						}
+					}
+					//Index rows
+					return indexRows.apply(this);
+				},
+				/**
+				 * Adjust the field data if one needs to be converted, cleaned-up or replaced.
+				 * WARNING: This is an expensive function, use only for pre-processing, should not be performed in performance-sensitive context.
+				 * This method has 2 signatures:
+				 * 1. field, cb - where field is the name or index of the column in the row
+				 * 2. cb - only callback is specified and it runs in the scope of the row, so any adjustments you can perform against row data directly
+				 *
+				 * Callaback has 2 signatures as well:
+				 * 1. value, row - this signature applies to 1st call signature and passes into callback current value of the field specified and a ref. to row
+				 * 2. row - this signature applies to 2nd call signature and passes into callback only row.
+				 *
+				 * @param {String} field (optional) Name of the field that will be accessed the main focus of adjustment
+				 * @param {Function} cb Callback function that will fire for every row in the set
+				 */
+				adjustData: function() {
+					var args = $.makeArray(arguments),
+						cb = args.slice(-1)[0],
+						field = args[1] ? args[0] : undef;
+
+					if ($.isFunction(cb)) for (var i = 0, r, v, c; r = this.__data__[i]; i++) {
+						v = (field != undef) ? r[field] : undef;
+						if (v !== undef) {
+							c = cb.apply(r, [v, r]);
+							r[field] = c ? c : v;
+						} else {
+							cb.apply(r, [r]);
+						}
+					}
+					return this;
+				},
+				/**
+				 * Merges existing DataStore (destination) with another Data (source) by column key, replacing/augmenting current row with values of the source row
+				 * WARNING: This is an expensive function
+				 * @param  {DataStore | Array[][]} sourceData - data to merge with
+				 * @param  {String|Object} onColumn - merge on what unique column. You may use JSON notation to map source key to destination key { "destKey":"sourceKey" }
+				 * @param  {Object} options various merge options.
+				 * @param  {boolean} options.differenceMerge Merges rows not found in the destination
+				 * @param {Array} options.whiteList List of source field names that are allowed to be merged w/ destination row
+				 * @param {Array} options.blackList List of source field names that will be excluded when merging w/ destination row
+				 * @returns {this}
+				 */
+				merge: function(sourceData, onColumn, options) {
+					var sData = (sourceData instanceof module.DataStore) ? sourceData : new module.DataStore(sourceData),
+						sRow, sKey, dKey, bList = ["__rowIndex__"],
+						wList = [],
+						sourceMatch;
+					//Map source and destination keys
+					if ($.type(onColumn) === STRING) {
+						sKey = dKey = onColumn;
+					} else if ($.type(onColumn) === OBJECT) {
+						$.each(onColumn, function(d, s) {
+							dKey = d;
+							sKey = s;
+							return;
+						});
+					}
+					//Set white/black list(s)
+					if (options && options.whiteList && (options.whiteList instanceof Array)) {
+						wList = wList.concat(options.whiteList);
+					}
+					if (options && options.blackList && (options.blackList instanceof Array)) {
+						bList = bList.concat(options.blackList);
+					}
+					//Difference merge
+					if (options && options.differenceMerge) {
+						var destKeys = this.groupBy(dKey),
+							sValue, max = sData.__data__.length;
+
+						while (max--) {
+							sourceMatch = sData.__data__[max];
+							sValue = sourceMatch[sKey];
+							if (!(sValue in destKeys)) {
+								sourceMatch = wList.length ? ctx.object.whiteList(sourceMatch, wList) : sourceMatch;
+								sourceMatch = bList.length ? ctx.object.blackList(sourceMatch, bList) : sourceMatch;
+								this.insertRow(sourceMatch);
+							}
+						}
+					} else {
+						//Match merge
+						var dGroup = this.groupBy(dKey),
+							sGroup = sData.groupBy(sKey);
+
+						//Update/augment destination row with source data
+						$.each(dGroup, function(keyValue, match) {
+							if (keyValue in sGroup && sGroup[keyValue].length) {
+								sourceMatch = sGroup[keyValue][0];
+								sourceMatch = wList.length ? ctx.object.whiteList(sourceMatch, wList) : sourceMatch;
+								sourceMatch = bList.length ? ctx.object.blackList(sourceMatch, bList) : sourceMatch;
+								$.extend(match[0], sourceMatch);
+							}
+						});
+					}
+					return this;
+				},
+				/**
+				 * Groups data by unique column values and creates and object tree
+				 * You may specify multiple columns to group by and that will create a nested tree with rows being set as leafs
+				 * @function
+				 * @param {String} column One or more column name argument that data will be grouped by. Column name can be deep (i.e. have dots to traverse), but this operation will be slower.
+				 * @returns {Object}
+				 */
+				groupBy: (function() {
+					/**
+					 * Gathers rows that match column value
+					 * @private
+					 */
+
+					function getRowsByColumnValue(column, value, data) {
+						var out = [],
+							row;
+						if (column.indexOf('.') > -1) {
+							out = ctx.jpath.filter(data, "*[" + column + "==" + value + "]");
+						} else {
+							for (var i = 0, m = data.length; m > i; i++) {
+								row = data[i];
+								if (row[column] === value) {
+									Array.prototype.push.apply(out, [row]);
+								}
+							}
+						}
+						return out;
+					}
+
+					/**
+					 * Maps unique values to rows
+					 * @private
+					 */
+
+					function buildMap(data, column) {
+						var tempStore = new module.DataStore(data),
+							uniques = tempStore.unique(column),
+							max = uniques.length,
+							out = {},
+							value;
+						while (max--) {
+							value = uniques[max];
+							out[value] = getRowsByColumnValue(column, value, data);
+						}
+
+						return out;
+					}
+
+					return function() {
+						var args = APS.apply(arguments),
+							column, data, tmp = {},
+							a = 0,
+							max = args.length - 1;
+
+						//Build initial Map
+						column = args[a];
+						tmp = buildMap(this.__data__, column);
+
+						//Recurse through nested groups
+						while (max > a) {
+							column = args[++a];
+							for (var key in tmp) {
+								if (tmp.hasOwnProperty(key)) {
+									data = tmp[key];
+									tmp[key] = buildMap(data, column);
+								}
+							}
+						}
+
+						return tmp;
+					};
+				})(),
+				/**
+				 * Clones a DataStore returning a new copy of the same data store
+				 * @returns {DataStore}
+				 */
+				clone: function() {
+					var out = new module.DataStore(),
+						copyOfThis = [];
+					for (var i = this.__data__.length - 1, row; i >= 0; i--) {
+						row = this.__data__[i];
+						copyOfThis[i] = isolate(row);
+					}
+					out.concat(copyOfThis);
+					return out;
+				}
+			})
+		};
+		/**
+		 * DataProvider class that extends DataStore and adds loadable functionality
+		 * @name DataProvider
+		 * @class DataProvider Represents a DataStore capable of working with remote data over AJAX
+		 * @augments DataStore
+		 * @property {Object} ajaxData Raw AJAX data response
+		 * @param {Object} opt Initialization options
+		 * @param {String} opt.dataNode JPath expression that points to rows collection in the raw AJAX data
+		 * @param {Boolean} opt.isRemote Setting this flag will assume that sorting and pagination is taking place on the server
+		 * @param {String} opt.pageParameterName Parameter name used to indicate page number when working with remote data
+		 * @param {String} opt.pageSizeParameterName Parameter name used to indicate pagination size when working with remote data
+		 * @param {String} opt.rowCountNode JPath expression that points to property that contains actual result count when working with remote data
+		 */
+		module.DataProvider = module.DataStore.extend({
+			/**
+			 * @lends DataProvider.prototype
+			 */
+
+			/** @constructs */
+			init: function(opt) {
+				var config = {
+					isRemote: !1,
+					//false
+					pageParameterName: 'page',
+					pageSizeParameterName: 'pageSize',
+					dataNode: NULL,
+					//deep expression to an array of objects
+					rowCountNode: NULL //deep expression to server row count node
+				};
+				if ($.type(opt) === 'object') {
+					$.extend(config, opt);
+				}
+				this.ajaxData = NULL; //Set this from w/in implementation
+				this._super(NULL, config);
+				$.loadable(this, this.config);
+				this._load = this.load; //IOP
+				this.load = function() {
+					var def = new $.Deferred(),
+						that = this;
+					this._load.apply(this, arguments).then(
+
+					function() {
+						def.resolveWith(that, [that]);
+					}, function() {
+						def.rejectWith(that, [that]);
+					});
+					return def.promise();
+				};
+				//Deferrify
+				$.extend(this, new $.Deferred());
+			},
+			/**
+			 * Reloads data from server
+			 */
+			refresh: function() {
+				this.load({
+					cache: !1
+				});
+				return this;
+			},
+			/**
+			 * Returns a paged range
+			 * Note: If isRemote page data will be sent to the server and will not be returned from this
+			 * function, instead use onLoadSuccess event to GetData.
+			 *
+			 * @param {Number} page Starting page (default: 1)
+			 * @param {Number} pageSize Number of rows per page
+			 * @returns {Array} An array or rows that fall in to a page range
+			 */
+			getPage: function(page, pageSize) {
+				if (this.config.isRemote) {
+					var data = {};
+					data[this.config.pageParameterName] = page;
+					data[this.config.pageSizeParameterName] = pageSize;
+					return this.load({
+						data: data
+					});
+				} else {
+					return this._super(page, pageSize);
+				}
+				return NULL;
+			},
+			/**
+			 * Sorts data
+			 * @param {Object} opt Sorting options
+			 * @returns {this}
+			 * @example
+			 * 	if ( !isRemote )
+			 *		column: index <number> | name <string> - column to sort data by
+			 *		order: 'asc' | 'desc' - sort order
+			 *		type: 'text' | 'number' | 'date' - datatype to sort by
+			 *	else
+			 *		any object will be sent to the server as data parameters
+			 */
+			sort: function(opt) {
+				if (this.config.isRemote) {
+					this.load(opt || {});
+				} else {
+					this._super.apply(this, arguments);
+				}
+				return this;
+			},
+			/**
+			 * Returns total rows count
+			 * Note: Remote datasets should return value specified by the service and not local buffer length
+			 * @returns {Number} Number of rows
+			 */
+			count: function() {
+				var count = 0;
+				if (typeof(this.config.rowCountNode) === STRING) {
+					count = ctx.jpath.filter(this.ajaxData, this.config.rowCountNode);
+					count = !isNaN(count) ? +count : 0;
+				} else {
+					count = this._super();
+				}
+				return count;
+			}
+		});
+
+		/**
+		 * @name JsonDataProvider
+		 * @class JsonDataProvider Version of DataProvider specifically designed to work with JSON data
+		 * @augments DataProvider
+		 * @param  {Object} opt Initialization options. Normally same options as $.ajax
+		 * @param {String} opt.dataNode (optional) JPath expression that points to a particular node within raw data that will be used as source of rows.
+		 */
+		module.JsonDataProvider = module.DataProvider.extend({
+			/**
+			 * @lends JsonDataProvider.prototype
+			 */
+
+			/** @constructs */
+			init: function(opt) {
+				var that = this;
+				this._super(opt);
+				$.extend(this.config, {
+					dataType: 'json',
+					success: function(json) {
+						this.ajaxData = json;
+						if (typeof(that.config.dataNode) === STRING) {
+							that.__data__ = ctx.jpath.filter(json, that.config.dataNode);
+						} else {
+							that.__data__ = toArray(json);
+						}
+						//Index rows
+						indexRows.apply(this);
+						//Calculate page count
+						if (that.__data__ && that.__data__.length) {
+							that.status.pageCount = Math.ceil(that.__data__.length / that.config.pageSize);
+							that.status.currentRange.end = that.__data__.length;
+						}
+						this.resolveWith(this, [this]);
+					},
+					error: function() {
+						this.rejectWith(this, arguments);
+					}
+				});
+			}
+		});
+		/**
+		 * @name XmlDataProvider
+		 * @class XmlDataProvider Version of DataProvider specifically designed to work with XML data
+		 * @augments DataProvider
+		 * @param  {Object} opt Initialization options. Normally same options as $.ajax
+		 * @param {String} opt.dataNode (optional) JPath expression that points to a particular node within raw data that will be used as source of rows.
+		 */
+		module.XmlDataProvider = module.DataProvider.extend({
+			/**
+			 * @lends XmlDataProvider.prototype
+			 */
+
+			/** @constructs */
+			init: function(opt) {
+				var that = this;
+				this._super(opt);
+				$.extend(this.config, {
+					dataType: 'xml',
+					dataFilter: function(data) {
+						return ctx.xml.xmlToJSON(data);
+					},
+					success: function(json) {
+						this.ajaxData = json;
+						if (typeof(that.config.dataNode) === STRING) {
+							that.__data__ = $.makeArray(ctx.jpath.filter(json, that.config.dataNode));
+						} else {
+							that.__data__ = toArray(json);
+						}
+						//Index rows
+						indexRows.apply(this);
+						//Calculate page count
+						if (that.__data__ && that.__data__.length) {
+							that.status.pageCount = Math.ceil(that.__data__.length / that.config.pageSize);
+							that.status.currentRange.end = that.__data__.length;
+						}
+						this.resolveWith(this, [this]);
+					},
+					error: function() {
+						this.rejectWith(this, arguments);
+					}
+				});
+			}
+		});
+		/**
+		 * @name CsvDataProvider
+		 * @class CsvDataProvider Version of DataProvider specifically designed to work with CSV data
+		 * @augments DataProvider
+		 * @param  {Object} opt Initialization options. Normally same options as $.ajax
+		 */
+		module.CsvDataProvider = module.DataProvider.extend({
+			/**
+			 * @lends CsvDataProvider.prototype
+			 */
+
+			/** @constructs */
+			init: function(opt) {
+				var that = this;
+				this._super(opt);
+				$.extend(this.config, {
+					dataType: 'text',
+					dataFilter: function(data) {
+						var rawRows = data.split(/\r\n/),
+							processedRows = [],
+							rx = /,(?=(?:[^\"]*\"[^\"]*\")*(?![^\"]*\"))/g;
+						for (var r = 0, current; current = rawRows[r]; r++) {
+							if (current) {
+								Array.prototype.push.apply(processedRows, [current.split(rx)]);
+							}
+						}
+						return (that.config.firstRowHeader) ? processedRows.slice(1) : processedRows;
+					},
+					success: function(csv) {
+						this.ajaxData = csv;
+						that.__data__ = toArray(csv);
+						//Index rows
+						indexRows.apply(this);
+						//Calculate page count
+						if (that.__data__ && that.__data__.length) {
+							that.status.pageCount = Math.ceil(that.__data__.length / that.config.pageSize);
+							that.status.currentRange.end = that.__data__.length;
+						}
+						this.resolveWith(this, [this]);
+					},
+					error: function() {
+						this.rejectWith(this, arguments);
+					}
+				});
+			}
+		});
+
+		/**
+		 * @name XmlDataStore
+		 * @class XmlDataStore Version of DataStore specifically designed to work with XML static data
+		 * @augments DataStore
+		 * @param  {String | XMLDocument} xmlData String XML or an XMLDocument object
+		 * @param  {Object} opt Initialization options
+		 * @param  {String} opt.dataNode (optional) JPath expression that points to a particular node within raw data that will be used as source of rows.
+		 */
+		module.XmlDataStore = module.DataStore.extend({
+			/**
+			 * @lends XmlDataStore.prototype
+			 */
+
+			/** @constructs */
+			init: function(xmlData, opt) {
+				if (xmlData !== undef) {
+					var xmlJson = ctx.xml.xmlToJSON(xmlData),
+						data;
+					if (opt.dataNode !== undef) {
+						data = $.makeArray(ctx.jpath.filter(xmlJson, opt.dataNode));
+						this._super(data, opt);
+					}
+				}
+			}
+		});
+
+		bam.register("data", 0.1, module);
+	});
+})( /**Object*/ jQuery, /**Object*/ bam, null);

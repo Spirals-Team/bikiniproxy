@@ -1,0 +1,1 @@
+var userUuid = ''; var accountUuid = ''; var userEmail = ''; var userFirstName = ''; var userLastName = ''; var userPhoneNumber = ''; var userIsLoggedIn = false; var userProfilePhoto = ''; var loggedIn = false; var userMembershipID = ''; var userSubscriptionType = ''; var userInTrial = false; var isAnon = false; var isLawyer = false;

@@ -1,0 +1,108 @@
+window.addEventListener("DOMContentLoaded", function() {
+	var threadpadding = "10";
+	function realign(){
+		try {
+	
+			var forumbits = document.getElementsByClassName('forumbit_post L1');
+			var count = 0;
+			for (var i=0;i < forumbits.length; i++) {
+				if(count == 0){
+					if(forumbits[i].childNodes[1].clientHeight < forumbits[i+1].childNodes[1].clientHeight){
+						forumbits[i].childNodes[1].style.height = (forumbits[i+1].childNodes[1].clientHeight-(threadpadding*2))+"px";
+					} else {
+						forumbits[i+1].childNodes[1].style.height = (forumbits[i].childNodes[1].clientHeight-(threadpadding*2))+"px";
+					}
+					count++;
+				} else {
+					count = 0;
+				}
+			};
+	
+		} catch(e) {
+	
+		}
+	
+		try{
+			count = 0;
+			var forumbits = document.getElementsByClassName('forumbit_post old L2');
+			var count = 0;
+			for (var i=0;i < forumbits.length; i++) {
+				if(count == 0){
+					if(forumbits[i].clientHeight < forumbits[i+1].clientHeight){
+						forumbits[i].style.height = (forumbits[i+1].clientHeight-(threadpadding*2))+"px";
+					} else {
+						forumbits[i+1].style.height = (forumbits[i].clientHeight-(threadpadding*2))+"px";
+					}
+					count++;
+				} else {
+					count = 0;
+				}
+			};
+		} catch(e) {
+	
+		}
+	}
+
+	realign()
+
+	window.setInterval(realign,400);
+
+	// Fix subpage page number alignment.
+	var forms = document.querySelectorAll('#pagination_top form');
+	if (forms.length == 0)
+	{
+		// If form doesn't exists, realign page number.
+		try {
+			var el = document.getElementById("postpagestats_above");
+			el.style.bottom = "-67px";
+		} catch(e) {}
+	}
+
+
+	// Fix admin urls.
+	/*
+	console.log("Admin menu elements:");
+	var children = document.querySelectorAll('#admintools .popupbody a');
+	console.log(children);
+	for (i in children)
+	{
+		var url = children[i].getAttribute("href");
+		children[i].setAttribute("href", "https://adm-forum.supercell.net/admincp/index.php?loc=" + url);
+	}
+	*/
+
+	// Fix logo links.
+	if (typeof(SC_FORUM_ID) != "undefined")
+	{
+		switch (SC_FORUM_ID)
+		{
+			case "clashofclans":
+				changeLogoUrl("/forumdisplay.php/4-Clash-of-Clans");
+				return;
+			case "hayday":
+				changeLogoUrl("/forumdisplay.php/5-Hay-Day");
+				return;
+			case "boombeach":
+                changeLogoUrl("/forumdisplay.php/46-Boom-Beach");
+                return;
+		}
+
+	}
+
+
+}, false);
+
+function changeLogoUrl(url)
+{
+
+	var links = document.getElementsByClassName("logo-image");
+	for (i in links)
+	{
+		try {
+			links[i].setAttribute("href", url);
+		} catch(e) {
+			//console.log(e);
+		}
+	}
+
+}

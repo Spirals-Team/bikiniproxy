@@ -1,0 +1,73 @@
+
+function myCbnDashboardOpen(userName, hash) {
+	previousLink = '<p><a class="back" href="/homepagedata.php?key='+userName+'&code='+hash+'&offset=5">&laquo; Previous</a> </p>';
+    $.ajax({
+        type: "POST",
+        url: "/Global/WebServices/Dashboard.asmx/GetDashboard",
+        data: "{'userName':'" + userName + "', 'hash':'" + hash.replace(/^\s*/, "").replace(/\s*$/, "") + "'}",
+        contentType: "application/json; charset=utf-8",
+        dataType: "json",
+        timeout: 50000,
+        success: function(result) { OnGetDashboardSuccess(result, userName, hash); },
+        error: function(xhr) { OnGetDashboardFailed(xhr); }
+    });
+}
+
+function OnGetDashboardSuccess(result, userName, hash) {
+    if (result.d != null) {
+        _recordCount = result.d.RecordCount;
+
+		$("#friendFeed").html(result.d.friendFeed.replace(previousLink,''));
+		$("#selfFeed").html(result.d.selfFeed.replace(previousLink,''));
+		$("#mailLink").html(result.d.mailLink.replace('&nbsp;','[0]').replace('[','Messages ['));
+		$("#friendsLink").html(result.d.friendsLink.replace("["," ["));
+		linkHTML = "<table class='DashboardGroupTable>'";
+		for (var i =0; i< result.d.groups.length; i++)
+		{
+			linkHTML += "<tr class='DashboardGroup'><td><a title='"+result.d.groups[i].desc+"' class = 'DashboardGroupImageLink' href='"+result.d.groups[i].url+"'><img class = 'DashboardGroupImage' src='"+result.d.groups[i].icon+"'/></a></td>" + "<td><a class = 'DashboardGroupLink' title='"+result.d.groups[i].desc+"' href='"+result.d.groups[i].url+"'>"+result.d.groups[i].name+"</a></td></tr>";
+		}
+		linkHTML += "</table>"
+		discussionHTML = "";
+		for (var i =0; i< result.d.discussions.length; i++)
+		{
+			discussionHTML += "<li class='MyCBNDiscussionListItem'>" + result.d.discussions[i] + "</li>";
+		}
+		discussionHTML = "<ul class = 'MyCBNDiscussionList'>" + discussionHTML + "</ul>";
+		document.getElementById("userIcon").src = result.d.userIcon;
+		document.getElementById("userIcon").style.height="auto";
+		document.getElementById("userIcon").style.width="auto";
+		document.getElementById("MyCBNImageLink").href = "http://my.cbn.com/";
+		document.getElementById("MyCBNFeaturedGroups").style.display='none';
+		document.getElementById("MyCBNWallFeed").style.display='inline';
+		document.getElementById("FreeResources").style.display='none';
+		document.getElementById("MyCBNFeatures").style.display='inline';
+		document.getElementById("joinMyCBNLink").style.display='none';
+		$("#groupArea").html(linkHTML);
+		$("#discussionArea").html(discussionHTML);
+		setTimeout("myCbnDashboardOpen('"+userName+"','"+hash+"');",60000);
+    }
+    else {
+		//alert("null result");
+    }
+
+}
+function OnGetDashboardFailed(error) {
+	//alert("System Error: Failed to Retrieve Dashboard information");
+    //alert(error.responseText);
+}
+function myCbnDashboardFilter(){
+	if (this.id=="selfActivityLink")
+	{
+		document.getElementById('friendActivityLink').style.textDecoration = 'none';
+		document.getElementById('selfActivityLink').style.textDecoration = 'underline';
+		document.getElementById('friendFeed').style.display = 'none';
+		document.getElementById('selfFeed').style.display = 'inline';
+	}
+	if (this.id=="friendActivityLink")
+	{
+		document.getElementById('selfActivityLink').style.textDecoration = 'none';
+		document.getElementById('friendActivityLink').style.textDecoration = 'underline';
+		document.getElementById('selfFeed').style.display = 'none';
+		document.getElementById('friendFeed').style.display = 'inline';
+	}
+}

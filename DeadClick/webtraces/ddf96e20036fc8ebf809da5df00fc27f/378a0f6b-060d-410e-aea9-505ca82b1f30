@@ -1,0 +1,53 @@
+<!-- Revenue Science cookie creation logic start -->
+
+
+	var caution = false;
+	
+	function rs_setCookie( jscookie, value, expires, path, domain, secure) {
+	        var curCookie =  jscookie + "=" + escape(value) +
+	                ((expires) ? "; expires=" + expires.toGMTString() : "") +
+	                ((path) ? "; path=" + path : "") +
+	                ((domain) ? "; domain=" + domain : "") +
+	                ((secure) ? "; secure" : "");
+	        if (!caution || (name + "=" + escape(value)).length <= 4000)
+	                document.cookie = curCookie;
+	        else
+	                if (confirm("Cookie exceeds 4KB and will be cut!"))
+	                        document.cookie = curCookie;
+	}
+	
+	function rs_fixdate(date) {
+		var base = new Date(0);
+		var skew = base.getTime();
+		if (skew > 0) {
+			date.setTime(date.getTime() - skew);
+		}
+	}
+	
+	function rs_assembleSegments(segsArray) {
+		
+		var segsString = '';
+		for (var i = 0; i < segsArray.length; i++) {
+			
+			segsString += "'" + (segsArray[i]) + "'";
+			
+			if (i != segsArray.length - 1) {
+				segsString += ',';
+			}	 
+		
+		}
+		return segsString;		
+	}
+	
+	// set dates	
+	var rs_now = new Date();
+	rs_fixdate(rs_now);
+	rs_now.setTime(rs_now.getTime() + 12 * 60 * 60 * 1000);
+	
+	// assemble the segments
+	var rs_segsAsString = rs_assembleSegments(rsinetsegs);
+	
+	// set the current domain
+	var rs_currentDomain = '.guardian.co.uk';
+		
+	<!-- Revenue Science cookie creation logic end -->

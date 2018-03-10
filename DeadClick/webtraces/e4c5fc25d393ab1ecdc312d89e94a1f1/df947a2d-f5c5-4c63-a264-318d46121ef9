@@ -1,0 +1,4 @@
+/*! updated; 02-13-2018 04:14 PM **/
+
+
+Modulr.define("core.base:utils/page.reload",["require","jquery"],function(require,$){var App=function(){this._timeout=null,this._focused=!0,this._curr_timeout=0;var self=this;$(window).on("focus",function(){self._focused=!0}),$(window).on("blur",function(){self._focused=!1})};return App.prototype.set=function(timeout){var self=this;if(clearTimeout(this._timeout),"number"==typeof(timeout=timeout||this._curr_timeout)&&timeout>1){this._curr_timeout=timeout;var ms=window.location.search.indexOf("_p_ref=1")>-1?15e3:6e4*timeout;this._timeout=setTimeout(function(){self._focused?window.location.reload():$(window).on("focus",function(){window.location.reload()})},ms)}},App.prototype.reset=function(){this.set()},App.prototype.clear=function(){clearTimeout(this._timeout)},new App});

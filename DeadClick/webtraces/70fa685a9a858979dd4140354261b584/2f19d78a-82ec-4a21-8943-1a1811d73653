@@ -1,0 +1,551 @@
+window.odometerOptions = {
+	duration: 750
+}
+
+
+counts = {};
+
+function DropDown(el, callback) {
+	this.dd = el;
+	this.placeholder = this.dd.children('span');
+	this.opts = this.dd.find('ul.dropdown > li');
+	this.val = '';
+	this.index = -1;
+	this.initEvents();
+	this.callback = callback;
+}
+
+DropDown.prototype = {
+	initEvents : function() {
+		var obj = this;
+
+		obj.dd.on('click', function(event){
+			$(this).toggleClass('active');
+			return false;
+		});
+
+		obj.opts.on('click',function(){
+			var opt = $(this);
+
+			obj.val = opt.text();
+			obj.index = opt.index();
+			obj.placeholder.text(obj.val);
+			obj.population = opt.find('a').data('population');
+			//console.log(obj.val);
+			if (obj.callback) {
+				obj.callback();
+			}
+			
+		});
+	},
+	getValue : function() {
+		return this.val;
+	},
+	getIndex : function() {
+		return this.index;
+	},
+	getPopulation : function() {
+		return this.population;
+	}
+}
+
+var ltoVideo = {
+	full_bleed: function(boxWidth, boxHeight, imgWidth, imgHeight) {
+		// Calculate new height and width…
+		var initW = imgWidth;
+		var initH = imgHeight;
+		var ratio = initH / initW;
+		imgWidth = boxWidth;
+		imgHeight = boxWidth * ratio;
+		// If the video is not the right height, then make it so...
+		if(imgHeight < boxHeight){
+			imgHeight = boxHeight;
+			imgWidth = imgHeight / ratio;
+		}
+		//  Return new size for video
+		return {
+			width: imgWidth,
+			height: imgHeight
+		};
+	},
+	init: function() {
+		resizeVideo();
+	}
+};
+
+
+lessThanOne = {
+	population: 0,
+	interestedIn: 1,
+	ageRange: 1,
+	looks: 1,
+	intellect: 1, 
+	values: 1,
+	click: 1,
+	calculation1 : function () {
+		var num = (this.population);
+		return (num);
+	},
+	calculation2 : function () {
+		var num = (this.population * this.interestedIn);
+		return (num);
+	},
+	calculation3 : function () {
+		var num = (this.population * this.interestedIn * this.ageRange);
+		return (num);
+	},
+	calculation4 : function () {
+		var num = (this.population * this.interestedIn * this.ageRange * this.looks);
+		return (num);
+	},
+	calculation5 : function () {
+		var num = (this.population * this.interestedIn * this.ageRange * this.looks * this.intellect);
+		return (num);
+	},
+	calculation6 : function () {
+		var num = (this.population * this.interestedIn * this.ageRange * this.looks * this.intellect * this.values);
+		return (num);
+	}, 
+	calculationFinal : function () {
+		var num = (this.population * this.interestedIn * this.ageRange * this.looks * this.intellect * this.values * this.click);
+		return (num);
+	},
+
+}
+
+$(function(){
+
+	$('#slider').slider({
+		slide: function( event, ui ) {
+			var value = (100 - ui.value)/100;
+			if (value == 0) {
+				value = 0.01;
+			}
+			lessThanOne.click = value;
+			calculateAll();
+			$('#soulmatenumber').text(formatNumber(lessThanOne.calculationFinal()), 0);
+			
+		},
+		change: function( event, ui) {
+			$("#step7").closest('section').find('.next').css({visibility: 'visible'}).animate({opacity: 1}, 1000);
+		}
+
+	});
+
+
+	$(".numberinput").keydown(function(event) {
+        // Allow: backspace, delete, tab, escape, enter and .
+        if ( $.inArray(event.keyCode,[46,8,9,27,13,190]) !== -1 ||
+             // Allow: Ctrl+A
+             (event.keyCode == 65 && event.ctrlKey === true) || 
+             // Allow: home, end, left, right
+             (event.keyCode >= 35 && event.keyCode <= 39)) {
+                 // let it happen, don't do anything
+             return;
+         }
+         else {
+            // Ensure that it is a number and stop the keypress
+            if (event.shiftKey || (event.keyCode < 48 || event.keyCode > 57) && (event.keyCode < 96 || event.keyCode > 105 )) {
+            	event.preventDefault(); 
+            }   
+        }
+    });
+
+
+	$("#a_about").fancybox({
+		padding: [ 0, 0, 0, 0],
+		maxWidth	: 1024,
+		maxHeight	: 768,
+		fitToView	: false,
+		width		: '80%',
+		height		: '80%',
+		autoSize	: false,
+		closeClick	: false,
+		openEffect	: 'none',
+		closeEffect	: 'none',
+		openSpeed : 3000,
+		closeSpeed: 3000
+	});
+
+
+
+
+	ltoVideo.init();
+
+
+
+	$.getJSON("../cities.json", function(data) {
+
+		//Alphabetize cities
+		var cities =  _(data.cities).sortBy("name");
+
+		var cities_options = {};
+
+
+
+
+		var s = $("#cities_select");
+		$('<option />', { 
+			value: 0, 
+			text: "CHOOSE YOUR NEAREST CITY"
+		}).appendTo(s);
+
+		jQuery.each(cities, function(i, val) {
+			//console.log(val.name + " " + val.population);
+
+			$('ul#cities_list').append(
+				$('<li>').append(
+					$('<a>')
+					.attr('href','#')
+					.addClass("city")
+					.attr("data-population", val.population)
+					.append(
+						val.name
+						)));  
+
+
+
+
+			$('<option />', { 
+				value: val.population, 
+				text: val.name
+			}).appendTo(s);
+			
+		});
+
+		var dd = new DropDown( $('#dd'), function(){			
+			$('#cities_select').val(this.getPopulation());
+			$('#cities_select').change();
+		});
+
+
+
+
+
+	});
+
+
+	$(document).click(function() {
+		// all dropdowns
+		$('.wrapper-dropdown-5').removeClass('active');
+	});
+
+	$(window).resize(function() {
+		resizeVideo();
+	});
+
+	$('a.circle, a.button').click(function(e){
+		e.preventDefault();
+	});
+
+	$('a#btnGo').click(function(e){
+		e.preventDefault();
+		showPanel($('#step1'));
+	});
+
+	$('a.nextbutton, a#btnCalculate').click(function(e){
+		e.preventDefault();
+		var step = $(this).data('step');
+		var $elem = $('#' + step);
+		showPanel($elem);
+		$(this).closest('.next').removeClass('pulsate');
+	});
+
+
+	// STEP 1
+	
+	$('input#population').focus(function(){		
+		$('#step1 .messageText').fadeOut(750, function() {
+			$('.populationbtnwrapper').fadeIn(750);
+		});
+	});
+
+	$('#btnPopulation').click(function(){
+
+		var $input = $('input#population');
+		if ($input.val() != "") {
+			$('.populationbtnwrapper').fadeOut(500, function(){
+				$input.closest('.step').find('.next').addClass("pulsate");
+				setPopulation($input.val(), "your city");
+			});
+		}
+	});
+
+	// STEP 2
+	$('#step2 a.button').click(function(){
+
+		$('#step2 a.button').removeClass("activeselection");
+		$(this).addClass("activeselection");
+
+		lessThanOne.interestedIn = $(this).data('multiplier');
+
+		var pct = "";
+
+		if ($(this).data('gender') == "men") {
+			pct = "48.5%";
+		}
+		else if ($(this).data('gender') == "women") {
+			pct = "51.5%";	
+		}
+		else if ($(this).data('gender') == "all") {
+			pct = "100%";
+		}
+
+		$('#step2 .messageText').data('entered', true);
+		calculateAll();
+		setMessage($('#step2 .messageText'),"You're interested in " + pct + " of them: ", formatNumber(lessThanOne.calculation2(), 0), true);
+
+		$("#step2").closest('section').find('.next').css({visibility: 'visible'}).animate({opacity: 1}, 1000).addClass('pulsate');
+	});
+
+	// STEP 3 
+	// $('input#age').blur(function(){ 
+	// 	lessThanOne.ageRange  = 1/3;
+	// 	$('#step3 .messageText').data('entered', true);
+	// 	calculateAll();
+	// 	setMessage($('#step3 .messageText'),"About 1/3 of this population is in your age range: ", formatNumber(lessThanOne.calculation3(), 0), true);
+
+	// 	$("#step3").closest('section').find('.next').css({visibility: 'visible'}).animate({opacity: 1}, 1000).addClass('pulsate');
+	// });
+
+
+
+$('input#age').focus(function(){		
+	$('#step3 .messageText').fadeOut(750, function() {
+		$('.agebtnwrapper').fadeIn(750);
+	});
+});
+
+$('#btnAge').click(function(){
+
+	var $input = $('input#Age');
+	if ($input.val() != "") {
+		$('.agebtnwrapper').fadeOut(500, function(){
+
+			lessThanOne.ageRange  = 1/3;
+			$('#step3 .messageText').data('entered', true);
+			calculateAll();
+			setMessage($('#step3 .messageText'),"About 1/3 of this population is in your age range: ", formatNumber(lessThanOne.calculation3(), 0), true);
+
+			$("#step3").closest('section').find('.next').css({visibility: 'visible'}).animate({opacity: 1}, 1000).addClass('pulsate');
+
+		});
+	}
+});
+
+	// STEP 4
+	$('#step4 a.circle').click(function(){
+
+		$('#step4 a.circle').removeClass("activeselection");
+		$(this).addClass("activeselection");
+		lessThanOne.looks = $(this).data('multiplier');
+		$('#step4 .messageText').data('entered', true);
+		calculateAll();
+		setMessage($('#step4 .messageText'),"You'll find about " + lessThanOne.looks*100 + "% of this group attractive: ", formatNumber(lessThanOne.calculation4(), 0), true);
+
+		$("#step4").closest('section').find('.next').css({visibility: 'visible'}).animate({opacity: 1}, 1000).addClass('pulsate');
+	});
+
+	// STEP 5
+	$('#step5 a.circle').click(function(){
+		$('#step5 a.circle').removeClass("activeselection");
+		$(this).addClass("activeselection");
+		lessThanOne.intellect = $(this).data('multiplier');
+		$('#step5 .messageText').data('entered', true);
+		calculateAll();
+		setMessage($('#step5 .messageText'), "About " + lessThanOne.intellect*100 + "% of this group will challenge you: ", formatNumber(lessThanOne.calculation5(), 0), true);
+
+		$("#step5").closest('section').find('.next').css({visibility: 'visible'}).animate({opacity: 1}, 1000).addClass('pulsate');
+	});
+
+	// STEP 6
+	$('#step6 a.circle').click(function(){
+		$('#step6 a.circle').removeClass("activeselection");
+		$(this).addClass("activeselection");
+		lessThanOne.values = $(this).data('multiplier');
+		$('#step6 .messageText').data('entered', true);
+		calculateAll();
+		setMessage($('#step6 .messageText'), "You'll match well with about " + lessThanOne.values*100 + "% of them: ", formatNumber(lessThanOne.calculation6(), 0), true);
+
+		$("#step6").closest('section').find('.next').css({visibility: 'visible'}).animate({opacity: 1}, 1000).addClass('pulsate');
+	});
+
+	// STEP 7
+	$('#step7 a.circle').click(function(){
+		$('#step7 a.circle').removeClass("activeselection");
+		$(this).addClass("activeselection");
+		lessThanOne.click = $(this).data('multiplier');
+		calculateAll();
+		$('#soulmatenumber').text(formatNumber(lessThanOne.calculationFinal()), 0);
+		$("#step7").closest('section').find('.next').css({visibility: 'visible'}).animate({opacity: 1}, 1000).addClass('pulsate');
+	});
+
+
+	$('#imgplay').hover(function(){
+		$(this).animate({opacity: 0.6}, 200)
+	}, function(){
+		$(this).animate({opacity: 1.0}, 200)
+	});
+
+	$('#imgplay').click(function(){
+		$('#imgplay').fadeOut(1000);
+		$('#video-house').fadeOut(500, function(){
+			$('#video-container').fadeOut(000, function(){
+				$('#vimeoplayer').fadeIn(500);
+
+				$f('vimeoplayer').play();
+			});
+		});
+
+	});
+
+
+
+	$('#cities_select').on('change', function(){
+		var city = $(this).find(":selected");
+		$("#population").val("");
+		$('.populationbtnwrapper').fadeOut(500, function() {
+			setPopulation(city.val(), city.text());
+		});
+	});
+
+});
+
+
+function resizeVideo() {
+	var browserHeight = Math.round($(window).height());
+	var browserWidth = Math.round($(window).width());
+	var videoHeight = $('#video-house').height();
+	var videoWidth = $('#video-house').width();
+	var new_size = ltoVideo.full_bleed(browserWidth, browserHeight, videoWidth, videoHeight);
+
+	$('#video-house')
+	.width(new_size.width)
+	.height('100%');
+}
+
+
+function formatNumber(x, fixed) {
+
+	var decimal_places = 0;
+
+	if (x  < 10) {
+		decimal_places = 2;
+	}	
+
+	return x.toFixed(decimal_places).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+}
+
+
+function setMessage($elem, text, stepcount, fade) {
+
+	if (fade) {
+		$elem.fadeIn(750);
+	}
+
+	$elem.find('span.steptext').text(text);
+	$elem.find('span.stepcount').text(stepcount);
+	$elem.closest('section').find('a.nextbutton').addClass('pulsate');
+}
+
+
+function setPopulation(x, city) {
+	lessThanOne.population = x * 0.441;
+	calculateAll();
+	setMessage($('#step1 .messageText'), "About " + formatNumber(lessThanOne.calculation1(), 0) + " singles live in " + city + ".", "", true);
+	$("#step1").closest('section').find('.next').css({visibility: 'visible'}).animate({opacity: 1}, 1000).addClass('pulsate');
+
+}
+
+function showPanel($elem) {
+	$elem.slideDown(0, function(){
+		$('html, body').animate({scrollTop: $(document).height() - $(window).height()}, 2000, "easeOutCubic");
+	});
+}
+
+function showArrow($elem) {
+
+}
+
+function calculateAll() {
+	$('#step2 .stepcount').text(formatNumber(lessThanOne.calculation2()), 2);
+	$('#step3 .stepcount').text(formatNumber(lessThanOne.calculation3()), 2);	
+	$('#step4 .stepcount').text(formatNumber(lessThanOne.calculation4()), 2);
+	$('#step5 .stepcount').text(formatNumber(lessThanOne.calculation5()), 2);
+	$('#step6 .stepcount').text(formatNumber(lessThanOne.calculation6()), 2);
+	$('#step7 .stepcount').text(formatNumber(lessThanOne.calculationFinal()), 2);
+	$('#soulmatenumber').text(formatNumber(lessThanOne.calculationFinal()), 0);
+	$('a#share_twitter').attr('href', "http://twitter.com/intent/tweet?text=" + formatNumber(lessThanOne.calculationFinal(), 0) + "%20people%20in%20the%20world%20are%20perfect%20for%20me.%20http%3A%2F%2Fwww.lessthanone.com");
+	setMailLink();
+
+}
+
+
+
+/**
+ * Set Facebook share text.
+ * @param  {string} section 'page', 'video', 'image'
+ * @return {undefined}
+ */
+ function fbs_click() {
+
+
+ 	var soulmates = $("#soulmatenumber").html();
+ 	var	fb_text = "?s=100" + '&p[url]=' + encodeURIComponent("http://www.lessthanone.com") + 
+ 	"&p[images][0]=" + encodeURIComponent("http://lto.theicecreamsocial.com/img/LTO_square_smaller.jpg") +
+ 	"&p[title]=" + encodeURIComponent("" + soulmates + " people are perfect for me.") + 
+ 	"&p[summary]=" + encodeURIComponent("Less Than One is a film project that places a mathematical lens on the abstract idea of “finding one’s soulmate.” So take the test. See if “the one” (or " + soulmates + ") is out there for you. ");
+ 	u=location.href;
+ 	t=document.title;
+ 	window.open('http://www.facebook.com/sharer.php' + fb_text,'sharer','toolbar=0,status=0,width=626,height=436');
+ 	return false;
+ }
+
+
+ function fbs_click_footer() {
+ 	var soulmates = $("#soulmatenumber").html();
+ 	var	fb_text = "?s=100" + '&p[url]=' + encodeURIComponent("http://www.lessthanone.com") + 
+ 	"&p[images][0]=" + encodeURIComponent("http://lto.theicecreamsocial.com/img/LTO_square_smaller.jpg") +
+ 	"&p[title]=" + encodeURIComponent("Less Than One") + 
+ 	"&p[summary]=" + encodeURIComponent("Do you believe in a soulmate? Watch as one couple applies a mathematical equation to this universal question.");
+ 	u=location.href;
+ 	t=document.title;
+ 	window.open('http://www.facebook.com/sharer.php' + fb_text,'sharer','toolbar=0,status=0,width=626,height=436');
+ 	return false;
+ }
+
+
+ function setMailLink() {
+ 	var soulmates = $("#soulmatenumber").html();
+
+ 	var s = "";
+
+
+ 	var subj = encodeURIComponent(soulmates + " people are perfect for me.");
+ 	var body = encodeURIComponent("Less Than One is a film project that places a mathematical lens on the abstract idea of “finding one’s soulmate.” So take the test. See if “the one” (or " + soulmates + ") is out there for you. http://www.lessthanone.com");
+ 	$('a#share_email').attr('href', "mailto:?subject="+subj+"&body="+body); 
+
+ }
+
+ function digits(n) { 
+ 	return 1+Math.floor(Math.log(n)/Math.log(10)); 
+ }
+
+
+ function magic_number($elem, value) {
+ 	
+ 	var element_name = $elem.text();
+ 	var current = counts[element_name] || 0;
+
+ 	jQuery({count: current}).animate({count: value}, {
+ 		duration: 900,
+
+ 		step: function() {
+ 			$elem.text(formatNumber(String(parseInt(Math.ceil(this.count)))),2);
+ 		}
+ 	}, 'easeOutQuad');
+ 	counts[element_name] = Math.ceil(value);
+
+ };
+
+

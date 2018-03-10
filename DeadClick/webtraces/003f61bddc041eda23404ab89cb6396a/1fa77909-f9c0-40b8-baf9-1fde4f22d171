@@ -1,0 +1,57 @@
+<!--
+
+// This will first detect whether my content is being displayed from a copy hosted at a non-authorized server. 
+var myName= "Lucia"
+var lingerTime_seconds=10
+var correctDomain="rankexploits.com"						// domain name where copies of protected content may be hosted.
+var correctLocation ="http://rankexploits.com/musings/"		// location where I wish to redirect user. Can be anywhere. 
+var http="http:"											// Used to limit redirect only when hosted at http: or https:  Downloading to pc for reading off line permitted. 
+var https="https:"
+	// below list domains that you will permit to *copy or cache* content and frame their cached copy.
+var permittedDomains= new Array ('translate.googleusercontent.com', 'webcache.googleusercontent.com','www.google.com' ) 
+	
+// ---------- do not modify below here ---------- 
+var lingerTime=lingerTime_seconds*1000
+var exception = in_array(permittedDomains, document.domain)
+//	document.write("<p><font color='brown'>exception= |"+exception+ "|</font>" )
+	
+try{	// frame of a copy : share domain. top.blah.blah defined.
+	
+	if( ( top.document.domain != correctDomain)   
+	&& !exception
+	&& ( (location.protocol == https ) || (location.protocol == http )  )
+	){
+		document.write("<p><font color='blue'>Hi there!</font>&nbsp; This message is from "+ myName +".</p> <p>I have inserted a script to detect unauthorized copying and display of my content originally posted at "+correctDomain+". If you would like  "+top.document.domain+" to host copies of my content on their site, please encourage them to contact me to arrange a valid license.</p> <p>I'm now going to redirect you to my site in "+ lingerTime_seconds +" seconds, </p><p>"+ myName +"</p>" )
+		setTimeout("redirect_after_pause(correctLocation)",lingerTime)
+	}
+}catch(err){
+	if(!exception){	// 'normal' frame parent and child do not share domain. top.blah.blah not defined.
+					// if www.google.com frames webcache.googleusercontent.com I still want to permit that.
+					// of course, I'm permitting anyone to frame google cache... but such is life. 
+					// (Maybe google won't permit it. Not myproblem to solve.)
+		document.write("<p><font color='red'><b>Security Alert</b></font> You are viewing my content in a 3rd party frame at a site that has not arranged for a valid license.  Javascript does not permit me to detect who is framing my content. It might be someone decent (e.g. google) or it might be a criminal attempting a click-jacking attack. For security reasons, I do not permit framing of my content by unauthorized sites. I'm going to redirect you to my site in "+ lingerTime_seconds +" seconds.</p> <p>If you are not automatically forwarded, the site you are visiting may be using framebusting software. I advise you click <a href='"+self.location+"' target='_top' >"+self.location+"</a> to view my content safely.</p> <p>"+ myName +"</p>")
+		if(document.domain == correctDomain){
+			var cleanlocation=self.location.href.split("?",2)	// incase they got address from feedburner, remove utm crap after ? 
+			setTimeout("redirect_after_pause(cleanlocation[0])",lingerTime)
+		}else{ setTimeout("redirect_after_pause(correctLocation)",lingerTime)
+		}
+	}
+
+}
+
+//document.write("<p><font color='green'>done.... sorry about this. Testing a second.</font>")
+//setTimeout("redirect_after_pause(correctLocation)",lingerTime)
+	
+//==============   ==========
+function redirect_after_pause(correctLocation) {
+	top.location=correctLocation 
+}
+// ========== =======
+function in_array(permittedDomains, domain) {
+    for(var i=0; i<permittedDomains.length; i++) {
+		//document.write("<p>compare to "+permittedDomains[i]+"</p>") 
+        if (permittedDomains[i] == domain) return true;
+    }
+	return false;
+}
+-->

@@ -1,0 +1,207 @@
+/***************************************************************
+*
+*  JavaScript FormWidgets for TYPO3
+*
+*  Copyright notice
+*
+*  (c) 2004-2006 Peter Klein
+*  All rights reserved
+*
+*  Released under GNU/GPL (see license file in tslib/)
+*
+*  This script is distributed in the hope that it will be useful,
+*  but WITHOUT ANY WARRANTY; without even the implied warranty of
+*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+*
+*  This copyright notice MUST APPEAR in all copies of this script
+*
+***************************************************************/
+
+var runOnce;
+
+/**
+ * General Behaviours
+ */
+ 
+function FW_addLoadEvent(func) {
+/**
+ * http://simon.incutio.com/archive/2004/05/26/addLoadEvent
+ */
+  var oldonload = window.onload;
+  if (typeof window.onload != 'function') {
+    window.onload = func;
+  } else {
+    window.onload = function() {
+      oldonload();
+      func();
+    };
+  }
+}
+
+function FW_name2id() {
+/**
+ * add an id attribute to every element that has a name but no id
+ * http://richardathome.no-ip.com/index.php?article_id=300
+ */
+  var els = document.getElementsByTagName('*');
+  for (var i=0; (el = els[i]); i++) {
+    if (("" + el.name != "undefined") && (el.id == "")) {
+      el.id = el.name;
+    }
+  }
+}
+//FW_addLoadEvent(FW_name2id);
+
+function FW_isImagesEnabled() {
+	 /* Fix for Opera, as TYPO3 v4.0 runs the onload handler twice, which results in Opera showing two sets of buttons! */
+	if (runOnce) return;
+	runOnce=1;
+	/* checks if images is enabled in browser, before replacing widgets */
+	if (document.createElement && document.getElementsByTagName) {
+		var img = document.createElement("img");
+		img.onload = FW_formsPrepare;
+		img.setAttribute("src", "clear.gif");
+	}
+}
+//FW_addLoadEvent(FW_isImagesEnabled);
+
+
+/** 
+ * forms behavior layer
+ */
+ 
+function FW_formsPrepare () {
+	FW_formsEnhanceCheckbox();
+	FW_formsEnhanceRadio();
+}
+//FW_addLoadEvent(FW_formsPrepare);
+
+
+function FW_formsEnhanceRadio() {
+	// Enhance radio form fields
+	var els=document.getElementsByTagName("input");
+	for(var i=0; (el=els[i]); i++) {
+		if (el.type == "radio") {
+			el.style.position = 'absolute';
+			el.style.left = '-999px';
+			var img=document.createElement("img");
+			img.setAttribute("src", "clear.gif");
+			img.setAttribute("width", tx_formwidgets_radioWidth);
+			img.setAttribute("height", tx_formwidgets_radioHeight);
+			img.className=((el.checked)?"tx-formwidgets-radio2":"tx-formwidgets-radio1")+((el.disabled)?" tx-formwidgets-radiodisabled":"");
+			img.onclick = FW_toggleRadio;
+			if (tx_formwidgets_enableMouseover) {
+				img.onmouseover = FW_mouseoverRadio;
+				img.onmouseout = FW_mouseoutRadio;
+			}
+			if (tx_formwidgets_enableFocus) {
+				el.onfocus = FW_focusRadio;
+				el.onblur = FW_blurRadio;
+			}
+			el.onclick = FW_toggleRadioImage;
+			el.parentNode.insertBefore(img, el);
+		}
+	}
+}
+
+function FW_focusRadio() {
+	this.previousSibling.className = ((this.checked)?"tx-formwidgets-radio4":"tx-formwidgets-radio3")+((this.disabled)?" tx-formwidgets-radiodisabled":"");
+}
+function FW_blurRadio() {
+	this.previousSibling.className = ((this.checked)?"tx-formwidgets-radio2":"tx-formwidgets-radio1")+((this.disabled)?" tx-formwidgets-radiodisabled":"");
+}
+
+function FW_mouseoverRadio() {
+	if (!this.nextSibling.disabled) { this.className = ((this.nextSibling.checked)?"tx-formwidgets-radio4":"tx-formwidgets-radio3"); }
+}
+function FW_mouseoutRadio() {
+	if (!this.nextSibling.disabled) { this.className = ((this.nextSibling.checked)?"tx-formwidgets-radio2":"tx-formwidgets-radio1"); }
+}
+
+function FW_toggleRadioImage() {
+	if (!this.disabled) {
+		els=this.parentNode.parentNode.getElementsByTagName("input");
+		for(var i=0; (el=els[i]); i++) {
+			if (el.type == "radio") {
+				el.previousSibling.className=((el.checked)?"tx-formwidgets-radio2":"tx-formwidgets-radio1")+((el.disabled)?" tx-formwidgets-radiodisabled":"");
+			}
+		}
+	}
+}
+
+function FW_toggleRadio() {
+// graphical radio onclick event handler
+	if (!this.nextSibling.disabled) {
+		// toggle the radio state:
+		this.nextSibling.checked=true;
+		els=this.parentNode.parentNode.getElementsByTagName("input");
+		for(var i=0; (el=els[i]); i++) {
+			if (el.type == "radio") {
+				if (el.checked) el.focus();
+				el.previousSibling.className=((el.checked)?"tx-formwidgets-radio2":"tx-formwidgets-radio1")+((el.disabled)?" tx-formwidgets-radiodisabled":"");
+			}
+		}
+	}
+}
+
+function FW_formsEnhanceCheckbox() {
+	// Enhance checkbox form fields
+	var els=document.getElementsByTagName("input");
+	for(var i=0; (el=els[i]); i++) {
+		if (el.type == "checkbox") {
+			el.style.position = 'absolute';
+			el.style.left = '-999px';
+			var img=document.createElement("img");
+			img.setAttribute("src", "clear.gif");
+			img.setAttribute("width", tx_formwidgets_checkboxWidth);
+			img.setAttribute("height", tx_formwidgets_checkboxHeight);
+			img.className=((el.checked)?"tx-formwidgets-checkbox2":"tx-formwidgets-checkbox1")+((el.disabled)?" tx-formwidgets-checkboxdisabled":"");
+			img.onclick= FW_toggleCheckbox;
+			if (tx_formwidgets_enableMouseover) {
+				img.onmouseover = FW_mouseoverCheckbox;
+				img.onmouseout = FW_mouseoutCheckbox;
+			}
+			if (tx_formwidgets_enableFocus) {
+				el.onfocus = FW_focusCheckbox
+				el.onblur = FW_blurCheckbox
+			}
+			el.onclick= FW_toggleCheckboxImage;
+			el.parentNode.insertBefore(img, el);
+		}
+	}
+}
+
+function FW_focusCheckbox() {
+	this.previousSibling.className = ((this.checked)?"tx-formwidgets-checkbox4":"tx-formwidgets-checkbox3")+((this.disabled)?" tx-formwidgets-checkboxdisabled":"");
+}
+function FW_blurCheckbox() {
+	this.previousSibling.className = ((this.checked)?"tx-formwidgets-checkbox2":"tx-formwidgets-checkbox1")+((this.disabled)?" tx-formwidgets-checkboxdisabled":"");
+}
+
+function FW_mouseoverCheckbox() {
+	if (!this.nextSibling.disabled) { this.className = ((this.nextSibling.checked)?"tx-formwidgets-checkbox4":"tx-formwidgets-checkbox3"); }
+}
+function FW_mouseoutCheckbox() {
+	if (!this.nextSibling.disabled) { this.className = ((this.nextSibling.checked)?"tx-formwidgets-checkbox2":"tx-formwidgets-checkbox1"); }
+}
+
+function FW_toggleCheckboxImage() {
+	if (!this.disabled) { this.previousSibling.className=(this.checked)?"tx-formwidgets-checkbox2":"tx-formwidgets-checkbox1"; }
+}
+
+function FW_toggleCheckbox() {
+	// graphical checkbox onclick event handler
+	// toggle the checkbox state:
+	if (!this.nextSibling.disabled) {
+		this.nextSibling.focus();
+		if (this.nextSibling.checked) {
+			this.className="tx-formwidgets-checkbox1";
+			this.nextSibling.checked=false;
+		}
+		else {
+			this.className="tx-formwidgets-checkbox2";
+			this.nextSibling.checked=true;
+		}
+	}
+}
+

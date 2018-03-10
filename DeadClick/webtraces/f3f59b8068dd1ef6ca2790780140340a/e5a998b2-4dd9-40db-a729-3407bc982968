@@ -1,0 +1,99 @@
+window.onload=function(){
+
+    //alert('test');
+    // check if the cc cookie exists
+
+    var cc=getCookie("cc");
+    var aa=getCookie("aa");
+
+    if (cc!="") {
+
+        prepareLinks('cc',cc);
+
+    } else {
+
+        // check if the cc flag is in the querystring (not set as a cookie yet)
+
+        setCookie('cc',getParameterByName('cc'),30);
+
+        var cc = getParameterByName('cc');
+
+        if (cc!="") {
+
+            prepareLinks('cc',cc);
+
+        }
+
+    }
+
+    if (aa!="") {
+
+        prepareLinks('aa',aa);
+
+    } else {
+
+        // check if the aa flag is in the querystring (not set as a cookie yet)
+
+        setCookie('aa',getParameterByName('aa'),30);
+
+        var aa = getParameterByName('aa');
+
+        if (aa!="") {
+
+            prepareLinks('aa',aa);
+
+        }
+
+    }
+
+};
+
+function getCookie(cname) {
+    var name = cname + "=";
+    var ca = document.cookie.split(';');
+    for(var i=0; i<ca.length; i++) {
+        var c = ca[i];
+        while (c.charAt(0)==' ') c = c.substring(1);
+        if (c.indexOf(name) == 0) return c.substring(name.length,c.length);
+    }
+    return "";
+}
+
+function setCookie(cname, cvalue, exdays) {
+    var d = new Date();
+    d.setTime(d.getTime() + (exdays*24*60*60*1000));
+    var expires = "expires="+ d.toUTCString();
+    document.cookie = cname + "=" + cvalue + "; " + expires;
+}
+
+function getParameterByName(name) {
+    name = name.replace(/[\[]/, "\\[").replace(/[\]]/, "\\]");
+    var regex = new RegExp("[\\?&]" + name + "=([^&#]*)"),
+        results = regex.exec(location.search);
+    return results === null ? "" : decodeURIComponent(results[1].replace(/\+/g, " "));
+}
+
+function prepareLinks(link_code,link_value) {
+
+    var links = document.getElementsByTagName('a');
+
+    for(var i = 0; i < links.length; i++) {
+
+        var thisLink = links[i];
+
+        if(thisLink.href.indexOf("growtix") > -1) {
+
+            if(thisLink.href.indexOf("?") > -1) {
+
+                thisLink.href += '&' +  link_code + '='+link_value;
+
+            } else {
+
+                thisLink.href += '?' +  link_code + '='+link_value;
+
+            }
+
+        }
+
+    }
+}

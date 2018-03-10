@@ -1,0 +1,122 @@
+
+//*****************************************************************************
+//* Ouverture de la page d'aide contextuelle
+//*****************************************************************************
+function helpStatic(url, langue, page){
+	if(page){
+		return openHelpPopup(url+'/'+langue+'/'+page+'.html');
+	}
+	return false;
+}
+
+function helpStaticPdf(url, langue, page, anchor){
+	if(page){
+		return openHelpPopup(url+'/'+langue.substring(0,2)+'/'+page+'.pdf#'+anchor);
+	}
+	return false;
+}
+//*****************************************************************************
+//* Ouverture de la page d'aide contextuelle
+//*****************************************************************************
+function help(page){
+	if(page){
+		return openHelpPopup('formulaire/help/'+page+'.jsf');
+	}
+	return false;
+}
+
+/**
+ * Open a contextual popup that display an help message
+ * @param {String} url
+ * @returns {Boolean}
+ */
+function openHelpPopup(url){
+	var height = parseInt(jQuery(document).height(), 10) - 100;
+    var left = (parseInt(jQuery(document).width(), 10) - 680)/2;
+	w = window.open(url, 'hlp', 'width=670,height='+height+',top=0,left='+left+',screenY=0,screenX='+left+',toolbar=no,location=no,directories=no,status=no,menubar=no,scrollbars=yes,resizable=yes,copyhistory=no');
+
+    setTimeout("document.title = 'InfoCuria';",500);
+    if(window.focus){
+    	w.focus();
+    }
+    //return false;
+}
+
+function displayWaitBlock() {
+	hideSelects('hidden');
+        document.getElementById('waitBlock').style.display = '';
+        document.getElementById('waitBlockContainer').style.display = '';
+	//Element.show('waitBlock');
+        //Element.show('waitBlockContainer');
+        stop_scroll();
+        restartGif();
+}
+function displayWaitBlockBrowse() {
+        scroll(0,0);
+	//displayWaitBlock();
+}
+function displayWaitBlockSearch() {
+	hideSelects('hidden');
+        document.getElementById('waitBlockContainer').style.display = '';
+        document.getElementById('waitBlock').style.display = '';
+	//Element.show('waitBlock');
+        //Element.show('waitBlockContainer');
+        stop_scroll();
+        restartGif();
+        //restartGif();
+        //setTimeout(restartGif(), 10);
+}
+function hideWaitBlock() {
+	hideSelects('visible');
+        document.getElementById('waitBlock').style.display = 'none';
+        document.getElementById('waitBlockContainer').style.display = 'none';
+	///Element.hide('waitBlock');
+        //Element.hide('waitBlockContainer');
+        start_scroll();
+}
+
+function hideSelects(visibility){
+	/*selects = document.getElementsByTagName('select');
+	for(i = 0; i < selects.length; i++) {
+    	if(Element != undefined){
+        	if(!Element.hasClassName(selects[i],'listePopup')){
+              selects[i].style.visibility = visibility;
+            }
+	}
+	}*/
+}
+
+function restartGif(){
+/*
+        var reg=new RegExp("[ ,;]+", "g");
+	for(var i=0; i<document.images.length; i++){
+		var img = document.images[i];
+                var tableau = img.src.split(reg);
+		var imgName = tableau[0];
+		if (imgName.toUpperCase().substring(imgName.length-11, imgName.length) == "LOADING.GIF"){
+                        
+			img.src = imgName;
+		}
+	}
+        */
+}
+
+
+function stop_scroll() {
+    //scroll(0,0);
+    document.getElementById('bodyPage').style.overflowY = 'hidden';
+    hideSelects('hidden');
+}
+
+function start_scroll() {
+    //scroll(0,0);
+    hideSelects('visible');
+    //document.getElementById('bodyPage').style.width = '99.8%';
+    //document.getElementById('bodyPage').style.overflowX = 'hidden';
+    document.getElementById('bodyPage').style.overflowY = 'auto';
+    
+}
+
+function refreshInput(inputName) {
+    
+}

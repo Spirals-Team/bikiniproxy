@@ -1,0 +1,67 @@
+// JavaScript Document
+({
+	validation: (function(){
+		var STRING = "string", ARRAY = "array", FALSE = false, NUMBER = "number",
+			_self = {			
+			isEmpty: function(o) {
+                var t = true;
+                var _type = bam.object.typeOf(o);
+                switch(_type) {					
+                    case STRING: o = bam.string.trim(o);
+                    case ARRAY: t = !o.length; break;
+					case "object": for(var i in o) {
+						if(o.hasOwnProperty(i)) {
+							t = false; break; 
+						} 
+					} break;
+					case NUMBER: t = false; break;
+                }
+                return t;
+            },
+			isEmail: function(str) {
+				if(_self.isEmpty(str)){return FALSE;}
+				if(typeof(str)===STRING){return /^[^@\s]+@[^@\s]+.[A-Za-z]{2,}$/.test(str);}
+			},
+			isInteger: function(str) {
+				if(_self.isEmpty(str)){return FALSE;}
+				if(typeof(str)===STRING){return /^(([0-9]+)$)/.test(str);}
+			},
+			isNumeric: function(str) {
+				if(_self.isEmpty(str)){return FALSE;}
+				if(typeof(str)===STRING){return /^((-)?([0-9]*)((\.{0,1})([0-9]+))?$)/.test(str);}
+			},
+			isAlphanumeric: function(str) {
+				if(_self.isEmpty(str)){return FALSE;}
+				if(typeof(str)===STRING){return /^[a-zA-Z_0-9]*$/.test(str);}	
+			},
+			isAlpha: function(str) {
+				if(_self.isEmpty(str)){return FALSE;}
+				if(typeof(str)===STRING){return /^[a-zA-Z_]*$/.test(str);}
+			},
+			isFloat: function(str) {
+				if(_self.isEmpty(str)){return FALSE;}
+				return _self.isNumeric(str);
+			},
+			isCurrency: function(str) {
+				if(_self.isEmpty(str)){return FALSE;}
+				if(typeof(str)===STRING){return /^((-)?([0-9]{1,3})(\,[0-9]{3})*?((\.{0,1})([0-9]+))?$)/.test(str);}
+			},
+			isIPAddress: function(str) {
+				if(_self.isEmpty(str)){return FALSE;}
+				if(typeof(str)===STRING){return /^([01]?\d\d?|2[0-4]\d|25[0-5])\.([01]?\d\d?|2[0-4]\d|25[0-5])\.([01]?\d\d?|2[0-4]\d|25[0-5])\.([01]?\d\d?|2[0-4]\d|25[0-5])$/.test(str);}
+			},
+			isPhoneNumber:  function(str) {
+				if(_self.isEmpty(str)){return FALSE;}
+				return /^(?:1|1[\.\- ])?\(?([0-9]{3})\)?\s*[\.\- ]?\s*([0-9]{3})\s*[\.\- ]?\s*([0-9]{4})\s?((ext|x)\s*(\.:|\.|:)?\s*([0-9]+))?$/i.test(str);
+			},
+            isDef: function(o){return typeof(o) !== "undefined";}, 
+            isFn: function(o){return bam.object.typeOf(o) === "function";}, 
+            isNum: function(o){return bam.object.typeOf(o) === NUMBER;}, 
+            isStr: function(o){return bam.object.typeOf(o) === STRING;}, 
+            isDt: function(o){return bam.object.typeOf(o) === "date";}, 
+            isArr: function(o){return bam.object.typeOf(o) === ARRAY;},
+            isBet: function(n, a, b){return (this.isNum(a) && this.isNum(b) && this.isNum(n) && n >= a && n <= b); }
+		};
+		return _self;
+   })()
+})

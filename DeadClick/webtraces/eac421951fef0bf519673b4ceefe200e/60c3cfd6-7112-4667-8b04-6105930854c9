@@ -1,0 +1,148 @@
+var showRTInfo = false;
+var showVerticalBanner = false;
+var commandNav = false;
+var imageShown = 0;
+
+$jl(window).scroll(function() {
+    var bannerHeight  = ($jl('.banner_product').height()) + parseInt($jl("#content_page").css("margin-top").replace("px", ""));
+    var scrollLevel = $jl(this).scrollTop();    
+    var backgroundLevel = scrollLevel > (100 + bannerHeight) ? (100 + bannerHeight) : scrollLevel;
+    $jl('#order_panel').css('margin-top', - backgroundLevel);
+    
+    if(scrollLevel >= (200 + bannerHeight)) {
+        if(showRTInfo == false) {
+            $jl(".prochaines_sorties").animate({
+                width: '-=245px'
+            }, 100);
+            showRTInfo = true;
+        }
+    } else {
+        if(showRTInfo == true) {
+            $jl(".prochaines_sorties").animate({
+                width: '+=245px'
+            }, 100);
+            showRTInfo = false;
+        }
+    }
+    
+    var poc = $jl('.footer_block').collision( ".insertBanvertical" );
+    
+    if(poc.length > 0) {
+        if(showVerticalBanner == true) {
+            $jl('.insertBanvertical img').fadeOut();
+            showVerticalBanner = false;
+        }
+    } else {
+    
+        if(scrollLevel >= (300 + bannerHeight)) {
+            if(showVerticalBanner == false) {
+                $jl('#product_infos_rt').fadeIn();
+                $jl('.insertBanvertical').css('margin-top', ($jl('.ficheP_rt_panel').height() + 10) + "px");
+                $jl('.insertBanvertical img').fadeIn();
+                showVerticalBanner = true;
+            }
+        } else {
+            if(showVerticalBanner == true) {
+                $jl('.insertBanvertical img').fadeOut();
+                $jl('#product_infos_rt').fadeOut();
+                showVerticalBanner = false;
+            }
+        }
+    }
+ });
+ 
+ $jl(document).ready(function() {	
+
+        $jl("*").click(function(e){
+                if(commandNav) {
+                    commandNav = false;
+                    return false;
+                }
+                $jl(".rg-image-wrapper").fadeOut("slow");
+                $jl(".rg-image").fadeOut("slow");
+                $jl('body').css('overflow', 'visible');
+        });
+        
+        $jl(".rg-thumbs img, .ficheP_visu img").click(function(e){
+                document.body.scrollTop = 200;
+                $jl(".rg-image-wrapper").height($jl("body").height());
+                $jl(".rg-image-wrapper").fadeIn("slow");
+                imageShown = parseInt($jl(this).attr("id"));
+                
+                showImageShown(imageShown);
+                
+                //$jl('body').css('overflow', 'hidden');
+                return false;
+        });
+
+        $jl(document).keypress(function(e){
+                if(e.keyCode==27){
+                        $jl(".rg-image-wrapper").fadeOut("slow");
+                        $jl(".rg-image").fadeOut("slow");
+                        $jl('body').css('overflow', 'visible');
+                }
+        });
+});
+
+function showNext() {
+    imageShown++;
+    if(imageShown >= $jl("#ImageTotal").html())
+        imageShown = 0;
+    
+    showImageShown(imageShown);
+    
+    commandNav = true;
+}
+
+function showPrev() {
+    imageShown--;
+    if(imageShown < 0)
+        imageShown = $jl("#ImageTotal").html() - 1;
+    
+    showImageShown(imageShown);
+    commandNav = true;
+}
+
+function showImageShown() {
+    $jl("#Imagenumber").html((imageShown+1));
+    if($jl("#" + imageShown).attr("class") == "video") {
+        showVideo($jl("#" + imageShown).attr("data-large"));
+    } else {
+        showPicture($jl("#" + imageShown).attr("data-large"));
+    }
+}
+
+function showVideo(link) {
+    $jl(".rg-image").hide();
+    $jl(".rg-video").html(
+            '<iframe src="https://player.vimeo.com/video/' + link + '" \n\
+                    width="1000" \n\
+                    height="600" \n\
+                    frameborder="0" \n\
+                    webkitallowfullscreen \n\
+                    mozallowfullscreen allowfullscreen></iframe>'
+            );
+    $jl(".rg-video").css("left", ($jl("body").width()-$jl(".rg-video").width())/2)
+        .css("top", ($jl("body").height()-$jl(".rg-video").height())/3)
+        .fadeIn("slow");
+    $jl('html, body').animate({
+        scrollTop: $(".rg-video").offset().top - 200
+    }, 1000);
+    showGalleryNav($jl(".rg-video").height());
+}
+
+function showPicture(link) {
+    $jl(".rg-video").hide();
+    $jl(".rg-image img").attr("src", link);
+    $jl(".rg-image").css("left", ($jl("body").width()-$jl(".rg-image").width())/2)
+        .css("top", ($jl("body").height()-$jl(".rg-image").height())/3)
+        .fadeIn("slow");
+    $jl('html, body').animate({scrollTop: $(".rg-image").offset().top - 200}, 1000);
+    showGalleryNav($jl(".rg-image").height());
+}
+
+function showGalleryNav(height) {
+    $jl("#galleryNav").css("margin-top", ($jl("body").height() - height)/3 + height)
+                        .fadeIn();
+}
+

@@ -1,0 +1,188 @@
+/* ******************************************* */
+/* Custom: News Election Redirect - Temporary  */
+/* ******************************************* */
+
+/*
+// CBN News page?
+try {
+
+if (document.location.toString().toLowerCase().indexOf("/cbnnews") >= 0) {
+
+	// Check cookie: first visit to CBN News?
+	news_visited = news_getCookie("news_visited");
+	if ((typeof (news_visited) == "undefined") || (news_visited != "true")) {
+
+		// Yes -> set cookie
+		news_setCookie("news_visited", "true","/");
+
+		// First visit to a news page and that page is the news home page?		
+		if (location.pathname.toLowerCase() == "/cbnnews") { 
+			location.href = "/cbnnews/politics/election";
+		}
+	}
+}
+
+function news_getCookie(name) {
+	var start = document.cookie.indexOf(name + "=");
+	var len = start + name.length + 1;
+	if ((!start) && (name != document.cookie.substring(0, name.length))) {
+		return null;
+	}
+	if (start == -1) return null;
+	var end = document.cookie.indexOf(';', len);
+	if (end == -1) end = document.cookie.length;
+
+	return unescape(document.cookie.substring(len, end));
+}
+
+function news_setCookie(name, value, expires, path, domain, secure) {
+	var today = new Date();
+	today.setTime(today.getTime());
+	if (expires) {
+		expires = expires * 1000 * 60 * 60 * 24;
+	}
+
+	var expires_date = new Date(today.getTime() + (expires));
+
+	document.cookie = name + '=' + escape(value) +
+		((expires) ? ';expires=' + expires_date.toGMTString() : '') + //expires.toGMTString()
+		((path) ? ';path=' + path : '') +
+		((domain) ? ';domain=' + domain : '') +
+		((secure) ? ';secure' : '');
+}
+
+} catch (Error) { }
+*/
+/* ******************************************* */
+/* End Custom: News Election Redirect          */
+/* ******************************************* */
+
+/* App Install Banners */
+!function() {
+    try {
+        var app_ids = {
+            "my.cbn.com": {
+                ios: "913786452",
+                android: "com.cbn.mycbn.app"
+            },
+            "/cbnnews": {
+                ios: "482626826",
+                android: "com.cbn.cbnnews.app.android.christian.news"
+            },
+            "/fiestahoy": {
+                ios: "501808964",
+                android: "com.cbn.fiesta.hoy.cristiano.musica.android.app"
+            },
+            "/radio": {
+                ios: "329377934",
+                android: "com.cbn.radio.christian.music.free.android.app"
+            },
+            "/superbook": {
+                ios: "606378030",
+                android: "air.cbn.superbook.bible.app.android"
+            },
+            "/tv": {
+                ios: "381338213",
+                android: "com.cbn.cbntv.app.android.christian.tv"
+            },
+            "/700club": {
+                ios: "381338213",
+                android: "com.cbn.cbntv.app.android.christian.tv"
+            },
+            "/video": {
+                ios: "381338213",
+                android: "com.cbn.cbntv.app.android.christian.tv"
+            }
+        };
+
+        if ((document.location.toString().toLowerCase().indexOf("/cruise") < 0) && (document.location.toString().toLowerCase().indexOf("/giving") < 0) && (document.location.toString().toLowerCase().indexOf("/partners") < 0)) {
+            var found_path = false;
+            var ios_promo_id = '';
+            var android_promo_id = '';
+
+            for (var key in app_ids) {
+                if (app_ids.hasOwnProperty(key)) {
+                    if (document.location.toString().indexOf(key) >= 0) {
+                        ios_promo_id = app_ids[key].ios;
+                        android_promo_id = app_ids[key].android;
+                        found_path = true;
+                        break;
+                    }
+                }
+            }
+
+            if (!found_path) {
+                var rand_num = Math.floor(Math.random() * 5);
+                switch (rand_num) {
+                    case 0:
+                        ios_promo_id = app_ids['/superbook'].ios;
+                        android_promo_id = app_ids['/superbook'].android;
+                        break;
+                    case 1:
+                        ios_promo_id = app_ids['/tv'].ios;
+                        android_promo_id = app_ids['/tv'].android;
+                        break;
+                    case 2:
+                        ios_promo_id = app_ids['/radio'].ios;
+                        android_promo_id = app_ids['/radio'].android;
+                        break;
+                    case 3:
+                        ios_promo_id = app_ids['my.cbn.com'].ios;
+                        android_promo_id = app_ids['my.cbn.com'].android;
+                        break;
+                    default:
+                        ios_promo_id = app_ids['my.cbn.com'].ios;
+                        android_promo_id = app_ids['my.cbn.com'].android;
+                }
+            }
+
+            document.write('<meta name="apple-itunes-app" content="app-id=' + ios_promo_id + '">');
+            document.write('<meta name="android_play_store_app" content="' + android_promo_id + '">');
+
+        }
+    } catch (err) {
+        if (window.console)
+            window.console.log(err);
+    }
+}();
+
+/* Custom Tracking: Chartbeat */
+
+try {
+
+	var _sf_async_config={};
+	_sf_async_config.uid = 61703;
+    _sf_async_config.domain = 'cbn.com';
+    _sf_async_config.useCanonical = true;
+
+	var _sf_startpt = (new Date()).getTime();
+
+	cb_head = document.head || document.getElementsByTagName('head')[0]
+    cb_outputstring = "<style id='chartbeat-flicker-control-style' type='text/css'>body { visibility: hidden !important;}</style>";	
+	cb_head.innerHTML = cb_outputstring + cb_head.innerHTML;
+    // var _sf_startpt = (new Date()).getTime();
+
+   // Set a timeout event for 1 second (can adjust)
+   window.setTimeout(function() {
+      var hider = document.getElementById('chartbeat-flicker-control-style');
+      if (hider) {
+         hider.parentNode.removeChild(hider);
+      }
+   }, 1000);
+
+	(function () {
+	var events = document.createElement('script');
+	events.type = 'text/javascript';
+	events.async = true;
+	events.src = '//static.chartbeat.com/js/chartbeat_mab.js';
+	var cb_s = document.getElementsByTagName('script')[0];
+	  cb_s.parentNode.insertBefore(events, cb_s);
+	})();
+    // <script async src = "//static.chartbeat.com/js/chartbeat_mab.js"></script>
+
+
+} catch (Error) { }
+
+
+
+

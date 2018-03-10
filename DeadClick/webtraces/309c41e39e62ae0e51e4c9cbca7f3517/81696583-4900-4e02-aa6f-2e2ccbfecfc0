@@ -1,0 +1,17 @@
+/*
+ accounting.js v0.4.2
+ Copyright 2014 Open Exchange Rates
+
+ Freely distributable under the MIT license.
+ Portions of accounting.js are inspired or borrowed from underscore.js
+
+ Full details and documentation:
+ http://openexchangerates.github.io/accounting.js/
+*/
+(function(t,D){function u(a){return!!(""===a||a&&a.charCodeAt&&a.substr)}function p(a){return y?y(a):"[object Array]"===z.call(a)}function v(a){return a&&"[object Object]"===z.call(a)}function w(a,b){var c;a=a||{};b=b||{};for(c in b)b.hasOwnProperty(c)&&null==a[c]&&(a[c]=b[c]);return a}function l(a,b,c){var d=[],e,h;if(!a)return d;if(A&&a.map===A)return a.map(b,c);e=0;for(h=a.length;e<h;e++)d[e]=b.call(c,a[e],e,a);return d}function q(a,b){a=Math.round(Math.abs(a));return isNaN(a)?b:a}function B(a){var b=
+d.settings.currency.format;"function"===typeof a&&(a=a());return u(a)&&a.match("%v")?{pos:a,neg:a.replace("-","").replace("%v","-%v"),zero:a}:a&&a.pos&&a.pos.match("%v")?a:u(b)?d.settings.currency.format={pos:b,neg:b.replace("%v","-%v"),zero:b}:b}var d={version:"0.4.1",settings:{currency:{symbol:"$",format:"%s%v",decimal:".",thousand:",",precision:2,grouping:3},number:{precision:0,grouping:3,thousand:",",decimal:"."}}},A=Array.prototype.map,y=Array.isArray,z=Object.prototype.toString,r=d.unformat=
+d.parse=function(a,b){if(p(a))return l(a,function(a){return r(a,b)});a=a||0;if("number"===typeof a)return a;b=b||d.settings.number.decimal;var c=new RegExp("[^0-9-"+b+"]",["g"]),c=parseFloat((""+a).replace(/\((.*)\)/,"-$1").replace(c,"").replace(b,"."));return isNaN(c)?0:c},C=d.toFixed=function(a,b){b=q(b,d.settings.number.precision);var c=Math.pow(10,b);return(Math.round(d.unformat(a)*c)/c).toFixed(b)},x=d.formatNumber=d.format=function(a,b,c,k){if(p(a))return l(a,function(a){return x(a,b,c,k)});
+a=r(a);var e=w(v(b)?b:{precision:b,thousand:c,decimal:k},d.settings.number),h=q(e.precision),f=0>a?"-":"",g=parseInt(C(Math.abs(a||0),h),10)+"",n=3<g.length?g.length%3:0;return f+(n?g.substr(0,n)+e.thousand:"")+g.substr(n).replace(/(\d{3})(?=\d)/g,"$1"+e.thousand)+(h?e.decimal+C(Math.abs(a),h).split(".")[1]:"")},E=d.formatMoney=function(a,b,c,k,e,h){if(p(a))return l(a,function(a){return E(a,b,c,k,e,h)});a=r(a);var f=w(v(b)?b:{symbol:b,precision:c,thousand:k,decimal:e,format:h},d.settings.currency),
+g=B(f.format);return(0<a?g.pos:0>a?g.neg:g.zero).replace("%s",f.symbol).replace("%v",x(Math.abs(a),q(f.precision),f.thousand,f.decimal))};d.formatColumn=function(a,b,c,k,e,h){if(!a)return[];var f=w(v(b)?b:{symbol:b,precision:c,thousand:k,decimal:e,format:h},d.settings.currency),g=B(f.format),n=g.pos.indexOf("%s")<g.pos.indexOf("%v")?!0:!1,m=0;a=l(a,function(a,b){if(p(a))return d.formatColumn(a,f);a=r(a);var c=(0<a?g.pos:0>a?g.neg:g.zero).replace("%s",f.symbol).replace("%v",x(Math.abs(a),q(f.precision),
+f.thousand,f.decimal));c.length>m&&(m=c.length);return c});return l(a,function(a,b){return u(a)&&a.length<m?n?a.replace(f.symbol,f.symbol+Array(m-a.length+1).join(" ")):Array(m-a.length+1).join(" ")+a:a})};"undefined"!==typeof exports?("undefined"!==typeof module&&module.exports&&(exports=module.exports=d),exports.accounting=d):"function"===typeof define&&define.amd?define([],function(){return d}):(d.noConflict=function(a){return function(){t.accounting=a;d.noConflict=D;return d}}(t.accounting),t.accounting=
+d)})(this);

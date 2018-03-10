@@ -1,0 +1,81 @@
+$(document).ready(function() {
+    // Pour tous les liens qui affichent un tooltip
+    $('.tooltipLink').mouseover(function(){
+        // On récupère le tooltip lié au lien
+        var tt = $(this).parent().find('.tooltip');
+        tt.removeClass('toHide');
+        if(navigator.userAgent.indexOf("WebKit") != -1){
+        		tt.css('top', $(this).parent().position().top + 20);
+        }
+        // ajustement de la position de la fenetre 
+        // (au dessus ou en dessous de l'objet en fonction de la place restante)
+        if ( ($(window).height() - $(this).position().top - tt.height() - $(this).height() + $(document.body).scrollTop()) < 0 ) {
+    		tt.css('top', $(this).position().top - tt.height() - ($(this).height()/2) - $(document.body).scrollTop());
+    		if ($(this).position().top - tt.position().top - tt.height() < 0) {
+    			tt.css('top', $(this).position().top - $(document.body).scrollTop());
+    		}
+    	}
+    	else {
+    		tt.css('top', $(this).position().top + $(this).height() - $(document.body).scrollTop());
+    	}
+        
+        // ajustement de la position de la fenetre 
+        // (a droite ou a gauche de l'objet en fonction de la place restante)
+        if ( ($(window).width() - $(this).position().left - tt.width() + $(document.body).scrollLeft()) < 0 ) {
+    		tt.css('left', $(this).position().left - tt.width() - $(document.body).scrollLeft());
+    		if ($(this).position().left - tt.position().left - tt.width() < 0) {
+    			tt.css('left', $(this).position().left - $(document.body).scrollLeft());
+    		}
+    	}
+    	else {
+    		tt.css('left', $(this).position().left - $(document.body).scrollLeft());
+    	}
+        
+        
+        $('.toHide').hide(0, 
+            // On affiche le tooltip avec un effet déroulant
+            tt.slideDown(10, function(){
+                // On cache tous les tooltip qui ont le flag css activé lorsqu'on quitte le tooltip
+                $(this).mouseleave(function() {
+                   $(this).addClass('toHide');
+                   setTimeout(function() {$('.toHide').slideUp(10)}, 250);
+                }).mouseenter(function() {
+                    // On supprime le flag css de suppression lorsqu'on entre dans le tooltip
+                    $(this).removeClass('toHide');
+                });
+            })
+            
+        );
+        // On cache le tooltip lorsqu'on quitte le lien
+        // On temporise avec un flag sur le style css
+        $(this).mouseleave(function() {
+            tt.addClass('toHide');
+            setTimeout(function() {$('.toHide').slideUp(10)}, 250);
+        });
+       
+    /*    
+       setTimeout(function(){
+    	   //alert('window.height = '+$(window).height());
+    	   //alert('this.top = '+$(tt.context).position().top);
+            // Hauteur de fenêtre restante
+            var hauteurRestante = $(window).height() - ($(tt.context).position().top - $(document.body).scrollTop());
+            // Hauteur du div à afficher
+            var divToShow = tt.height();
+            
+            // Pas assez de hauteur pour afficher la div
+            // On la repositionne
+            if(hauteurRestante < divToShow){
+                var newOffset = $(window).height() - divToShow - 10;
+                //alert('Reposition a faire=' + newOffset);
+                tt.css('top', newOffset);
+                //alert('Reposition resultat=' + tt.position().top);
+            }
+            else {
+            	tt.css('top', $(window).height() - hauteurRestante - $(tt).height());
+            }
+        
+        //alert('W=' + $(window).height() + ' - D=' + $(tt).offset().top + ' - S=' + $(document).scrollTop());
+        //alert('H=' + hauteurRestante + ' - Div=' + divToShow);
+        }, 600);*/
+    });           
+});

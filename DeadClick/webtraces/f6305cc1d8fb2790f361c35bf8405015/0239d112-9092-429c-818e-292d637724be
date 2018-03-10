@@ -1,0 +1,140 @@
+/*********************** Environment specific variable ***********************/
+var loadAd_UrlLocation = ('https:' == document.location.protocol ? 'https:' : 'http:') + "//aps.hearstnp.com/";
+//var aps = aps || {};
+
+/*********************** Load Main file for serving ads ***********************/
+/*var mainFile = loadAd_UrlLocation + 'Scripts/loadAdsMain.js';
+document.write('<scr' + 'ipt id="loadAdConfig" type="text/javascript" src="' + mainFile + '"><\/scr' + 'ipt>');*/
+
+var adwiz_errors = ''; /* this is a container to hold errors */
+var JuicePageUrl = "";
+var taxOverride = null;
+var secOverride = null;
+var cccOverride = null;
+var YSMTier;
+var YSMCategory;
+var APSpageUrl;
+var juice_errors = "";
+//var apsq = apsq || [];
+
+//should we load async?
+// OJ32 is blocked due to third parties using document.write
+// I am leaving this code(commented out) in case that changes
+/*
+if (window.location.search.indexOf("asyncload=yes") !== -1) {
+    aps.loadAsynchronously = true;
+    //wrap the hearst place ad call
+    window.hearstPlaceAd = function () {
+        //convert aruments into an array
+        var args = Array.prototype.slice.call(arguments);
+       //create  function call to the real place ad
+        apsq.push(function () {
+            _hearstPlaceAd.apply(window, args);
+        });
+    };
+
+    //wrap the interstitial ad call
+    window.hearstRefreshInterstitialAds = function (adcodes) {
+        //create  function call to the real place ad
+        apsq.push(function () {
+            _hearstRefreshInterstitialAds.apply(window, adcodes);
+        });
+    };
+
+} else {
+    aps.loadAsynchronously = false;
+}
+*/
+
+/*** Get Page URL, clean it up, and then call Juice Service ****/
+JuicePageUrl = getPageUrl();
+JuicePageUrl = cleanUrl(JuicePageUrl);
+serve_JuiceAds(JuicePageUrl);
+
+
+/*********************** Get URL from parent or URL Override ***********************/
+function getPageUrl() {
+    var returnUrl;
+
+    /* due to cross site scripting, attempt to get information from parent */
+    var parentAPSPageURL;
+    var parentPageUrl;
+    try {
+        parentAPSPageURL = parent.APSpageUrl;
+        parentPageUrl = parent.window.location.host + parent.window.location.pathname + parent.window.location.search;
+    }
+    catch (e) {
+        juice_errors = "juice service error - unable to get parent information\n";
+    }
+
+    /* iFrames need to use APSpageUrl variable or parents URL. If these don't exist (then not in iFrame) use current url */
+    try {
+        returnUrl = parentAPSPageURL || APSpageUrl || parentPageUrl ||
+        window.location.host + window.location.pathname + window.location.search;
+    }
+    catch (e) {
+        /* error probably occured trying to get the parent hostname */
+        returnUrl = window.location.host + window.location.pathname + window.location.search;
+        juice_errors += 'juice serve error - getting JuicePageUrl\n';
+    }
+
+    return returnUrl;
+}
+
+/*********************** Clean up URL ***********************/
+function cleanUrl(returnUrl) {
+    /* Remove http:// and https:// */
+    if (returnUrl.toLowerCase().indexOf('http://') == 0) {
+        returnUrl = returnUrl.substr(7, returnUrl.length);
+    }
+    if (returnUrl.toLowerCase().indexOf('https://') == 0) {
+        returnUrl = returnUrl.substr(8, returnUrl.length);
+    }
+
+    /* page URL can only be 300 chars long */
+    if (returnUrl.length > 300) {
+        returnUrl = returnUrl.substr(0, 300);
+    }
+
+    /* If the last character is a '/' then we need to remove the slash. This allows the system to distinguish
+    ads that go on this page and adds that do not fall in correct bucket. (I.E. www.chron.com/ and www.chron.com/notReal/ */
+    if (returnUrl.charAt(returnUrl.length - 1) == "/") {
+        returnUrl = returnUrl.slice(0, -1);
+    }
+
+    return returnUrl;
+}
+
+/*********************** Write calls to document ***********************/
+function serve_JuiceAds(urlToSend) {
+
+    window.onJuiceEvent_ServeAds && window.onJuiceEvent_ServeAds();
+    /*oj32 code - commented out
+    try {
+            var adUrl = loadAd_UrlLocation + 'SRO/GetJS?url=' + escape(urlToSend);
+
+            if (aps.loadAsynchronously) {
+                var gads = document.createElement("script");
+                gads.async = true;
+                gads.type = "text/javascript";
+                gads.src = adUrl;
+                var node = document.getElementsByTagName("script")[0];
+                node.parentNode.insertBefore(gads, node);
+            } else {
+                document.write('<scr' + 'ipt id="AdsConfigJavaScript" type="text/javascript" src="' + adUrl + '"><\/scr' + 'ipt>');
+            }
+    }
+    catch (e) {
+        juice_errors += 'juice serve error - writing to document\n';
+    }
+    */
+    try {
+        var adUrl = loadAd_UrlLocation + 'SRO/GetJS?url=' + escape(urlToSend);
+        document.write('<scr' + 'ipt id="AdsConfigJavaScript" type="text/javascript" src="' + adUrl + '"><\/scr' + 'ipt>');
+    }
+    catch (e) {
+        juice_errors += 'juice serve error - writing to document\n';
+    }
+
+}
+

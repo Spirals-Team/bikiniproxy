@@ -1,0 +1,50 @@
+_satellite.pushBlockingScript(function(event, target, $variables){
+  var zObj = {};
+
+var urlContainsLot = window.location.href.indexOf('lot.');
+
+if(urlContainsLot){                             
+  var dataLayerLotNum  = stb.digitalData.auction.lotId, 
+    dataLayerSaleNum = stb.digitalData.auction.saleNumber;
+  if((dataLayerLotNum === null) || (dataLayerSaleNum === null)) {     
+    var lotNum  = window.location.href.split('lot.')[1].split('.')[0], 
+      saleNum = $('.ajax-watchlive').attr('data-salenumber');
+  } else {
+    var lotNum  = dataLayerLotNum,
+      saleNum = dataLayerSaleNum;
+  }
+}
+
+var fmtdLotNum  = '',
+    salePlusLot = '';
+
+if (lotNum.match(/[a-z]/i)) {
+  var letterIdx = lotNum.length - 1,
+      lotLetter = lotNum[letterIdx];  
+      lotNum    = lotNum.substring(0, lotNum.length-1);
+} else { lotLetter = ''; }
+
+if(lotNum <= 0){ fmtdLotNum = ' - lot number is less than or equal to 0.'; lotLetter  = ''; }
+if(lotNum > 0 && lotNum < 10){ fmtdLotNum = '000' + lotNum; }
+if(lotNum > 9 && lotNum < 100){ fmtdLotNum = '00' + lotNum; }
+if(lotNum > 99 && lotNum < 1000){ fmtdLotNum = '0' + lotNum; }
+if(lotNum > 999){ fmtdLotNum = lotNum; }
+
+salePlusLot = saleNum + fmtdLotNum + lotLetter;
+
+// VARIABLES DECLARED
+var actionStr  = 'detail';
+var productId  = salePlusLot;
+var customerId = stb.digitalData.account.clientId;
+var saleId    = (stb.digitalData.auction.saleNumber) ? stb.digitalData.auction.saleNumber : $('.ajax-watchlive').attr('data-salenumber'); //s.pageName;
+
+// HELPER FUNCTIONS
+var emailVal = _satellite.readCookie('stb-email');
+
+zObj['action']      = actionStr;
+zObj['product_id']  = productId;
+if(saleId) zObj['sale_id'] = saleId; 
+if(customerId) zObj['customer_id'] = customerId;
+if(emailVal && stb.digitalData.account.authenticated) zObj['email'] = emailVal;
+zaius.event('product', zObj);
+});

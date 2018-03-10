@@ -1,0 +1,30 @@
+_satellite.pushAsyncScript(function(event, target, $variables){
+  /* Vendor - Facebook - Sorel_US */
+var s = _satellite.getVar('SiteID') || "";
+if (s == "Sorel_US") {
+
+    !function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+    n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;
+    n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;
+    t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,
+    document,'script','https://connect.facebook.net/en_US/fbevents.js');
+
+    fbq('init', '1858263577747168'); 
+    fbq('track', 'PageView');
+    if(TagManagerData.PageType == "ProductDetail"){
+      fbq('track', 'ViewContent', {'content_type': TagManagerData.ProductName, 'content_ids': TagManagerData.ProductID });
+    } 
+    if(TagManagerData.PageType == "Cart"){
+         var CartMerchValue = 0;
+         for(i = 0; i < TagManagerData.CartLineItems.length; i++){
+          fbq('track','AddToCart',{'value': TagManagerData.CartLineItems[i].ProductAdjustedPrice, 'content_type': TagManagerData.CartLineItems[i].ProductName, 'content_ids': TagManagerData.CartLineItems[i].ProductID, 'currency': "USD"});
+        }
+      }
+    if(TagManagerData.PageType == "CHKTThanks"){
+     var OrderMerchValue = 0;
+            for(i = 0; i < TagManagerData.OrderLineItems.length; i++){
+             fbq('track','Purchase',{'value': TagManagerData.OrderLineItems[i].ProductAdjustedPrice, 'content_type': TagManagerData.OrderLineItems[i].ProductName, 'content_ids': TagManagerData.OrderLineItems[i].ProductID, 'currency': "USD"});
+         } 
+    }
+}
+});

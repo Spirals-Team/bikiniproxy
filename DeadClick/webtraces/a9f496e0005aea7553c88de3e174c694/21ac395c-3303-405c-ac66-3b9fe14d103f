@@ -1,0 +1,287 @@
+function in_array(string, array){
+	var len = array.length;
+	for (i = 0; i < len; i++){
+		if(array[i] == string){
+			return true;
+		}
+	}
+	return false;
+}
+
+function grayOutBackground(vis, inactiveBoxHeight) {
+	if(inactiveBoxHeight == null){
+		inactiveBoxHeight = 75;
+	}
+	var opacity = 70;
+	var opaque = (opacity / 100);
+	var bgcolor = '#000000';
+	var dark = document.getElementById('darkenScreenObject');
+	
+	//var left = $(window).width() / 2 + $(window).scrollLeft() - Number($('#inactive-box-body').css('width').replace('px', '')) / 2;
+	var inactiveBoxBody = $('#inactive-box-body').css('width').replace('px', '');
+	if(inactiveBoxBody > 0){
+
+	} else {
+		inactiveBoxBody = $('#inactive-box-body').width();
+	}
+	var left = $(window).width() / 2 + $(window).scrollLeft() - inactiveBoxBody / 2;
+
+	if(Number(left) > 0){
+		$('#inactive-box').css('left', left + 'px');
+	}
+	var top = $(window).height() / 2 + $(window).scrollTop() - inactiveBoxHeight;
+	if(Number(top) > 0){
+		$('#inactive-box').css('top', top + 'px');
+	}
+
+	if (vis) {
+		//alert('test2');
+		//alert('Window: ' + $(window).height() + '/Document: ' + $(document).height());
+
+		// Calculate the page width and height
+		 /*if( document.body && ( document.body.scrollWidth || document.body.scrollHeight ) ) {
+			var pageWidth = document.body.scrollWidth+'px';
+			var pageHeight = document.body.scrollHeight+'px';
+		} else if( document.body.offsetWidth ) {
+			var pageWidth = document.body.offsetWidth+'px';
+			var pageHeight = document.body.offsetHeight+'px';
+		} else {
+			var pageWidth='100%';
+			var pageHeight='100%';
+		}*/
+		var pageWidth = $(window).width();
+		var pageHeight = $(window).height();
+		//set the shader to cover the entire page and make it visible.
+		if(jQuery.support.opacity){
+			dark.style.opacity = opaque;
+			dark.style.MozOpacity = opaque;
+		} else {
+			dark.style.filter = 'alpha(opacity=' + opacity + ')';
+		}
+		$("#darkenScreenObject").css({
+			backgroundColor: bgcolor,
+			width: pageWidth,
+			height: pageHeight,
+			display: 'block'
+		})
+		/*dark.style.backgroundColor = bgcolor;
+		dark.style.width = pageWidth;
+		dark.style.height = pageHeight;
+		dark.style.display ='block';*/
+	} else {
+		dark.style.display='none';
+	}
+}
+
+function evaluateShowSection(object, desiredValue, section, inverse){
+	if(!objExists(object)){
+		return;
+	}
+	if(inverse == null){
+		inverse = false;
+	}
+	var handle = document.getElementById(section);
+	var retVal = false;
+
+	if(object.type == 'checkbox'){
+		if((desiredValue == 'Y' && object.checked) || (desiredValue != 'Y' && !object.checked)){
+			//handle.style.display = '';
+			//can'g use fadeIn or fadeOut cuz it doesn't work right in IE8 running compatibility mode on some templates (mantis 1438)
+			if(inverse){
+				$(handle).hide();
+			} else {
+				$(handle).show();
+			}
+			retVal = true;
+		} else {
+			//handle.style.display = 'none';
+			if(inverse){
+				$(handle).show();
+			} else {
+				$(handle).hide();
+			}
+		}
+		return retVal;
+	}
+
+	if(typeof(desiredValue) == 'string'){
+		desiredValue = new Array(desiredValue);
+	}
+	//alert(getSelectedValue(document.jsform, object) + '|' + desiredValue);
+	if(in_array(getSelectedValue(null, object), desiredValue)){
+		if(objExists(handle)){
+			//handle.style.display = '';
+			if(inverse){
+				$(handle).hide();
+			} else {
+				$(handle).show();
+			}
+			retVal = true;
+		}
+	} else {
+		if(objExists(handle)){
+			//handle.style.display = 'none';
+			if(inverse){
+				$(handle).show();
+			} else {
+				$(handle).hide();
+			}
+		}
+	}
+	return retVal;
+}
+
+function confirmMsg(msg) {
+    if(!confirm(msg)) {
+		return false;
+    }
+
+    return true;
+}
+
+function goThere(url){
+	window.location.href = url;
+}
+
+function objExists(objToTest) {
+	if (null == objToTest) {
+		return false;
+	}
+
+	if ("undefined" == typeof(objToTest) ) {
+		return false;
+	}
+
+	return true;
+}
+
+function getElementByName(which, name){
+	var length = name.length;
+
+	for(i=0;i<which.length;i++) {
+		var tempobj=which.elements[i];
+
+		if(tempobj.name.substring(0,length)==name) {
+			return tempobj;
+		}
+	}
+}
+
+function getSelectValueByName(which, name){
+	var length = name.length;
+
+	for(i=0;i<which.length;i++) {
+		var tempobj=which.elements[i];
+
+		if(tempobj.name.substring(0,length)==name) {
+			return getSelectedValue(which, tempobj);
+		}
+	}
+}
+
+function getSelectedValue(frm, obj){
+	//does the object exist
+	if(objExists(obj)){
+		//does the object have any sub-entities		
+		if(objExists(obj[0])){
+			//if it does, is it a radio select?
+			if(obj[0].type && obj[0].type == 'radio'){
+				for(i=0; i<obj.length; i++){
+					if(obj[i].checked){
+						return obj[i].value;
+					}
+				}
+			} else if(obj.type == 'select-one'){
+				return obj[obj.selectedIndex].value;
+			} else {
+
+				//alert(obj.type);
+			}
+		} else {
+			//the object doesn't have any sub entites, so just return its value
+			return obj.value;
+		}
+	}
+}
+
+function applyDisplay(element, value){
+    if(document.getElementById(element)){
+        document.getElementById(element).style.display = value;
+    }
+}
+
+function checkEmail(email) {
+    var reg = /^([A-Za-z0-9_\-\.])+\@([A-Za-z0-9_\-\.])+\.([A-Za-z]{2,4})$/;
+   
+    if(reg.test(email) == false) {
+      	return false;
+    }
+    
+    return true;
+				
+}
+
+function numericSort(a, b){
+	return a-b;
+}
+
+
+function ksort(array, numeric){
+	if(numeric == null){
+		numeric = true;
+	}
+	var keys = new Array();
+	for(k in array){
+		keys.push(k);
+	}
+	if(numeric){
+		keys.sort(numericSort);
+	} else {
+		keys.sort();
+	}
+	array2 = new Array();
+	for(var i = 0; i < keys.length; i++){
+		if(!objExists(array2[keys[i]])){
+			array2[keys[i]] = new Array();
+		}
+		array2[keys[i]] = array[keys[i]];
+	}
+	return array2;
+}
+
+/* Used for the all|none checkboxes with the batch delete functionality. */
+function selectEntities(docHandle, type){
+    var control = docHandle.elements.length;
+
+    for (var i=0; i<control; i++) {
+        var element = docHandle.elements[i];
+
+        if ("entityCheckbox[]" == element.name.substring(0, 16)) {
+            element.checked = ("all" == type);
+        }
+    }
+}
+
+function strPad(input, length, padString){
+	while(input.length < length){
+		input = padString + input;
+	}
+}
+
+function convertToFloat(sText){
+    var validChars = "0123456789.,-";
+    var character = '';
+    var number ='';
+
+
+    for (i = 0; i < sText.length; i++){
+        character = sText.charAt(i);
+        if (validChars.indexOf(character) == -1){
+
+        } else {
+            number += character;
+        }
+    }
+
+    return number;
+}

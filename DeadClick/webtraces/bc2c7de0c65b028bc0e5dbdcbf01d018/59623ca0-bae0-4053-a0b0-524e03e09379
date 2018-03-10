@@ -1,0 +1,124 @@
+(function($){
+	
+	/* Code for email subscription - implemented for footer - Flash to HTML Conversion */	
+	subscribe = {
+		elements: {
+			signUp: $('#signUp'),
+			emailAddress: $('#emailAddress')
+		},
+		messages: {
+				defaultMsg: "Enter your email",
+				validationErrorMsg: "Please, enter valid email.",
+				confirmationMsg: "Email Sent...Thank You.",
+				errorMsg: "An Error Occurred.",
+				processingMsg: "Processing.."
+			},
+		init: function(messages){
+			$.extend(this.messages,messages);
+			this.events.helperMessages();
+			this.events.subscribeEmail();
+		},
+		events:{
+			helperMessages: function(){
+				var messages = subscribe.messages;
+				/* Below is necessary in case footer.js is loaded before element is created in DOM */
+				if (!subscribe.elements.emailAddress.length) {
+					subscribe.elements.emailAddress = $('#emailAddress');
+				}
+				
+				$(subscribe.elements.emailAddress)
+					.val(messages.defaultMsg)
+					.on({						
+						focus: function(){
+							var $this = $(this),
+								val = $this.val();
+							if(val === messages.defaultMsg || val === messages.validationErrorMsg 
+								|| val === messages.confirmationMsg || val === messages.errorMsg){
+								$this.val('');
+							}
+						},
+						blur: function(){
+							var $this = $(this);
+							if($this.val().length === 0){
+								$this.val(messages.defaultMsg);
+							}
+						}
+					});
+			}, 
+			subscribeEmail: function(){
+				/* Below is necessary in case footer.js is loaded before element is created in DOM */
+				if (!subscribe.elements.signUp.length) {
+					subscribe.elements.signUp = $('#signUp');
+				}
+				
+				$(subscribe.elements.signUp).on('click',function(){
+					var emailAddress = $(subscribe.elements.emailAddress).val(),
+						messages = subscribe.messages,
+						redirectTo = '/emailsignup/index.jsp';
+					
+					if(subscribe.actions.validateEmail(emailAddress)){
+						subscribe.actions.processing(true,messages.processingMsg);
+						subscribe.actions.controlSubmission(true);
+						subscribe.actions.fetch(redirectTo, {							
+							contest: "RLM_FOOTER_FR",
+							sendEmailConf: "yes",
+							webstore: "FR",
+							email_pref: "Y",
+							language: messages.locale.substring(0,2).toUpperCase(),
+							emailAddress: emailAddress,
+							url: location.origin + redirectTo
+						});					
+					}else{							
+						$(subscribe.elements.emailAddress).val(messages.validationErrorMsg);							
+					}
+				});
+			},
+		},
+		actions:{
+			validateEmail: function(email){
+				var exp = /^([\w-]+(?:\.[\w-]+)*)@((?:[\w-]+\.)*\w[\w-]{0,66})\.([a-z]{2,6}(?:\.[a-z]{2})?)$/i;
+				return exp.test(email);
+			},
+			processing: function(flag, message){
+				$(subscribe.elements.emailAddress).val(message).prop('disabled', flag);
+			},
+			controlSubmission: function(flag){
+				$(subscribe.elements.signUp).prop('disabled', flag);
+			},
+			omniturePixel: function() {
+				try {
+					s.customLinkTrackEnabled = true;
+					s.linkTrackVars = 'events';
+					s.linkTrackEvents = 'event18';
+					s.events = 'event18';
+					s.pageName = '';
+					s.tl(this, 'o', 'email capture');
+				} catch (err) {} // do nothing
+			},
+			fetch: function(url,data){
+				var messages = subscribe.messages;				
+				$.ajax({
+					type: 'POST',
+					url: url,
+					data: data,
+					success: function ( msg ) {							
+						var result = (msg.toLowerCase().indexOf("successview") > 0)? messages.confirmationMsg : messages.errorMsg;
+						subscribe.actions.processing(false,result);
+						subscribe.actions.omniturePixel();
+					},
+					error: function(jqXHR, textStatus, errorThrown) {
+						subscribe.actions.processing(false,messages.errorMsg);
+						console.log('Error');
+						console.log(jqXHR);
+						console.log(textStatus);
+						console.log(errorThrown);
+					},
+					complete: function(){
+						subscribe.actions.controlSubmission(false);
+					}
+				});
+			},
+		}		
+	};
+	
+})($j);

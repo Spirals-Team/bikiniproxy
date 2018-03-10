@@ -1,0 +1,53 @@
+var AP_Tacoda_AMS_DDC_snippet_version = "1.3.a";
+var AP_Tacoda_AMD_DDC_snippet_date = "011905";
+var AP_Tacoda_AMS_DDC_clist = new Array("TID");
+var AP_Tacoda_AMS_DDC_clist_notset = null;
+var AP_Tacoda_AMS_DDC_keys = new Array();
+var AP_Tacoda_AMS_DDC_values = new Array();
+var AP_Tacoda_AMS_DDC_vars_num = 0;
+function AP_Tacoda_AMS_DDC_getCookie(AP_name) {
+var AP_cname = AP_name + "=";
+var AP_dc = document.cookie;
+if (AP_dc.length > 0) {
+for(var AP_begin = AP_dc.indexOf(AP_cname); AP_begin != -1; AP_begin = AP_dc.indexOf(AP_cname, AP_begin)) {
+if((AP_begin != 0) && (AP_dc.charAt(AP_begin - 1) != ' ')) {
+AP_begin++;
+continue;
+}
+AP_begin += AP_cname.length;
+var AP_end = AP_dc.indexOf(";", AP_begin);
+if (AP_end == -1)
+AP_end = AP_dc.length;
+return unescape(AP_dc.substring(AP_begin, AP_end));
+}
+}
+return AP_Tacoda_AMS_DDC_clist_notset;
+}
+function AP_Tacoda_AMS_DDC_addPair(AP_key, AP_value) {
+AP_Tacoda_AMS_DDC_keys[AP_Tacoda_AMS_DDC_vars_num] = AP_key;
+AP_Tacoda_AMS_DDC_values[AP_Tacoda_AMS_DDC_vars_num] = AP_value;
+AP_Tacoda_AMS_DDC_vars_num++;
+}
+function AP_Tacoda_AMS_DDC_collect_vars() {
+var AP_Tacoda_AMS_DDC_vars_as_string = "";
+for(var AP_i = 0; AP_i < AP_Tacoda_AMS_DDC_vars_num; AP_i++) {
+AP_Tacoda_AMS_DDC_vars_as_string += "&var_" + escape( AP_Tacoda_AMS_DDC_keys[AP_i] ) + "=" + escape( AP_Tacoda_AMS_DDC_values[AP_i] ) ;
+}
+return AP_Tacoda_AMS_DDC_vars_as_string;
+}
+function AP_Tacoda_AMS_DDC(AP_Tacoda_AMS_DDC_img_url, AP_Tacoda_AMS_DDC_js) {
+AP_Tacoda_AMS_DDC_js = parseFloat(AP_Tacoda_AMS_DDC_js);
+AP_Tacoda_AMS_DDC_args = "?" + Math.random() + "&snippet_version=" + AP_Tacoda_AMS_DDC_snippet_version + "&referrer=" + escape(document.referrer) + "&page=" + escape(window.location.href);
+AP_Tacoda_AMS_DDC_args += "&timezone=" + (new Date()).getTimezoneOffset();
+for(var AP_i = 0; AP_i < AP_Tacoda_AMS_DDC_clist.length; AP_i++) {
+var AP_clist_name = AP_Tacoda_AMS_DDC_clist[AP_i];
+var AP_clist_value = AP_Tacoda_AMS_DDC_getCookie(AP_clist_name);
+if(AP_clist_value != null) {
+AP_Tacoda_AMS_DDC_args += "&clist_" + escape(AP_clist_name) + "=" + escape(AP_clist_value);
+}
+}
+AP_Tacoda_AMS_DDC_args += AP_Tacoda_AMS_DDC_collect_vars();
+document.write('<IMG '+'SRC="' + AP_Tacoda_AMS_DDC_img_url + AP_Tacoda_AMS_DDC_args + '" height="1" width="1" border="0" id="tacoda">');
+}
+
+

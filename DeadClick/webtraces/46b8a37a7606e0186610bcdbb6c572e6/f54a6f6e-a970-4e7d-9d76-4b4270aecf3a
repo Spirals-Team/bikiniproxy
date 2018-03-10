@@ -1,0 +1,171 @@
+// JavaScript Document
+({
+	soap: (function(){
+		//Load dependent libs
+		bam.loadSync(bam.homePath + "bam.xml.js");
+		var _self = {					
+			//SOAP Client
+			SOAPClient: {
+				Proxy: "",
+				SOAPServer: "",
+				ContentType: "text/xml",
+				CharSet: "utf-8",
+				ResponseXML: null,
+				ResponseText: "",
+				Status: 0,
+				ContentLength: 0,
+				Namespace: function(name, uri) {
+					return {"name":name, "uri":uri};
+				},
+				SendRequest: function(soapReq, callback) {		
+                    var content;
+
+                    function getResponse(xData) {
+                        if(!!callback) {
+                            _self.SOAPClient.Status = xData.status;
+                            _self.SOAPClient.ResponseText = xData.responseText;
+                            _self.SOAPClient.ResponseXML = xData.responseXML;
+                            var jsOut = xData.responseXML ? bam.xml.xmlToJSON(xData.responseXML) : bam.xml.xmlToJSON(xData.responseText);
+                            callback(jsOut);
+                        }
+                    }
+
+					if(!!_self.SOAPClient.Proxy) {
+						_self.SOAPClient.ResponseText = "";
+						_self.SOAPClient.ResponseXML = null;
+						_self.SOAPClient.Status = 0;
+						
+						content = soapReq.toString();
+						_self.SOAPClient.ContentLength = content.length;
+
+						return $.ajax({
+							 type: "POST",
+							 url: _self.SOAPClient.Proxy,
+							 dataType: "xml",
+							 processData: false,
+							 data: content,
+							 complete: getResponse,
+							 contentType: _self.SOAPClient.ContentType + "; charset=\"" + _self.SOAPClient.CharSet + "\"",
+							 beforeSend: function(req) {
+								req.setRequestHeader("Method", "POST");
+								//req.setRequestHeader("Content-Length", _self.SOAPClient.ContentLength);								
+								req.setRequestHeader("SOAPServer", _self.SOAPClient.SOAPServer);
+								req.setRequestHeader("SOAPAction", soapReq.Action);
+							 }
+						});
+					}
+				},	
+				ToXML: function(soapObj) {
+					var out = new bam.string.StringBuffer();
+					var isNSObj=false;
+					try {
+						if(!!soapObj&&typeof(soapObj)==="object"&&soapObj.typeOf==="SOAPObject") {
+							//Namespaces
+							if(!!soapObj.ns) {
+								if(typeof(soapObj.ns)==="object") {
+									isNSObj=true;
+									out.append("<"+soapObj.ns.name+":"+soapObj.name)
+									.append(" xmlns:"+soapObj.ns.name+"=\""+soapObj.ns.uri+"\"");
+								} else {
+									out.append("<"+soapObj.name)
+									.append(" xmlns=\""+soapObj.ns+"\"");
+								}
+							} else {
+								out.append("<"+soapObj.name);
+							}
+							//Node Attributes
+							if(soapObj.attributes.length > 0) {
+								 var cAttr;
+								 var aLen=soapObj.attributes.length-1;
+								 do {
+									 cAttr=soapObj.attributes[aLen];
+									 if(isNSObj) {
+										out.append(" "+soapObj.ns.name+":"+cAttr.name+"=\""+cAttr.value+"\"");
+									 } else {
+										out.append(" "+cAttr.name+"=\""+cAttr.value+"\"");
+									 }
+								 } while(aLen--);
+							}
+							out.append(">");
+							//Node children
+							if(soapObj.hasChildren()) {
+								var cPos, cObj;
+								for(cPos in soapObj.children){
+									if (!soapObj.children.hasOwnProperty || soapObj.children.hasOwnProperty(cPos)) {
+										cObj = soapObj.children[cPos];
+										if(typeof(cObj) === "object"){out.append(_self.SOAPClient.ToXML(cObj));}
+									}
+								}
+							}
+							//Node Value
+							if(!!soapObj.value){out.append(soapObj.value);}
+							//Close Tag
+							if(isNSObj){out.append("</"+soapObj.ns.name+":"+soapObj.name+">");}
+							else {out.append("</"+soapObj.name+">");}
+							return out.toString();
+						}
+					} catch(e){throw new Error("Unable to process SOAPObject! Object must be an instance of SOAPObject");}
+				}
+			},
+			//Soap request - this is what being sent using SOAPClient.SendRequest
+			SOAPRequest: function(action, soapObj) {
+				this.Action=action;	
+				var nss=[];
+				var headers=[];
+				var bodies=(!!soapObj)?[soapObj]:[];
+				this.addNamespace=function(ns, uri){nss.push(new _self.SOAPClient.Namespace(ns, uri));};
+				this.addHeader=function(soapObj){headers.push(soapObj);};
+				this.addBody=function(soapObj){bodies.push(soapObj);};
+				this.toString=function() {
+					var soapEnv = new _self.SOAPObject("soapenv:Envelope");
+						soapEnv.attr("xmlns:soapenv","http://schemas.xmlsoap.org/soap/envelope/");
+					//Add Namespace(s)
+					if(nss.length>0){
+						var tNs, tNo;
+						for(tNs in nss){
+							if(!nss.hasOwnProperty || nss.hasOwnProperty(tNs)) {
+								tNo=nss[tNs];if(typeof(tNo)==="object"){soapEnv.attr("xmlns:"+tNo.name, tNo.uri);}
+							}
+						}
+					}
+					//Add Header(s)
+					if(headers.length>0) {
+						var soapHeader = soapEnv.appendChild(new _self.SOAPObject("soapenv:Header"));
+						var tHdr;
+						for(tHdr in headers){
+							if(!headers.hasOwnProperty || headers.hasOwnProperty(tHdr)) {
+								soapHeader.appendChild(headers[tHdr]);
+							}
+						}
+					}
+					//Add Body(s)
+					if(bodies.length>0) {
+						var soapBody = soapEnv.appendChild(new _self.SOAPObject("soapenv:Body"));
+						var tBdy;
+						for(tBdy in bodies){
+							if(!bodies.hasOwnProperty || bodies.hasOwnProperty(tBdy)) {
+								soapBody.appendChild(bodies[tBdy]);
+							}
+						}
+					}
+					return soapEnv.toString();
+				};
+			},
+			//Soap Object - Used to build body envelope and other structures
+			SOAPObject: function(name) {
+				this.typeOf="SOAPObject";
+				this.ns=null;
+				this.name=name;
+				this.attributes=[];
+				this.children=[];
+				this.value=null;
+				this.attr=function(name, value){this.attributes.push({"name":name, "value":value});return this;};
+				this.appendChild=function(obj){this.children.push(obj);return obj;};
+				this.hasChildren=function(){return (this.children.length > 0)?true:false;};
+				this.val=function(v){if(!v){return this.value;}else{this.value=v;return this;}};
+				this.toString=function(){return _self.SOAPClient.ToXML(this);};
+			}
+		};
+		return _self;
+   })()
+})

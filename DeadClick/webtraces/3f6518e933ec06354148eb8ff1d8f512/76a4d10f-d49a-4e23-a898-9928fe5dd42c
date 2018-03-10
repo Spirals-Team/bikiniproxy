@@ -1,0 +1,1 @@
+(function(b){var a={};b.getJS=function(f,h,e){var g=a[f],d=function(){g.s=2;var m=g.fn,k=0,j=m.length;for(;k<j;k++){m[k]()}},c=function(i,j){b.ajax({dataType:"script",cache:true,url:i,success:j})};if(e){c(f,h)}else{if(g){if(h){g.s===1?g.fn.push(h):h()}}else{g=a[f]={s:1,fn:h?[h]:[]};c(f,d)}}}})(jQuery);

@@ -1,0 +1,149 @@
+/* HitBox download tagging */
+
+// An anonymous function that is executed as soon as it's parsed by the browser
+(function() {
+    // Purpose: This function will setup javascript files/dependencies if via AJAX
+    // Input:  lib_path - This is the path to the js file to include
+    //         call_back_fn - This is an optional call back function to be executed after JS file is sourced.
+    // Change History:
+    // 1.0 - Created by Lbell
+    // 1.1 - Added status/readystate check for safety Lbell
+    // 1.2 - Added try/catch for extra safety lbell
+    function get_lib(lib_path, call_back_fn) {		
+        if (window.XMLHttpRequest) {              
+            AJAX=new XMLHttpRequest();              
+        } else {                                  
+            AJAX=new ActiveXObject("Microsoft.XMLHTTP");
+        }
+        if (AJAX) {
+            try {
+                AJAX.open("GET", lib_path, false);  //Synch call                            
+                AJAX.send(null);
+                
+                if ( AJAX.status == 200 && AJAX.readyState == 4) { //Success
+                    if (window.execScript) { //IE 
+                          window.execScript( AJAX.responseText);
+                    }else{
+                      var fn = function() { //Everyone else
+                        window.eval.call( window, AJAX.responseText );
+                      };
+                      fn();
+                    }
+
+                    if (call_back_fn){
+	                  call_back_fn();
+                    }
+
+                }else{
+                    return false; 
+                }
+            }
+            catch(err)
+            {
+                return false;
+            }
+
+        } else {
+            return false;
+        }                         
+    };
+
+	if (typeof(jQuery) == 'undefined'){ 
+            get_lib('/javascript/jquery-1.3.2.min.js');
+    }
+
+	if (typeof(report_campaign_trax) == 'undefined'){ 
+        get_lib('/javascript/campaign_trax.js', xrx_hbx_dt);
+    }
+	
+	// if both libraries have been sourced already, just execute the function.
+	xrx_hbx_dt();
+})();
+
+function xrx_hbx_dt(){
+	jQuery.fn.xrx_hbx_dt = function(options) {
+		options = jQuery.extend({
+			xoglang:    'en_US',
+			hbx_delay:  100,
+			hbx_ws_url: '/perl-bin/hbx_ws.pl',
+			href_regex: '/redirect\.jsp|/product_details\.jsp|/[A-Za-z_0-9\-]+\.pdf|\.ppt|\.doc|\.swf|\.flv|\.zip|\.mp3|\.wmv|www\.gisx\.com|www\.xdss\.com|buy\.xerox\.com|direct\.xerox\.com|xeroxdirect\.com|www\.graphiccommunications-estore\.xerox\.com|\/perl-bin\/exit.pl\?|\/Exit\/|channelintelligence\.com|members\.ppcommunity\.com|blogs\.xerox\.com',
+			href_exclude_regex: 'www\.xerox\.com|office\.xerox\.com|opbu\.xerox\.com|consulting\.xerox\.com|xerox\.com\/digital-printing|javascript\:',
+			debug: false
+		}, options);
+		var HREF_REGEX    = new RegExp(options.href_regex,'i');
+		var EXCLUDE_REGEX = new RegExp(options.href_exclude_regex+'|'+location.host,'i');
+		if (options.debug) {
+			console.log('regex='+HREF_REGEX.source+' exclude regex='+EXCLUDE_REGEX.source);
+			console.log(window._hbPageView!=null);
+		}
+		if ( window._hbPageView != null ) {
+			var click_handler = function(e) {
+				e.returnValue = false;
+				var continued = false;
+				var anchor_elem = e.target;
+				if (options.debug) console.log('target elem is a '+anchor_elem.tagName);
+				while ( anchor_elem.tagName.toLowerCase() != 'a' ) {
+					if (options.debug) console.log('looking at parent elem '+anchor_elem.parentNode.tagName);
+					anchor_elem = anchor_elem.parentNode;
+				}
+				if (options.debug) console.log('anchor elem is a '+anchor_elem.tagName);
+				var ping_hbx = function(hbx_vars) {
+					if (options.debug) console.log('hbx_vars.page='+hbx_vars.page+' hbx_vars.mlc='+hbx_vars.mlc);
+					if ( hbx_vars.page != null && hbx_vars.mlc != null ) {
+						// here we call HitBox with a function from their API
+						_hbPageView(hbx_vars.page, hbx_vars.mlc);
+						report_campaign_trax(hbx_vars, anchor_elem, options); 
+						if (options.debug) console.log('setTimeout for ('+options.hbx_delay+') ms');
+						// seems we need to wait a little while for _hbPageView to complete
+						if (options.hbx_delay > 0) {
+							setTimeout(continue_request, options.hbx_delay);
+						} else {
+							continue_request();
+						}
+					} else {
+						continue_request();
+					}
+				};
+				var continue_request = function() {
+					if (continued) return;
+					continued = true;
+					var target = anchor_elem.target;
+					if (options.debug) {
+						console.log('would go to '+anchor_elem.href+' with target '+target+' '+target.length);
+					} else {
+						jQuery(anchor_elem).unbind('click', click_handler);
+						if ( target != null && target.length > 0 ) {
+							window.open(anchor_elem.href, target);
+						} else {
+							window.location = anchor_elem.href;
+						}
+					} 
+				};
+				var error_handler = function(xhr,msg,err) {
+					if (options.debug) console.log('error handler with msg('+msg+') and error('+err+'), '+xhr.statusText);
+					continue_request();
+				};
+				if (options.debug) console.log('making AJAX request to url('+options.hbx_ws_url+')');
+				jQuery.ajax({
+					url:      options.hbx_ws_url,
+					async:    false,
+					type:     'GET',
+					dataType: 'json',
+					success:  ping_hbx,
+					error:    error_handler,
+					data:     {
+						url:     anchor_elem.href,
+						xoglang: options.xoglang
+					}
+				});
+				return false;
+			};
+
+			return jQuery('a').filter(function(index){
+				var match =  !(this.href == null || this.href == '') && (HREF_REGEX.test(this.href) || !EXCLUDE_REGEX.test(this.href))
+				if (options.debug) console.log(match+' => '+this.href);
+				return match;
+			}).bind('click', click_handler);
+		}
+	};
+};

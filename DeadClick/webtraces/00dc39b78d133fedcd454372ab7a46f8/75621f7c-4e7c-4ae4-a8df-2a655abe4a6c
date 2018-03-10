@@ -1,0 +1,181 @@
+/**
+    Miscellaneous utilities
+*/
+
+function $(id) { return document.getElementById(id); }
+
+// See: http://www.joehewitt.com/software/firebug/faq.php
+function printfire() {
+    /*
+    if (document.createEvent) {
+        printfire.args = arguments;
+        var ev = document.createEvent("Events");
+        ev.initEvent("printfire", false, true);
+        dispatchEvent(ev);
+    }
+    */
+}
+
+// See: http://simon.incutio.com/archive/2004/05/26/addLoadEvent
+function addLoadEvent(func) {
+    var oldonload = window.onload;
+    if (typeof window.onload != 'function') {
+        window.onload = func;
+    } else {
+        window.onload = function() {
+            oldonload();
+            func();
+        }
+    }
+}
+
+// See: http://ejohn.org/projects/flexible-javascript-events/
+function addEvent( obj, type, fn ) {
+    if ( obj.attachEvent ) {
+        obj['e'+type+fn] = fn;
+        obj[type+fn] = function(){obj['e'+type+fn]( window.event );}
+        obj.attachEvent( 'on'+type, obj[type+fn] );
+    } else {
+        obj.addEventListener( type, fn, false );
+}
+}
+function removeEvent( obj, type, fn ) {
+    if ( obj.detachEvent ) {
+        obj.detachEvent( 'on'+type, obj[type+fn] );
+        obj[type+fn] = null;
+    } else {
+        obj.removeEventListener( type, fn, false );
+}
+}
+/*
+    Mini MochiKit
+*/
+
+function forEach(list, fn) {
+    for (var i=0; i<list.length; i++) fn(list[i]);
+}
+
+function filter(fn, list) {
+    var rv = [];
+    for (var i=0; i<list.length; i++)
+        if (fn(list[i])) 
+            rv[rv.length] = list[i];
+    return rv;
+}
+
+function map(fn, list) {
+    var rv = [];
+    for (var i=0; i<list.length; i++) rv[rv.length] = fn(list[i]);
+    return rv;
+}
+
+function appendChildNodes(parent, nodes) {
+    for (var i=0; i<nodes.length; i++) {
+        var node = nodes[i];
+        if (node.nodeType) 
+            parent.appendChild(node);
+        else if ( (typeof(node) == 'object') && node.length)
+            appendChildNodes(parent, node);
+        else
+            parent.appendChild(document.createTextNode(''+node));
+    }
+}
+
+function createDOM(name, attrs, nodes) {
+    var elem = document.createElement(name);
+    if (attrs) for (k in attrs) {
+        elem.setAttribute(k, attrs[k]);
+        switch(k) {
+            // MSIE seems to want this.
+            case 'class': elem.className = attrs[k]; break;
+        }
+    }
+    if (nodes) appendChildNodes(elem, nodes);
+    return elem;
+}
+
+function createDOMFunc(name) {
+    return function(attrs) {
+        var nodes = [];
+        for (var i=1; i<arguments.length; i++) 
+            nodes[nodes.length] = arguments[i];
+        return createDOM(name, attrs, nodes);
+    }
+}
+
+forEach([ 
+    'A', 'BUTTON', 'BR', 'CANVAS', 'DIV', 'FIELDSET', 'FORM',
+    'H1', 'H2', 'H3', 'HR', 'IMG', 'INPUT', 'LABEL', 'LEGEND', 'LI', 'OL',
+    'OPTGROUP', 'OPTION', 'P', 'PRE', 'SELECT', 'SPAN', 'STRONG', 'TABLE', 'TBODY',
+    'TD', 'TEXTAREA', 'TFOOT', 'TH', 'THEAD', 'TR', 'TT', 'UL' 
+    ], function(n) { window[n] = createDOMFunc(n); });
+
+
+function uClose(){
+	$('uShadow').remove();
+	$('uPage').remove();
+	$('uWrapper1').remove();
+}
+
+// UConnect overlay
+function uconnectWin(langCode){
+	var uShadow2 = new Element('div', {
+		'id': 'uShadow',
+		'styles': {
+			'position': 'absolute',
+			'width': '100%',
+			'height': '100%',
+			'top': '0',
+			'left': '0',
+			'margin': '0',
+			'padding': '0',
+			'background': '#000',
+			'opacity': '.4',
+			'filter': 'alpha(opacity=40)',
+			'zIndex': '9996',
+			'display': 'block'
+		}
+	});
+	
+	var uWrapper2 = new Element('div', {
+		'id': 'uWrapper1',
+		'styles': {
+			'position': 'absolute',
+			'width': '100%',
+			'height': '100%',
+			'top': '0',
+			'left': '0',
+			'margin': '0',
+			'padding': '0',
+			'zIndex': '9997',
+			'display': 'block'
+		}
+	});
+	
+	var uPage2 = new Element('div', {
+		'id': 'uPage',
+		'styles': {
+			'position': 'relative',
+			'width': '650px',
+			'height': '510px',
+			'margin': '20px auto 0 auto',
+			'background': '#fff',
+			'zIndex': '9998',
+			'display': 'block'
+		}
+	});
+	
+ 		uShadow2.injectInside(document.body);
+		uWrapper2.injectInside(document.body);
+		uPage2.injectInside(uWrapper2);
+	  
+		if(!langCode){
+			var url = "/uconnect/frame.html";
+			} else {
+			var url = "/" + langCode + "/uconnect/frame.html";
+		}
+		new Ajax(url, {
+			method: 'get',
+			update: 'uPage'
+		}).request();
+}

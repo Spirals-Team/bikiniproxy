@@ -1,0 +1,70 @@
+define('shared/scripts/bam/number/1.0/number', function( require, exports, module ) {
+	"use strict";
+	var module = {
+		/**
+		 * Returns either the original value or the limit if value is out of bounds
+		 *
+		 * @method
+		 * @name limitValueToRange
+		 * @alias bam.util.limitValueToRange
+		 * @memberOf bam.util
+		 * @static
+		 * @public
+		 * @param {Number} val Value to limit
+		 * @param {Number} rangeA One end of a numeric range
+		 * @param {Number} rangeB The other end of a numeric range
+		 * @returns {Number} Limited value
+		 */
+		limitValueToRange: function(val, rangeA, rangeB) {
+			var min = Math.min(rangeA, rangeB),
+				max = Math.max(rangeA, rangeB);
+			return Math.max(Math.min(val, max), min);
+		},
+		/** This neat function adds commas to thousands, millions in a number
+		 * @example
+		 * addCommas("5000025.25"); //5,000,025.25
+		 */
+		addCommas: function(nStr) {
+			nStr += '';
+			var x = nStr.split('.'),
+				x1 = x[0],
+				x2 = x.length > 1 ? '.' + x[1] : '',
+				rgx = /(\d+)(\d{3})/;
+			while (rgx.test(x1)) {
+				x1 = x1.replace(rgx, '$1' + ',' + '$2');
+			}
+
+			return x1 + x2;
+		},
+		/**
+		 * Pads a number with preceding zeroes
+		 * @number - number you want to pad
+		 * @length - positions length you want to fill (default: 2)
+		 * returns - {String} @number padded with zeroes
+		 * Ex: padZeroes(1);  //01
+		 *     padZeroes(10); //10
+		 *     padZeroes(1, 5); //00001
+		 */
+		padZeroes: function(number, length) {
+			var len = +length || 2,
+				sNum = number + '',
+				zeroes = new Array(len).join('0');
+			return sNum.length >= len ? sNum : (zeroes + sNum).slice(0 - len);
+		},
+		/**
+		 * Returns a random number in range
+		 * @param  {string|number} from (optional) Starting number. Defaults to 0 if ommited.
+		 * @param  {string|number} to   Maximum number in range
+		 * @return {number}
+		 */
+		randomNumber: function() {
+			var args = Array.prototype.slice.apply(arguments),
+				i = 0,
+				from = args.length === 1 ? 0 : +args[i++],
+				to = +args[i++];
+			return from + Math.floor(Math.random() * (to - from));
+		}
+	};
+
+	jQuery.extend(exports, module);
+});

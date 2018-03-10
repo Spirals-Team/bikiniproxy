@@ -1,0 +1,4 @@
+/*! updated; 02-13-2018 04:14 PM **/
+
+
+Modulr.define("core.video:models/ais.auth",["require","jquery","lodash","helper","config"],function(require,$,_,Helper,config){function request(){var url="//idp.securetve.com/rest/1.0/"+config.ais.platformId+"/init/?format=jsonp&responsefield=fxn_ais_idpInit";window.fxn_ais_idpInit=function(response){processStack(response),delete window.fxn_ais_idpInit,EXECUTING=!1},$.ajax({url:url,dataType:"script",cache:!0,error:function(jqXHR,textStatus,errorThrown){console.log("aisRequest > ERROR:",jqXHR,textStatus,errorThrown),processStack(null)}})}function processStack(data){for(var i=0;i<CALLBACK_STACK.length;i++)CALLBACK_STACK[i](data)}var EXECUTING=!1,CALLBACK_STACK=[],App=function(){};return App.prototype.init=function(callback){CALLBACK_STACK.push(callback),EXECUTING||(EXECUTING=!0,request())},new App});

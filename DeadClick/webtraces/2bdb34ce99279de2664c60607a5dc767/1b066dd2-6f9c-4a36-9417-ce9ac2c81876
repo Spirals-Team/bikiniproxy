@@ -1,0 +1,43 @@
+(function($){
+    var container = $('body');
+    
+    /* Extract elements from their containers */
+	  $('.getMeOut').each(function(){
+    	 $(this).appendTo($(this).parents('.container_wrap')); 
+   	});
+
+    /* Scroll Pane Element */
+   	$(".scroll-pane").scrollbar({orientation: 'horizontal', scrollFactor: 30});
+
+    /* Mobile Toggle */
+    $("li.m_menu a").on("click", function(e){
+      e.preventDefault();
+      container.removeClass("m_search-show").toggleClass("m_menu-show");
+    });
+    $("li.m_search a").on("click", function(e){
+      e.preventDefault();
+      container.removeClass("m_menu-show").toggleClass("m_search-show");
+    });
+
+    /* Close Menus on #main click */
+    $("a.mobile_toggle").on('click', function(){
+        setTimeout(function(){ 
+            $("#wrap_all").on('click', '#main', function() { container.removeClass("m_menu-show m_search-show"); }); 
+        }, 100);
+    });
+    
+    /* Inline PopUp */
+    $('a[href*="?inline"]').each(function(){
+      $src = $(this).attr('href').split("?");
+      $(this).removeAttr('href').attr('data-popup', $src[0]);
+    }).on('click', function(){
+      $.magnificPopup.open({
+          items: {
+              src: $(this).data('popup')
+          },
+          type: 'inline'
+      });
+    });
+        
+
+})(jQuery);

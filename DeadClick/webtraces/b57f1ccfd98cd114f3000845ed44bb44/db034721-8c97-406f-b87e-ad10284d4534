@@ -1,0 +1,537 @@
+
+var PP = PP || {};
+(function ($, window) {
+	$.support.cors = true;
+    var STATUS = { LOGGED_IN: "pong", LOGGED_OUT: "ping", UNKNOWN:"unknown", KO: "ko" ,TC_REQUIRED:"tc_required"};
+    var	SCOPE = { PUBLIC: "public", PRIVATE: "private"};
+
+    var user = { status: STATUS.UNKNOWN};
+    var profiler = "profiler";
+	var profilerFName = "profilerFullName";
+
+   function resolveUserDetails(user) {
+		var d = new $.Deferred();
+		//test
+	    $.ajax({
+				async:false,
+			    url: site.apiUrl()  + "authentication/userdetails.json",
+				dataType: 'json',
+				cache: false,
+				success:function(data) {
+				    shallowCopy(data,user);
+				    user.isResolved=true;
+				    d.resolve(user);
+		   		},
+				error: function(jqXHR, textStatus, errorThrown) {
+
+					user.status = STATUS.KO;
+					d.reject(user);
+				}
+			   });
+		return d.promise();
+    }
+
+function resolveUserFull() {
+		var d = new $.Deferred();
+		var pageId = getMetaData("page_id");
+		var portalscope = getMetaData("portal-scope");
+		var url = "authentication/user.json";
+		 $.ajax({
+			async:false,
+		    url: site.apiUrl()  + url,
+			dataType: 'json',
+			cache: false,
+			success:function(data) {
+			    shallowCopy(data,user);
+			    user.isResolved=true;
+			    d.resolve(user);
+			},
+			error: function(jqXHR, textStatus, errorThrown) {
+				if(jqXHR.status == 409){
+					if(hasLoginIntent()) {
+						user.status = STATUS.TC_REQUIRED;
+						d.resolve(user);
+					}
+					else {
+						var tcUrl = jqXHR.getResponseHeader("tcUrl");
+						tcUrl = tcUrl+"?from=" + document.URL;
+						window.location.href = tcUrl;
+					}
+				}
+				else {
+					user.status = STATUS.KO;
+					d.reject(user);
+				}
+		}});
+	   return d.promise();
+    }
+
+
+
+    function resolveAccessProtocol(user) {
+		var d = new $.Deferred();
+		if(STATUS.LOGGED_IN === user.status) {
+			if(!isHTTPS()) {
+		    	 redirToHTTPS();
+			}
+			d.resolve(user);
+		}
+
+		if(STATUS.LOGGED_OUT === user.status || STATUS.TC_REQUIRED === user.status) {
+					if (SCOPE.PUBLIC !== getContentScope()) {logMeIn();}
+		}
+
+		if(STATUS.TC_REQUIRED === user.status) {
+			if(isHTTPS()) {
+				redirToHTTP();
+			}
+			d.resolve(user);
+		}
+
+	return d.promise();
+    }
+
+    function resolveLoggedInStatus(nocache) {
+
+		var d = new $.Deferred();
+		    $.ajax({
+			    async: false,
+			    url: site.apiUrl() + "authentication/status.json",
+			    dataType:'json',
+			    cache: false,
+			    success:function(data) {
+			    	if(STATUS.LOGGED_IN === data.loginStatus){
+						user.status = STATUS.LOGGED_IN;
+			    	}
+			    	else {
+						user.status = STATUS.LOGGED_OUT;
+			    	}
+			    	d.resolve(user)
+				},
+				error:function(jqXHR, textStatus, errorThrown) {
+			    	user.status = STATUS.KO;
+			    	d.reject(user);
+				}
+		   });
+
+		return d.promise();
+    }
+
+
+
+    // errors handlers
+    //----------------
+    onFailedLoggedInStatus = function(user) {
+		user.status = STATUS.KO;
+	}
+
+    // views rendering
+    //----------------
+
+    function render() {
+			switch(user.status) {
+				case STATUS.LOGGED_IN:
+					renderSecure(user);
+					break;
+				case STATUS.KO:
+					renderUnavailable() ;
+					break;
+				default:
+					renderAnonymous(user);
+					break;
+			     }
+	}
+
+    function renderAnonymous() {
+
+		$("body").addClass("canlogin");
+		$("body").addClass("anonymous");
+		renderResources();
+    }
+    function renderSecure(user){
+		$("body").addClass("secure");
+		renderUserDetails(user);
+		renderResources(user);
+    }
+
+	function renderUnavailable() {
+		$("body").addClass("anonymous");
+		$("body").addClass("offline");
+
+	}
+    function renderError(msg) {
+		error(msg);
+    }
+
+    function renderUserDetails(user){
+		var d = new $.Deferred();
+		// safe check
+		$(".pp-username").html(displayName(user.firstName + " " + user.lastName));
+		$("body").addClass("secure");
+		if (aallow(user)) {
+			$("body").addClass("admin");
+
+			if ($.cookie(profiler) && $.cookie(profilerFName)) {
+				$("#login-icon").removeClass("icon-user").addClass("admin-spy");
+				$(".pp-username").html($.cookie(profilerFName));
+
+			}
+	     }
+
+		return d.promise();
+    }
+
+    function renderResources(user) {
+
+		// loop on dynamic divs
+		renderImpProfile();
+		$('.dynamic').each(function(index) {
+		var proceed = true;
+		var secure = $(this).hasClass('secure');
+		var isUserLoggedIn = isLoggedIn(user);
+		// anonymous - secure content -> no proceed || logged - anonymous content -> no proceed
+		if ((secure && !isUserLoggedIn) || ($(this).hasClass('anonymous') && isUserLoggedIn)) {proceed = false;}
+			if (proceed) {
+				var fragment = $(this).attr('id');
+				// ajax loading
+				loading($(this));
+				// parameters
+				var data = location.search.substring(1);
+
+				// load fragment
+				if (data != "") {
+					$(this).load(site.apiUrl() + fragment, data, function(response, status, xhr) {FEF.components.initiateTables();if (status == "error") {error($(this));}});
+				} else {
+				
+					if(fragment.indexOf('?')!= -1){
+						fragment = fragment+"&redirectURL="+window.location.href+"&refreshIamUser=true";
+					}
+					else{
+						fragment = fragment+"?redirectURL="+window.location.href+"&refreshIamUser=true";
+					}
+					$(this).load(site.apiUrl() + fragment , function(response, status, xhr) {
+						FEF.components.initiateTables();
+							if(xhr.status === 200){
+								try{								
+									var object = jQuery.parseJSON(response);
+									if(object.type && object.type === "redirect"){
+										window.location = object.value;
+									}
+								}
+								catch(e){
+								}	
+								
+							}
+							if (status == "error") {
+								error($(this));
+							}
+						}
+					);
+				}
+			}
+	    });
+    }
+
+    // control event
+    function bindListeners(user) {
+
+		// login event
+		$(".pp-login").on("click",function(event) {
+			event.preventDefault();
+			writeIntent();
+			var loginStatusResolver = resolveLoggedInStatus(true);
+			loginStatusResolver.done(function(user){user.status != STATUS.KO || user.status != STATUS.LOGGED_IN?logMeIn():error("sorry")});
+	    });
+
+		$(".pp-gohome").on("click",function(event) {
+			event.preventDefault();
+			home();
+	    });
+		// logout event
+		$(".pp-logout").on("click",function(event) {
+			$('#logoutModal').modal('show');
+
+			$('#logoutModal').on('hide', function () {
+				event.preventDefault();
+				var loginStatusResolver = resolveLoggedInStatus(true);
+				loginStatusResolver.done(function(user){
+				logMeOut()});//,function(){error("sorry")});
+
+			})
+
+
+	    });
+
+		// forward link with parameter
+		$("a[data-param]").on("click",function(event) {
+			event.preventDefault();
+			var keys = $(this).attr("data-param").split(",");
+			var url = $(this).attr("href") + "?";
+			$.each(keys, function(index, key) { url += key + "=" + getParamValue(key) + "&";});
+			$(location).attr("href", url.slice(0,-1));
+		});
+
+		$(document).on("click","a[data-uri]",function(e) {
+			e.preventDefault();
+			var url = $(this).attr("data-uri");
+			$(location).attr("href", url);
+		});
+
+
+		// profiler submit
+		$(document).on("click",".profiler-submit",function(event) {
+			event.preventDefault();
+			if(isLoggedIn(PP.user.get())) {
+				var profileValue = $(".profiler-input").val();
+				//if(new RegExp("^[a-z]{0,20}$").test(profileValue)) {
+                    $.cookie(profiler,profileValue, {path:"/"});
+					$(".profiler-ecas").html("&#8730; " + $(".profiler-input").val());
+					$(".profiler-1").hide();
+					$.ajax({
+						async: false,
+						url: site.apiUrl() + "role/impersonification.json?uid="+profileValue,
+						dataType:'json',
+						cache: false,
+						success:function(data) {
+							$(".pp-username").html(displayName(data.sName));
+							$.cookie(profilerFName,displayName(data.sName), {path:"/"});
+						},
+						error:function(jqXHR, textStatus, errorThrown) {
+							$(".pp-username").html(profileValue);
+						}
+					});
+
+					$(".profiler-2").show();
+					$("#login-icon").removeClass("icon-user").addClass("admin-spy");
+				//}
+				//else {
+				//	$(".profiler-input").val("");
+				//}
+
+			}
+		});
+
+	// profiler reset
+	$(document).on("click",".profiler-reset",function(event) {
+		event.preventDefault();
+
+		if(isLoggedIn(PP.user.get()) && aallow(PP.user.get())) {
+            $.removeCookie(profiler, {path:"/"});
+			$.removeCookie(profilerFName, {path:"/"});
+			$(".profiler-2").hide();
+			$(".profiler-1").show();
+			$(".pp-username").html(displayName(PP.user.get().firstName + " " + PP.user.get().lastName));
+			$("#login-icon").removeClass("admin-spy").addClass("icon-user");
+		}
+
+	});
+
+
+   }
+
+	function displayName(displayName){
+		if(displayName.length>25){
+			displayName = displayName.substring(0,20) + '...';
+		}
+		return displayName;
+	}
+
+	
+
+	function renderImpProfile() {
+
+		if ($.cookie(profiler)) {
+			var profilerValue = $.cookie(profiler);
+
+			//if(new RegExp("^[a-z]{0,20}$").test(profilerValue)) {
+ 				$(".profiler-ecas").html("&#8730; " + profilerValue);
+				$(".profiler-2").show();
+			//}
+		} else {
+				$(".profiler-input").val("");
+				$(".profiler-1").show();
+		}
+
+
+	}
+
+	function aallow(user) {
+		return !isEmpty(user) && ("isAdmin" in user || "isallowed" in user) && (user.isAdmin||user.isallowed);
+	}
+
+    // error handler
+    function error(element) {
+		if (element == "sorry") {
+		    $.ajax({url: site.portalPath + "desktop/en/fragment/sorry.html", success: function (data) {$('.alert-error').remove();$('#content').prepend(data); $('#sorry').slideDown(); $('#sorry').delay(7000).fadeOut(1000);}, dataType: 'html'});
+		} else {
+		    element.load(site.portalPath  + "desktop/en/fragment/unavailable.html");
+		}
+    }
+
+    /* Utilities fonctions and object */
+    //---------------------------------
+	function writeIntent() {
+			$.cookie("intent",1,{path:"/"});
+	}
+
+	function hasLoginIntent() {
+		var intent = $.cookie("intent");
+		return !isEmpty(intent);
+	}
+	function getPortalBase() {
+		var portalBase = getMetaData("portalbase");
+		if(isEmpty(portalBase)) {
+			portalBase = "/research/participants/";
+		}
+		return portalBase;
+	}
+	function getPortalPath() {
+		var portalPath = getMetaData("portalpath");
+		if(isEmpty(portalPath)) {
+			portalPath = "/research/participants/portal/";
+		}
+		return portalPath;
+	}
+
+	function getApiBasePath() {
+		var apiPath = getMetaData("apibase");
+		if(isEmpty(apiPath)) {
+			apiPath = "/research/participants/api/";
+		}
+		return apiPath;
+	}
+
+
+ 	function getContentScope() {
+		return getMetaData("portal-scope");
+    }
+
+	function getMetaData(name) {
+		var meta = "meta[name="+name+"]";
+		return !isEmpty($(meta)) ? $(meta).attr("content"):null;
+	}
+
+var site = {
+		scheme: window.location.protocol,
+		hostname: window.location.hostname,
+		portalBase: function() {return getPortalBase()},
+		apiPath : getApiBasePath(),
+		apiUrl: function(){return this.scheme + "//" + this.hostname + this.apiPath},
+		apiUrlHttps: function(){return "https://" + this.hostname + this.apiPath},
+		portalPath: getPortalPath(),
+		portalUrl: function() {return this.scheme + "//" + this.hostname + this.portalPath},
+		isHttps:function() {return "https:" == this.scheme}
+	}
+
+
+    // copy objects properties
+    function shallowCopy(srcObj,destObj) {
+		$.each(srcObj,function(key,value) {destObj[key]= value;});
+    }
+
+    // dot trick
+    function format(fragment) {return fragment.replace('.','\\.').replace('/','\\/');}
+
+    // redirect to https
+    function redirToHTTPS() {if (location.href.indexOf("https://") == -1) {location.href = location.href.replace("http://", "https://");}}
+
+    // redirect to http
+    function redirToHTTP() {if (location.href.indexOf("http://") == -1) {location.href = location.href.replace("https://", "http://");}}
+
+    // check if https
+    function isHTTPS() {return window.location.protocol == "https:";}
+
+	
+    // log in
+    function logMeIn() {$.removeCookie(profiler, {path:"/"});
+	writeIntent();$(location).attr("href", site.apiUrlHttps() + "authentication/login.html?from=" + document.URL);}
+	
+    // log out
+    function logMeOut() {$.removeCookie(profiler, {path:"/"});$(location).attr('href',site.apiUrlHttps() +  "authentication/logout.html?service=http://"+site.hostname + site.portalPath+"desktop/en/home.html");}
+
+	function home() {
+		$(location).attr('href',"http://"+site.hostname + site.portalPath+"desktop/en/home.html");
+	}
+    // url param
+    function getParamValue(key) {key = key.replace(/[*+?^$.\[\]{}()|\\\/]/g, "\\$&"); var match = location.search.match(new RegExp("[?&]"+key+"=([^&]+)(&|$)"));return match && decodeURIComponent(match[1].replace(/\+/g, " "));}
+
+    // ajax loading
+    function loading(element) {element.html("<img class='loader' src='"+site.portalPath +"img/general/ajax-loader.gif'/>");return;}
+
+    function isLoggedIn(user){
+		return !isEmpty(user) && "status" in user && STATUS.LOGGED_IN == user.status;
+    }
+
+	function isLoggedOut(user) {
+		return !isEmpty(user) && "status" in user && STATUS.LOGGED_OUT == user.status;
+	}
+    function isEmpty(obj) {
+		return typeof obj === "undefined" || obj == null;
+    }
+
+    function hasProperty(obj,property) {
+		return !isEmpty(obj) && property in obj;
+    }
+
+
+
+	function resolveUser2Ways() {
+		// resolve the user current state
+		resolveLoggedInStatus().done(function(user) {
+	      resolveAccessProtocol(user).done(function(user){
+		    resolveUserDetails(user).done(function(user) {
+	//				    renderSecure(user);
+				    });
+			    });
+		     }).fail(onFailedLoggedInStatus);
+		return user;
+	}
+	function resolveUser() {
+
+		resolveUserFull().done(function(user) {
+	      			resolveAccessProtocol(user).done()
+		     }).fail(onFailedLoggedInStatus);
+
+		return user;
+	}
+
+	// export as public method
+	//window.PP.resolveUser = resolveUser;
+	//window.PP.resolveUser2Ways = resolveUser2Ways;
+	//window.PP.loadCaptcha= loadCaptcha;
+
+	window.PP.render = render;
+	window.PP.bindListeners = bindListeners;
+	window.PP.getPortalPath = getPortalPath;
+	window.PP.getApiBasePath = getApiBasePath;
+	userP = resolveUser();
+	window.PP.user = {get:function() {
+		return userP;
+	}};
+})(jQuery,window);
+
+//(function() {
+//	userP = PP.resolveUser();
+//	function fetchUser() {
+//		return userP;
+//	}
+//	window.PP.fetchUser = fetchUser;
+//})();
+
+
+$(document).ready(function() {
+	PP.bindListeners();
+	PP.render(PP.user.get());
+	//$(document).ajaxComplete(function(event, xhr, settings){
+	//	if(xhr.status === 200 && xhr.responseText && xhr.responseText!==""){
+	//		var data = $.parseJSON(xhr.responseText);
+	//		if(data.type && data.type === "redirect"){
+	//			https://localhost/research/participants/portal/desktop/en/experts/my_expert.html
+	//			window.location = data.value;
+	//		}
+	//	}
+	//});
+
+});
+
+

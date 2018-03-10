@@ -1,0 +1,252 @@
+/*globals jQuery, document, console, alert, window, ChromerApp, navigator */
+
+(function($) {
+    'use strict';
+
+    var menuTimer = null,
+
+        getLanguageFromHtml = function () {
+            return $('html').attr('lang').split('-')[0];
+        },
+
+        langToCategoryId = {
+            de: 113,
+            en: 109,
+            es: 112,
+            fr: 110,
+            it: 111,
+            nl: 114
+        },
+
+        searchSubmit = function (event) {
+            var $form = $(this),
+                $select = $form.find("#searchCategories"),
+                $input = $form.find("#siteSearch"),
+                $language = getLanguageFromHtml(),
+                $categoryId;
+
+            if (!langToCategoryId.hasOwnProperty($language)) {
+                $language = "en";
+            }
+            $categoryId = langToCategoryId[$language];
+
+            if ($input.val() === "") {
+                event.preventDefault();
+                return false;
+            }
+
+            if ($select.find("option:selected").attr("value") === "support") {
+                window.location.href = 'https://connect.lulu.com/' + $language + '/search?adv=0&cat=' + $categoryId  + '&subcats=1&search=' + encodeURIComponent($input.val());
+                event.preventDefault();
+                return false;
+            }
+        },
+
+        signUpSubmission = function (event) {
+            event.preventDefault();
+
+            var $form = $(this),
+                $userEmail = $("#signUp").val(),
+                $confirmText = $('#confirmSignUp span'),
+                $newConfirmation;
+
+            function signUpSuccess(data) {
+                if (data === "SUCCESS") {
+                    $form.find("#formFields").hide();
+
+                    $newConfirmation = $confirmText.text().replace('%s', $userEmail);
+                    $confirmText.text($newConfirmation);
+
+                    $form.find("#confirmSignUp").show();
+                } else if (data === "EMAIL_FAILURE") {
+                    $form.find(".joomlaFormError.signUp.invalid").show();
+                } else {
+                    $form.find("#formFields").hide();
+                    $form.find("#errorSignUp").show();
+                }
+            }
+
+            function signUpFailure() {
+                $form.find("#formFields").hide();
+                $form.find("#errorSignUp").show();
+            }
+
+            $.ajax({
+                data: $form.serialize(),
+                url: $form.attr("action"),
+                type: "post",
+                success: signUpSuccess,
+                error: signUpFailure
+            });
+
+        },
+
+        isTouchDevice = function () {
+            return window.ontouchstart !== undefined;
+        },
+
+        showDD = function (event) {
+
+            var $trigger = $(this),
+                $target = $("#" + $trigger.attr("id") + "DD");
+
+            if (isTouchDevice()) {
+                event.preventDefault();
+            }
+
+            if ($target.is(".calcOffset")) {
+                $target.css("left", $trigger.offset().left);
+            }
+
+            if ($target.is(".calcPosition")) {
+                $target.css("left", $trigger.position().left);
+            }
+
+            $(".menuDD").hide();
+
+            if (!$trigger.is(".open")) {
+                $target.show();
+                $(".ddTrigger").removeClass("open");
+                $trigger.addClass("open");
+            } else {
+                $trigger.removeClass("open");
+            }
+
+            if (menuTimer && $target.length > 0) {
+                window.clearTimeout(menuTimer);
+                menuTimer = null;
+            }
+        },
+
+        closeDD = function (event) {
+            var $target = $(this),
+                $menu = $(".menuDD").has($target);
+
+            event.preventDefault();
+
+            if ($menu.length >= 1) {
+                $menu.hide();
+                $(".ddTrigger").removeClass("open");
+            }
+        },
+
+        handleBodyClick = function (event) {
+            var $target = $(event.target);
+
+            if (isTouchDevice()) {
+                event.preventDefault();
+            }
+
+            if (!$target.is(".menuDD") && $(".menuDD").has($target).length === 0) {
+                $(".menuDD").hide();
+                $(".ddTrigger").removeClass("open");
+                return;
+            }
+        },
+
+        handleWindowTouch = function (event) {
+            var $target = $(event.target);
+
+            if ($target.is(".ddTrigger")) {
+                showDD.call($target, event);
+                return;
+            }
+
+            if ($target.parents(".ddTrigger").length > 0) {
+                $target = $target.parents(".ddTrigger")[0];
+                showDD.call($target, event);
+                return;
+            }
+        },
+
+        isCorrectVersion = function () {
+            var uMatch = navigator.userAgent.match("MSIE ([0-9]{1,}[\.0-9]{0,})|Version/([0-9.]{1,}) Safari");
+            if (uMatch && uMatch.length > 1) {
+                if (typeof uMatch[1] == 'undefined') {
+                    //Safari
+                    var version = parseFloat(uMatch[2]);
+                    return version >= 5;
+                } else {
+                    //IE
+                    var version = parseFloat(uMatch[1]);
+                    return version > 8;
+                }
+            }
+            return true;
+        },
+
+        checkBrowserVersion = function () {
+            var versionCheckPassed = isCorrectVersion();
+            if (!versionCheckPassed) {
+                var COOKIE_NAME = 'lulu.unsupported.browser';
+                if (document.cookie.indexOf(COOKIE_NAME) == -1) {
+                    document.cookie = COOKIE_NAME + "=1;path=/";
+                    var $jqr = jQuery.noConflict();
+                    var $bubble = $jqr('#unsupportedBrowserBubble');
+                    if ($bubble) {
+                        $bubble.uiBubble({
+                            dismissOnBlur : false
+                        });
+                        $bubble.uiBubble('open');
+                        $bubble.find('.luluBtn').click(function(event) {
+                            $bubble.uiBubble('close');
+                        });
+                    }
+                }
+            }
+        };
+
+    $(document).ready(function() {
+        var domain = document.domain;
+
+        if ($("#signUpBox").find('form').length > 0) {
+            $("#signUpBox").find('form').attr('action', '//' + domain + '/cmsstatic/modules/mod_signupform/processSignup.php');
+            $("#signUpBox").find('form').validator({callback: signUpSubmission});
+        } else if ($('#rSignUpBox').find('form').length > 0) {
+            $('#rSignUpBox').find('form').attr('action', '//' + domain + '/cmsstatic/modules/mod_responsive_signupform/processSignup.php');
+            $('#rSignUpBox').find('form').validator({callback: signUpSubmission});
+        }
+
+        if (!isTouchDevice()) {
+
+            $("#primaryNavigationBar, #primaryMenuItemContainer, #accountNavigation").on('mouseover', ".ddTrigger", showDD);
+
+            $(".menuDD, .ddTrigger").on("mouseout", function () {
+                menuTimer = window.setTimeout(function () {
+                    $(".menuDD").hide();
+                    $(".ddTrigger").removeClass("open");
+                }, 500);
+            });
+
+            $(".menuDD").on("mouseover", function () {
+                window.clearTimeout(menuTimer);
+                menuTimer = null;
+            });
+
+            $("body").on("click", handleBodyClick);
+
+        } else {
+            // $(window).on("touchstart", handleBodyClick);
+            $(window).on("touchstart", handleWindowTouch);
+            $(".ddTrigger").on("click", function (event) { event.preventDefault(); });
+        }
+
+
+        $(".closeAction a").on("click", closeDD);
+
+        $("#primaryNavigationBar .menuDD").each(function () {
+            $(this).navcontent({locale: ChromerApp.locale});
+        });
+
+        if ($("ul#blogRoll").length > 0) {
+            $("ul#blogRoll").blogcontent();
+        }
+
+        $("form#searchBox").on("submit", searchSubmit);
+
+        checkBrowserVersion();
+
+    });
+
+
+}(jQuery));

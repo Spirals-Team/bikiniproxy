@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en" >
+<head>
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+<meta charset="utf-8">
+<title>CASE Expressions</title>
+<meta name="generator" content="Oracle DARB XHTML Converter - Version 4.5.2 Build 31" />
+<meta name="dcterms.created" content="2005-07-10T12:57:20+08:00" />
+<meta name="robots" content="all" />
+<meta name="dcterms.title" content="Database SQL Reference" />
+<meta name="dcterms.identifier" content="B14200-02" />
+<meta name="dcterms.isVersionOf" content="SQLRF" />
+<link rel="Start" href="../../index.htm" title="Home" type="text/html" />
+<link rel="Copyright" href="../../dcommon/html/cpyr.htm" title="Copyright" type="text/html" />
+
+<script type="application/javascript"  src="../../dcommon/js/headfoot.js"></script>
+<script type="application/javascript"  src="../../nav/js/doccd.js"></script>
+<link rel="Contents" href="toc.htm" title="Contents" type="text/html" />
+<link rel="Index" href="index.htm" title="Index" type="text/html" />
+<link rel="Prev" href="expressions003.htm" title="Previous" type="text/html" />
+<link rel="Next" href="expressions005.htm" title="Next" type="text/html" />
+<link rel="alternate" href="../b14200.pdf" title="PDF version" type="application/pdf" />
+<link rel="alternate" href="../B14200-02.epub" title="ePub version" type="application/epub+zip" />
+<link rel="alternate" href="../B14200-02.mobi" title="Mobipocket version" type="application/x-mobipocket-ebook" />
+<link rel="schema.dcterms" href="http://purl.org/dc/terms/" />
+<link rel="stylesheet" href="../../dcommon/css/fusiondoc.css">
+<link rel="stylesheet" type="text/css"  href="../../dcommon/css/header.css">
+<link rel="stylesheet" type="text/css"  href="../../dcommon/css/footer.css">
+<link rel="stylesheet" type="text/css"  href="../../dcommon/css/fonts.css">
+<link rel="stylesheet" href="../../dcommon/css/foundation.css">
+<link rel="stylesheet" href="../../dcommon/css/codemirror.css">
+<link rel="stylesheet" type="text/css" title="Default" href="../../nav/css/html5.css">
+<link rel="stylesheet" href="../../dcommon/css/respond-480-tablet.css">
+<link rel="stylesheet" href="../../dcommon/css/respond-768-laptop.css">
+<link rel="stylesheet" href="../../dcommon/css/respond-1140-deskop.css">
+<script type="application/javascript" src="../../dcommon/js/modernizr.js"></script>
+<script type="application/javascript" src="../../dcommon/js/codemirror.js"></script>
+<script type="application/javascript" src="../../dcommon/js/jquery.js"></script>
+<script type="application/javascript" src="../../dcommon/js/foundation.min.js"></script>
+<script type="text/javascript" src="//s7.addthis.com/js/300/addthis_widget.js#pubid=ra-552992c80ef99c8d" async="async"></script>
+<script type="application/javascript" src="../../dcommon/js/jqfns.js"></script>
+<script type="application/javascript" src="../../dcommon/js/ohc-inline-videos.js"></script>
+<!-- Add fancyBox -->
+<link rel="stylesheet" href="../../dcommon/fancybox/jquery.fancybox.css?v=2.1.5" type="text/css" media="screen" />
+<script type="text/javascript" src="../../dcommon/fancybox/jquery.fancybox.pack.js?v=2.1.5"></script>
+<!-- Optionally add helpers - button, thumbnail and/or media -->
+<link rel="stylesheet"  href="../../dcommon/fancybox/helpers/jquery.fancybox-buttons.css?v=1.0.5"  type="text/css" media="screen" />
+<script type="text/javascript" src="../../dcommon/fancybox/helpers/jquery.fancybox-buttons.js?v=1.0.5"></script>
+<script type="text/javascript" src="../../dcommon/fancybox/helpers/jquery.fancybox-media.js?v=1.0.6"></script>
+<link rel="stylesheet"  href="../../dcommon/fancybox/helpers/jquery.fancybox-thumbs.css?v=1.0.7"  type="text/css" media="screen" />
+<script type="text/javascript" src="../../dcommon/fancybox/helpers/jquery.fancybox-thumbs.js?v=1.0.7"></script>
+<script>window.ohcglobal || document.write('<script src="/en/dcommon/js/global.js">\x3C/script>')</script></head>
+<body>
+<a href="#BEGIN" class="accessibility-top skipto" tabindex="0">Go to main content</a>
+<header><!--
+<div class="zz-skip-header"><a id="top" href="#BEGIN">Go to main content</a>--></header>
+<div class="row" id="CONTENT">
+<div class="IND large-9 medium-8 columns" dir="ltr">
+<a id="BEGIN" name="BEGIN"></a>
+<span id="PAGE" style="display:none;">276/479</span> <!-- End Header --><a id="i1033392"></a>
+<div class="sect1"><!-- infolevel="all" infotype="General" -->
+<h1 class="indexterm">CASE Expressions <a id="sthref2636"></a><a id="sthref2637"></a></h1>
+<p><code>CASE</code> expressions let you use <code>IF</code> ... <code>THEN</code> ... <code>ELSE</code> logic in SQL statements without having to invoke procedures. The syntax is:</p>
+<img width="454" height="64" src="img/case_expression.gif" alt="Description of case_expression.gif follows" title="Description of case_expression.gif follows" /><br />
+<a id="sthref2638" href="img_text/case_expression.htm">Description of the illustration case_expression.gif</a><br />
+<br />
+<p class="subhead2"><a id="sthref2639"></a><span class="italic">simple_case_expression</span>::=</p>
+<img width="412" height="39" src="img/simple_case_expression.gif" alt="Description of simple_case_expression.gif follows" title="Description of simple_case_expression.gif follows" /><br />
+<a id="sthref2640" href="img_text/simple_case_expression.htm">Description of the illustration simple_case_expression.gif</a><br />
+<br />
+<p class="subhead2"><a id="sthref2641"></a><span class="italic">searched_case_expression</span>::=</p>
+<img width="324" height="39" src="img/searched_case_expression.gif" alt="Description of searched_case_expression.gif follows" title="Description of searched_case_expression.gif follows" /><br />
+<a id="sthref2642" href="img_text/searched_case_expression.htm">Description of the illustration searched_case_expression.gif</a><br />
+<br />
+<p class="subhead2"><a id="sthref2643"></a><span class="italic">else_clause</span>::=</p>
+<img width="149" height="27" src="img/else_clause.gif" alt="Description of else_clause.gif follows" title="Description of else_clause.gif follows" /><br />
+<a id="sthref2644" href="img_text/else_clause.htm">Description of the illustration else_clause.gif</a><br />
+<br />
+<p><a id="sthref2645"></a><a id="sthref2646"></a>In a simple <code>CASE</code> expression, Oracle Database searches for the first <code>WHEN</code> ... <code>THEN</code> pair for which <code><span class="codeinlineitalic">expr</span></code> is equal to <code><span class="codeinlineitalic">comparison_expr</span></code> and returns <code><span class="codeinlineitalic">return_expr</span></code>. If none of the <code>WHEN</code> ... <code>THEN</code> pairs meet this condition, and an <code>ELSE</code> clause exists, then Oracle returns <code><span class="codeinlineitalic">else_expr</span></code>. Otherwise, Oracle returns null. You cannot specify the literal <code>NULL</code> for every <code><span class="codeinlineitalic">return_expr</span></code> and the <code><span class="codeinlineitalic">else_expr</span></code>.</p>
+<p>In a searched <code>CASE</code> expression, Oracle searches from left to right until it finds an occurrence of <code><span class="codeinlineitalic">condition</span></code> that is true, and then returns <code><span class="codeinlineitalic">return_expr</span></code>. If no <code><span class="codeinlineitalic">condition</span></code> is found to be true, and an <code>ELSE</code> clause exists, Oracle returns <code><span class="codeinlineitalic">else_expr</span></code>. Otherwise, Oracle returns null.</p>
+<p>Oracle Database uses <span class="bold">short-circuit evaluation</span>. That is, for a simple <code>CASE</code> expression, the database evaluates each <code><span class="codeinlineitalic">comparison_expr</span></code> value only before comparing it to <code><span class="codeinlineitalic">expr</span></code>, rather than evaluating all <code><span class="codeinlineitalic">comparison_expr</span></code> values before comparing any of them with <code><span class="codeinlineitalic">expr</span></code>. Consequently, Oracle never evaluates a <code><span class="codeinlineitalic">comparison_expr</span></code> if a previous <code><span class="codeinlineitalic">comparison_expr</span></code> is equal to <code><span class="codeinlineitalic">expr</span></code>. For a searched <code>CASE</code> expression, the database evaluates each <code><span class="codeinlineitalic">condition</span></code> to determine whether it is true, and never evaluates a <code><span class="codeinlineitalic">condition</span></code> if the previous <code><span class="codeinlineitalic">condition</span></code> was true.</p>
+<p>For a simple <code>CASE</code> expression, the <code><span class="codeinlineitalic">expr</span></code> and all <code><span class="codeinlineitalic">comparison_expr</span></code> values must either have the same datatype (<code>CHAR</code>, <code>VARCHAR2</code>, <code>NCHAR</code>, or <code>NVARCHAR2</code>, <code>NUMBER</code>, <code>BINARY_FLOAT</code>, or <code>BINARY_DOUBLE</code>) or must all have a numeric datatype. If all expressions have a numeric datatype, then Oracle determines the argument with the highest numeric precedence, implicitly converts the remaining arguments to that datatype, and returns that datatype.</p>
+<p>For both simple and searched <code>CASE</code> expressions, all of the <code><span class="codeinlineitalic">return_expr</span></code>s must either have the same datatype (<code>CHAR</code>, <code>VARCHAR2</code>, <code>NCHAR</code>, or <code>NVARCHAR2</code>, <code>NUMBER</code>, <code>BINARY_FLOAT</code>, or <code>BINARY_DOUBLE</code>) or must all have a numeric datatype. If all return expressions have a numeric datatype, then Oracle determines the argument with the highest numeric precedence, implicitly converts the remaining arguments to that datatype, and returns that datatype.</p>
+<p>The maximum number of arguments in a <code>CASE</code> expression is 255. All expressions count toward this limit, including the initial expression of a simple <code>CASE</code> expression and the optional <code>ELSE</code> expression. Each <code>WHEN</code> ... <code>THEN</code> pair counts as two arguments. To avoid exceeding this limit, you can nest <code>CASE</code> expressions so that the <code><span class="codeinlineitalic">return_expr</span></code> itself is a <code>CASE</code> expression.</p>
+<div class="infoboxnotealso">
+<p class="notep1">See Also:</p>
+<ul>
+<li>
+<p><a href="sql_elements002.htm#g195937">Table 2-10, "Implicit Type Conversion Matrix"</a> for more information on implicit conversion</p>
+</li>
+<li>
+<p><a href="sql_elements001.htm#i156865">"Numeric Precedence"</a> for information on numeric precedence</p>
+</li>
+<li>
+<p><a href="functions023.htm#i1001341">COALESCE</a> and <a href="functions102.htm#i1001340">NULLIF</a> for alternative forms of <code>CASE</code> logic</p>
+</li>
+<li>
+<p><a class="olink DWHSG02012" href="../../server.102/b14223/analysis.htm#DWHSG02012"><span class="italic">Oracle Data Warehousing Guide</span></a> for examples using various forms of the <code>CASE</code> expression</p>
+</li>
+</ul>
+</div>
+<p><a id="sthref2647"></a><span class="subhead3">Simple CASE Example&nbsp;</span>For each customer in the sample <code>oe.customers</code> table, the following statement lists the credit limit as "Low" if it equals $100, "High" if it equals $5000, and "Medium" if it equals anything else.</p>
+<pre>
+SELECT cust_last_name,
+   CASE credit_limit WHEN 100 THEN 'Low'
+   WHEN 5000 THEN 'High'
+   ELSE 'Medium' END
+   FROM customers;
+
+CUST_LAST_NAME       CASECR
+-------------------- ------
+...
+Bogart               Medium
+Nolte                Medium
+Loren                Medium
+Gueney               Medium
+</pre>
+<p><a id="sthref2648"></a><span class="subhead3">Searched CASE Example&nbsp;</span>The following statement finds the average salary of the employees in the sample table <code>oe.employees</code>, using $2000 as the lowest salary possible:</p>
+<pre>
+SELECT AVG(CASE WHEN e.salary &gt; 2000 THEN e.salary
+   ELSE 2000 END) "Average Salary" FROM employees e;
+
+Average Salary
+--------------
+    6461.68224
+</pre></div>
+<!-- class="sect1" --></div>
+<!-- Start Footer -->
+</div>
+<!-- add extra wrapper close div-->
+<footer><!--
+<hr />
+<table class="cellalignment2392">
+<tr>
+<td class="cellalignment2399">
+<table class="cellalignment2397">
+<tr>
+<td class="cellalignment2396"><a href="expressions003.htm"><img width="24" height="24" src="../../dcommon/gifs/leftnav.gif" alt="Go to previous page" /><br />
+<span class="icon">Previous</span></a></td>
+<td class="cellalignment2396"><a href="expressions005.htm"><img width="24" height="24" src="../../dcommon/gifs/rightnav.gif" alt="Go to next page" /><br />
+<span class="icon">Next</span></a></td>
+</tr>
+</table>
+</td>
+<td class="cellalignment-copyrightlogo"><img width="144" height="18" src="../../dcommon/gifs/oracle.gif" alt="Oracle" /><br />
+Copyright&nbsp;&copy;&nbsp;1996, 2005,&nbsp;Oracle.&nbsp;All&nbsp;rights&nbsp;reserved.<br />
+<a href="../../dcommon/html/cpyr.htm">Legal Notices</a></td>
+<td class="cellalignment2401">
+<table class="cellalignment2395">
+<tr>
+<td class="cellalignment2396"><a href="../../index.htm"><img width="24" height="24" src="../../dcommon/gifs/doclib.gif" alt="Go to Documentation Home" /><br />
+<span class="icon">Home</span></a></td>
+<td class="cellalignment2396"><a href="../../nav/portal_booklist.htm"><img width="24" height="24" src="../../dcommon/gifs/booklist.gif" alt="Go to Book List" /><br />
+<span class="icon">Book List</span></a></td>
+<td class="cellalignment2396"><a href="toc.htm"><img width="24" height="24" src="../../dcommon/gifs/toc.gif" alt="Go to Table of Contents" /><br />
+<span class="icon">Contents</span></a></td>
+<td class="cellalignment2396"><a href="index.htm"><img width="24" height="24" src="../../dcommon/gifs/index.gif" alt="Go to Index" /><br />
+<span class="icon">Index</span></a></td>
+<td class="cellalignment2396"><a href="../../nav/mindx.htm"><img width="24" height="24" src="../../dcommon/gifs/masterix.gif" alt="Go to Master Index" /><br />
+<span class="icon">Master Index</span></a></td>
+<td class="cellalignment2396"><a href="../../dcommon/html/feedback.htm"><img width="24" height="24" src="../../dcommon/gifs/feedbck2.gif" alt="Go to Feedback page" /><br />
+<span class="icon">Contact Us</span></a></td>
+</tr>
+</table>
+</td>
+</tr>
+</table>
+--></footer>
+<noscript>
+<p>Scripting on this page enhances content navigation, but does not change the content in any way.</p>
+</noscript>
+</body>
+</html>

@@ -1,0 +1,75 @@
+/**
+* 2007-2015 PrestaShop
+*
+* NOTICE OF LICENSE
+*
+* This source file is subject to the Academic Free License (AFL 3.0)
+* that is bundled with this package in the file LICENSE.txt.
+* It is also available through the world-wide-web at this URL:
+* http://opensource.org/licenses/afl-3.0.php
+* If you did not receive a copy of the license and are unable to
+* obtain it through the world-wide-web, please send an email
+* to license@prestashop.com so we can send you a copy immediately.
+*
+* DISCLAIMER
+*
+* Do not edit or add to this file if you wish to upgrade PrestaShop to newer
+* versions in the future. If you wish to customize PrestaShop for your
+* needs please refer to http://www.prestashop.com for more information.
+*
+*  @author PrestaShop SA <contact@prestashop.com>
+*  @copyright  2007-2015 PrestaShop SA
+*  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
+*  International Registered Trademark & Property of PrestaShop SA
+*/
+
+$(function() {
+	$('#seeIngredientsLink').click(function() {
+		$('#ingredients').ScrollTo();
+	});
+	
+	//set jqZoom parameters if needed
+	if (typeof(jqZoomEnabled) != 'undefined' && jqZoomEnabled)
+	{
+		$('.jqzoom').jqzoom({
+			zoomType: 'innerzoom', //innerzoom/standard/reverse/drag
+			zoomWidth: 458, //zooming div default width(default width value is 200)
+			zoomHeight: 458, //zooming div default width(default height value is 200)
+			xOffset: 21, //zooming div default offset(default offset value is 10)
+			yOffset: 0,
+			title: false
+		});
+	}
+	//add a link on the span 'view full size' and on the big image
+	$(document).on('click', '#view_full_size, #image-block', function(e){
+		$('#views_block .shown').click();
+	});
+	
+	//update display of the large image
+	function displayImage(domAAroundImgThumb, no_animation)
+	{
+		if (typeof(no_animation) == 'undefined')
+			no_animation = false;
+		if (domAAroundImgThumb.prop('href'))
+		{
+			var new_src = domAAroundImgThumb.attr('href').replace('thickbox', 'large');
+			var new_title = domAAroundImgThumb.attr('title');
+			var new_href = domAAroundImgThumb.attr('href');
+			if ($('#bigpic').prop('src') != new_src)
+			{
+				$('#bigpic').attr({
+					'src' : new_src,
+					'alt' : new_title,
+					'title' : new_title
+				}).load(function(){
+					if (typeof(jqZoomEnabled) != 'undefined' && jqZoomEnabled)
+						$(this).attr('rel', new_href);
+				});
+			}
+			$('#views_block li a').removeClass('shown');
+			$(domAAroundImgThumb).addClass('shown');
+		}
+	}
+
+});
+

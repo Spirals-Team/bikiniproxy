@@ -1,0 +1,246 @@
+var news_config = {
+	shareThisAPIUrl : "//wd.sharethis.com/api/getCount2.php",
+	shareThisPubKey : "36749a9c-cc10-4042-8c29-84e0c435a633",
+};
+
+function findShares(item) {
+    var lookupUrl = overrideUrls(item.url);
+    return $.ajax({
+        url: news_config.shareThisAPIUrl, 
+        data: {
+            cb: 'stCallBack',//call back function used for store share this count number
+            url: lookupUrl, 
+            pubKey: news_config.shareThisPubKey
+        },
+        type:"GET",
+        crossDomain: true, 
+        dataType: "jsonp",
+        complete: function(){
+            var totalShares = news_config.stCount;
+            item.share_count = totalShares;
+            $('.article_'+item.id+' .shareCount').html(totalShares);
+            delete news_config.stCount;
+        }
+    });
+}
+
+function stCallBack(response){
+    news_config.stCount = response.total;
+}
+
+function overrideUrls(url) {
+    var host = window.location.host;
+    var new_url = "https://"+host+url;   
+    return new_url;
+}
+
+$(document).ready(function() {
+	var i, item;
+	var list = jsonNews;
+	for (i = 0; list && i < list.length; i++) {
+		item = list[i];
+		findShares(item);
+	}
+
+     if($('.fixed-sky').length && $('.featured').length){
+        var shaft = $('.fixed-sky');
+        var skyscraper = $('.skyscraper-ad');
+        shaft.css('position','relative');
+        skyscraper.width(shaft.width());
+        var shaftTop = shaft.offset().top;
+        var shaftBottom = $('.featured').offset().top - 135;
+        var shaftHeight = shaftBottom - shaftTop;
+        shaft.height(shaftHeight);
+        var skyscraperHeight = $(skyscraper).height();
+        var didScroll = false;
+        var timer;
+        $(window).scroll(function() {
+            didScroll = true;
+        });
+        timer = setInterval(function() {
+            if (didScroll) {
+                shaftTop = shaft.offset().top;
+                shaftBottom = $('.featured').offset().top - 50;
+                didScroll = false;
+                skyscraperHeight = $(skyscraper).height();
+                if ($(window).scrollTop() < (shaftTop - 130)) {
+                    skyscraper.css({'position':'relative','top':'','bottom':''});
+                } else if($(window).scrollTop() > (shaftBottom - skyscraperHeight - 250)) {
+                    var relative_pos = shaftBottom - shaftTop - skyscraperHeight - 250 + 130;
+                    skyscraper.css({'position':'relative','top':relative_pos + 'px','bottom':'0'});
+                } else {
+                    skyscraper.css({'position':'fixed','top':'130px','bottom':''});
+                }
+            }
+        },250);
+    }
+    $(".royalSlider").royalSlider({
+        keyboardNavEnabled: true,
+    	autoScaleSlider: true,
+        controlNavigation: 'none',
+        arrowsNav: true,
+        arrowsNavAutoHide: false,
+        imageScaleMode: 'fill',
+        transitionType: 'fade',
+        loop: true,
+        autoScaleSliderWidth: 1040,
+        autoScaleSliderHeight: 669,
+        globalCaption: true
+    }); 
+    
+	var initPhotoSwipeFromDOM = function(gallerySelector) {
+	    var parseThumbnailElements = function(el) {
+	        var thumbElements = el.getElementsByClassName("photoswipe_slides"),
+	            numNodes = thumbElements.length,
+	            items = [],
+	            figureEl,
+	            linkEl,
+	            size,
+	            item;
+	        for(var i = 0; i < numNodes; i++) {
+	            figureEl = thumbElements[i]; // <figure> element
+	            if(figureEl.nodeType !== 1) {
+	                continue;
+	            }
+	            linkEl = figureEl.children[0]; // <a> element
+	            
+	            size = linkEl.getAttribute('data-size').split('x');
+	            item = {
+	                src: linkEl.getAttribute('href'),
+	                w: parseInt(size[0], 10),
+	                h: parseInt(size[1], 10)
+	            };
+
+	            if(figureEl.children.length > 1) {
+	                item.title = figureEl.children[1].textContent; 
+	            }
+	            if(linkEl.children.length > 0) {
+	                item.msrc = linkEl.children[0].getAttribute('src');
+	            } 
+	            item.el = figureEl;
+	            items.push(item);
+	        }
+	        return items;
+	    };
+	    var closest = function closest(el, fn) {
+	        return el && ( fn(el) ? el : closest(el.parentNode, fn) );
+	    };
+	    var onThumbnailsClick = function(e) {
+	        e = e || window.event;
+	        e.preventDefault ? e.preventDefault() : e.returnValue = false;
+	        var eTarget = e.target || e.srcElement;
+	        var clickedListItem = closest(eTarget, function(el) {
+	            return (el.tagName && el.tagName.toUpperCase() === 'FIGURE');
+	        });
+	        if(!clickedListItem) {
+	            return;
+	        }
+	        var clickedGallery = clickedListItem.parentNode,
+	            childNodes = clickedGallery.getElementsByClassName("photoswipe_slides"),
+	            numChildNodes = childNodes.length,
+	            nodeIndex = 0,
+	            index;
+	        for (var i = 0; i < numChildNodes; i++) {
+	            if(childNodes[i].nodeType !== 1) { 
+	                continue; 
+	            }
+	            if(childNodes[i] === clickedListItem) {
+	                index = nodeIndex;
+	                break;
+	            }
+	            nodeIndex++;
+	        }
+	        if(index >= 0) {
+	            openPhotoSwipe( index, clickedGallery );
+	        }
+	        return false;
+	    };
+	    var photoswipeParseHash = function() {
+	        var hash = window.location.hash.substring(1),
+	        params = {};
+	        if(hash.length < 5) {
+	            return params;
+	        }
+	        var vars = hash.split('&');
+	        for (var i = 0; i < vars.length; i++) {
+	            if(!vars[i]) {
+	                continue;
+	            }
+	            var pair = vars[i].split('=');  
+	            if(pair.length < 2) {
+	                continue;
+	            }           
+	            params[pair[0]] = pair[1];
+	        }
+	        if(params.gid) {
+	            params.gid = parseInt(params.gid, 10);
+	        }
+	        if(!params.hasOwnProperty('pid')) {
+	            return params;
+	        }
+	        params.pid = parseInt(params.pid, 10);
+	        return params;
+	    };
+	    var openPhotoSwipe = function(index, galleryElement, disableAnimation) {
+	        var pswpElement = document.querySelectorAll('.pswp')[0],
+	            gallery,
+	            options,
+	            items;
+	        items = parseThumbnailElements(galleryElement);
+	        options = {
+	            index: index,
+	            galleryUID: galleryElement.getAttribute('data-pswp-uid'),
+				preload: [1,1],
+		    shareButtons: [
+			{id:'facebook', label:'Share on Facebook', url:'https://www.facebook.com/sharer/sharer.php?u={{url}}'},
+			{id:'twitter', label:'Tweet', url:'https://twitter.com/intent/tweet?text={{text}}&url={{url}}'},
+			{id:'pinterest', label:'Pin it', url:'//www.pinterest.com/pin/create/button/?url={{url}}&media={{image_url}}&description={{text}}'}
+		    ],
+	            getThumbBoundsFn: function(index) {
+	                var thumbnail = items[index].el.getElementsByTagName('img')[0],
+	                    pageYScroll = window.pageYOffset || document.documentElement.scrollTop,
+	                    rect = thumbnail.getBoundingClientRect(); 
+	                return {x:rect.left, y:rect.top + pageYScroll, w:rect.width};
+	            }
+	        };
+	        if(disableAnimation) {
+	            options.showAnimationDuration = 0;
+	        }
+	        gallery = new PhotoSwipe( pswpElement, PhotoSwipeUI_Default, items, options);
+	        gallery.init();
+	    };
+	    var galleryElements = document.querySelectorAll( gallerySelector );
+	    for(var i = 0, l = galleryElements.length; i < l; i++) {
+	        galleryElements[i].setAttribute('data-pswp-uid', i+1);
+	        var elements = galleryElements[i].getElementsByClassName("photoswipe_slides");
+	        for(var j = 0, len = elements.length; j < len; j++){
+	            elements[j].children[0].onclick = onThumbnailsClick;
+	        }
+	    }
+	    var hashData = photoswipeParseHash();
+	    if(hashData.pid > 0 && hashData.gid > 0) {
+	        openPhotoSwipe( hashData.pid - 1 ,  galleryElements[ hashData.gid - 1 ], true );
+	    }
+	};
+
+	initPhotoSwipeFromDOM('.photoswipe_container');    
+});
+
+var stDefer = $.Deferred();
+$.getScript('https://ws.sharethis.com/button/buttons.js',function(){
+	stLight.options({
+		publisher:'36749a9c-cc10-4042-8c29-84e0c435a633',
+		onhover:false, 
+		newOrZero:"zero", 
+		doNotHash: true, 
+		doNotCopy: true, 
+		hashAddressBar: false
+	});
+	stDefer.resolve();
+});
+$.when(stDefer.promise()).done(function() {
+	var shareUrl = overrideUrls(window.location.pathname);
+	stButtons.getCount(shareUrl,"facebook",document.getElementById('fbcount_top'));	
+	stButtons.getCount(shareUrl,"twitter",document.getElementById('twcount_top'));
+	stButtons.getCount(shareUrl,"sharethis",document.getElementById('stcount_top'));
+});

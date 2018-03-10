@@ -1,0 +1,429 @@
+var _isUserAuthenticated = false;
+var _displayName;
+var _userName;
+var _seed;
+var previousLink;
+var firstTime = true;
+var redirect = false;
+var redirectTo = "";
+var loginExists = true;
+
+var commentsOnPage = false;
+var cbnLoginOnPage = false;
+var myCbnDashboardOnPage = false;
+
+var omsource = "";
+if (window.location.href.indexOf("?")>0)
+{
+	omsource = "&om=comment-lighbox";
+}
+else
+{
+	omsource = "?om=comment-lighbox";
+}
+
+var _loginUrl = "/Global/Templates/Pages/Login.aspx?ReturnUrl=" + escape(window.location.href + omsource);
+var _logoutUrl = "/community/af/logoutredirect.aspx";
+function cbnLoginResize() {
+    $("#loginFrame").height($("#loginDialog").height());
+}
+
+function appendLoginUrl(loginUrl)
+{
+	if (typeof loginInceptionSource != 'undefined')
+	{
+		return loginUrl += "&InceptSource="+loginInceptionSource;
+	}
+	else
+	{
+		return loginUrl;
+	}
+}
+
+$(document).ready(function() {
+	InitGlobalControls();
+});
+
+function InitGlobalControls(){
+	//find if comments are on the page
+	if (document.getElementById('commentForm'))
+	{
+		commentsOnPage = true;
+	}
+	//find if a login control is on the page
+	if (document.getElementById('cbnLoginLink'))
+	{
+		cbnLoginOnPage = true;
+	}
+	if (document.getElementById('cbnLogOutLink'))
+	{
+		cbnLoginOnPage = true;
+	}
+	//find if the dashboard is on the page
+	if (document.getElementById('MyCBNWallFeed'))
+	{
+		myCbnDashboardOnPage = true;
+	}
+	//load the login control if it's supposed to be on the page.
+	if (cbnLoginOnPage)
+	{
+		cbnLoginInit();
+	}
+	//load the dashboard if it's supposed to be on the page.
+	if (myCbnDashboardOnPage)
+	{
+		myCbnDashboardInit();
+	}
+	//handle if the comments are on the page
+	if (commentsOnPage)
+	{
+		myCbnCommentsInit();
+	}
+}
+
+
+function userAuthenticated(userId, displayName, seed) {
+	if (cbnLoginOnPage)
+	{
+		cbnLoginClose();
+		_userName = userId;
+		_displayName = displayName;
+		_seed = seed.replace(/^\s*/, "").replace(/\s*$/, "");
+		if (document.getElementById('myCBN'))
+		{
+			document.getElementById('myCBN').innerHTML = "<img src='/redesign-prototype/images/myCBNLogoSm.gif' width='57' height='14' align='middle' /> &nbsp; <a href='"+_logoutUrl+"'>Log Out</a>";
+		}
+	}
+	if (myCbnDashboardOnPage)
+	{
+		if (cbnLoginAuthenticated())
+		{
+			document.getElementById('friendActivityLink').onclick = myCbnDashboardFilter;
+			document.getElementById('selfActivityLink').onclick = myCbnDashboardFilter;
+			myCbnDashboardOpen(userId, seed);
+			$("#featureTabs").tabs("select",3);
+		}
+	}
+	if (commentsOnPage)
+	{
+		myCbnCommentsGet(getPageURI(), _userName, _numberPerPage, _pageNumber, _sort);
+		$("#loginDialog").dialog("close");
+		_userName = userId;
+		_isUserAuthenticated = true;
+		_seed = seed.replace(/^\s*/, "").replace(/\s*$/, "");
+		$("#loginLink").hide();
+		if (jumpToComments)
+		{
+			$("#comment").focus();
+		}
+	}
+	if (redirect)
+	{
+		window.location.href = redirectTo;
+	}
+	
+}
+
+function myCbnCommentsInit()
+{
+	if (!cbnLoginOnPage)
+	{
+		$("#loginDialog").append("<iframe id=\"loginFrame\" src=\"" + appendLoginUrl(_loginUrl) + "\" height=\"190\" frameborder=\"0\" scrolling=\"no\" marginheight=\"0\" marginwidth=\"0\" style=\"display: none; width: auto;\"></iframe>");
+		
+		
+		//http://orip.org/2009/05/jquery-ui-scoped-themes-and-dialog.html
+		// Wraps the dialog in a div with the scoping class on
+		// dialog open, removes the scoping class on dialog close
+
+		$.fn.dialogScopingWorkaround = function(scopingClass) {
+			this.bind('dialogopen', function(event, ui) {
+				$(this).parents(".ui-dialog").wrap(
+					'<div class="dialogScopingWrapper '
+					+ scopingClass
+					+ '"></div>'
+				);
+			});
+			this.bind('dialogclose', function(event, ui) {
+				var wrapper = $(this).parents(".dialogScopingWrapper");
+				wrapper.replaceWith(wrapper.children());
+			});
+			return this;
+		};
+
+		$(function() {
+			$("#loginDialog").dialogScopingWorkaround("global").dialog({
+				bgiframe: false,
+				modal: true,
+				closeOnEscape: true,
+				resizable: false,
+				draggable: false,
+				autoOpen: false,
+				title: "Login",
+				dragStart: function(event, ui) {
+					$("#loginFrame").hide();
+				},
+				dragStop: function(event, ui) {
+					$("#loginFrame").show();
+				},
+				close: function(event, ui) {
+					$("#loginFrame").src = "";
+				}
+			});
+		});
+	}
+	else
+	{
+		commentsThumbs = "yes";
+	}
+	try {
+		_isUserAuthenticated = isUserAuthenticated();
+		myCbnCommentsGet(getPageURI(), _userName, _numberPerPage, _pageNumber, _sort);
+	}catch(err) {}
+
+	if (_isUserAuthenticated)
+		$("#loginLink").hide();
+
+	$('#toComments').click(function() {
+		var position = $("#commentTitle").offset();
+		$('html, body').animate({ scrollTop: position.top }, 1000, 'linear', function() { $("#comment").focus(); });
+	});
+}
+
+function cbnLoginInit()
+{
+	if (document.getElementById('cbnLoginLink'))
+	{
+		document.getElementById('cbnLoginLink').onclick = openMainLogin;
+	}
+	if (document.getElementById('cbnSignUpLink'))
+	{
+		document.getElementById('cbnSignUpLink').onclick = cbnLoginOpenSignUp;
+	}
+	loginLinks = document.getElementsByClassName("LoginRequired");
+	for( var i =0; i< loginLinks.length; i++)
+	{
+		loginLinks[i].onclick=cbnLoginResourceLogin;
+	}
+}
+
+function myCbnDashboardInit()
+{
+	if (cbnLoginAuthenticated())
+	{
+		document.getElementById('friendActivityLink').onclick = myCbnDashboardFilter;
+		document.getElementById('selfActivityLink').onclick = myCbnDashboardFilter;
+		myCbnDashboardOpen(_userName, _seed);
+	}
+}
+
+function cbnLoginAuthenticated()
+{
+	if (typeof(_userName)=="undefined")
+	{
+		return false;
+	}
+	if (typeof(_seed)=="undefined")
+	{
+		return false;
+	}
+	if(!_userName)
+	{
+		return false;
+	}
+	if(!_seed)
+	{
+		return false;
+	}
+	if ((_userName !="") && (_seed!=""))
+	{
+		return true;
+	}
+	return false;
+}
+
+
+function cbnLoginResourceLogin()
+{
+	if (cbnLoginAuthenticated())
+	{
+		return true;
+	}
+	var resource = this.href;
+	redirectTo = resource;
+	redirect = true;
+	
+	openMainLogin();
+	return false;
+}
+
+/* open functions - consolidation targets */
+function cbnLoginOpen(height, width) {
+    $("#loginFrame").src = appendLoginUrl(_loginUrl);
+    $("#loginFrame").show();
+
+    if (height != null)
+        $("#loginDialog").dialog("option", "height", height);
+
+    if (width != null)
+        $("#loginDialog").dialog("option", "width", width);
+
+    $("#loginDialog").dialog('open');
+}
+function openMainLogin()
+{
+	if (window.location.href.indexOf("?")>0)
+	{
+		omsource = "&om=homepage";
+	}
+	else
+	{
+		omsource = "?om=homepage";
+	}
+
+	_loginUrl = "/Global/Templates/Pages/Login.aspx?ReturnUrl=" + escape(window.location.href + omsource);
+	if (firstTime)
+	{
+		firstTime = false;
+		if (!document.getElementById('loginDialog'))
+		{
+			loginDialog = document.createElement("div");
+			loginDialog.id = "loginDialog";
+			loginDialog.title = "Login";
+
+			document.body.insertBefore(loginDialog,document.body.firstChild);
+		}
+		$("#loginDialog").append("<iframe id=\"loginFrame\" name='loginFrame' src=\"" + appendLoginUrl(_loginUrl) + "\" height=\"190\" frameborder=\"0\" scrolling=\"no\" marginheight=\"0\" marginwidth=\"0\" style=\"display: none; width: auto;\"></iframe>");
+
+	    $("#loginFrame").show();
+
+
+		$("#loginDialog").dialog({ zIndex: 501, closeText: 'x'});
+		$("#loginDialog").dialog('close');
+
+		
+	}
+	//$("#loginFrame").src = _loginUrl;
+	if (window.frames.loginFrame && window.frames.loginFrame.__doPostBack) {
+		if (window.frames.loginFrame.document.links[0].innerHTML == "Terms of Service")
+		{
+			window.frames.loginFrame.__doPostBack('login$lnkLogin','');
+		}
+	}
+	$("#loginFrame").show();
+	firstTime = false;
+	$("#loginDialog").dialog('open');
+	cbnLoginSetActiveView("Login");
+	return false;
+}
+function cbnLoginOpenSignUp()
+{
+
+	if (firstTime)
+	{
+		
+		loginDialog = document.createElement("div");
+		loginDialog.id = "loginDialog";
+		loginDialog.title = "Login";
+
+		document.body.insertBefore(loginDialog,document.body.firstChild);
+
+		$("#loginDialog").append("<iframe id=\"loginFrame\" name='loginFrame' height=\"190\" frameborder=\"0\" scrolling=\"no\" marginheight=\"0\" marginwidth=\"0\" style=\"display: none; width: auto;\"></iframe>");
+
+		$('#loginFrame').load(
+			function(){
+				if(firstTime)
+				{
+					openSignUp2();
+				}
+				//callback(this);
+			}
+		);
+		$("#loginFrame").attr('src', appendLoginUrl(_loginUrl));
+
+	    $("#loginFrame").show();
+
+
+		$("#loginDialog").dialog({ zIndex: 501, closeText: 'x'});
+		$("#loginDialog").dialog('close');
+
+		
+	}
+	else
+	{
+		openSignUp2();
+	}
+	return false;
+}
+function openSignUp2(){
+	firstTime = false;
+	//$("#loginFrame").src = _loginUrl;
+	if (window.frames.loginFrame && window.frames.loginFrame.__doPostBack) {
+		if (window.frames.loginFrame.document.links[0].innerHTML == "Sign Up")
+		{
+			window.frames.loginFrame.__doPostBack('login$lnkRegisterTop','');
+		}
+	}
+	
+	$("#loginFrame").show();
+	firstTime = false;
+	$("#loginDialog").dialog('open');
+	cbnLoginSetActiveView("Register");
+		
+}
+function cbnLoginClose()
+{
+	$("#loginDialog").dialog('close');
+}
+
+
+
+function cbnLoginSetActiveView(activeViewName) {
+	var title;
+	var height;
+	var width;
+	switch (activeViewName) {
+		case "Login":
+			title = "Login";
+			height = 250;
+			width = 340;
+			break;
+		case "Register":
+			title = "Sign Up";
+			height = 375;
+			width = 340;
+			break;
+		case "Password":
+			title = "Forgot Password";
+			height = 200;
+			width = 340;
+			break;
+	}
+
+	$("#loginDialog").dialog("option", "title", title);
+
+	$("#loginDialog").dialog("option", "height", height);
+	$("#loginDialog").dialog("option", "width", width);
+
+	$(".ui-dialog-content").height(height-50 + "px");
+	$(".ui-dialog-content").width("auto");
+
+	cbnLoginResize();
+}
+
+
+
+/*code not in functions*/
+
+
+
+document.getElementsByClassName = function(cl) {
+var retnode = [];
+var myclass = new RegExp('\\b'+cl+'\\b');
+var elem = this.getElementsByTagName('*');
+for (var i = 0; i < elem.length; i++) {
+var classes = elem[i].className;
+if (myclass.test(classes)) retnode.push(elem[i]);
+}
+return retnode;
+}; 
+

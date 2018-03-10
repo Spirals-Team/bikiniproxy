@@ -1,0 +1,26 @@
+var report_campaign_trax = function(hbx_vars, anchor_elem, options) {
+	if (typeof(mmtUserID) != 'undefined') {
+		var protocol = (document.location.href.indexOf("https") == 0) ? "https" : "http";
+		var img      = protocol + ":\/\/ftr1.external.xerox.com\/EventTracker.aspx?" + jQuery.param({
+			uid:mmtUserID ,
+			xlob:mmtLOB,
+			xcntry:mmtCountry,
+			etype:escape (hbx_vars.mlc + '/' + hbx_vars.page) ,
+			params:'epn='+escape(hbx_vars.page) ,
+			ROICost:escape (mmtEventAmount) ,
+			profit:escape (mmtEventProfit) ,
+			order:escape (mmtEventOrderNumber) ,
+			product:escape (mmtEventProductName),
+			cur:escape (mmtEventCurrency) ,
+			url:escape (anchor_elem.href),
+			r:Math.random(),
+			// these parameters are from roitracker.js,
+			version:escape(_mt_scriptVersion),
+			hitGuid:_mt_newHitGuid,
+			sessionId:_mt_sessionID ,
+			visitorID:_mt_visitorID
+		});
+		if ((options != 'undefined') && (options.debug)) console.log('CampaignTrax image: '+img);
+			(new Image()).src = img;
+	}
+};

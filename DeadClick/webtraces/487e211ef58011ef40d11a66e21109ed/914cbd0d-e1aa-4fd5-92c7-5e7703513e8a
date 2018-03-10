@@ -1,0 +1,76 @@
+var errorTimeout;
+var msgTimeout;
+var errorTimeoutTime = 4000;
+var slideUpTime = 500;
+var handleError = function (err, container) {
+    var errorString = "";
+    if (typeof err == "string") {
+        errorString = err;
+    }
+    else {
+        var isFirst = true;
+        for (i = 0; i < err.errors.length; i++) {
+            if (!isFirst) { errorString += "<br />"; }
+            errorString += err.errors[i];
+            isFirst = false;
+        }
+    }
+    var isBody = false;
+    if (!container) {
+        container = $("body");
+        isBody = true;
+    }
+    if (!container) {
+        //console.log(errorString);
+    }
+    else {
+        var error = container.find(".disappearingError");
+        if (error.length > 0) {
+
+            error.html(errorStrin);
+        }
+        else {
+            error = $("<div/>", {
+                'class': "disappearingError",
+                'html': errorString
+            });
+            if (isBody) {
+                error.css("top", $(document).scrollTop());
+            }
+            container.prepend(error);
+            $('.disappearingError').append("<img id='basket-error' src='/Content/images/1358288788_exclamation-circle_red.png'>")
+        }
+        clearTimeout(errorTimeout);
+        errorTimeout = setTimeout("removeError()", errorTimeoutTime);
+    };
+}
+var saveComplete = function (err) {
+    $(".savecomplete").remove();
+    var newdiv = $("<div/>", {
+        "class": "savecomplete",
+        "html": "Save Complete"
+    }).css("top", $(document).scrollTop());
+    $("body").prepend(newdiv);
+    clearTimeout(msgTimeout);
+    msgTimeout = setTimeout("removeMsg()", errorTimeoutTime);
+}
+var notify = function (msg) {
+    $(".savecomplete").remove();
+    var newdiv = $("<div/>", {
+        "class": "savecomplete",
+        "html": msg
+    }).css("top", $(document).scrollTop());
+    $("body").prepend(newdiv);
+    clearTimeout(msgTimeout);
+    msgTimeout = setTimeout("removeMsg()", errorTimeoutTime);
+}
+var removeError = function () {
+    $(".disappearingError").slideUp(slideUpTime, function () {
+        $(this).remove();
+    });
+}
+var removeMsg = function () {
+    $(".savecomplete").slideUp(slideUpTime, function () {
+        $(this).remove();
+    });
+}

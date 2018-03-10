@@ -1,0 +1,413 @@
+
+/*
+
+@TODO:
+descriptive comments here
+
+*/
+
+{% 
+	if(this.defkey) {
+		var overlay,
+			related_links,
+			video,	
+			video_kids,
+			video_thumb,			
+			display_seconds,
+			hide_caption,			
+			facebook			= {},
+			fb_away_url			= "",
+			fb_home_url			= "",
+			photo				= "", 
+			photo270			= "", 	
+			thumb				= "",
+			video_caption		= "",
+			caption_mode		= "",
+			hide_linescore		= "0",	
+			hide_gamebanner		= "0",
+			breaking_news		= "N",
+			no_bscore			= "",	
+			property			= bam.mediawall.getConfig("property"),
+			club				= bam.mediawall.getConfig("club") || window.club || property || "",	
+			sid					= window.sid || "",
+			defkey				= this.defkey,
+			gameid 				= this.gameid,	
+			gameday				= (!!gameid) ? gameid.replace(/(\/)|(-)/g,"_") : "",
+			urltext				= this.urltext && this.urltext.replace(/^\s*/, ""),
+			morelink			= this.url,			
+			containsGamedayShim	= (~morelink.indexOf("&lt;gameday&gt;") || ~morelink.indexOf("<gameday>")),	
+			url					= (containsGamedayShim) ? "javascript:launchGameday({gid:'" + gameday + "', mode:'gameday', c_id:'" + club + "'})" : morelink,							
+			kicker				= this.kicker, 
+			bigblurb			= this.bigblurb, 			 		
+			type				= this.type, 
+			contentid			= this.contentid,					 
+			children			= this.children,
+			controldata			= this.controldata || [],
+			keywords			= this.keywords,
+			videopage			= bam.mediawall.getConfig("videopage"),
+			boxlinkbase			= bam.mediawall.getConfig("boxlinkbase"),
+			mediacenterlink		= bam.mediawall.getConfig("mediacenterlink"),
+			o, i = z = 0;	
+			
+		for (; i<children.length; i++) { 
+			o = children[i]; 			
+			if(o.defkey === "2011_mediawall_large") { 
+				photo = o.url;
+			} else if(o.defkey === "photo-480x270") { 
+				photo270 = o.url;
+			} else if(o.defkey === "large-thumbnail") { 
+				thumb = o.url;
+			} else if(o.defkey === "article_related_index") { 
+				related_links = o.members;
+			} else if(o.defkey === "short_related_index") { 			
+				video = o.members[0];		
+				if(video){		
+					video_kids = $.ensureArray(video.children);					
+					if(video.defkey === "video_alias"){
+						for(; z<video_kids.length; z++) { 
+							if(video_kids[z].defkey==="small-text-graphic" || video_kids[z].defkey==="image-124x70") {
+								video_thumb = video_kids[z].url; 
+								break;						
+							}			
+						}	
+						video_caption = video.headline;									
+					}else{
+						for(; z<video_kids.length; z++) { 
+							if(video_kids[z].defkey==="small-text-graphic" || video_kids[z].defkey==="image-124x70") {
+								video_caption = video_kids[z].caption;
+								video_thumb = video_kids[z].url;
+								break;
+							}					
+						}
+					}
+				}			
+			} else if(o.defkey === "related_facebook_index") { 			
+				if(!!o.members[0]) {
+					fb_home_url = o.members[0].url;					
+					if(!~fb_home_url.indexOf("http:")) fb_home_url = "http://mlb.mlb.com" + fb_home_url;					
+				}				
+				if(!!o.members[1]) {
+					fb_away_url = o.members[1].url;
+					if(!~fb_away_url.indexOf("http:")) fb_away_url = "http://mlb.mlb.com" + fb_away_url;
+				}						
+			
+				/* TYIB	*/
+				facebook = {
+					away_code 		: "fb_away_code",
+					home_code 		: "fb_home_code",
+					home_url 		: encodeURIComponent(unescape(fb_home_url)),
+					away_url 		: encodeURIComponent(unescape(fb_away_url)),
+					away_player_id	: fb_away_url.substr(fb_away_url.indexOf("playerid=")+9),	
+					home_player_id	: fb_home_url.substr(fb_home_url.indexOf("playerid=")+9)	
+				}
+				
+				/* GAME		
+				facebook = {
+					away_code 	: o.gameid.substr(11,3),
+					home_code 	: o.gameid.substr(18,3),
+					home_url 	: encodeURIComponent(unescape(fb_home_url)),
+					away_url 	: encodeURIComponent(unescape(fb_away_url)),
+					seriescode	: o.seriescode,
+					seriesnum	: o.seriesnum
+				}
+				*/				
+				
+			}						
+	 	}		
+		
+		for(i=0;i<controldata.length;i++){
+			o = controldata[i];
+			if(o.display_seconds) display_seconds = o.display_seconds;
+			else if(o.hidemwcap) hide_caption = o.hidemwcap;	
+			else if(o.hide_linescore) hide_linescore = o.hide_linescore;
+			else if(o.hide_gamebanner) hide_gamebanner = o.hide_gamebanner;			
+			else if(o.no_bscore) no_bscore = o.no_bscore;	
+			else if(o.breaking_news) breaking_news = o.breaking_news;   
+			else if(o.caption_mode) caption_mode = o.caption_mode;          	
+		}
+		
+		for(i=0;i<keywords.length;i++){
+			o = keywords[i];
+			if(o.parent === "Mediawall Overlay") {
+				overlay = o.key;	
+				break;
+			}
+		}		
+	
+		bam.mediawall.createPanel({
+			defkey					:	defkey,
+			photo					:	photo,
+			photo270				:	photo270,
+			thumb					:	thumb,
+			overlay					:	overlay,			
+			video_thumb				:	video_thumb,			
+			display_seconds			:	display_seconds * 1000,
+			hide_linescore			:	hide_linescore,	
+			kicker					: 	kicker,
+			gameid					:	gameid,	
+			gameday					:	gameday,
+			no_bscore				:	no_bscore,
+			contentid				:	contentid,
+			facebook				:	facebook		
+		});		
+		
+	} 
+%}
+ 
+
+
+
+{% /* these functions write out related links */ %}
+ 
+		{% function relatedVideo(r){ 
+				var content_id = r.meta.content_id,
+					topic_id = r.meta.topic_id,
+					href = videopage + "?";				
+				if(!!content_id) href += "content_id="+content_id;
+				if(!!content_id && !!topic_id) href += "&";
+				if(!!topic_id) href += "topic_id="+topic_id;
+				if(typeof(club)!=="undefined") href += "&c_id=" + club;
+				if(!!sid) href += "&sid=" + sid;			
+		%}&nbsp;<img src="/shared/images/icons/video.gif">&nbsp;&#160;<a href="{%=href%}">{%=r.headline%}</a>{% } %}
+
+		{% function relatedArticle(r){ %}&nbsp;&nbsp;&bull;&nbsp;&nbsp;<a href="{%=r.url%}">{%=r.headline%}</a>{% } %}
+
+		{% function relatedAudio(r){ %}<!-- <a href=""></a> -->{% } %}
+	
+		{% function relatedContentShort(r){
+				var h = r.headline, 
+					prefix = ( ~h.indexOf("img") ) ? "&nbsp;&nbsp;" : "&nbsp;&nbsp;&bull;&nbsp;&nbsp;";				
+				/* this checks to see if the headline contains handcoded links */	
+				if( h.length - h.replace(/</gi, "").length > 0 && h.length - h.replace(/</gi, "").length === h.length - h.replace(/>/gi, "").length && ~h.indexOf("href")	) {
+%}{%=prefix%}{%=h%}{% }else{ %}{%=prefix%}<a href="{%=r.url%}">{%=h%}</a>{% }} %}
+
+		{% function buildrelated(rlinks) {
+				if(!!rlinks){
+					var r, type;
+					for(var i=0; i<rlinks.length; i++){ 
+						r		= rlinks[i];
+						type	= r.type;				
+						if(type==="video") relatedVideo(r);	
+						else if(type==="articles") relatedArticle(r);	
+						else if(type==="audio") relatedAudio(r);	
+						else if(type==="content_short") relatedContentShort(r);				
+					}	
+				}		
+			}
+		%}
+		
+{% /* end of related links functions */ %}
+		
+		
+		
+{% 	/******** GAME MODE ********/  %}	
+
+	{%	
+	if( defkey === "mediawall-game" && no_bscore !== "1") { 
+		 bam.mediawall.trigger("gamePanelFound",[gameday]); 
+	%}	
+	
+	{% function buildLinescore(showFull){ %}
+		<table class="mw_linescore_matchup">
+			<thead>
+				<tr><th></th></tr>
+			</thead>
+			<tbody>
+        		<tr><td></td></tr>
+				<tr><td></td></tr>
+     		 </tbody>
+		</table>
+		{% if(showFull){ %}
+		<div class="mw_linescore_innings">
+			<table>
+				<thead>
+					<tr></tr>
+				</thead>
+				<tbody>
+        			<tr></tr>
+					<tr></tr>
+     			 </tbody>
+			</table>								
+		</div>		
+		<div class="mw_innings_left"></div>
+		<div class="mw_innings_right"></div>	
+		{% } %}
+		<table class="mw_linescore_rhe">
+			<thead>
+				<tr><th>R</th><th>H</th><th>E</th></tr>
+			</thead>
+			<tbody>
+        		<tr><td></td><td></td><td></td></tr>
+				<tr><td></td><td></td><td></td></tr>
+     		 </tbody>
+		</table>				
+		<div class="mw_bases"><div class="mw_outs"></div></div>
+		<div class="mw_starttime"></div>
+	{% } %}
+
+	<li class="mw_panel mw_panel_game {% if (!!video && !!video.meta) { %}mw_panel_video{% } %}">
+
+		{% if(hide_gamebanner !== "1") { %}		
+		<div class="mw_live_banner_bg"></div>
+		<div class="mw_live_banner">
+			<h3></h3>						
+			<a href="javascript:launchGameday({gid:'{%=gameday%}', mode:'gameday', c_id:'{%=club%}'})" class="mw_button mw_button_wrap bam-button bam-button-products"></a>			
+			<a href="{%=boxlinkbase%}{%=gameday%}&mode=box&c_id={%=club%}" class="mw_button mw_button_box bam-button bam-button-products"></a>
+			<a href="javascript:launchGameday({gid:'{%=gameday%}', mode:'gameday', c_id:'{%=club%}'})" class="mw_button mw_button_gameday bam-button bam-button-products"></a>
+			<a href="#" class="mw_button mw_button_audio bam-button bam-button-products"></a>
+			<a href="{%=mediacenterlink%}" class="mw_button mw_button_tv bam-button bam-button-products"></a>
+		</div>
+		{% } %}	
+	
+		{% if(!!overlay) { %}<div class="mw_overlay"><a href="{%= url %}"></a>{% } %}
+	
+		<div class="mw_photo"><a href="{%= url %}"></a></div>
+		
+		{% if(breaking_news === "Y") { %}		
+			<div class="mw_breaking">Breaking News</div>					
+		{%}%}		
+
+		
+		{% if (!!video && !!video.meta) { %}
+
+		{%
+			var videoLink = "";
+			if(!!video.meta.topic_id || property !== "mlb") {
+				videoLink = videopage;
+				videoLink += (window.club) ? "?c_id=" + window.club + "&" : "?";	
+				if(!!sid) videoLink += "sid="+sid+"&";
+				if(!!video.meta.content_id) videoLink += "content_id="+video.meta.content_id+"&";
+				if(!!video.meta.topic_id) videoLink += "topic_id="+video.meta.topic_id;										
+			} else {
+				/* @TODO: make gameday link base into a config option */
+				videoLink = (property === "mlb") ? "/mlb" : "";
+				videoLink += "/gameday/index.jsp?gid=";
+				videoLink += gameday;
+				videoLink += "&content_id=";
+				videoLink += video.meta.content_id;				
+				if(property === "mlb"){
+					videoLink += (window.club) ? "&c_id=" + window.club : "";
+				}
+			}				
+		%}			
+			<div class="mw_video">
+				<a href="{%=videoLink%}">			
+					<div class="mw_video_play"></div>						
+				</a>					
+				<div>{%=video_caption%}</div>
+			</div>
+		{% } else { %}		
+			<div class="mw_linescore_short">
+				<a href="{%= url %}">
+					{% buildLinescore(false) %}
+				</a>		
+			</div>				
+		{% } %}	
+		
+
+		<div class="mw_kicker primary">
+			{% if(!!kicker && kicker!=="auto"){ %}
+				<a href="{%= url %}">{%= kicker %}</a>	
+			{% } else { %}
+				<a href="{%= url %}" class="mw_auto"></a>
+			{% } %}
+		</div>				
+		
+		{% if(!!bigblurb && bigblurb!=="auto"){ %}			
+			<div class="mw_blurb">		
+				{%=bigblurb%}{% if(!!urltext){ %}&nbsp;<a class="rel_link" href="{%=url%}">{%=urltext%} &raquo;</a>{% } %}				
+				{% if(breaking_news === "N") { %}
+				<div class="mw_related_links">{% buildrelated(related_links); %}</div>
+				{% } %}
+			</div>		
+		{% } else { %}				
+			<div class="mw_linescore">
+				<a href="{%= url %}">
+					{% buildLinescore(true) %}
+				</a>	
+			</div>			
+		{% } %}
+		
+		<div class="mw_bottom_bg"></div>	
+	</li>	
+
+	
+{% } else if(caption_mode === "promo") { %}
+
+	{% /******** PROMO MODE ********/ %}	
+	
+	<li class="mw_panel"><div class="mw_photo"><a href="{%= url %}"></a></div></li>	
+	
+{% } else { %}
+	
+	{% /******** NEWS MODE ********/ %}				
+		
+	<li class="mw_panel{% if (!!video && !!video.meta) { %} mw_panel_video{% } %}">
+		
+		{% if(!!overlay) { %}<div class="mw_overlay"><a href="{%= url %}"></a></div>{% } %}
+	
+		<div class="mw_photo"><a href="{%= url %}"></a></div>	
+	
+		{% if(breaking_news === "Y") { %}		
+			<div class="mw_breaking">Breaking News</div>					
+		{%}%}		
+	
+		{% if (!!video && !!video.meta) { %}
+		{%
+			var videoLink = videopage;
+			videoLink += (window.club) ? "?c_id=" + window.club + "&" : "?";					
+			if(!!sid) videoLink += "sid="+sid+"&";
+			if(video.meta.content_id && video.meta.topic_id) {						
+				videoLink += "content_id="+video.meta.content_id+"&topic_id="+video.meta.topic_id;
+			} else if(video.meta.content_id) {
+				videoLink += "content_id="+video.meta.content_id;			
+			} else if(video.meta.topic_id) {
+				videoLink += "topic_id="+video.meta.topic_id;			
+			}				
+		%}
+		<div class="mw_video">
+			<a href="{%=videoLink%}">			
+				<div class="mw_video_play"></div>					
+			</a>					
+			<div>{%=video_caption%}</div>
+		</div>			
+		{%}%}
+		
+		<div class="mw_kicker primary"><a href="{%= url %}">{%= kicker %}</a></div>	
+
+		<div class="mw_blurb">			
+			{%=bigblurb%}{% if(!!urltext){ %}&nbsp;<a class="rel_link" href="{%=morelink%}">{%=urltext%} &raquo;</a>{% } %}		
+			
+			{% if(breaking_news === "N") { %}	
+
+				{% if(!!facebook.away_url && !!facebook.home_url) { %}	
+					<div class="fb_module {%= facebook.seriescode %} game_{%= facebook.seriesnum %} fb_tyib">
+						<div class="fb_module_content">			
+							{% /* TYIB */ %}
+							<a href="/mlb/awards/y2010/tyib/index.jsp"><img src="http://gdx.mlb.com/images/gameday/mugshots/mlb/{%= facebook.away_player_id %}.jpg" width="28" height="34" /></a>
+							<span class="fb_module_vs"><img src="/images/trans.gif" width="15" height="16" /></span>
+							<a href="/mlb/awards/y2010/tyib/index.jsp"><img src="http://gdx.mlb.com/images/gameday/mugshots/mlb/{%= facebook.home_player_id %}.jpg" width="28" height="34" /></a>
+							{% /* GAME %}
+							<img src="/mlb/images/team_logos/33x33/33x33_{%= facebook.away_code %}.png" class="png" />
+							<span class="fb_module_vs"><img src="/images/trans.gif" width="15" height="16" /></span>
+							<img src="/mlb/images/team_logos/33x33/33x33_{%= facebook.home_code %}.png" class="png" />	
+							{% */ %}									
+						</div>
+					</div>					
+					
+				{% } else if(!!facebook.home_url) { %}				
+					<div class="fb_module_one {%= facebook.seriescode %} game_{%= facebook.seriesnum %} fb_tyib">
+						<div class="fb_module_content">
+							 <a href="/mlb/awards/y2010/tyib/index.jsp"><img src="http://gdx.mlb.com/images/gameday/mugshots/mlb/{%= facebook.home_player_id %}.jpg" width="28" height="34" /></a>
+						</div>
+					</div>	
+						
+				{% } else { %}			
+					<div class="mw_related_links">{% buildrelated(related_links); %}</div>			
+				{% } %}			
+
+			{% } %}
+		</div>		
+		<div class="mw_bottom_bg"></div>	
+	</li>	
+{% } %}

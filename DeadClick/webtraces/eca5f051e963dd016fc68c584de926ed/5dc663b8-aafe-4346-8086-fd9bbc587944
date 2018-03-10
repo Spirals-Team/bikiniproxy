@@ -1,0 +1,94 @@
+function closeDropdownMenu(element) {
+    if ( $(element).hasClass('show-list')) {
+        $(element).removeClass('show-list');
+    }
+}
+
+function toggleDropdownMenu(element) {
+    $(element).toggleClass('show-list', !$(element).hasClass('show-list'));
+}
+
+function updateSectionsModule(listItem) {
+    var sectionActive = listItem.data('section'),
+        sectionsDropdownMenu = $('.dropdown-menu-mobile'),
+        eyebrowText = $('.bq-section-eyebrow .eyebrow-text'),
+        dropdownButton = $('.dropdown-button');
+
+    dropdownButton.text(listItem.text()); 
+    eyebrowText.text(listItem.text());
+    $(".more-from-button").text("MORE FROM " + listItem.text()); // more from box
+    $(".more-from-button").attr('href',listItem.data('link')); // more from link
+    $(".sections-list .list-item").removeClass('text-clam');
+    listItem.addClass('text-clam');
+
+    for( var i = 1; i < 4; i++ ) {
+        $("#sa-"+i+" a").attr('href', sections[sectionActive][i-1].url);
+        $("#sa-"+i+" .headline").html(sections[sectionActive][i-1].headline);
+        $("#sa-"+i+" .image img").attr('src',sections[sectionActive][i-1].main_article_image);
+    }
+
+    closeDropdownMenu(sectionsDropdownMenu);
+}
+
+//Duplicate the code in home.js 
+function equalizeHeights(container) {
+    var equalizerContainer = $(container),
+        elem = equalizerContainer.find('.equalizer-watch'),
+        maxHeight = 0;
+
+    if (MentalFloss.getCurrentDevice() == "desktop" || MentalFloss.getCurrentDevice() == "tablet") {
+            
+        elem.each(function(){
+
+            $(this).height('auto');
+
+            if ($(this).height() > maxHeight) {
+                maxHeight = $(this).height();
+            }
+        });
+
+        elem.height(maxHeight);
+
+    } else {
+        
+        elem.height('auto');
+    }
+}
+
+$(document).ready(function() {
+
+    equalizeHeights('#sections-articles');
+    equalizeHeights('#sponsor-articles-2');
+    equalizeHeights('#sponsor-articles-3');
+    equalizeHeights('#latest-top-section');
+    equalizeHeights('#latest-flex-section');
+    equalizeHeights('#latest-double-section');
+    equalizeHeights('#hero-list-section');
+
+    $(window).resize(function() {
+        equalizeHeights('#sections-articles');
+        equalizeHeights('#sponsor-articles-2');
+        equalizeHeights('#sponsor-articles-3');
+        equalizeHeights('#latest-top-section');
+        equalizeHeights('#latest-flex-section');
+        equalizeHeights('#latest-double-section');
+        equalizeHeights('#hero-list-section');
+    });
+
+    $('#big-questions-dropdown').on('click', function(){
+        toggleDropdownMenu($(this));
+        equalizeHeights('#sections-articles');
+    });
+
+    $('.sections-list .list-item').on('click', function(){
+        updateSectionsModule($(this));
+    });
+
+    window.onclick = function(event) {  // HIDE LIST UPON EXTERNAL CLICK OF LIST
+        var sectionsDropdownMenu = document.getElementById('big-questions-dropdown');
+
+        if (sectionsDropdownMenu && !event.target.matches('#big-questions-button')) {
+            closeDropdownMenu(sectionsDropdownMenu);
+        }
+    }
+});

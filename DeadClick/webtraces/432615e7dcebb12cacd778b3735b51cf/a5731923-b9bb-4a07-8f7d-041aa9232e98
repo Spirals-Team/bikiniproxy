@@ -1,0 +1,157 @@
+jQuery.fn.slider = function(settings) {
+	settings = jQuery.extend({
+		speed: "normal",
+		slideBy: 3,
+		pagerId: "pager",
+		nextId: "next",
+		previousId: "previous",
+		continuous: true,
+		autoPlay: false,
+		timeout: 15000
+	}, settings);
+	return this.each(function() {
+		jQuery.fn.slider.run(jQuery(this), settings);
+	});
+};
+
+jQuery.fn.slider.run = function($this, settings) {
+	var debug = false;
+	var timer;
+	var currentPage = 0;
+	var ul = jQuery("ul:eq(0)", $this);
+	var li = ul.children();
+	if (li.length > settings.slideBy) {
+		var $next = jQuery("#" + settings.nextId, $this);
+		var $back = jQuery("#" + settings.previousId, $this);
+		if (settings.continuous == false) $back.fadeTo("fast", 0.4);
+
+		var liWidth = jQuery(li[0]).outerWidth(true);
+		var length = li.length;
+		var extraItems = length % settings.slideBy;
+		for (var i = 0; i < extraItems; i++) {
+			ul.append("<li></li>");
+			length++;
+		}
+		var pageCount = length / settings.slideBy;
+		for (var i = 0; i < pageCount; i++) {
+			$(document.createElement("a"))
+				.attr('id', settings.pagerId + "_" + i)
+				.attr('rel', i)
+				.attr('href', "javascript:void(0);")
+				.appendTo($("#" + settings.pagerId))
+				.html("&nbsp;")
+				.click(function() {
+					animate($(this).attr('rel'));
+				});
+		};
+		if (settings.continuous) {
+			ul.append(jQuery("ul li", $this).slice(0, parseInt(settings.slideBy)).clone());
+			length = ul.children().length;
+		};
+		ul.css("width", (length * liWidth));
+		var animating = false;
+		$next.click(function() {
+			next();
+			return false;
+		});
+		$back.click(function() {
+			previous();
+			return false;
+		});
+		
+		function next() {
+			if(debug) alert("next()");
+			var pageNumber = parseInt(currentPage) + 1;
+			if (pageNumber == pageCount && settings.continuous == false) { }
+			else animate(pageNumber);
+			startTimer();
+		}
+		function previous() {
+			if(debug) alert("previous()");
+			var pageNumber = parseInt(currentPage) - 1;
+			if (currentPage == 0 && settings.continuous == false) { }
+			else animate(pageNumber);
+			startTimer();
+		}
+		this.next=next;
+		this.previous=previous;
+		function animate(pageNumber) {
+			if(debug) alert("animate("+pageNumber+")");
+			setCurrent(pageNumber);
+			var slideLength = 0;
+			if (pageNumber < 0 && settings.continuous) {
+				ul.css("left", (liWidth * settings.slideBy) * pageCount * -1);
+				slideLength = liWidth * (length - settings.slideBy * 2) * -1;
+			}
+			else {
+				slideLength = (liWidth * settings.slideBy) * pageNumber * -1;
+			}
+			ul.stop();
+			ul.animate({
+				left: slideLength
+			}, settings.speed, function() {
+				if (currentPage == (pageCount - 1) && settings.continuous == false) {
+					$next.fadeTo("fast", 0.4);
+					$back.fadeTo("fast", 1);
+					return;
+				}
+				else if (currentPage == 0 && settings.continuous == false) {
+					$back.fadeTo("fast", 0.4);
+					$next.fadeTo("fast", 1);
+					return;
+				}
+				if (pageNumber == pageCount)
+					ul.css("left", 0);
+			});
+			/* original code
+			if(debug) alert("animate("+pageNumber+")");
+			setCurrent(pageNumber);
+			var slideLength = 0;
+			if (pageNumber < 0 && settings.continuous) {
+				ul.css("left", (liWidth * settings.slideBy) * pageCount * -1);
+				slideLength = liWidth * (length - settings.slideBy * 2) * -1;
+			}
+			else {
+				slideLength = (liWidth * settings.slideBy) * pageNumber * -1;
+			}
+			ul.animate({
+				left: slideLength
+			}, settings.speed, function() {
+				if (currentPage == (pageCount - 1) && settings.continuous == false) {
+					$next.fadeTo("fast", 0.4);
+					$back.fadeTo("fast", 1);
+					return;
+				}
+				else if (currentPage == 0 && settings.continuous == false) {
+					$back.fadeTo("fast", 0.4);
+					$next.fadeTo("fast", 1);
+					return;
+				}
+				if (pageNumber == pageCount)
+					ul.css("left", 0);
+			});
+			*/
+		}
+		function setCurrent(i) {
+			if(debug) alert("setCurrent("+i+")");
+			$("#" + settings.pagerId + "_" + currentPage).removeClass("current");
+			if (i < 0) currentPage = (pageCount - 1);
+			else currentPage = i < pageCount ? i : 0;
+			$("#" + settings.pagerId + "_" + currentPage).addClass("current");
+		};
+		function startTimer(){
+			if(timer) stopTimer();
+			timer = setInterval(function() { next();}, settings.timeout);	
+		}
+		function stopTimer(){
+			clearInterval(timer);
+			timer=null;	
+		}
+		//init
+		setCurrent(0);
+
+		if (settings.autoPlay) {
+			startTimer();
+		};
+	}
+}

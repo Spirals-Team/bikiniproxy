@@ -1,0 +1,2534 @@
+	
+	var t;
+	var x0, y0, x1, y1, clickOffsetX, clickOffsetY, imageX0, imageY0;
+	var screenScaleFactor = onScreenPreviewWidth = mouseStatus = sliderBarStatus = smallWidthFlag = smallHeightFlag = 0;
+	var commentReplyId;
+	var ignoreMouseDown = 0;
+	var currentProductImageId = null;
+
+	function newHttpReq()
+	{
+		var newRequest = null;
+		
+		try
+		{
+			newRequest = new XMLHttpRequest();
+		}
+		catch(trymicrosoft)
+		{
+			try
+			{
+				newRequest = new ActiveXObject("Msxml2.XMLHTTP");
+			}
+			catch(othermicrosoft)
+			{
+				try
+				{
+					newRequest = new ActiveXObject("Microsoft.XMLHTTP");
+				}
+				catch(failed)
+				{
+					newRequest = null;
+				}			
+			}
+		}
+		
+		return newRequest;
+	
+	}
+
+	var httpobject = [];
+	var requestcount = 0;	
+	
+	function positionArtworkDiv()
+	{
+		onScreenPreviewWidth = getComputedStyle(document.getElementById('productPreviewImage')).getPropertyValue('width');
+
+		screenScaleFactor = parseInt(onScreenPreviewWidth) / parseInt(maskWidth);
+
+		var artworkDiv = document.getElementById('artworkDiv');
+		artworkDiv.style.width = parseInt(fullSizeImageWidth * sliderBarScaleFactor * screenScaleFactor) + 'px';
+		artworkDiv.style.height = parseInt(fullSizeImageHeight * sliderBarScaleFactor * screenScaleFactor) + 'px';
+		artworkDiv.style.top = parseInt((productYOffset + fullSizeTargetY) * screenScaleFactor) + 'px';
+		artworkDiv.style.left = parseInt((productXOffset + fullSizeTargetX) * screenScaleFactor) + 'px';
+
+		var bleedDiv = document.getElementById('bleedDiv');
+		bleedDiv.style.top = parseInt(productYOffset * screenScaleFactor) + 'px';
+		bleedDiv.style.left = parseInt(productXOffset * screenScaleFactor) + 'px';
+		bleedDiv.style.width = parseInt(productWidth * screenScaleFactor) + 'px';
+		bleedDiv.style.height = parseInt(productHeight * screenScaleFactor) + 'px';
+
+		if (document.getElementById('coloredBleedDiv'))
+		{
+			var coloredBleedDiv = document.getElementById('coloredBleedDiv');
+			coloredBleedDiv.style.top = bleedDiv.style.top;
+			coloredBleedDiv.style.left = bleedDiv.style.left;
+			coloredBleedDiv.style.width = bleedDiv.style.width;
+			coloredBleedDiv.style.height = bleedDiv.style.height;
+		}
+	}
+
+	function showBackgroundImage()
+	{
+
+		if (document.getElementById('resizeSuggestionDiv'))
+		{
+			document.getElementById('resizeSuggestionDiv').style.display = 'none';
+		}
+
+		positionArtworkDiv();
+		hide('productPreviewImage');
+
+		var backgroundItems = document.getElementsByClassName("backgroundItem");
+		
+		for (var i = 0, l = backgroundItems.length; i < l; i++)
+		{
+			backgroundItems[i].style.visibility = 'visible';
+		}
+
+	}
+
+	function hidebackgroundimage()
+	{
+
+		show('productPreviewImage');
+
+		var backgroundItems = document.getElementsByClassName("backgroundItem");
+		for (var i = 0, l = backgroundItems.length; i < l; i++) {
+			backgroundItems[i].style.visibility = 'hidden';
+		}
+	}
+
+	function mouseup(evt)
+	{
+		if (mouseStatus == 1 || sliderBarStatus == 1)
+		{
+			updateimage();
+		}
+
+		hidebackgroundimage();
+
+		mouseStatus = 0;
+		sliderBarStatus = 0;
+	}
+
+	function mousemove(evt)
+	{
+		if(!document.getElementById('artworkDiv'))
+		{
+			return;
+		}
+		
+		var artworkDiv = document.getElementById('artworkDiv');
+		var currentWidth = artworkDiv.clientWidth;
+		var currentHeight = artworkDiv.clientHeight;
+
+		var pos = getPointerPosition(evt);
+		x1 = pos.x1;
+		y1 = pos.y1;
+
+		if (mouseStatus == 1)
+		{
+			if (evt.touches)
+			{
+				event.preventDefault();
+			}
+
+			var xTarget = x1 - clickOffsetX;
+			var yTarget = y1 - clickOffsetY;
+
+			if (xTarget > (productXOffset * screenScaleFactor))
+			{
+				xTarget = productXOffset * screenScaleFactor;
+			}
+
+			if (xTarget + currentWidth < ((productXOffset + productWidth) * screenScaleFactor))
+			{
+				xTarget = ((productXOffset + productWidth) * screenScaleFactor) - currentWidth;
+			}
+
+			if (yTarget > (productYOffset * screenScaleFactor))
+			{
+				yTarget = productYOffset * screenScaleFactor;
+			}
+
+			if (yTarget + currentHeight < ((productYOffset + productHeight) * screenScaleFactor))
+			{
+				yTarget = ((productYOffset + productHeight) * screenScaleFactor) - currentHeight;
+			}
+
+			// Small Width
+			smallWidthFlag = 0;
+			if (currentWidth < (productWidth * screenScaleFactor))
+			{
+				smallWidthFlag = 1;
+			}
+
+			// Small Height
+			smallHeightFlag = 0;
+			if (currentHeight < productHeight * screenScaleFactor)
+			{
+				smallHeightFlag = 1;
+			}
+
+			if (smallWidthFlag == 0)
+			{
+				fullSizeTargetX = parseInt(xTarget / screenScaleFactor) - productXOffset;
+				artworkDiv.style.left = xTarget + 'px';
+			}
+
+			if (smallHeightFlag == 0)
+			{
+				fullSizeTargetY = parseInt(yTarget / screenScaleFactor) - productYOffset;
+				artworkDiv.style.top = yTarget + 'px';
+			}
+		}
+
+		if (sliderBarStatus == 1)
+		{
+			if (evt.touches)
+			{
+				event.preventDefault();
+			}
+
+			var xTargetSliderBar = x1 - clickOffsetX;
+
+			if (xTargetSliderBar < 0)
+			{
+				xTargetSliderBar = 0;
+				document.getElementById('blankmessage').focus();
+			}
+
+			if (xTargetSliderBar > 260)
+			{
+				xTargetSliderBar = 260;
+				document.getElementById('blankmessage').focus();
+			}
+
+			document.getElementById('sliderbar').style.left = xTargetSliderBar + 'px';
+
+			sliderBarScaleFactor = 0.25 + 0.75 * (xTargetSliderBar / 130);
+
+			if(true)
+			{
+				if(xTargetSliderBar <= 130)
+				{
+					sliderBarScaleFactor = sliderBarMinimumScalePercentage + (xTargetSliderBar / 130) * (1 - sliderBarMinimumScalePercentage);
+				}
+				else
+				{
+					sliderBarScaleFactor = 1 + ((xTargetSliderBar - 130) / 130) * (sliderBarMaximumScalePercentage - 1);
+				}
+			}			
+			
+			var targetWidth = fullSizeImageWidth * sliderBarScaleFactor;
+			var targetHeight = fullSizeImageHeight * sliderBarScaleFactor;
+
+			var widthRatio = targetWidth / productWidth;
+			var heightRatio = targetHeight / productHeight;
+
+			var flagfound = 0;
+			if (widthRatio > 0.90 && widthRatio < 1.1)
+			{
+				flagfound = 1;
+				sliderBarScaleFactor = productWidth / fullSizeImageWidth;
+			}
+
+			if (heightRatio > 0.90 && heightRatio < 1.1)
+			{
+				if (flagfound == 0) {
+					sliderBarScaleFactor = productHeight / fullSizeImageHeight;
+				}
+			}
+
+			var newWidth = fullSizeImageWidth * sliderBarScaleFactor * screenScaleFactor;
+			var newHeight = fullSizeImageHeight * sliderBarScaleFactor * screenScaleFactor;
+			imageX0 = artworkDiv.offsetLeft;
+			imageY0 = artworkDiv.offsetTop;
+			imageX0 = imageX0 - (newWidth - currentWidth) / 2;
+			imageY0 = imageY0 - (newHeight - currentHeight) / 2;
+
+			if (imageX0 > (productXOffset * screenScaleFactor))
+			{
+				imageX0 = parseInt(productXOffset * screenScaleFactor);
+			}
+
+			if (imageX0 + newWidth < ((productXOffset + productWidth) * screenScaleFactor))
+			{
+				imageX0 = parseInt(((productXOffset + productWidth) * screenScaleFactor) - newWidth);
+			}
+
+			if (imageY0 > (productYOffset * screenScaleFactor))
+			{
+				imageY0 = parseInt(productYOffset * screenScaleFactor);
+			}
+
+			if (imageY0 + newHeight < ((productYOffset + productHeight) * screenScaleFactor))
+			{
+				imageY0 = parseInt(((productYOffset + productHeight) * screenScaleFactor) - newHeight);
+			}
+
+			// Small
+			if (newWidth < (productWidth * screenScaleFactor) || newHeight < (productHeight * screenScaleFactor))
+			{
+				imageX0 = productXOffset + (productWidth - newWidth / screenScaleFactor) / 2;
+				imageY0 = productYOffset + (productHeight - newHeight / screenScaleFactor) / 2;
+
+				imageX0 = parseInt(imageX0 * screenScaleFactor);
+				imageY0 = parseInt(imageY0 * screenScaleFactor);
+
+				smallflag = 1;
+			}
+			else
+			{
+				smallflag = 0;
+			}
+
+			// Small Width
+			smallWidthFlag = 0;
+			if (newWidth < (productWidth * screenScaleFactor))
+			{
+				imageX0 = productXOffset + (productWidth - (newWidth / screenScaleFactor)) / 2;
+				imageX0 = parseInt(imageX0 * screenScaleFactor);
+				smallWidthFlag = 1;
+			}
+
+			// Small Height
+			smallHeightFlag = 0;
+			if (newHeight < productHeight * screenScaleFactor)
+			{
+				imageY0 = productYOffset + (productHeight - (newHeight / screenScaleFactor)) / 2;
+				imageY0 = parseInt(imageY0 * screenScaleFactor);
+				smallHeightFlag = 1;
+			}
+
+			fullSizeTargetX = (imageX0 / screenScaleFactor) - productXOffset;
+			fullSizeTargetY = (imageY0 / screenScaleFactor) - productYOffset;
+
+			artworkDiv.style.left = imageX0 + 'px';
+			artworkDiv.style.top = imageY0 + 'px';
+			artworkDiv.style.width = newWidth + 'px';
+			artworkDiv.style.height = newHeight + 'px';
+
+		}
+	}
+
+	function getPointerPosition(evt)
+	{
+		var offsetleft, offsettop, x1, y1;
+
+		if (document.documentElement.scrollTop && !document.body.scrollTop) {
+			offsetleft = document.documentElement.scrollLeft;
+			offsettop = document.documentElement.scrollTop;
+		}
+		else {
+			offsetleft = document.body.scrollLeft;
+			offsettop = document.body.scrollTop;
+		}
+
+		x1 = parseInt(evt.clientX + offsetleft);
+		y1 = parseInt(evt.clientY + offsettop);
+
+		if (evt.touches) {
+			x1 = evt.touches[0].pageX;
+			y1 = evt.touches[0].pageY;
+		}
+
+		return {
+			x1: x1,
+			y1: y1
+		};
+	}
+
+	function getElementPosition(el)
+	{
+		var posX, posY;
+
+		posX = el.style.left;
+		posY = el.style.top;
+
+		if (el.offsetParent) {
+			posX = el.offsetLeft;
+			posY = el.offsetTop;
+
+			while (el = el.offsetParent) {
+				posX += el.offsetLeft;
+				posY += el.offsetTop;
+			}
+		}
+
+		return {
+			posX: posX,
+			posY: posY
+		};
+	}
+
+	function enableSelectStart()
+	{
+		document.onselectstart = function () {
+			return true;
+		};	
+	}
+	
+	function mousedown(evt)
+	{
+		if(ignoreMouseDown == 1)
+		{
+			return;
+		}
+		
+		positionArtworkDiv();
+
+		document.onselectstart = function () {
+			return false;
+		};
+		
+		var windowWidth = window.innerWidth || document.body.clientWidth;
+		
+		var pointerPos = getPointerPosition(evt);
+		x1 = pointerPos.x1;
+		y1 = pointerPos.y1;
+
+		var sliderBar = document.getElementById('sliderbar');
+		var sliderBarPos = getElementPosition(sliderBar);
+
+		// Check if sliderbar has been clicked on
+		if (Math.abs(x1 - sliderBarPos.posX) < 50 && Math.abs(y1 - sliderBarPos.posY) < 25)
+		{
+			x0 = parseInt(sliderBar.style.left);
+			y0 = parseInt(sliderBar.style.top);
+
+			clickOffsetX = x1 - x0;
+			clickOffsetY = y1 - y0;
+
+			document.onselectstart = function () {
+				return false;
+			};
+			sliderBar.ondragstart = function () {
+				return false;
+			};
+
+			showBackgroundImage();
+
+			sliderBarStatus = 1;
+		}
+
+		var productImage = document.getElementById('productPreviewImage');
+		var productImagePos = getElementPosition(productImage);
+
+		// Check if product image has been clicked on
+		if(windowWidth >= 640 && x1 > productImagePos.posX && x1 < (productImagePos.posX + maskWidth * screenScaleFactor) && y1 > productImagePos.posY && y1 < (productImagePos.posY + maskHeight * screenScaleFactor))
+		{
+
+			document.onselectstart = function () {
+				return false;
+			};
+			productImage.ondragstart = function () {
+				return false;
+			};
+
+			var artworkDiv = document.getElementById('artworkDiv');
+			artworkDiv.ondragstart = function () {
+				return false;
+			};
+
+			showBackgroundImage();
+
+			x0 = parseInt(artworkDiv.style.left);
+			y0 = parseInt(artworkDiv.style.top);
+
+			clickOffsetX = x1 - x0;
+			clickOffsetY = y1 - y0;
+
+			mouseStatus = 1;
+		}
+
+		return false;
+	}
+
+
+	function updateimage()
+	{
+		showBusyImage();
+	
+		var artworkDiv = document.getElementById('artworkDiv');
+
+		var currentWidth = parseInt(artworkDiv.clientWidth / screenScaleFactor);
+		var currentHeight = parseInt(artworkDiv.clientHeight / screenScaleFactor);
+
+		var currentX = parseInt(artworkDiv.offsetLeft / screenScaleFactor);
+		var currentY = parseInt(artworkDiv.offsetTop / screenScaleFactor);
+		
+		var targetX = parseInt(currentX - productXOffset);
+		var targetY = parseInt(currentY - productYOffset);
+		
+		var backgroundColor = document.getElementById('productbackgroundcolor').value;
+		
+		document.getElementById('targetx').value = targetX;
+		document.getElementById('targety').value = targetY;
+
+		document.getElementById('imagewidth').value = currentWidth;
+		document.getElementById('imageheight').value = currentHeight;
+
+		var localvalue = requestcount;
+					
+		httpobject[localvalue] = newHttpReq();			
+		httpobject[localvalue].onreadystatechange = function(){
+		
+			try 
+			{
+				if(httpobject[localvalue].readyState == 4)
+				{
+				}
+			
+				if(httpobject[localvalue].status == 200)
+				{
+				}
+			}
+			catch (e)
+			{
+				return;
+			}
+			
+			if(httpobject[localvalue].readyState == 4 && httpobject[localvalue].status == 200)
+			{
+				var response = JSON.parse(httpobject[localvalue].responseText);
+				
+				// The response will only fail if the session has timed out.  If that's the case, then redirect
+				// to the appropriate timeout URL.
+				if(response.status == 'success')
+				{				
+					if(response.renderedImage != '')
+					{
+						document.getElementById('productPreviewImage').src = response.renderedImage;
+
+						if (typeof updateSelectedProductImage !== 'undefined')
+						{
+							if (updateSelectedProductImage == true && document.getElementById('selectedProduct') != null)
+							{
+								document.getElementById('selectedProduct').src = response.renderedImage;
+							}
+						}
+						
+						if (typeof updateOtherImageId !== 'undefined' && document.getElementById(updateOtherImageId) != null)
+						{
+							document.getElementById(updateOtherImageId).src = response.renderedImage;
+						}
+
+						if(document.getElementById('renderedImageMobileTop'))
+						{
+							document.getElementById('renderedImageMobileTop').src = response.renderedImage;
+						}						
+					}
+					
+					
+					// Display the additional product images.
+					if(response.additionalImages != '' && response.additionalImages != null)
+					{
+						for(var key in response.additionalImages)
+						{
+							var currentImage = response.additionalImages[key];
+							
+							if(document.getElementById(currentImage['id']) != null)
+							{
+								//document.getElementById(currentImage['id']).src = currentImage['urlSmall'];
+								document.getElementById(currentImage['id']).src = currentImage['url'];
+								document.getElementById(currentImage['id']).setAttribute('data-url-large', currentImage['url']);
+							}
+						}
+					}
+					
+					
+					// If the artwork covers the product, then hide the background color div.
+					if(response.artworkCoversProduct)
+					{
+						if(document.getElementById('backgroundColorDiv'))
+						{
+							document.getElementById('backgroundColorDiv').style.display = 'none';
+						}
+					}
+					else
+					{
+						if(document.getElementById('backgroundColorDiv'))
+						{					
+							document.getElementById('backgroundColorDiv').style.display = 'inline-block';
+						}
+					}
+
+					if(response.artworkNearEdges)
+					{
+						if(document.getElementById('imageWarningDiv'))
+						{
+							document.getElementById('imageWarningDiv').style.display = 'inline-block';
+						}
+					}
+					else
+					{
+						if(document.getElementById('imageWarningDiv'))
+						{
+							document.getElementById('imageWarningDiv').style.display = 'none';
+						}					
+					}
+					
+					// Display the complete product SKU.
+					if(response.completeProductSku != '' && document.getElementById('completeProductSku'))
+					{
+						//document.getElementById('completeProductSku').innerHTML = response.completeProductSku;
+						document.getElementById('completeProductSku').value = response.completeProductSku;
+					}
+				}
+				else
+				{
+					window.location = document.getElementById('timeoutUrl').value;
+					return;
+				}
+			
+			}
+		
+		
+		};		
+
+		var url = "/queries/queryUpdateProductConfiguratorProduct.php";
+		var postString = 'uniqueId=' + document.getElementById('uniqueid').value + '&action=updateImagePositionAndColor&targetX=' + document.getElementById('targetx').value + '&targetY=' + document.getElementById('targety').value + '&imageWidth=' + document.getElementById('imagewidth').value + '&imageHeight=' + document.getElementById('imageheight').value + '&backgroundColor=' + backgroundColor;
+		
+		//alert(postString);
+		
+		httpobject[localvalue].open('post',url,true);
+		httpobject[localvalue].setRequestHeader('content-type', 'application/x-www-form-urlencoded');
+		httpobject[localvalue].send(postString);	
+
+		requestcount += 1;
+	}
+	
+	
+	function showAdditionalProductImage(productImageId)
+	{		
+		ignoreMouseDown = 1;
+		currentProductImageId = productImageId;
+		
+		createForegroundAndBackgroundDiv();
+		createAdditionalProductImagePopUpDiv();
+	
+		var imageUrl = document.getElementById(productImageId).getAttribute('data-url-large');
+		
+		//var image001 = new Image();
+		//image001.src = imageUrl;
+				
+		var widthclient = parseInt(document.documentElement.clientWidth);
+		var heightclient = parseInt(document.documentElement.clientHeight);			
+
+		var newImageWidth = document.getElementById(productImageId).naturalWidth;
+		var newImageHeight = document.getElementById(productImageId).naturalHeight;
+				
+		var newImageWidth = document.getElementById(productImageId).getAttribute('data-width');
+		var newImageHeight = document.getElementById(productImageId).getAttribute('data-height');		
+				
+		var maxWidth = Math.min(widthclient * 0.80, newImageWidth);			
+		var maxHeight = Math.min(heightclient * 0.80, newImageHeight);
+		
+		var ratio = Math.max(1, newImageWidth / maxWidth, newImageHeight / maxHeight);
+		
+		//alert(ratio);
+		
+		var widthtarget = parseInt(newImageWidth / ratio);
+		var heighttarget = parseInt(newImageHeight / ratio);
+		
+		if(widthtarget > widthclient - 100)
+		{
+			widthtarget = widthclient - 100;
+			heighttarget = parseInt(widthtarget/newImageWidth*newImageHeight);
+		}
+		
+
+		//alert(widthtarget + ' - ' + heighttarget);
+		
+	
+		var backgroundobject = document.getElementById('backgroundDiv');
+		backgroundobject.style.width = '100%';
+		backgroundobject.style.height = '100%';
+		backgroundobject.style.visibility = 'visible';		
+							
+		var offsetleft = 0;
+		var offsettop = 0;
+		
+		var offsetx = 0;
+		var offsety = 0;
+		
+		var additionalProductImagePopUpDiv = document.getElementById('additionalProductImagePopUpDiv');
+		additionalProductImagePopUpDiv.style.width = widthtarget + 'px';
+		additionalProductImagePopUpDiv.style.height = heighttarget + 'px';
+		additionalProductImagePopUpDiv.style.visibility = 'visible';
+		
+		additionalProductImagePopUpDiv.style.left = (offsetx + offsetleft + parseInt((widthclient - (widthtarget + 30)) / 2)) + 'px';
+		additionalProductImagePopUpDiv.style.top = (offsety + offsettop + parseInt((heightclient - (heighttarget + 30)) / 2)) + 'px';
+
+		additionalProductImagePopUpDiv.innerHTML = "<a href='javascript: showNextAdditionalImage();'><img src='" + imageUrl + "' style='float: left; width: 100%; border: none;'></a><a href='javascript: hideAdditionalProductImage();'><img src='/XClearSearchTransparent.png' style='position: absolute; top: -30px; right: -60px; padding: 15px; border: none; z-index: 5002;'></a><a href='javascript: showPreviousAdditionalImage();'><img src='/images/HomePageSlideshowArrowLeft.gif' style='position: absolute; left: 15px; top: 50%; top: calc(50% - 25px); z-index: 5002;'></a><a href='javascript: showNextAdditionalImage();'><img src='/images/HomePageSlideshowArrowRight.gif' style='position: absolute; right: 15px; top: 50%; top: calc(50% - 25px); z-index: 5002;'></a>"
+
+	}
+	
+	function showPreviousAdditionalImage()
+	{
+		var previousElementIndex = null;
+		var previousProductImageId = null;
+		
+		var elements = document.getElementsByClassName('additionalProductImage');
+		
+		for(var i = 0; i < elements.length; i ++)
+		{
+			if(elements[i].id == currentProductImageId)
+			{
+				previousElementIndex = i - 1;
+				
+				if(previousElementIndex == -1)
+				{
+					previousElementIndex = elements.length - 1;
+				}
+			}
+		}
+		
+		previousProductImageId = elements[previousElementIndex].id;
+		
+		showAdditionalProductImage(previousProductImageId);
+	}
+	
+	
+	function showNextAdditionalImage()
+	{
+		var nextElementIndex = null;
+		var nextProductImageId = null;
+		
+		var elements = document.getElementsByClassName('additionalProductImage');
+		
+		for(var i = 0; i < elements.length; i ++)
+		{
+			if(elements[i].id == currentProductImageId)
+			{
+				nextElementIndex = i + 1;
+				
+				if(nextElementIndex == elements.length)
+				{
+					nextElementIndex = 0;
+				}
+			}
+		}
+		
+		nextProductImageId = elements[nextElementIndex].id;
+		
+		showAdditionalProductImage(nextProductImageId);
+	}	
+	
+	
+	function showProductVideo(productVideoId)
+	{
+		ignoreMouseDown = 1;
+		
+		createForegroundAndBackgroundDiv();
+		createAdditionalProductImagePopUpDiv();
+
+		var widthclient = parseInt(document.documentElement.clientWidth);
+		var heightclient = parseInt(document.documentElement.clientHeight);			
+
+		var newImageWidth = 848;
+		var newImageHeight = 477;
+				
+		var maxWidth = Math.min(widthclient * 0.80, newImageWidth);			
+		var maxHeight = Math.min(heightclient * 0.60, newImageHeight);
+		
+		var ratio = Math.max(1, newImageWidth / maxWidth, newImageHeight / maxHeight);
+		
+		//alert(ratio);
+		
+		var widthtarget = parseInt(newImageWidth / ratio);
+		var heighttarget = parseInt(newImageHeight / ratio);
+		
+		if(widthtarget > widthclient - 100)
+		{
+			widthtarget = widthclient - 100;
+			heighttarget = parseInt(widthtarget/newImageWidth*newImageHeight);
+		}
+		
+
+		//alert(widthtarget + ' - ' + heighttarget);
+		
+	
+		var backgroundobject = document.getElementById('backgroundDiv');
+		backgroundobject.style.width = '100%';
+		backgroundobject.style.height = '100%';
+		backgroundobject.style.visibility = 'visible';		
+							
+		var offsetleft = 0;
+		var offsettop = 0;
+		
+		var offsetx = 0;
+		var offsety = 0;
+		
+		var additionalProductImagePopUpDiv = document.getElementById('additionalProductImagePopUpDiv');
+		additionalProductImagePopUpDiv.style.width = widthtarget + 'px';
+		additionalProductImagePopUpDiv.style.height = heighttarget + 'px';
+		additionalProductImagePopUpDiv.style.visibility = 'visible';
+		
+		additionalProductImagePopUpDiv.style.left = (offsetx + offsetleft + parseInt((widthclient - (widthtarget + 30)) / 2)) + 'px';
+		additionalProductImagePopUpDiv.style.top = (offsety + offsettop + parseInt((heightclient - (heighttarget + 30)) / 2)) + 'px';
+
+		additionalProductImagePopUpDiv.innerHTML = "<iframe id='youtubevideo' src='https://www.youtube.com/embed/" + productVideoId + "?hd=1&showinfo=0&autohide=1&autoplay=1&rel=0&theme=light&color=white' allowfullscreen style='width: 100%; height: 100%; border: none; overflow: hidden;'></iframe><a href='javascript: hideAdditionalProductImage();'><img src='/XClearSearchTransparent.png' style='position: absolute; top: -30px; right: -60px; padding: 15px; border: none; z-index: 5002;'></a>";
+		
+	}
+	
+	
+	function hideAdditionalProductImage()
+	{
+		ignoreMouseDown = 0;
+		document.getElementById('backgroundDiv').style.visibility = 'hidden';
+		document.getElementById('additionalProductImagePopUpDiv').style.visibility = 'hidden';
+		document.getElementById('additionalProductImagePopUpDiv').innerHTML = '&nbsp;';	
+	}
+	
+
+	function selectproductbackgroundcolor(newbackgroundcolor)
+	{
+		var otherbackgroundcolor = 1 - newbackgroundcolor;
+
+		document.getElementById('productbackgroundcoloroption[' + newbackgroundcolor + ']').className = 'optionselected';
+		document.getElementById('productbackgroundcoloroption[' + otherbackgroundcolor + ']').className = 'optionnotselected';
+
+		document.getElementById('productbackgroundcolor').value = newbackgroundcolor;
+
+		updateimage();
+	}
+
+	function changeColorFarb(e)
+	{
+		var color = document.getElementById('farbColor').value.replace('#', '');
+		if (null == /[a-f0-9]{6}/i.exec(color)) {
+			return;
+		}
+		var code = (e.keyCode ? e.keyCode : e.which);
+		if (37 == code || 38 == code || 39 == code || 40 == code || 16 == code || 91 == code || "paste" == e.type) {
+			return;
+		}
+		if (6 == color.length) {
+
+			var selected = document.getElementsByClassName('colorSquare selected');
+			var numfound = selected.length;
+			if (numfound > 0) {
+				var selectedClass;
+				while (selected.length > 0) {
+					selectedClass = selected[0].getAttribute('class').replace(' selected', '');
+					selected[0].setAttribute('class', selectedClass);
+				}
+			}
+
+			$.farbtastic('#farbPicker').setColor('#' + color);
+			document.getElementById('farbColor').value = '#' + color;
+			document.getElementById('selectedColor').style.backgroundColor = '#' + color;
+			document.getElementById('selectedColorName').innerHTML = rgbValue(color);
+			document.getElementById('productbackgroundcolor').value = color;
+			if (document.getElementById('coloredBleedDiv')) {
+				document.getElementById('coloredBleedDiv').style.backgroundColor = '#' + color;
+				document.getElementById('coloredBleedDiv').style.borderColor = '#' + color;
+			}
+			positionArtworkDiv();
+			updateimage();
+
+		}
+	}
+
+	function changeColor(e)
+	{
+		var el = e.target || e.srcElement;
+		document.getElementById('farbColor').value = '#' + el.getAttribute('data-value');
+		$("#farbColor").keyup();
+		document.getElementById('selectedColor').setAttribute('style', el.getAttribute('data-style'));
+		document.getElementById('selectedColorName').innerHTML = el.getAttribute('data-name');
+
+		var cssClass = el.getAttribute('class');
+		el.setAttribute('class', cssClass + ' selected');
+	}
+
+	function hex2rgb(hexStr)
+	{
+		// Expand shorthand form (e.g. "03F") to full form (e.g. "0033FF")
+		var shorthandRegex = /^#?([a-f\d])([a-f\d])([a-f\d])$/i;
+		hexStr = hexStr.replace(shorthandRegex, function (m, r, g, b) {
+			return r + r + g + g + b + b;
+		});
+		var hex = parseInt(hexStr, 16);
+		var r = (hex & 0xff0000) >> 16;
+		var g = (hex & 0x00ff00) >> 8;
+		var b = hex & 0x0000ff;
+
+		return [r, g, b];
+	}
+
+	function rgbValue(hex)
+	{
+		var rgb = hex2rgb(hex.replace('#', ''));
+		return 'R(' + rgb[0] + ') G(' + rgb[1] + ') B(' + rgb[2] + ')';
+	}
+
+	function selectproductinsert(includeInsert, pr)
+	{
+		var otherIncludeInsert = 1 - includeInsert;
+
+		document.getElementById('productinsertoption[' + includeInsert + ']').className = 'optionselected';
+		document.getElementById('productinsertoption[' + otherIncludeInsert + ']').className = 'optionnotselected';
+
+		document.getElementById('productinsertoption').value = includeInsert;
+
+		document.getElementById('price').innerHTML = pr.toFixed(2);
+	}
+
+	function submitform()
+	{
+		document.getElementById('producttypeform').submit();
+	}
+
+	function changeproducttype()
+	{
+		window.location = document.getElementById('changeproducttype').value;
+	}
+
+	function changeproducttypeorientation()
+	{
+		window.location = document.getElementById('producttypeorientation').value;
+	}
+
+	var touchx0;
+	var touchy0;
+	var timestamp0;
+
+	var touchxcurrent;
+	var touchycurrent;
+
+	function touchcapturestart(evt)
+	{
+		if (evt.touches) {
+			timestamp0 = new Date();
+			timestamp0 = timestamp0.getTime();
+
+			touchx0 = evt.touches[0].pageX;
+			touchy0 = evt.touches[0].pageY;
+
+			touchxcurrent = touchx0;
+			touchycurrent = touchy0;
+		}
+	}
+
+	function touchcapturemove(evt) {
+		if (evt.touches) {
+			touchxcurrent = evt.touches[0].pageX;
+			touchycurrent = evt.touches[0].pageY;
+		}
+	}
+
+	function touchcaptureend(evt)
+	{
+		if (isNaN(touchx0) || isNaN(touchy0) || isNaN(touchxcurrent) || isNaN(touchycurrent)) {
+			return;
+		}
+
+		var touchdeltax = touchxcurrent - touchx0;
+		var touchdeltay = touchycurrent - touchy0;
+		var currenttime = new Date();
+		currenttime = currenttime.getTime();
+
+		var touchtimestampdelta = currenttime - timestamp0;
+
+		//alert(touchdeltax + ' - ' + touchdeltay + ' - ' + touchtimestampdelta);
+
+		if (touchdeltax < -100 && Math.abs(touchdeltay) < 100 && touchtimestampdelta < 1000) {
+			if (document.getElementById('linknext')) {
+				showswipeinprogress();
+				document.getElementById('linknext').click();
+			}
+		}
+
+		if (touchdeltax > 100 && Math.abs(touchdeltay) < 100 && touchtimestampdelta < 1000) {
+			if (document.getElementById('linkprevious')) {
+				showswipeinprogress();
+				document.getElementById('linkprevious').click();
+			}
+		}
+
+	}
+
+	function showswipeinprogress()
+	{
+		var widthclient = parseInt(document.documentElement.clientWidth);
+		var heightclient = parseInt(document.documentElement.clientHeight);
+
+		var widthtarget = 131;
+		var heighttarget = 23;
+
+		var offsetleft = 0;
+		var offsettop = 0;
+
+		if (false) {
+			if (document.documentElement.scrollTop && !document.body.scrollTop) {
+				offsetleft = document.documentElement.scrollLeft;
+				offsettop = document.documentElement.scrollTop;
+			}
+			else {
+				offsetleft = document.body.scrollLeft;
+				offsettop = document.body.scrollTop;
+			}
+		}
+
+		var sourceobject = document.getElementById('pagelistdiv');
+
+		if (sourceobject.offsetParent) {
+			offsettop = sourceobject.offsetTop;
+
+			while (sourceobject = sourceobject.offsetParent) {
+				offsettop += sourceobject.offsetTop;
+			}
+		}
+
+		if (!document.getElementById('foregrounddiv') || !document.getElementById('backgrounddiv')) {
+
+			var newdiv;
+			var cssstyle;
+
+			// Background Div
+			if (!document.getElementById('backgrounddiv')) {
+				newdiv = document.createElement('div');
+				cssstyle = 'position: fixed; z-index: 5000; left: 0px; top: 0px; width: 10px; height: 10px; background-color: #000000; visibility: hidden; opacity: 0.50; filter: alpha(opacity=50);';
+				newdiv.id = 'backgrounddiv';
+				newdiv.setAttribute('style', cssstyle);
+				newdiv.style.cssText = cssstyle;
+				document.body.appendChild(newdiv);
+			}
+
+			// Foreground Div
+			if (!document.getElementById('foregrounddiv')) {
+				newdiv = document.createElement('div');
+				cssstyle = 'position: fixed; z-index: 5001; left: 0px; top: 0px; width: 10px; min-height: 10px; padding: 0px; overflow: hidden; border: none; background-color: transparent; visibility: hidden; box-shadow: none;';
+				newdiv.id = 'foregrounddiv';
+				newdiv.setAttribute('style', cssstyle);
+				newdiv.style.cssText = cssstyle;
+				document.body.appendChild(newdiv);
+			}
+		}
+
+		var backgroundobject = document.getElementById('backgrounddiv');
+		backgroundobject.style.width = '100%';
+		backgroundobject.style.height = '100%';
+		//backgroundobject.style.visibility = 'visible';
+
+		var foregrounddiv = document.getElementById('foregrounddiv');
+		foregrounddiv.style.width = widthtarget + 'px';
+		foregrounddiv.style.height = heighttarget + 'px';
+		foregrounddiv.style.backgroundColor = 'transparent';
+		foregrounddiv.style.border = 'none';
+		foregrounddiv.style.boxShadow = 'none';
+		foregrounddiv.innerHTML = "<img src='/Searching.gif' style='float: left;'>";
+
+		foregrounddiv.style.left = (offsetleft + parseInt((widthclient - widthtarget) / 2)) + 'px';
+		//foregrounddiv.style.top = (offsettop + parseInt((heightclient - heighttarget) / 2)) + 'px';
+		//foregrounddiv.style.top = '130px';
+		foregrounddiv.style.top = offsettop + 'px';
+
+		foregrounddiv.style.visibility = 'visible';
+
+	}
+
+
+	function toggleavailableproducts()
+	{
+		if (document.getElementById('availableproductsdiv').style.display == 'none') {
+			document.getElementById('availableproductsdiv').style.display = 'inline-block';
+		}
+		else {
+			document.getElementById('availableproductsdiv').style.display = 'none';
+		}
+	}
+
+	function show(id) {
+		document.getElementById(id).style.visibility = 'visible';
+	}
+
+	function hide(id) {
+		document.getElementById(id).style.visibility = 'hidden';
+	}
+
+	function showDisplay(id) {
+		document.getElementById(id).style.display = 'block';
+	}
+
+	function hideDisplay(id) {
+		document.getElementById(id).style.display = 'none';
+	}
+
+	function toggle(id) {
+		var el = document.getElementById(id);
+		if ('none' == el.style.display) {
+			el.style.display = 'block';
+		} else {
+			el.style.display = 'none';
+		}
+	}
+
+	function previewImageOnLoad() {
+		document.getElementById('productPlain').style.visibility = 'hidden';
+		document.getElementById('productPreviewImage').style.visibility = 'visible';
+		hide('spinner');
+	}
+
+	function checknextprevious(theEvent)
+	{
+		var activeelementtagname = document.activeElement.tagName;
+		activeelementtagname = activeelementtagname.toLowerCase();
+
+		if (activeelementtagname == 'textarea') {
+			return;
+		}
+
+		if (theEvent == null) {
+			theEvent = window.event;
+		}
+
+		if (theEvent.target) {
+			theTarget = theEvent.target;
+		}
+		else {
+			theTarget = theEvent.srcElement;
+		}
+
+		if (theEvent.keyCode == 37) {
+			if (document.getElementById('linkprevioussidearrow')) {
+				window.location = document.getElementById('linkprevioussidearrow').getAttribute('href');
+			}
+		}
+
+		if (theEvent.keyCode == 39) {
+			if (document.getElementById('linknextsidearrow')) {
+				window.location = document.getElementById('linknextsidearrow').getAttribute('href');
+			}
+		}
+	}
+
+	function showBusyImage()
+	{
+		var targetObject = document.getElementById('busyImage');
+		if(!targetObject)
+		{
+			return;
+		}
+	
+		var sourceObject = document.getElementById('productPreviewImage');
+	
+		var sourcePositionX = 0
+		var sourcePositionY = 0;
+		var sourceWidth = parseInt(getComputedStyle(sourceObject).getPropertyValue('width'));
+		var sourceHeight = parseInt(getComputedStyle(sourceObject).getPropertyValue('height'));
+		
+		sourcePositionX = sourceObject.offsetLeft;
+		sourcePositionY = sourceObject.offsetTop;		
+		
+		if (false && sourceObject.offsetParent) 
+		{
+			sourcePositionX = sourceObject.offsetLeft;
+			sourcePositionY = sourceObject.offsetTop;
+		
+			while (sourceObject = sourceObject.offsetParent)
+			{
+				sourcePositionX += sourceObject.offsetLeft;
+				sourcePositionY += sourceObject.offsetTop;
+			}
+		}
+
+		//alert(sourcePositionX + ' - ' + sourcePositionY + ' - ' + sourceWidth + ' - ' + sourceHeight);
+
+		targetObject.style.visibility = 'hidden';
+		targetObject.style.display = 'inline-block';
+		var targetWidth = parseInt(getComputedStyle(targetObject).getPropertyValue('width'));
+		var targetHeight = parseInt(getComputedStyle(targetObject).getPropertyValue('height'));		
+		
+		var targetPositionX = sourcePositionX + parseInt((sourceWidth - targetWidth) / 2);
+		var targetPositionY = sourcePositionY + parseInt((sourceHeight - targetHeight) / 2);
+		
+		//alert(targetPositionX  + ' - ' + targetPositionY);
+		
+		targetObject.style.left = targetPositionX + 'px';
+		targetObject.style.top = targetPositionY + 'px';
+		targetObject.style.visibility = 'visible';
+	}
+
+	function hideBusyImage()
+	{
+		var targetObject = document.getElementById('busyImage');
+		
+		if(targetObject)
+		{
+			targetObject.style.display = 'none';
+		}
+	}
+	
+	
+	
+	function changeProductOption(s)
+	{
+		var optionId = s.id;
+		
+		var optionValue = '';
+
+		if(s.tagName == 'SELECT')
+		{
+			optionValue = s[s.selectedIndex].value;
+		}
+		
+		if(s.tagName == 'INPUT')
+		{
+			optionValue = s.value;
+		}
+		
+		var optionAction = s.getAttribute('data-targetAction');
+		
+		//alert(s.id + ' - '+ optionValue + ' - ' + optionAction);
+	
+		if(optionAction == 'changeUrl')
+		{
+			window.location = optionValue;
+			return;
+		}
+		
+		if(optionAction == 'setParameterUpdatePrice')
+		{
+			setParameterUpdatePrice(optionId,optionValue);
+		}
+		
+		if(optionAction == 'setParameterUpdatePriceAndImages')
+		{
+			setParameterUpdatePriceAndImages(optionId,optionValue);
+		}		
+		
+	}
+	
+	function setParameterUpdatePrice(formOptionId,formOptionValue)
+	{
+		var localvalue = requestcount;
+					
+		httpobject[localvalue] = newHttpReq();			
+		httpobject[localvalue].onreadystatechange = function(){
+		
+			try 
+			{
+				if(httpobject[localvalue].readyState == 4)
+				{
+				}
+			
+				if(httpobject[localvalue].status == 200)
+				{
+				}
+			}
+			catch (e)
+			{
+				return;
+			}
+			
+			if(httpobject[localvalue].readyState == 4 && httpobject[localvalue].status == 200)
+			{
+				var response = JSON.parse(httpobject[localvalue].responseText);
+										
+				// The response will only fail if the session has timed out.  If that's the case, then redirect
+				// to the appropriate timeout URL.
+				if(response.status == 'success')
+				{
+					//alert(response.message);
+					//alert(response.price);						
+				
+					if(response.price)
+					{
+						document.getElementById('productPrice').innerHTML = response.price;
+						
+						if(document.getElementById('productPriceMobileTop'))
+						{
+							document.getElementById('productPriceMobileTop').innerHTML = response.price;
+						}
+						
+						enableAddToCart();
+					}
+					
+					if(response.aboutProductDescription && document.getElementById('aboutProductDescription'))
+					{
+						document.getElementById('aboutProductDescription').innerHTML = response.aboutProductDescription;
+					}
+
+					if(response.productConfigurationOptions && document.getElementById('productConfigurationOptionsDiv'))
+					{
+						document.getElementById('productConfigurationOptionsDiv').innerHTML = response.productConfigurationOptions;
+					}					
+					
+				}
+				else
+				{
+					window.location = document.getElementById('timeoutUrl').value;
+				}
+				
+			
+			}
+		
+		
+		};		
+
+		disableAddToCart();
+		
+		var url = "/queries/queryUpdateProductConfiguratorProduct.php";
+		var postString = 'uniqueId=' + document.getElementById('uniqueid').value + '&action=setParameter&formInputParameterName=' + formOptionId + '&formInputParameterValue=' + formOptionValue;
+		
+		//alert(postString);
+		
+		httpobject[localvalue].open('post',url,true);
+		httpobject[localvalue].setRequestHeader('content-type', 'application/x-www-form-urlencoded');
+		httpobject[localvalue].send(postString);	
+
+		requestcount += 1;
+	}
+
+	function setParameterUpdateImagesOnly(formOptionId,formOptionValue)
+	{
+		showBusyImage();
+	
+		var localvalue = requestcount;
+					
+		httpobject[localvalue] = newHttpReq();			
+		httpobject[localvalue].onreadystatechange = function(){
+		
+			try 
+			{
+				if(httpobject[localvalue].readyState == 4)
+				{
+				}
+			
+				if(httpobject[localvalue].status == 200)
+				{
+				}
+			}
+			catch (e)
+			{
+				return;
+			}
+			
+			if(httpobject[localvalue].readyState == 4 && httpobject[localvalue].status == 200)
+			{
+				var response = JSON.parse(httpobject[localvalue].responseText);
+										
+				// The response will only fail if the session has timed out.  If that's the case, then redirect
+				// to the appropriate timeout URL.
+				if(response.status == 'success')
+				{
+					//alert(response.message);
+					//alert(response.price);				
+
+					if(response.price)
+					{
+						document.getElementById('productPrice').innerHTML = response.price;
+						
+						if(document.getElementById('productPriceMobileTop'))
+						{
+							document.getElementById('productPriceMobileTop').innerHTML = response.price;
+						}						
+						
+						enableAddToCart();
+					}
+					
+					if(response.renderedImage != '')
+					{
+						document.getElementById('productPreviewImage').src = response.renderedImage;
+
+						if (typeof updateSelectedProductImage !== 'undefined')
+						{
+							if (updateSelectedProductImage == true && document.getElementById('selectedProduct') != null)
+							{
+								document.getElementById('selectedProduct').src = response.renderedImage;
+							}
+						}
+						
+						if (typeof updateOtherImageId !== 'undefined' && document.getElementById(updateOtherImageId) != null)
+						{
+							document.getElementById(updateOtherImageId).src = response.renderedImage;
+						}
+
+						if(document.getElementById('renderedImageMobileTop'))
+						{
+							document.getElementById('renderedImageMobileTop').src = response.renderedImage;
+						}
+						
+					}
+					
+					
+					// Display the additional product images.
+					if(response.additionalImages != '' && response.additionalImages != null)
+					{
+						for(var key in response.additionalImages)
+						{
+							var currentImage = response.additionalImages[key];
+							
+							if(document.getElementById(currentImage['id']) != null)
+							{
+								//document.getElementById(currentImage['id']).src = currentImage['urlSmall'];
+								document.getElementById(currentImage['id']).src = currentImage['url'];
+								document.getElementById(currentImage['id']).setAttribute('data-url-large', currentImage['url']);
+							}
+						}
+					}
+					
+					
+					// If the artwork covers the product, then hide the background color div.
+					if(response.artworkCoversProduct)
+					{
+						if(document.getElementById('backgroundColorDiv'))
+						{
+							document.getElementById('backgroundColorDiv').style.display = 'none';
+						}
+					}
+					else
+					{
+						if(document.getElementById('backgroundColorDiv'))
+						{					
+							document.getElementById('backgroundColorDiv').style.display = 'inline-block';
+						}
+					}
+
+					if(response.artworkNearEdges)
+					{
+						if(document.getElementById('imageWarningDiv'))
+						{
+							document.getElementById('imageWarningDiv').style.display = 'inline-block';
+						}
+					}
+					else
+					{
+						if(document.getElementById('imageWarningDiv'))
+						{
+							document.getElementById('imageWarningDiv').style.display = 'none';
+						}					
+					}
+													
+				}
+				else
+				{
+					window.location = document.getElementById('timeoutUrl').value;
+				}
+				
+			
+			}
+		
+		
+		};		
+
+		disableAddToCart();
+		
+		var url = "/queries/queryUpdateProductConfiguratorProduct.php";
+		var postString = 'uniqueId=' + document.getElementById('uniqueid').value + '&action=setParameter&formInputParameterName=' + formOptionId + '&formInputParameterValue=' + formOptionValue;
+		
+		//alert(postString);
+		
+		httpobject[localvalue].open('post',url,true);
+		httpobject[localvalue].setRequestHeader('content-type', 'application/x-www-form-urlencoded');
+		httpobject[localvalue].send(postString);	
+
+		requestcount += 1;	
+	}
+	
+	function setParameterUpdatePriceAndImages(formOptionId,formOptionValue)
+	{
+		showBusyImage();
+	
+		var localvalue = requestcount;
+					
+		httpobject[localvalue] = newHttpReq();			
+		httpobject[localvalue].onreadystatechange = function(){
+		
+			try 
+			{
+				if(httpobject[localvalue].readyState == 4)
+				{
+				}
+			
+				if(httpobject[localvalue].status == 200)
+				{
+				}
+			}
+			catch (e)
+			{
+				return;
+			}
+			
+			if(httpobject[localvalue].readyState == 4 && httpobject[localvalue].status == 200)
+			{
+				var response = JSON.parse(httpobject[localvalue].responseText);
+										
+				// The response will only fail if the session has timed out.  If that's the case, then redirect
+				// to the appropriate timeout URL.
+				if(response.status == 'success')
+				{
+					//alert(response.message);
+					//alert(response.price);				
+
+					if(response.price)
+					{
+						document.getElementById('productPrice').innerHTML = response.price;
+
+						if(document.getElementById('productPriceMobileTop'))
+						{
+							document.getElementById('productPriceMobileTop').innerHTML = response.price;
+						}						
+						
+						enableAddToCart();
+					}
+					
+					if(response.renderedImage != '')
+					{
+						document.getElementById('productPreviewImage').src = response.renderedImage;
+
+						if (typeof updateSelectedProductImage !== 'undefined')
+						{
+							if (updateSelectedProductImage == true && document.getElementById('selectedProduct') != null)
+							{
+								document.getElementById('selectedProduct').src = response.renderedImage;
+							}
+						}
+						
+						if (typeof updateOtherImageId !== 'undefined' && document.getElementById(updateOtherImageId) != null)
+						{
+							document.getElementById(updateOtherImageId).src = response.renderedImage;
+						}
+
+						if(document.getElementById('renderedImageMobileTop'))
+						{
+							document.getElementById('renderedImageMobileTop').src = response.renderedImage;
+						}						
+					}
+					
+					
+					// Display the additional product images.
+					if(response.additionalImages != '' && response.additionalImages != null)
+					{
+						for(var key in response.additionalImages)
+						{
+							var currentImage = response.additionalImages[key];
+							
+							if(document.getElementById(currentImage['id']) != null)
+							{
+								//document.getElementById(currentImage['id']).src = currentImage['urlSmall'];
+								document.getElementById(currentImage['id']).src = currentImage['url'];
+								document.getElementById(currentImage['id']).setAttribute('data-url-large', currentImage['url']);
+							}
+						}
+					}
+					
+					
+					// If the artwork covers the product, then hide the background color div.
+					if(response.artworkCoversProduct)
+					{
+						if(document.getElementById('backgroundColorDiv'))
+						{
+							document.getElementById('backgroundColorDiv').style.display = 'none';
+						}
+					}
+					else
+					{
+						if(document.getElementById('backgroundColorDiv'))
+						{					
+							document.getElementById('backgroundColorDiv').style.display = 'inline-block';
+						}
+					}
+
+					if(response.artworkNearEdges)
+					{
+						if(document.getElementById('imageWarningDiv'))
+						{
+							document.getElementById('imageWarningDiv').style.display = 'inline-block';
+						}
+					}
+					else
+					{
+						if(document.getElementById('imageWarningDiv'))
+						{
+							document.getElementById('imageWarningDiv').style.display = 'none';
+						}					
+					}
+					
+					if(response.productConfigurationOptions && document.getElementById('productConfigurationOptionsDiv'))
+					{
+						document.getElementById('productConfigurationOptionsDiv').innerHTML = response.productConfigurationOptions;
+					}
+
+					
+					if(typeof response.completeProductSku !== 'undefined')
+					{
+						if(document.getElementById('completeProductSku'))
+						{
+							document.getElementById('completeProductSku').value = response.completeProductSku;
+						}
+						
+						// https://gist.github.com/jlong/2428561
+						var parser = document.createElement('a');
+						parser.href = window.location;
+						
+						var currentLocation = parser.pathname;
+						
+						if(currentLocation.indexOf('productconfigurator.html') == -1)
+						{
+							window.history.replaceState('','', currentLocation + '?completeProductSku=' + response.completeProductSku);
+						}
+						
+					}
+					
+										
+				}
+				else
+				{
+					window.location = document.getElementById('timeoutUrl').value;
+				}
+				
+			
+			}
+		
+		
+		};		
+
+		disableAddToCart();
+		
+		var url = "/queries/queryUpdateProductConfiguratorProduct.php";
+		var postString = 'uniqueId=' + document.getElementById('uniqueid').value + '&action=setParameter&formInputParameterName=' + formOptionId + '&formInputParameterValue=' + formOptionValue;
+		
+		//alert(postString);
+		
+		httpobject[localvalue].open('post',url,true);
+		httpobject[localvalue].setRequestHeader('content-type', 'application/x-www-form-urlencoded');
+		httpobject[localvalue].send(postString);	
+
+		requestcount += 1;
+	}	
+	
+	
+	function disableAddToCart()
+	{
+		document.getElementById('productPrice').style.opacity = '0.50';
+		document.getElementById('productCurrency').style.opacity = '0.50';
+	}
+	
+	function enableAddToCart()
+	{
+		document.getElementById('productPrice').style.opacity = '1.00';
+		document.getElementById('productCurrency').style.opacity = '1.00';
+	}
+
+	function keepAliveUniqueId()
+	{
+		var localvalue = requestcount;
+					
+		httpobject[localvalue] = newHttpReq();			
+		httpobject[localvalue].onreadystatechange = function(){
+		
+			try 
+			{
+				if(httpobject[localvalue].readyState == 4)
+				{
+				}
+			
+				if(httpobject[localvalue].status == 200)
+				{
+				}
+			}
+			catch (e)
+			{
+				return;
+			}
+			
+			if(httpobject[localvalue].readyState == 4 && httpobject[localvalue].status == 200)
+			{
+				var response = JSON.parse(httpobject[localvalue].responseText);
+				
+				//alert(response.status);
+
+				if(response.status == 'success')
+				{				
+					
+					
+					
+					
+				
+				}
+				else
+				{
+					window.location = document.getElementById('timeoutUrl').value;
+					return;
+				}
+			
+			}
+		
+		
+		};		
+		
+		if(document.getElementById('uniqueid'))
+		{			
+			var url = "/queries/queryProductConfiguratorKeepAliveUniqueId.php";
+			var postString = 'uniqueId=' + document.getElementById('uniqueid').value;
+					
+			httpobject[localvalue].open('post',url,true);
+			httpobject[localvalue].setRequestHeader('content-type', 'application/x-www-form-urlencoded');
+			httpobject[localvalue].send(postString);	
+
+			requestcount += 1;
+		}
+	}
+	
+	
+	function showComment1()
+	{
+		
+		if(memberidtype == 'none')
+		{
+			targetfunction = "showcomment1()";
+			showLoginPopUp(false);
+			return;
+		}
+		
+		if(document.getElementById('comment1Div').style.display == 'none')
+		{
+			document.getElementById('comment1Div').style.display = 'inline-block';
+			document.getElementById('comment1Div').getElementsByTagName('textarea')[0].select();
+		}
+		else
+		{
+			document.getElementById('comment1Div').style.display = 'none';		
+		}
+		
+	}
+	
+	function submitComment1()
+	{
+		var comment = document.getElementById('comment1Div').getElementsByTagName('textarea')[0].value;
+		
+		if(comment.length < 3)
+		{
+			alert('You must enter at least three characters.');
+			return;
+		}
+
+		document.getElementById('comment1Form').submit();
+	
+	}
+	
+
+	function showComment2()
+	{
+
+		if(memberidtype == 'none')
+		{
+			targetfunction = "showComment2()";
+			showLoginPopUp(false);
+			return;
+		}	
+	
+		if(document.getElementById('comment2Div').style.display == 'none')
+		{
+			document.getElementById('comment2Div').style.display = 'inline-block';			
+			document.getElementById('comment2Div').getElementsByTagName('textarea')[0].select();
+		}
+		else
+		{
+			document.getElementById('comment2Div').style.display = 'none';		
+		}
+
+	}
+	
+	function submitComment2()
+	{
+		var comment = document.getElementById('comment2Div').getElementsByTagName('textarea')[0].value;
+		
+		if(comment.length < 3)
+		{
+			alert('You must enter at least three characters.');
+			return;
+		}
+		
+		document.getElementById('comment2Form').submit();
+	
+	}	
+	
+	
+	function showComment3()
+	{
+		document.getElementById('messageDivTop').innerHTML = '';
+		
+		if(memberidtype == 'none')
+		{
+			targetfunction = "showComment3()";
+			showLoginPopUp(false);
+			return;
+		}	
+	
+		if(document.getElementById('comment3Div').style.display == 'none')
+		{
+			document.getElementById('comment3Div').style.display = 'inline-block';			
+			document.getElementById('comment3Div').getElementsByTagName('textarea')[0].select();
+		}
+		else
+		{
+			document.getElementById('comment3Div').style.display = 'none';		
+		}
+
+	}	
+	
+	
+	
+	function submitComment3()
+	{
+		var comment = document.getElementById('comment3Div').getElementsByTagName('textarea')[0].value;
+		
+		if(comment.length < 3)
+		{
+			alert('You must enter at least three characters.');
+			return;
+		}
+		
+		document.getElementById('comment3Form').submit();
+	
+	}	
+
+
+	function submitReply(commentId,artworkId)
+	{
+		var comment = document.getElementById('reply').value;
+		
+		if(comment.length < 3)
+		{
+			alert('You must enter at least three characters.');
+			return;
+		}
+		
+		//document.getElementById('replyForm').submit();
+
+		var localvalue = requestcount;
+					
+		httpobject[localvalue] = newHttpReq();			
+		httpobject[localvalue].onreadystatechange = function(){
+		
+			try 
+			{
+				if(httpobject[localvalue].readyState == 4)
+				{
+				}
+			
+				if(httpobject[localvalue].status == 200)
+				{
+				}
+			}
+			catch (e)
+			{
+				return;
+			}
+			
+			if(httpobject[localvalue].readyState == 4 && httpobject[localvalue].status == 200)
+			{
+				var response = JSON.parse(httpobject[localvalue].responseText);
+				
+				//console.log(response);
+				
+				if(response.status == 'success')
+				{
+					var currentTime = new Date();
+					currentTime = currentTime.getTime();					
+					
+					var newUrl = document.getElementById('timeoutUrl').value;
+					
+					if(newUrl.indexOf('?') > 0)
+					{
+						newUrl += '&';
+					}
+					else
+					{
+						newUrl += '?';
+					}
+					
+					newUrl += 'timestamp=' + currentTime + '#comment' + commentId;
+					
+					window.location = newUrl;
+				}
+				else
+				{
+					alert(response.errorMessage);
+					return;
+				}
+			
+			}
+		
+		
+		};		
+
+		var url = "/queries/queryValidatePostCommentReply.php";
+		var postString = 'comment=' + encodeURIComponent(comment) + '&commentId=' + commentId + '&artworkId=' + artworkId;
+		
+		//alert(postString);
+		//return;
+		
+		httpobject[localvalue].open('post',url,true);
+		httpobject[localvalue].setRequestHeader('content-type', 'application/x-www-form-urlencoded');
+		httpobject[localvalue].send(postString);	
+
+		requestcount += 1;
+
+		
+	}
+	
+	
+	function createForegroundAndBackgroundDiv()
+	{
+		if(!document.getElementById('foregrounddiv') || !document.getElementById('backgrounddiv'))
+		{
+			var newdiv;
+			var cssstyle;
+
+			// Background Div
+			if(!document.getElementById('backgroundDiv'))
+			{
+				newdiv = document.createElement('div');			
+				cssstyle = 'position: fixed; z-index: 5000; left: 0px; top: 0px; width: 10px; height: 10px; background-color: #000000; visibility: hidden; opacity: 0.50; filter: alpha(opacity=50);';
+				newdiv.id = 'backgroundDiv';
+				newdiv.setAttribute('style',cssstyle);
+				newdiv.style.cssText = cssstyle;
+				document.body.appendChild(newdiv);				
+			}
+			
+			// Foreground Div
+			if(!document.getElementById('foregroundDiv'))
+			{			
+				newdiv = document.createElement('div');
+				cssstyle = 'position: fixed; z-index: 5001; left: 0px; top: 0px; width: 780px; min-height: 50px; padding: 0px; overflow: auto; padding: 25px; border: 15px solid #666666; background-color: #FFFFFF; visibility: hidden; box-shadow: 0px 0px 50px #000000;';
+				newdiv.id = 'foregroundDiv';
+				newdiv.setAttribute('style',cssstyle);
+				newdiv.style.cssText = cssstyle;
+				document.body.appendChild(newdiv);	
+			}
+		}		
+		
+	}
+	
+	
+	function createAdditionalProductImagePopUpDiv()
+	{
+		if(!document.getElementById('additionalProductImagePopUpDiv'))
+		{
+			newdiv = document.createElement('div');
+			cssstyle = 'position: fixed; z-index: 5001; left: 0px; top: 0px; width: 780px; min-height: 50px; padding: 0px; overflow: visible; padding: 0px; border: 15px solid #FFFFFF; background-color: #FFFFFF; visibility: hidden; box-shadow: 0px 0px 50px #000000;';
+			newdiv.id = 'additionalProductImagePopUpDiv';
+			newdiv.setAttribute('style',cssstyle);
+			newdiv.style.cssText = cssstyle;
+			document.body.appendChild(newdiv);
+		}
+	}
+	
+	
+	function showLoginPopUp(showerrors)
+	{		
+		createForegroundAndBackgroundDiv();
+	
+		var backgroundobject = document.getElementById('backgroundDiv');
+		backgroundobject.style.width = '100%';
+		backgroundobject.style.height = '100%';
+		backgroundobject.style.visibility = 'visible';		
+				
+		var widthclient = parseInt(document.documentElement.clientWidth);
+		var heightclient = parseInt(document.documentElement.clientHeight);
+		
+		//alert(widthclient);
+		
+		var widthtarget = parseInt(widthclient*0.80);
+		var heighttarget = parseInt(heightclient*0.60);
+		
+		if((widthtarget + 30) > widthclient)
+		{
+			widthtarget = widthclient - 30;
+		}
+		
+		if((heighttarget + 30) > heightclient)
+		{
+			heighttarget = heightclient - 30;
+		}
+		
+		if(widthtarget > 880)
+		{
+			widthtarget = 880;
+		}
+		
+		if(heighttarget > 680)
+		{
+			heighttarget = 680;
+		}
+		
+		var widthtarget = 400;
+		var heighttarget = 400;
+		
+		var offsetleft = 0;
+		var offsettop = 0;
+		
+		var offsetx = 0;
+		var offsety = 0;
+
+		if(document.documentElement.scrollTop && !document.body.scrollTop)
+		{
+			//offsetleft = document.documentElement.scrollLeft;
+			//offsettop = document.documentElement.scrollTop;
+    	}
+		else
+		{
+			//offsetleft = document.body.scrollLeft;
+			//offsettop = document.body.scrollTop;
+		}		
+		
+		var logindiv = document.getElementById('foregroundDiv');
+		logindiv.style.width = widthtarget + 'px';
+		logindiv.style.height = heighttarget + 'px';
+		logindiv.style.visibility = 'visible';
+		logindiv.innerHTML = "<img src='/Searching.gif' style='float: left;'>";
+		
+		logindiv.style.left = (offsetx + offsetleft + parseInt((widthclient - (widthtarget + 80)) / 2)) + 'px';
+		logindiv.style.top = (offsety + offsettop + parseInt((heightclient - (heighttarget + 80)) / 2)) + 'px';
+
+		var localvalue = requestcount;
+		
+		httpobject[localvalue] = newHttpReq();			
+		httpobject[localvalue].onreadystatechange = function(){
+		
+			try 
+			{
+				if(httpobject[localvalue].readyState == 4)
+				{
+				}
+			
+				if(httpobject[localvalue].status == 200)
+				{
+				}
+			}
+			catch (e)
+			{
+				return;
+			}
+			
+			if(httpobject[localvalue].readyState == 4 && httpobject[localvalue].status == 200)
+			{
+				document.getElementById('foregroundDiv').innerHTML = httpobject[localvalue].responseText;
+			}
+		
+		
+		};		
+
+
+		var url = "/queries/queryLoginFacebookNew.php";
+		var poststring = "showerrors=" + showerrors;
+
+		httpobject[localvalue].open('post',url,true);
+		httpobject[localvalue].setRequestHeader('content-type', 'application/x-www-form-urlencoded');
+		httpobject[localvalue].send(poststring);	
+
+		requestcount += 1;		
+		
+		return;	
+	}	
+	
+	
+	function hideLoginPopUp()
+	{
+		document.getElementById('backgroundDiv').style.visibility = 'hidden';
+		document.getElementById('foregroundDiv').style.visibility = 'hidden';
+		document.getElementById('foregroundDiv').innerHTML = '&nbsp;';
+	}
+	
+
+	function submitLogin()
+	{
+
+		document.getElementById('submitLoginDiv').innerHTML = "<img src='/Searching.gif'>\n";
+	
+		var localvalue = requestcount;
+		
+		httpobject[localvalue] = newHttpReq();			
+		httpobject[localvalue].onreadystatechange = function(){
+		
+			try 
+			{
+				if(httpobject[localvalue].readyState == 4)
+				{
+				}
+			
+				if(httpobject[localvalue].status == 200)
+				{
+				}
+			}
+			catch (e)
+			{
+				return;
+			}
+			
+			if(httpobject[localvalue].readyState == 4 && httpobject[localvalue].status == 200)
+			{
+				console.log(response);
+				
+				var response = httpobject[localvalue].responseText.split("<EXTRAINSTRUCTIONS>");
+			
+				document.getElementById('foregroundDiv').innerHTML = response[0];
+				
+				if(response[1])
+				{
+					eval(response[1]);
+				}							
+
+			}
+		
+		
+		};		
+
+		var poststring = 'username=' + document.getElementById('username').value + '&password=' + document.getElementById('password').value + '&sourcepage=productPage&targetfunction=' + targetfunction;
+		
+		//alert(poststring);
+		//return;
+		
+		var url = "/loginvalidationnew.php";
+
+		httpobject[localvalue].open('post',url,true);
+		httpobject[localvalue].setRequestHeader('content-type', 'application/x-www-form-urlencoded');
+		httpobject[localvalue].send(poststring);	
+
+		requestcount += 1;	
+	
+	}
+
+
+	function facebooklogin()
+	{
+		// Old Permissions: publish_stream,email
+		// New Permissions: email
+		
+		FB.login(function(response) {
+		  if (response.authResponse) {
+			if (true) {
+			  // user is logged in and granted some permissions.
+			  // perms is a comma separated list of granted permissions
+
+			  //alert(response.perms);
+			  
+			  if(true)
+			  {
+				//alert('permission granted');
+				
+				document.getElementById('foregroundDiv').innerHTML = "<img src='/Searching.gif'>";
+				
+			  
+				FB.getLoginStatus(function(response) {
+				
+					var facebookuserid = response.authResponse.userID;
+					var facebookaccesstoken = response.authResponse.accessToken;
+					//console.log(response);
+					//alert(facebookaccesstoken);
+					var email = '';
+				
+					FB.api('/me', 'get', {access_token: facebookaccesstoken, fields: 'first_name,last_name,email'}, function(response) {
+					
+					var poststring = 'facebookuserid=' + facebookuserid + '&facebookaccesstoken=' + facebookaccesstoken + '&email=' + response.email + '&firstname=' + response.first_name + '&lastname=' + response.last_name + '&sourcepage=producePage&targetfunction=' + targetfunction;
+					//alert(poststring);
+					//return;
+					
+					var localvalue = requestcount;
+					
+					httpobject[localvalue] = newHttpReq();			
+					httpobject[localvalue].onreadystatechange = function(){
+					
+						try 
+						{
+							if(httpobject[localvalue].readyState == 4)
+							{
+							}
+						
+							if(httpobject[localvalue].status == 200)
+							{
+							}
+						}
+						catch (e)
+						{
+							return;
+						}
+						
+						if(httpobject[localvalue].readyState == 4 && httpobject[localvalue].status == 200)
+						{
+							var response = httpobject[localvalue].responseText.split("<EXTRAINSTRUCTIONS>");
+						
+							document.getElementById('foregroundDiv').innerHTML = response[0];
+							
+							if(response[1])
+							{
+								eval(response[1]);
+							}							
+
+						}
+					
+					
+					};		
+
+					var url = "../queries/queryloginfacebookcomplete.php";
+
+					httpobject[localvalue].open('post',url,true);
+					httpobject[localvalue].setRequestHeader('content-type', 'application/x-www-form-urlencoded');
+					httpobject[localvalue].send(poststring);	
+
+					requestcount += 1;	
+
+					
+					});
+
+				});			  
+			  
+			  }
+			  else
+			  {
+				alert('permission denied');
+			  }
+			  
+			} else {
+			  // user is logged in, but did not grant any permissions
+			  
+			   //alert('logged in: permission denied');
+			  
+			}
+		  } else {
+			// user is not logged in
+			//alert('not logged in: permission denied');
+		  }
+		}, {scope:'email'});
+
+	}
+	
+	
+	function viewMoreComments()
+	{
+		var comments = document.getElementsByClassName('commentDiv');
+		
+		for(var i = 0; i < comments.length; i ++)
+		{
+			comments[i].style.display = 'inline-block';
+		}
+		
+		document.getElementById('viewMoreComments').style.display = 'none';
+		document.getElementById('hideMoreComments').style.display = 'inline-block';
+	}
+	
+	function hideMoreComments()
+	{
+		var comments = document.getElementsByClassName('commentDiv');
+		
+		for(var i = 0; i < comments.length; i ++)
+		{
+			if(i > 4)
+			{
+				comments[i].style.display = 'none';
+			}
+		}
+		
+		document.getElementById('viewMoreComments').style.display = 'inline-block';
+		document.getElementById('hideMoreComments').style.display = 'none';
+		
+		document.getElementById('commentsReviewsContainerDiv').scrollIntoView(true);
+	}	
+	
+	
+
+	function showReply(commentId, artworkId)
+	{
+
+		if(document.getElementById('replydiv'))
+		{
+			var parentobject = document.getElementById('replydiv').parentNode;
+			parentobject.removeChild(document.getElementById('replydiv'));
+			
+			if(commentId == commentReplyId)
+			{
+				return;
+			}
+		}
+		
+		commentReplyId = commentId;
+	
+		var parentobject = document.getElementById('individualcommentdiv['+commentId+']');
+		
+		var newelement = document.createElement('div');
+		newelement.id = 'replydiv';
+		newelement.style.styleFloat = 'left';
+		newelement.style.width = '100%';
+		newelement.innerHTML = "<div style='float: left; width: 100%; padding-top: 20px;'><form id='replyForm' name='replyForm' method='post' action='/validatepostcommentreply.php'><p style='float: left; width: 100%; font: 8pt arial; font-weight: bold;'>Post Reply</p><div style='float: left; width: 100%; padding-top: 5px;'><textarea id='reply' name='reply' style='float: left; width: 290px; padding: 5px; font: 10pt arial;'></textarea></div><div style='float: left; width: 100%; padding-top: 10px;'><a class='button' href='javascript: submitReply(" + commentId + "," + artworkId + ");'><span>Reply</span></a></div></form></div>";
+		
+		parentobject.appendChild(newelement);		
+		
+	}
+
+
+	function confirmDeleteComment(id)
+	{
+		result = confirm ('Are you sure you want to delete this comment?');
+		
+		if (result == true)
+		{
+			window.location = document.getElementById('timeoutUrl').value + "?deleteCommentId=" + id;	
+		}
+		
+	}
+
+
+	function favoriteImageTop(artworkId)
+	{
+		if(memberidtype == 'none')
+		{
+			targetfunction = "favoriteImageTop(" + artworkId + ")";
+			showLoginPopUp(false);
+			return;
+		}
+
+		document.getElementById('messageDivTop').style.display = 'inline-block';
+		document.getElementById('messageDivTop').innerHTML = "<div style='float: left; width: 100%; padding-top: 15px; padding-bottom: 15px; text-align: center;'><img src='/Searching.gif'></div>\n";
+		
+		var localvalue = requestcount;
+		
+		httpobject[localvalue] = newHttpReq();			
+		httpobject[localvalue].onreadystatechange = function(){
+		
+			try 
+			{
+				if(httpobject[localvalue].readyState == 4)
+				{
+				}
+			
+				if(httpobject[localvalue].status == 200)
+				{
+				}
+			}
+			catch (e)
+			{
+				return;
+			}
+			
+			if(httpobject[localvalue].readyState == 4 && httpobject[localvalue].status == 200)
+			{
+				var response = httpobject[localvalue].responseText.split("<EXTRAINSTRUCTIONS>");
+				
+				document.getElementById('messageDivTop').innerHTML = response[0];
+				
+				if(response[1])
+				{
+					eval(response[1]);
+				}							
+
+			}
+		
+		
+		};		
+
+		var poststring = 'artworkid=' + artworkId + '&flagtop=true';
+		
+		//alert(poststring);
+		//return;
+		
+		var url = '/queries/new-queryaddtofavoritesnew.php';
+
+		httpobject[localvalue].open('post',url,true);
+		httpobject[localvalue].setRequestHeader('content-type', 'application/x-www-form-urlencoded');
+		httpobject[localvalue].send(poststring);	
+
+		requestcount += 1;			
+	}	
+	
+	
+	function likeArtworkTop(artworkId,value)
+	{
+
+		if(memberidtype == 'none')
+		{
+			targetfunction = "likeArtworkTop("+artworkId+"," + value + ")";
+			showLoginPopUp(false);
+			return;
+		}   
+   
+		document.getElementById('messageDivTop').style.display = 'inline-block';
+		document.getElementById('messageDivTop').innerHTML = "<div style='float: left; width: 100%; padding-top: 15px; padding-bottom: 15px; text-align: center;'><img src='/Searching.gif'></div>\n";
+				
+		var localvalue = requestcount;
+		
+		httpobject[localvalue] = newHttpReq();			
+		httpobject[localvalue].onreadystatechange = function(){
+		
+			try 
+			{
+				if(httpobject[localvalue].readyState == 4)
+				{
+				}
+			
+				if(httpobject[localvalue].status == 200)
+				{
+				}
+			}
+			catch (e)
+			{
+				return;
+			}
+			
+			if(httpobject[localvalue].readyState == 4 && httpobject[localvalue].status == 200)
+			{
+				var response = httpobject[localvalue].responseText.split("<EXTRAINSTRUCTIONS>");
+				
+				document.getElementById('messageDivTop').innerHTML = response[0];
+				
+				if(response[1])
+				{
+					eval(response[1]);
+				}							
+
+			}
+		
+		
+		};		
+
+		var url = '/recommendartwork.php?artworkid=' + artworkId + '&value=' + value + '&flagtop=true';	
+		
+		httpobject[localvalue].open('get',url,true);
+		httpobject[localvalue].send(null);
+		
+		requestcount += 1;		
+
+	}	
+	
+
+	function facebookpopup(url) 
+	{
+		var width = 680;
+		var height = 400;
+		
+		var leftposition = Number((screen.width/2)-(width/2));
+		var topposition = Number((screen.height/2)-(height/2));
+		
+		window.open(url,'facebookwindow','width=' + width + ',height=' + height + ',resizable=1,toolbar=0,menubar=0,status=0,location=0,left=' + leftposition + ',top=' + topposition); 
+	}
+	
+	
+	function twitterpopup(url) 
+	{
+		var width = 600;
+		var height = 400;
+		
+		var leftposition = Number((screen.width/2)-(width/2));
+		var topposition = Number((screen.height/2)-(height/2));
+		
+		window.open(url,'twitterwindow','width=' + width + ',height=' + height + ',resizable=1,toolbar=0,menubar=0,status=0,location=0,left=' + leftposition + ',top=' + topposition); 
+	}
+	
+	function googlepluspopup(url) 
+	{
+		var width = 720;
+		var height = 500;
+		
+		var leftposition = Number((screen.width/2)-(width/2));
+		var topposition = Number((screen.height/2)-(height/2));
+		
+		window.open(url,'googlepluswindow','width=' + width + ',height=' + height + ',resizable=1,toolbar=0,menubar=0,status=0,location=0,left=' + leftposition + ',top=' + topposition);
+	}	
+
+	function pinterestpopup(url) 
+	{
+		var width = 640;
+		var height = 540;
+		
+		var leftposition = Number((screen.width/2)-(width/2));
+		var topposition = Number((screen.height/2)-(height/2));
+		
+		window.open(url,'pinterestwindow','width=' + width + ',height=' + height + ',resizable=1,toolbar=0,menubar=0,status=0,location=0,left=' + leftposition + ',top=' + topposition); 
+	}	
+	
+	function toggleSocialDiv()
+	{
+		if(document.getElementById('socialDiv').style.display != 'inline-block')
+		{
+			document.getElementById('socialDiv').style.display = 'inline-block';
+		}
+		else
+		{
+			document.getElementById('socialDiv').style.display = 'none';
+		}
+	}
+	
+	function showMobileTopImage()
+	{
+		var foregroundObject = document.getElementById('extraProductDivMobileTop');
+		foregroundObject.style.top = '0px';
+		foregroundObject.setAttribute('data-visible', 'true');
+	}
+
+	function hideMobileTopImage()
+	{
+		var foregroundObject = document.getElementById('extraProductDivMobileTop');
+		var divHeight = document.defaultView.getComputedStyle(foregroundObject,'').getPropertyValue('height');
+					
+		var targetY = divHeight.replace('px', '') * -1;
+		targetY -= 1;
+		targetY += 'px';
+
+		foregroundObject.style.top = targetY;
+		foregroundObject.setAttribute('data-visible', 'false');
+	}
+	
+	function captureScrollPosition()
+	{
+		var widthclient = parseInt(document.documentElement.clientWidth);
+		var heightclient = parseInt(document.documentElement.clientHeight);
+
+		if(document.getElementById('buttonaddtocart') && document.getElementById('extraProductDivMobileTop'))
+		{
+			var sourcePosY = 0;
+			var sourceObject = document.getElementById('productPreviewImage');
+			
+			if (sourceObject.offsetParent) 
+			{
+				sourcePosY = sourceObject.offsetTop;
+			
+				while (sourceObject = sourceObject.offsetParent)
+				{
+					sourcePosY += sourceObject.offsetTop;
+				}
+			}
+		
+			var imageHeight = getComputedStyle(document.getElementById('productPreviewImage')).getPropertyValue('height');
+			imageHeight = imageHeight.replace('px','');
+
+			//console.log(sourcePosY + '-' + imageHeight);
+			
+			sourcePosY += parseInt(imageHeight);
+
+			var scrollY = document.documentElement ? document.documentElement.scrollTop : document.body.scrollTop;
+			
+			if(scrollY == 0)
+			{
+				scrollY = document.body.scrollTop;
+			}
+
+			if(scrollY > sourcePosY + 50)
+			{
+				if(document.getElementById('extraProductDivMobileTop').getAttribute('data-visible') != 'true')
+				{
+					showMobileTopImage();
+				}
+			}
+			else
+			{
+				if(document.getElementById('extraProductDivMobileTop').getAttribute('data-visible') != 'false')
+				{					
+					hideMobileTopImage();
+				}
+			}
+		}
+	}			
+	
+	window.onscroll = captureScrollPosition;	
+
+	// Keep the Product alive in the session every 15 seconds.
+	window.addEventListener('load',setInterval('keepAliveUniqueId()',15000));
+	
+

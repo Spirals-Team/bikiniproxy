@@ -1,0 +1,836 @@
+/* ******************************************************************************************
+ // Last Updated on 10/25/17 by EB
+ // Previous updated 03/23/17 by AA
+ *******************************************************************************************/
+/* Set Vars For Moving Layers */
+var theTop = 70;
+var old = theTop;
+var windowhost = "//" + (window.location.host);
+var trackurl;
+var locale = "us";
+var krefl = false;
+var isrefp = false;
+var fHeadti;
+var fPubLine;
+var queryamp;
+var vpDom;
+var bavpurl;
+var cpEventTrack;
+var breakpoint;
+if (window.innerWidth <= 767) {
+    breakpoint=1;
+}else if(window.innerWidth >= 768 && window.innerWidth <= 1023 ) {
+    breakpoint=2;
+} else if(window.innerWidth >= 1024 && window.innerWidth <= 1279) {
+    breakpoint=3;
+} else {
+    breakpoint=4;
+}
+
+$(window).resize(function() {
+    viewPortSetting();
+});
+
+/*** BreakPoint function ***/
+function viewPortSetting(){
+    var lastBreakpoint = breakpoint;
+    if (window.innerWidth <= 767) {
+        breakpoint=1;
+    }else if(window.innerWidth >= 768 && window.innerWidth <= 1023 ) {
+        breakpoint=2;
+    } else if(window.innerWidth >= 1024 && window.innerWidth <= 1279) {
+        breakpoint=3;
+    } else {
+        breakpoint=4;
+    }
+    if(lastBreakpoint != breakpoint){
+        $(document).trigger("viewportChange",breakpoint);
+    }
+}
+
+/********* document load function for dekstop-English version*************/
+$(document).ready(function() {
+    trackurl = $("link[rel='canonical']").attr("href");
+    if( breakpoint === 1){
+
+        if (navigator.userAgent.toLowerCase().indexOf("android") != "-1") {
+            $("body").addClass('isAndroid');
+            window.scrollTo(0, 1);
+        }
+
+        window.scrollTo(0, 1);
+
+
+    } else {
+
+
+        //Adding the slideshow byline
+        $('#imgCollections .byline').html('Slideshow');
+
+        //add tracking to slideshow list items on reference homepage
+        if ($('.medscape_ref').length != 0 && $('.homestar').length != 0) {
+            $('#imgCollections .bucketContent ul li').each(function(index) {
+                $(this).find('a').attr("onclick","wmdTrack('slide_" + (index+1) + "')");
+            });
+
+            $('#featured .bucketContent ul.listLeft li').each(function(index) {
+                if (!$(this).hasClass('brandAlert')) {
+                    $(this).find('a').attr("onclick","wmdTrack('feat_" + (index+1) + "')");
+                }
+            });
+            $('#featured .bucketContent ul.listRight li').each(function(index) {
+                if (!$(this).hasClass('brandAlert')) {
+                    $(this).find('a').attr("onclick","wmdTrack('feat_" + (index+3) + "')");
+                }
+            });
+        }
+        trackurl = $("link[rel='canonical']").attr("href");
+        var links = $("[rel='canonical']");
+        if(links.length > 0){
+            if (links.attr('href').indexOf("reference") != "-1" && !krefl) {
+                krefl = false;
+                isrefp = true;
+            }
+        }
+
+
+        $('.whiteout-header-dropdown, .header-specialty-close-button').bind('click', function() {
+            if($("body").hasClass("dropdown-view")) {
+                $("body").removeClass("dropdown-view");
+                $('.header-specialty-menu').removeClass('is-expanded');
+                $('.header-specialty-toggle').find('.sp-arrow').removeClass('is-rotated');
+            } else {
+                $("body").addClass("dropdown-view")
+            }
+        });
+        $('.header-specialty-toggle').bind('click', function() {
+            if($("body").hasClass("dropdown-view")) {
+                $("body").removeClass("dropdown-view");
+            } else {
+                $("body").addClass("dropdown-view")
+            }
+        });
+
+        $('#currentSpecialty, #headertopright .btn-close').bind('click', function() {
+            if($("body").hasClass("dropdown-view")) {
+                $("body").removeClass("dropdown-view")
+            } else {
+                $("body").addClass("dropdown-view")
+            }
+        });
+
+
+        /* View Pub Hack For Right Rial Links */
+        viewPublish(document.getElementById("viewpub_publisher"), '#pubintro a#viewpub_publisher');
+        viewPublish(document.getElementById("viewpub_subscribe"), '#pubintro a#viewpub_subscribe');
+        viewPublish(document.getElementById("viewpub_submit"), '#pubintro a#viewpub_submit');
+        /* make the whole area of div#layer2 clickable */
+        $("body").on('click', "#layerAd2 .adContent", function(e) {
+            window.open($(this).find(".adTitle a").attr("href"));
+        });
+
+        /* avoid propagating the event to prevent div#layer2 click event from being called */
+        $("body").on('click', "#layerAd2 .adContent a", function(e) {
+            e.stopPropagation();
+        });
+
+        // PPE-43892 - Fix All text layer ads broken in iPad/Safari browser view
+        var ua = navigator.userAgent.toLowerCase();
+        var check = function(r) { return r.test(ua); };
+        var isChrome = check(/chrome/);
+        var isSafari = !isChrome && check(/safari/);
+        if(isSafari) {
+            var interval = setInterval(function(){
+                if($("#layerAd2").length > 0) {
+                    var AdNode = document.getElementById("layerAd2").cloneNode(true);
+                    $("#layerAd2").remove();
+                    window.document.body.appendChild(AdNode);
+                    clearInterval(interval);
+                } // end if
+            }, 500);
+
+            // stop checking if the parent window is loaded
+            $(window).load(function(){
+                clearInterval(interval);
+            });
+        }
+
+    }
+
+    addBrandAlert();
+});
+/* Global Ad Refreshing Script */
+/* medscape.core.js  */
+this.medscape = {
+    p: {},
+    m: {},
+    load: function(b, a) {
+        return $.xLazyLoader(b, a)
+    },
+    substitute: function(a, b) {
+        return a.replace(/\{([^{}]*)\}/g, function(d, c) {
+            var e = b[c];
+            return typeof e === "string" || typeof e === "number" ? e : d
+        })
+    },
+    htmlEncode: function(a) {
+        return a.replace(/\&/g, "&amp;").replace(/\</g, "&lt;").replace(/\>/g, "&gt;").replace(/\"/g, "&quot;")
+    },
+    openWindow: function(d, c) {
+        var h, g, b, e, a;
+        if (!c) {
+            c = {}
+        }
+        h = {
+            name: "",
+            focus: true
+        };
+        if (c.standard) {
+            h = $.extend(h, {
+                location: 1,
+                menubar: 1,
+                resizable: 1,
+                scrollbars: 1,
+                status: 1,
+                toolbar: 1
+            })
+        }
+        c = $.extend(h, c);
+        e = {
+            name: 1,
+            focus: 1,
+            standard: 1
+        };
+        b = [];
+        for (g in c) {
+            if (c.hasOwnProperty(g)) {
+                if (e[g]) {
+                    continue
+                }
+                b.push(g + "=" + c[g])
+            }
+        }
+        a = window.open(d, c.name, b.join(","));
+        if (c.focus && a) {
+            a.focus()
+        }
+        return a
+    },
+    object: (function() {
+        function a() {}
+        return function(d, c) {
+            a.prototype = d;
+            var b = new a();
+            if (c) {
+                $.extend(b, c)
+            }
+            return b
+        }
+    })()
+};
+/*$(function() {
+ window.document.write = function(a) {
+ throw ("INVALID document.write: " + a)
+ }
+ });*/
+
+/* refreshes the banner and right side ads*/
+medscape.ads = {
+
+    // Object to contain ad server URL parameters
+    params: {},
+
+    init: function() {
+        var re = new RegExp('(.*/)(.*)');
+        var paramsObj = {};
+        // Find real ad modules
+
+        $("[id*='ad1']").each(function() {
+            splitParams(this, paramsObj);
+        });
+
+        // Find interactive ad modules
+        $.each(medscape.ads.refresh.defaults.src, function() {
+            splitParams(this, paramsObj);
+        });
+
+        function splitParams(adframe, paramsObj) {
+            var fullParams, paramsArray, i, nvSplit, name, value;
+            var adsurl = $(adframe).attr("src");
+            var m = re.exec(adsurl);
+            if (m !== null) {
+                fullParams = m[2] === undefined ? "" : m[2];
+            }
+            if (fullParams) {
+                fullParams = fullParams.replace(/amp;/g, ""); // Clean up messy &amp; parameters in the fullParams string
+                paramsArray = fullParams.split('&');
+                for (i = 0; i < paramsArray.length; i++) {
+                    nvSplit = paramsArray[i].split('=');
+                    name = decodeURIComponent(nvSplit[0]);
+                    value = decodeURIComponent(nvSplit[1]);
+                    value = value.replace(/\//g, "%2f");
+                    // If the current param is not the pos value, or pos doesnt exist in the medscape.ads.params object
+                    if (name != "pos" || !(paramsObj[name])) {
+                        // set current param name-value pair
+                        paramsObj[name] = value;
+                        // If the current param is the pos value and pos already has a value in the medscape.ads.params object
+                    } else {
+                        // Add current pos value to comma-delimited list of pos values
+                        paramsObj[name] = paramsObj[name] + "," + value;
+                    }
+                }
+            }
+            return true;
+        }
+        medscape.ads.params = paramsObj;
+    },
+
+    refresh: function(options) {
+
+        // Set default options, and let passed-in options override them
+        var o = $.extend({}, medscape.ads.refresh.defaults, options);
+
+        //  medscape.ads.segnum set elsewhere, if needed, or default to 0
+        var transTileId = Math.round(99999999 * Math.random());
+
+        // getting the date, getting the seconds from epoch, slicing off the first two characters as we only want 11 here
+        var timestamp = new Date().getTime().toString().slice(2);
+
+        // making an 8 digit random number
+        var randomNumber = Math.random().toString().substr(2, 8);
+
+        // set the global variable to the 19 digit page view id
+        var s_pageview_id = timestamp + randomNumber;
+
+        // Grab the top divs for all possible ad elements on the page
+        $(o.selector).each(function() {
+            if ($(this).children().size() > 0) {
+                var ad, src;
+                var adifilabelid = $(this).attr('id');
+                $('#' + adifilabelid + ' .adlabelifi').removeClass('adlabelifi'); //remove 'Information from industry label' //
+                $('#' + adifilabelid + ' .adlabelblank').removeClass('adlabelblank'); //remove blank label //
+
+                // Remove all children of the original medscape iframe and possible expandable divs
+                var adFrame = $(this).children("[id*='ad1']");
+                $(this).children("*").not("[id*='ad1'], div[class*='adlabel']").remove();
+                $(this).children('[class*="adlabel"]').children("*").not("[id*='ad1']").remove();
+                adFrame.empty();
+
+                // Look for the existence of an ad element
+                ad = $(this).find("[id]");
+
+                // If no ad element is found in the current selector, it may be an interactive ad module
+                if (!ad[0]) {
+
+                    // Look in the object to find any properties of the o.src object that match the current id
+                    var adTag = o.src[$(this).attr("id")];
+                    // Grab the src attribute of adTag iframe for manipulation
+                    src = $(adTag).attr("src");
+                    // If they're found, then it's an interactive ad module that needs an initial ad load
+                    if (src) {
+                        // Clean up messy &amp; parameters in the http query string
+                        src = src.replace(/amp;/g, "");
+                        src = replaceAdParam(src, "transactionid", transTileId);
+                        src = replaceAdParam(src, "tile", transTileId);
+                        src = replaceAdParam(src, "pvid", s_pageview_id);
+                        src = replaceAdParam(src, "ep", "0");
+
+                        // replace and/or add params & filter for initial ad load
+                        $.each(o.params, function(i, val) {
+                            // Replace the param value if it exists
+                            src = replaceAdParam(src, i, val);
+                            // Add the param if it's not already there
+                            if (src.indexOf(i + "%3D") < 0) {
+                                src = src + "&" + i + "%3D" + val;
+                            }
+                        });
+
+                        if ($.isFunction(o.filter)) {
+                            src = o.filter(src);
+                        }
+
+                        // Update the adTag iframe's src value
+                        $(adTag).attr("src", src);
+
+                        // Laboriously convert the entire tag to a string, because IE sucks at createElement for iframes
+                        adTag = '<iframe id="' + $(adTag).attr("id") + '" width="' + $(adTag).attr("width") + '" height="' + $(adTag).attr("height") + '" src="' + $(adTag).attr("src") + '" frameborder="0" marginwidth="0" marginheight="0" scrolling="no" style=""></iframe>';
+                        // Append the tag to the placeholder div
+                        $(this).children("div.ad_placeholder").append(adTag);
+                        return;
+                    } else {
+                        // no ad found, and no Interactive ad module vars so remove ad frame
+
+                        $(this).parent().remove();
+
+                        return;
+                    }
+                } else {
+
+                    src = ad.attr("src");
+
+                    // ad element was found, but it has no src. Danger, Will Robinson! Dump out of ad refresh
+                    if (!src) {
+                        return;
+                    }
+
+                    src = replaceAdParam(src, "tile", transTileId);
+                    src = replaceAdParam(src, "transactionid", transTileId);
+                    src = replaceAdParam(src, "pvid", s_pageview_id);
+                    src = replaceAdParam(src, "ep", "0");
+
+                    // replace and/or add params & filter
+                    $.each(o.params, function(i, val) {
+                        src = replaceAdParam(src, i, val);
+
+                        // Add the param if it's not already there
+                        if (src.indexOf(i + "%3D") < 0) {
+                            src = src + "&" + i + "%3D" + val;
+                        }
+                    });
+
+                    if ($.isFunction(o.filter)) {
+                        src = o.filter(src);
+                    }
+
+                    // clear the style tag on the iframe in case 3rd part people have added inline styles to it
+                    $(ad).attr('style', '');
+
+                    // Update the iframe
+                    if (ad[0].contentWindow) {
+                        // To avoid adding to the page history and messing up the back button,
+                        // use location.replace instead of changing the src of the iframe
+                        ad[0].contentWindow.location.replace(src);
+                    } else {
+                        ad.attr({
+                            src: src
+                        });
+                    }
+                }
+            }
+        });
+
+        function replaceAdParam(srcStr, pName, pValue) {
+            var paramRegEx = new RegExp("\\b" + pName + "%3D[^&#\"']*");
+            srcStr = srcStr.replace(paramRegEx, pName + "%3D" + pValue);
+            return srcStr;
+        }
+
+    }
+
+};
+
+/* Blank defaults reset on a product level page, exmaple news article or ref article */
+medscape.ads.refresh.defaults = {
+    selector: "",
+    src: {},
+    params: {}
+};
+
+$(function() {
+    medscape.ads.init();
+});
+
+function viewPublish(element, publishlink) {
+    if (element) {
+        var vp_a = $(publishlink).attr('href');
+        var vp_txt = $(publishlink).html();
+        $("#journalnav ul:nth-child(2)").append('<li><a href="'+vp_a+'">'+vp_txt+'</a></li>');
+    }
+}
+
+function addBrandAlert() {
+    if (trackurl === undefined) {
+        return
+    }
+
+    var url, src, trackingEvent = '', locDir;
+    locDir = locale === 'us' ? '' : locale + '/';
+
+    var isMobile = /Android|webOS|iPhone|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+
+    // news article, not a reference and not a partner article
+    if ( (/\/viewarticle\//).test(location.pathname) && trackurl.indexOf('reference') === -1 && $(".partner-badge").length === 0 && breakpoint !== 1) {
+        url = windowhost + '/noscan/public/brandalert/merge-desktop-news-article.json';
+        src = 'desktop_fb';
+        buildBrandAlert(url, src, trackingEvent, function (html) {
+            var recommendations = $('#rel-recommend li');
+            recommendations.eq(0).after(html);
+            recommendations.eq(1).nextAll().hide();
+            // temporary fix for change html structure in news article ifi
+            $('.ifi-container').css({'border': 'none', 'padding': 0, 'margin': '0'});
+            $('.ifi-title').css('width', '149px');
+        });
+    }
+    // reference homepage
+    if ($('#dd-hp').length !== 0) {
+        url = windowhost + '/noscan/public/brandalert/' + (isMobile ? 'merge-mobile-ref.json' : 'merge-desktop-ref.json');
+        src = isMobile ? 'mobile_refhp_top' : 'desktop_refhp_left';
+        trackingEvent = 'wmdTrack("feat_ifi")';
+        buildBrandAlert(url, src, trackingEvent, function (html) {
+            if (isMobile) {
+                $('#dd-hp h1').after(html);
+            } else {
+                $('#featured li').eq(2).replaceWith(html);
+            }
+        });
+    }
+    // news homepage
+    if (typeof isNewsHomepage !== 'undefined' && isNewsHomepage && $('.medscape_today').length === 0 && $('.cardiology').length === 0 ) {
+        url = windowhost + '/noscan/public/brandalert/' + locDir + (isMobile ? 'merge-mobile-top.json' : 'merge-desktop-l.json');
+        src = isMobile ? 'mobile_hp_2' : 'desktop_hp_left';
+        buildBrandAlert(url, src, trackingEvent, [
+            function (html) {
+                $('.hp_news li').eq(1).replaceWith(html);
+            }, function (html) {
+                $('.hp_news li').eq(4).replaceWith(html);
+            }
+        ]);
+    }
+
+    function buildBrandAlert (url, src, trackingEvent, callback) {
+        // if callback is one single function, wrap it in an array for later use
+        if (typeof callback === 'function') {
+            var temp = [];
+            temp.push(callback);
+            callback = temp;
+        }
+        $.get(url).done(function(data){
+            for(var i = 0; i < data.length && i < callback.length; i++) {
+                var cpEventTrack;
+                var hlImpId = new Date().getTime().toString().slice(2) + Math.random().toString().substr(2, 8);
+                if (data[i].activityId != "") {
+                    cpEventTrack = '<script type="text/javascript">cpHlPush({"tcid": "' + data[i].tcid + '", "activityId": "' + data[i].activityId + '", "pvId": "' + s_pageview_id + '", "impId": "' + hlImpId + '"});</script>';
+                } else {
+                    cpEventTrack = '';
+                }
+                if (data[i].hasOwnProperty("tiarray")) {
+                    var fHeadti = data[i].tiarray[Math.round(Math.random() * (data[i].tiarray.length - 1))]
+                } else {
+                    var fHeadti = data[i].ti;
+                }
+                if (data[i].hasOwnProperty("pub")) {
+                    if (data[i]["pub"] !== "") {
+                        var fPubLine = data[i]["pub"]
+                    } else {
+                        var fPubLine = data[i].pu
+                    }
+                } else {
+                    var fPubLine = data[i].pu
+                }
+                if (data[i].uri.indexOf('?') !== -1) {
+                    var queryamp = "&";
+                } else {
+                    var queryamp = "?";
+                }
+                var bavpurl = data[i].uri.replace("browser", "headline");
+                var qaDomain = '';
+                if (typeof getDomain != 'undefined') {
+                    qaDomain = getDomain('profreg');
+                }
+                if (data[i].dom.indexOf('wp') !== -1) {
+                    if (data[i].dom.indexOf('staging') !== -1) {
+                        var vpDom = "www.staging." + qaDomain + "medscape.com";
+                    } else {
+                        var vpDom = "www." + qaDomain + "medscape.com";
+                    }
+                } else {
+                    if (data[i].dom.indexOf('.qa') == -1) {
+                        var vpDom = data[i].dom.replace(/(staging\.)?medscape/, '$1' + qaDomain + 'medscape');
+                    } else {
+                        var vpDom = data[i].dom;
+                    }
+                }
+
+                var href='//' + data[i].dom + data[i].uri + queryamp + 'src=' + src + '&pvId=' + s_pageview_id +  '&impId=' + hlImpId;
+                var iframeSrc = '//' + vpDom + '/public/vptrack.wxml?desturl=//' + data[i].dom + bavpurl + '／' + src;
+
+                var html = '<li class="brand-alert"><div class="ifi-container">' +
+                    '<div style="display:none;">' +
+                    '<iframe src="' + iframeSrc + '"  height="1" width="1" scrolling="no"></iframe>' + cpEventTrack +
+                    '</div>' +
+                    '<a href="' + href + '" onclick="' + trackingEvent +'">' +
+                    '<img class="ifi-thumb" src="' + data[i].thumb + '" border="0" alt="" \/>' +
+                    '<div class="ifi-title">' + fHeadti + '<span class="ifi-byline">' + fPubLine + '</span><span class="ifibjc">' + data[i].jc +
+                    '</span></div></a></div></li>';
+
+                callback[i](html);
+            }
+        })
+    }
+}
+
+function postData(data,i){
+
+    if (data[i].activityId != "") {
+        cpEventTrack = '<script type="text/javascript">cpHlPush({"tcid": "' + data[i].tcid + '", "activityId": "' + data[i].activityId + '"});</script>';
+    } else {
+        cpEventTrack = '';
+    }
+    if (data[i].hasOwnProperty("tiarray")) {
+        fHeadti = data[i].tiarray[Math.round(Math.random() * (data[i].tiarray.length - 1))]
+    } else {
+        fHeadti = data[i].ti;
+    }
+    if (data[i].hasOwnProperty("pub")) {
+        if (data[i]["pub"] !== "") {
+            fPubLine = data[i]["pub"]
+        } else {
+            fPubLine = data[i].pu
+        }
+    } else {
+        fPubLine = data[i].pu
+    }
+    if (data[i].uri.indexOf('?') !== -1) {
+        queryamp = "&";
+    } else {
+        queryamp = "?";
+    }
+    if (data[i].dom.indexOf('wp') !== -1) {
+        if (data[i].dom.indexOf('staging') !== -1) {
+            vpDom = "www.staging.medscape.com";
+        } else {
+            vpDom = "www.medscape.com";
+        }
+    } else {
+        vpDom = data[i].dom;
+    }
+
+    bavpurl = data[i].uri.replace("browser", "headline");
+}
+/* Layer and Src iframe loader */
+function loadidetailiframe(idetailurl, detailiframewidth, detailiframeheight, detailiframetop, detailiframeleft) {
+
+    var idetailwinbgwidth = (detailiframewidth * 1) + 24;
+    var idetailwinbgheight = (detailiframeheight * 1) + 48;
+    var framecover = document.getElementById("idetailiframewrapper");
+    var frame = parent.document.getElementById("idetailiframe");
+    var winbg = parent.document.getElementById("idetailwinbg");
+    var my_div2 = parent.document.getElementById("bodypadding");
+    var cssStyle;
+
+    var newDiv2 = parent.document.createElement("div");
+    newDiv2.setAttribute("id", "whiteoutlayer");
+    newDiv2.innerHTML = " ";
+
+    parent.document.body.insertBefore(newDiv2, my_div2);
+    setElementClass(framecover, 'active');
+
+    parent.document.location = "#";
+
+    frame.style.cssText = 'width:'+ detailiframewidth +'px;height:'+detailiframeheight+'px;';
+    frame.src = idetailurl;
+
+    cssStyle = 'position:absolute;zIndex:2000;top:'+detailiframetop+';left:'+detailiframeleft+
+        ';width:'+idetailwinbgwidth + 'px;height:'+idetailwinbgheight + 'px;';
+    winbg.style.cssText = cssStyle;
+}
+
+
+function removeidetailiframe() {
+    if ((window.pixnumtrack) && (pixnumtrack <= 6)) {
+        var oIframe = document.getElementById("idetailiframe");
+        var oDoc = oIframe.contentWindow || oIframe.contentDocument;
+        if (oDoc.document) {
+            oDoc = oDoc.document;
+        }
+        var timespentpxval = oDoc.getElementById("pxcntnum").value;
+        var rornval = oDoc.getElementById("rorn").value;
+        var cnttrack = "//bi.medscape.com/pi/1x1/bi_action_tracking.gif?company=0&department=0&series=0&promo_act=0&action=" + rornval + "_CLOSE&action_id=" + timespentpxval + "&ccid=&eguid=&is_test=0&" + new Date().getTime();
+        preload_image = new Image(1, 1);
+        preload_image.src = cnttrack;
+    }
+    if ($('#rollover_ad').length > 0) {
+        setTimeout("adRollTime=0", 500);
+        var rotrack = "//bi.medscape.com/pi/1x1/bi_action_tracking.gif?company=0&department=0&series=0&promo_act=0&action=ro-to-play&action_id=ro-close&ccid=&eguid=&is_test=&nocache=" + new Date().getTime();
+        preload_image = new Image(1, 1);
+        preload_image.src = rotrack;
+    }
+    parent.document.getElementById("idetailiframe").src = "//www.medscape.com/files/public/blank.html";
+   // var framecover = document.getElementById("idetailiframewrapper");
+    //setElementClass(framecover, 'inactive');
+    $("#idetailiframewrapper").attr('class','inactive');
+    if (document.getElementById("whiteoutlayer")) {
+        var element = document.getElementById("whiteoutlayer");
+        while (element.firstChild) {
+            element.removeChild(element.firstChild);
+        }
+        element.id = "";
+    }
+}
+
+// Virtual Page Tracking function
+function BItrack(thisURL) {
+    window.VPTrackFrame.getFile("desturl=" + trackurl + "%5f" + thisURL);
+}
+
+function showSp(value) {
+    if (value === "specialty") {
+        $("ul#specialtyDD_list").toggle();
+        $("#specialty-link .sp_arrow").toggleClass("sp_downarrow");
+    }
+    else if (value === "edition") {
+        $("ul#edition-list").toggle();
+        $("#edition-link .sp_arrow").toggleClass("sp_downarrow");
+    }
+}
+
+// Clear search input box for mobile device
+function clearSearch() {
+    $('#searchtextinput').val('').focus();
+}
+
+function searchView() {
+    $("#searchlayer").toggleClass("showSearch");
+    $("body").toggleClass("modal-open");
+}
+function logoutMessage() {
+    $("#layer-logout-confirmation, #layer-logout-bg").addClass("showLogout");
+}
+function cancelLogoutMessage() {
+    $("#layer-logout-confirmation, #layer-logout-bg").removeClass("showLogout");
+}
+// This function works for window pop-up. Assigning below function to OpenPopup.
+function resizeWin(newLoc, newHeight, newWidth) {
+    newWin = open("", newLoc, "scrollbars=yes,resizable=yes,height=" + newHeight + ",width=" + newWidth);
+}
+
+var OpenPopup = resizeWin;
+
+/* Random List of li */
+function showuniquelist(thelist, numselect) {
+    var listitems = new Array();
+    listitems = document.getElementById(thelist).getElementsByTagName("li");
+    var totallist = listitems.length;
+    var numofitems = listitems.length - 1;
+    if (totallist <= numselect) {
+    } else {
+        var Count = 0;
+        var NumUnique = numselect;
+        var Current = new Array(NumUnique);
+        for (; Count < NumUnique; Count++) {
+            var Found = false;
+            var rndValue = get_random(numofitems);
+            for (j = 0; j < Current.length; j++) {
+                if (Current[j] == rndValue) {
+                    Found = true;
+                    break;
+                }
+            }
+            if (Found) {
+                Count--;
+            } else {
+                Current[Count] = rndValue;
+            }
+        }
+        for (i = 0; i < listitems.length; i++) {
+            listitems[i].style.display = "none";
+        }
+
+        for (i = 0; i < 6 ; i++) {
+            listitems[yi].style.display = "block";
+        }
+    }
+}
+
+function changeSeachDB(id, str) {
+    if (document.getElementById(id)) {
+        document.getElementById(id).innerHTML = str;
+    }
+}
+/* Utility Functions for all langugages */
+function get_random(numofitems) {
+    return (Math.round(numofitems*Math.random()));
+}
+
+function setElementClass(element, classValue) {
+    if (element.setAttribute("class", classValue)) {
+        element.setAttribute("class", classValue);
+    } else if (element.setAttribute("className", classValue)) {
+        element.setAttribute("className", classValue);
+    }
+}
+/* Remove OSUN Notice */
+function removeosun(state) {
+    if (document.getElementById) {
+        var osunid = document.getElementById("medlayerad");
+        setElementClass(osunid, state);
+    }
+}
+/* NEW Remove OSUN Notice (generic to all new layer ads) */
+function removeosun2(state, layid) {
+    $("#"+layid).addClass(state);
+}
+
+function movelayers(num) {
+    if (window.innerHeight) {
+        pos = window.pageYOffset;
+    } else if (document.documentElement && document.documentElement.scrollTop) {
+        pos = document.documentElement.scrollTop;
+    } else if (document.body) {
+        pos = document.body.scrollTop;
+    }
+
+    (pos < theTop) ? pos = theTop : pos += 50;
+
+    if (pos == old) {
+        document.getElementById(num).style.top = (pos + 'px');
+
+    } else {
+        old = pos;
+        movelayers(num);
+    }
+}
+
+
+$(window).keydown(function(e) {
+    if (e.keyCode == 27) {
+
+        var layer=$('body').find('.active').attr('id');
+        if(typeof layer === 'undefined'){
+            layer =  $('body').find('.feed_Overlay').attr('id');
+            if(layer === 'feed_Overlay'){
+
+            }
+            return;
+        }
+        if(layer === 'author_layer'){
+
+            pop_layer(layer);
+            return;
+        }
+        if(layer === 'emailadexcontainer'){
+            showemailtoolbox('inactive');
+        }
+        if(layer === 'clinref_tablelayer'){
+            reftablehide();
+        } else {
+            hiderefcontent(layer);
+        }
+
+    }
+});
+function searchView() {
+    $("#searchlayer").toggleClass("showSearch");
+    $("body").toggleClass("modal-open");
+}
+function logoutMessage() {
+    $("#layer-logout-confirmation, #layer-logout-bg").addClass("showLogout");
+}
+function cancelLogoutMessage() {
+    $("#layer-logout-confirmation, #layer-logout-bg").removeClass("showLogout");
+}
+/* NEW Random List function allows for any child elements in a parent to be randomized and limited */
+$.fn.randomli = function(listEl,numDis){
+    var $allChild = listEl ? $(this).find(listEl) : $(this).children(),
+        $theParent = $allChild.parent();
+    $theParent.each(function(){
+        $(this).children(listEl).sort(function(){
+            return Math.round(Math.random()) - 0.5;
+        }).detach().appendTo(this);
+    });
+    $(this).find($(this).children()).slice( numDis ).detach();
+    return this;
+};
+
+/*** Whatsapp social share plugin ***/ 
+(function(){"use strict";var root=this,WASHAREBTN=function(){this.buttons=[],this.isIos===!0&&this.cntLdd(window,this.crBtn)};WASHAREBTN.prototype.isIos=navigator.userAgent.match(/Android|iPhone/i)&&!navigator.userAgent.match(/iPod|iPad/i)?!0:!1,WASHAREBTN.prototype.cntLdd=function(win,fn){var done=!1,top=!0,doc=win.document,root=doc.documentElement,add=doc.addEventListener?"addEventListener":"attachEvent",rem=doc.addEventListener?"removeEventListener":"detachEvent",pre=doc.addEventListener?"":"on",init=function(e){("readystatechange"!==e.type||"complete"===doc.readyState)&&(("load"===e.type?win:doc)[rem](pre+e.type,init,!1),!done&&(done=!0)&&fn.call(win,e.type||e))},poll=function(){try{root.doScroll("left")}catch(e){return void setTimeout(poll,50)}init("poll")};if("complete"===doc.readyState)fn.call(win,"lazy");else{if(doc.createEventObject&&root.doScroll){try{top=!win.frameElement}catch(e){}top&&poll()}doc[add](pre+"DOMContentLoaded",init,!1),doc[add](pre+"readystatechange",init,!1),win[add](pre+"load",init,!1)}},WASHAREBTN.prototype.addStyling=function(){var s=document.createElement("style"),c="body,html{padding:0;margin:0;height:100%;width:100%}.wa_btn{background-image:url(data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0idXRmLTgiPz4NCjwhRE9DVFlQRSBzdmcgUFVCTElDICItLy9XM0MvL0RURCBTVkcgMS4xLy9FTiIgImh0dHA6Ly93d3cudzMub3JnL0dyYXBoaWNzL1NWRy8xLjEvRFREL3N2ZzExLmR0ZCI+DQo8c3ZnIHZlcnNpb249IjEuMSIgaWQ9IkViZW5lXzEiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgeG1sbnM6eGxpbms9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkveGxpbmsiIHg9IjBweCIgeT0iMHB4Ig0KCSB3aWR0aD0iMTZweCIgaGVpZ2h0PSIxNnB4IiB2aWV3Qm94PSIwIDAgMTYgMTYiIGVuYWJsZS1iYWNrZ3JvdW5kPSJuZXcgMCAwIDE2IDE2IiB4bWw6c3BhY2U9InByZXNlcnZlIj4NCjxnPg0KCTxnPg0KCQk8cGF0aCBmaWxsLXJ1bGU9ImV2ZW5vZGQiIGNsaXAtcnVsZT0iZXZlbm9kZCIgZmlsbD0iI0ZGRkZGRiIgZD0iTTguMTI5LDAuOTQ1Yy0zLjc5NSwwLTYuODcyLDMuMDc3LTYuODcyLDYuODczDQoJCQljMCwxLjI5OCwwLjM2LDIuNTEyLDAuOTg2LDMuNTQ5bC0xLjI0LDMuNjg4bDMuODA1LTEuMjE5YzAuOTg0LDAuNTQ0LDIuMTE2LDAuODU0LDMuMzIxLDAuODU0YzMuNzk1LDAsNi44NzEtMy4wNzUsNi44NzEtNi44NzENCgkJCVMxMS45MjQsMC45NDUsOC4xMjksMC45NDV6IE04LjEyOSwxMy41MzhjLTEuMTYyLDAtMi4yNDQtMC4zNDgtMy4xNDctMC45NDZsLTIuMTk4LDAuNzA1bDAuNzE1LTIuMTI0DQoJCQljLTAuNjg2LTAuOTQ0LTEuMDktMi4xMDMtMS4wOS0zLjM1NGMwLTMuMTU1LDIuNTY2LTUuNzIyLDUuNzIxLTUuNzIyczUuNzIxLDIuNTY2LDUuNzIxLDUuNzIyUzExLjI4MywxMy41MzgsOC4xMjksMTMuNTM4eg0KCQkJIE0xMS4zNTIsOS4zNzljLTAuMTc0LTAuMDk0LTEuMDItMC41NS0xLjE3OC0wLjYxNUMxMC4wMTQsOC43LDkuODk4LDguNjY2LDkuNzc1LDguODM3QzkuNjUyLDkuMDA3LDkuMzAxLDkuMzksOS4xOTMsOS41MDUNCgkJCUM5LjA4OCw5LjYxNyw4Ljk4NCw5LjYyOSw4LjgxMiw5LjUzM2MtMC4xNzEtMC4wOTYtMC43My0wLjMtMS4zNzgtMC45MjNjLTAuNTA0LTAuNDg0LTAuODM0LTEuMDcyLTAuOTMtMS4yNTINCgkJCWMtMC4wOTUtMC4xOCwwLTAuMjcxLDAuMDkxLTAuMzU0QzYuNjc3LDYuOTI4LDYuNzc4LDYuODA1LDYuODcsNi43MDZjMC4wOTEtMC4xLDAuMTI0LTAuMTcxLDAuMTg3LTAuMjg2DQoJCQljMC4wNjItMC4xMTUsMC4wMzgtMC4yMTgtMC4wMDMtMC4zMDhDNy4wMTIsNi4wMjMsNi42OTQsNS4xNDYsNi41NjEsNC43OUM2LjQyOCw0LjQzNCw2LjI4LDQuNDg2LDYuMTc3LDQuNDgyDQoJCQlDNi4wNzUsNC40NzksNS45NTgsNC40NTksNS44NDEsNC40NTZDNS43MjQsNC40NTEsNS41MzMsNC40ODcsNS4zNjYsNC42NTdjLTAuMTY3LDAuMTctMC42MzcsMC41NzYtMC42NjksMS40MzkNCgkJCXMwLjU2NSwxLjcyMiwwLjY0OCwxLjg0MWMwLjA4NCwwLjEyMSwxLjE0LDEuOTkxLDIuODk3LDIuNzYyYzEuNzU2LDAuNzcsMS43NjYsMC41MzQsMi4wODgsMC41MTgNCgkJCWMwLjMyMi0wLjAxOCwxLjA1NS0wLjM4NiwxLjIxNS0wLjc4OWMwLjE2Mi0wLjQwNSwwLjE3Ni0wLjc1NSwwLjEzNS0wLjgzMUMxMS42MzksOS41MjEsMTEuNTIzLDkuNDc1LDExLjM1Miw5LjM3OXoiLz4NCgk8L2c+DQo8L2c+DQo8L3N2Zz4NCg==);border:1px solid rgba(0,0,0,.1);display:inline-block!important;position:relative;font-family:Arial,sans-serif;letter-spacing:.4px;cursor:pointer;font-weight:400;text-transform:none;color:#fff;border-radius:2px;background-color:#5cbe4a;background-repeat:no-repeat;line-height:1.2;text-decoration:none;text-align:left}.wa_btn_s{font-size:12px;background-size:16px;background-position:5px 2px;padding:3px 6px 3px 25px}.wa_btn_m{font-size:16px;background-size:20px;background-position:4px 2px;padding:4px 6px 4px 30px}.wa_btn_l{font-size:16px;background-size:20px;background-position:5px 5px;padding:8px 6px 8px 30px}";return s.type="text/css",s.styleSheet?s.styleSheet.cssText=c:s.appendChild(document.createTextNode(c)),s},WASHAREBTN.prototype.setButtonAttributes=function(b){var url=b.getAttribute("data-href"),text="?text="+encodeURIComponent(b.getAttribute("data-text"))+(b.getAttribute("data-text")?"%20":"");return text+=encodeURIComponent(url?url:document.URL),b.setAttribute("target","_top"),b.setAttribute("href",b.getAttribute("href")+text),b.setAttribute("onclick","window.parent."+b.getAttribute("onclick")),b},WASHAREBTN.prototype.setIframeAttributes=function(b){var i=document.createElement("iframe");return i.width=1,i.height=1,i.button=b,i.style.border=0,i.style.overflow="hidden",i.border=0,i.setAttribute("scrolling","no"),i.addEventListener("load",root.WASHAREBTN.iFrameOnload()),i},WASHAREBTN.prototype.iFrameOnload=function(){return function(){this.contentDocument.body.appendChild(this.button),this.contentDocument.getElementsByTagName("head")[0].appendChild(root.WASHAREBTN.addStyling());var meta=document.createElement("meta");meta.setAttribute("charset","utf-8"),this.contentDocument.getElementsByTagName("head")[0].appendChild(meta),this.width=Math.ceil(this.contentDocument.getElementsByTagName("a")[0].getBoundingClientRect().width),this.height=Math.ceil(this.contentDocument.getElementsByTagName("a")[0].getBoundingClientRect().height)}},WASHAREBTN.prototype.crBtn=function(){for(var b=[].slice.call(document.querySelectorAll(".wa_btn")),iframes=[],i=0;i<b.length;i++)root.WASHAREBTN.buttons.push(b[i]),b[i]=root.WASHAREBTN.setButtonAttributes(b[i]),iframes[i]=root.WASHAREBTN.setIframeAttributes(b[i]),b[i].parentNode.insertBefore(iframes[i],b[i])},root.WASHAREBTN=new WASHAREBTN}).call(this);

@@ -1,0 +1,47 @@
+define(['angular/core/services'], 
+	function(){
+	
+
+		var importDirectives = angular.module('graphdb.framework.impex.import.directives', []);
+		
+		importDirectives.directive('validateUri', function(){
+			return {
+				restrict: 'A',
+			    require: 'ngModel', 
+				link: function(scope, element, attr, ctrl) {
+					ctrl.$parsers.unshift(function(value) {
+						if(value) {
+							
+						  //get from https://github.com/jhermsmeier/uri.regex
+						  var uriRegExp = new RegExp( "([A-Za-z][A-Za-z0-9+\\-.]*):(?:(//)(?:((?:[A-Za-z0-9\\-._~!$&'()*+,;=:]|%[0-9A-Fa-f]{2})*)@)?((?:\\[(?:(?:(?:(?:[0-9A-Fa-f]{1,4}:){6}|::(?:[0-9A-Fa-f]{1,4}:){5}|(?:[0-9A-Fa-f]{1,4})?::(?:[0-9A-Fa-f]{1,4}:){4}|(?:(?:[0-9A-Fa-f]{1,4}:){0,1}[0-9A-Fa-f]{1,4})?::(?:[0-9A-Fa-f]{1,4}:){3}|(?:(?:[0-9A-Fa-f]{1,4}:){0,2}[0-9A-Fa-f]{1,4})?::(?:[0-9A-Fa-f]{1,4}:){2}|(?:(?:[0-9A-Fa-f]{1,4}:){0,3}[0-9A-Fa-f]{1,4})?::[0-9A-Fa-f]{1,4}:|(?:(?:[0-9A-Fa-f]{1,4}:){0,4}[0-9A-Fa-f]{1,4})?::)(?:[0-9A-Fa-f]{1,4}:[0-9A-Fa-f]{1,4}|(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?))|(?:(?:[0-9A-Fa-f]{1,4}:){0,5}[0-9A-Fa-f]{1,4})?::[0-9A-Fa-f]{1,4}|(?:(?:[0-9A-Fa-f]{1,4}:){0,6}[0-9A-Fa-f]{1,4})?::)|[Vv][0-9A-Fa-f]+\\.[A-Za-z0-9\\-._~!$&'()*+,;=:]+)\\]|(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)|(?:[A-Za-z0-9\\-._~!$&'()*+,;=]|%[0-9A-Fa-f]{2})*))(?::([0-9]*))?((?:/(?:[A-Za-z0-9\\-._~!$&'()*+,;=:@]|%[0-9A-Fa-f]{2})*)*)|/((?:(?:[A-Za-z0-9\\-._~!$&'()*+,;=:@]|%[0-9A-Fa-f]{2})+(?:/(?:[A-Za-z0-9\\-._~!$&'()*+,;=:@]|%[0-9A-Fa-f]{2})*)*)?)|((?:[A-Za-z0-9\\-._~!$&'()*+,;=:@]|%[0-9A-Fa-f]{2})+(?:/(?:[A-Za-z0-9\\-._~!$&'()*+,;=:@]|%[0-9A-Fa-f]{2})*)*)|)(?:\\?((?:[A-Za-z0-9\\-._~!$&'()*+,;=:@/?]|%[0-9A-Fa-f]{2})*))?(?:\\#((?:[A-Za-z0-9\\-._~!$&'()*+,;=:@/?]|%[0-9A-Fa-f]{2})*))?" );
+
+						  var valid = !!value.match(uriRegExp);
+						  ctrl.$setValidity('validateUri', valid);
+						}
+						return value;
+					});
+				}
+			}
+		});// defined in forest-core.js
+		
+		importDirectives.directive('filesTable', function() {
+		    return {
+		        restrict: 'A',
+		        templateUrl: 'v/8.4.0-TR02/js/angular/import/templates/filesTable.html',
+		    }
+		});
+
+		importDirectives.directive('filesOntoLoader', function () {
+			return {
+				link: function(scope, element, attr) {
+					scope.$watch('file.status', function() {
+						if (scope.file.status == 'IMPORTING' || scope.file.status == 'UPLOADING') {
+							if (!$(element).has("object").length > 0) {
+								$(element).append('<object width="' + attr.size + '" height="' + attr.size + '" data="v/8.4.0-TR02/js/angular/templates/loader/ot-loader.svg">Loading...</object>');
+							}
+						}
+					});
+				}
+			};
+		});
+});

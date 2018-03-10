@@ -1,0 +1,26 @@
+function ImagePopup(url, width, height, title) 
+{
+	var pageWidth = 480;
+	var pageHeight = 340;
+	if (document.body && document.body.clientWidth) {
+		pageWidth = document.body.clientWidth;
+		pageHeight = document.body.clientHeight;
+	} else if (window.innerWidth) {
+		pageWidth = window.innerWidth;
+		pageHeight = window.innerHeight;
+	}
+	var topPos = (pageHeight - height) / 2;
+	var leftPos = (pageWidth - width) / 2;
+	var features = 'width='+width;
+	features += ',height='+height;
+	features += ',top='+topPos;
+	features += ',left='+leftPos;
+
+	newWindow = window.open("", "ImagePopup", features);
+	newWindow.document.open();
+	newWindow.document.write('<html><title>'+title+'</title><body leftmargin="0" topmargin="0" marginheight="0" marginwidth="0" onBlur="self.close();" onClick="self.close();">');  
+	newWindow.document.write('<table width="'+width+'" height="'+height+'" border="0" cellspacing="0" cellpadding="0" align="center"><tr><td><img src="'+url+'" width="'+width+'" height="'+height+'" alt="Click to Close"></td></tr></table>'); 
+	newWindow.document.write('</body></html>');
+	newWindow.document.close();
+	newWindow.focus();
+}

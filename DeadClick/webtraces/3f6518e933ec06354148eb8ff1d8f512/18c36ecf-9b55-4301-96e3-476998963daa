@@ -1,0 +1,164 @@
+var AOLUK = (typeof AOLUK !== 'undefined' && typeof AOLUK === "object") ? AOLUK : {};
+
+(function($) {
+
+	/********** GHOST TEXT *****/
+	AOLUK.GhostTextEffect = function(SearchForm, SearchFormInput) {
+		if (!SearchForm.length || !SearchFormInput.length) {
+			
+			return;
+		}
+		var placeHolderText=SearchFormInput.attr("placeholder");
+		SearchForm.submit(function(e){    
+			var SearchFormInputValue=$.trim(SearchFormInput.val());    
+			if(SearchFormInputValue=="" || SearchFormInputValue==placeHolderText) {      
+				SearchFormInput.val(placeHolderText);
+				e.preventDefault();
+				return false;
+			}
+		});
+
+		SearchFormInput.click(function(){    
+			if($.trim(SearchFormInput.val())==placeHolderText) {      
+				SearchFormInput.val("");
+				SearchFormInput.addClass("default-color");
+			}
+		});
+		
+		SearchFormInput.blur(function(){    
+			if($.trim(SearchFormInput.val())=="") {      
+				SearchFormInput.removeClass("default-color");
+				SearchFormInput.val(placeHolderText);
+			}
+		});
+		SearchFormInput.val(placeHolderText);      
+	}
+	
+	AOLUK.NewsLetterSignup = function(url, inputName){
+		$(".aol-newsletter").aolNewsletter({
+			url:url,
+			input: inputName,
+			locale: {
+				messages: {
+					typeValidEmail: '<span class="error"> Error.</span> Please enter a valid email address',
+					thankYou: '<p class="m-text-success"><span class="success">Success!</span> Thank you for signing up to the AOL newsletter.</p>',
+					emailAlreadyExists: 'You have already signed up.'
+				},
+				errors: { invalidEmail:'Invalid Email.' }
+			},
+			verify: false
+		});	
+		
+		//switch email based on auth
+		var $switchEmail = $('.different-address');
+		$switchEmail.click(function(){
+			var $this = $(this),
+				$moduleWrapper = $this.closest('.aol-newsletter');
+			$moduleWrapper.removeClass('auth-user');
+			$moduleWrapper.find('input.signup-email').val('').attr('type','text').show();
+			$moduleWrapper.find('.use-another-email').hide();	
+		});
+	}
+	
+	AOLUK.CheckNewsLetterCookie = function(){
+		
+		var enableNewsLetter =  readCookie('isNewsLetterEnable');
+		
+		var d = new Date();
+		var n = d.getTime();
+		var $newsLetterSignupElement = $('.lo-left .newsletter-signup-form');
+		if(enableNewsLetter==null){
+			createCookie('isNewsLetterEnable',n,7);
+			$newsLetterSignupElement.show();
+		}else{
+			if((n-enableNewsLetter) < 259200000){
+				$newsLetterSignupElement.show();
+			}else{
+				$newsLetterSignupElement.hide();
+			}
+		}
+		
+	}
+	$(function() {
+	
+		var $body = $("body");
+		/*
+		//For google amp testing in sandboxes only
+		location.hostname.match(/\.sandbox\./i) && location.search.match(/gamp=1/i) !== null && $('a').each(function() {
+
+			if (location.hostname === this.hostname && this.href.match(/\d{4}\/\d{2}\/\d{2}\/[^\/]+\/$/i) !== null) {
+
+				$(this).attr({
+					'href': $(this).attr('href').split(/[?#]/)[0] + "amp/#development=1"
+				});	
+
+			}		
+
+		});
+	    */
+		if (
+			('ontouchstart' in window) ||
+			(navigator.maxTouchPoints > 0) ||
+			(navigator.msMaxTouchPoints > 0)) {
+			
+			!$body.hasClass('touch-screen') && $body.addClass('touch-screen');
+		}
+	
+		//Aol News Hub/News Category pages
+		if (
+			typeof io_c3sd !== "undefined" && 
+			(io_c3sd.cobrand||"") === "ttguk" &&
+			location.pathname.match(/^\/news(\/[^\/]+)?\/?$/i) !== null
+		) {
+			$body.find("[data-post-tags]").filter(function() { return /supp?ress\-post\-talktalk/i.test($(this).data("postTags") || $(this).attr("data-post-tags")) }).remove();
+		}
+		
+		$('a[name="aol-share"]').length && $('a[name="aol-share"]').AolShareButtons({
+				services: {
+					desktop: ["facebook", "twitter", "email"],
+					tablet: ["facebook", "twitter",  "email"],
+					phone: ["facebook", "twitter",  "email"]
+				},
+		    	twitterName : Site.TwitterAccount,
+		    	showWhatsapp : true,
+		    	cacheBuster: 'cb20170320'
+		  });
+
+		// Currency Converter 
+		$(".currency-converter").length && 
+		$(".currency-converter").each(function() {
+
+			var $this = $(this),
+				$form = $this.find('.currency-converter__form');
+				
+			$form.on('submit', function(e){
+				
+				e.preventDefault();
+				
+				var amount 	= $form.find('.currency-converter__input').val(),
+					cFrom	= $form.find('[name="from"]').val(),
+					cTo		= $form.find('[name="to"]').val(),
+					sit		= $form.find('[name="s_it"]').val();
+				
+				if ( /^([0-9.,]*$)/i.test(amount) && cFrom && cTo ) {
+				
+					var url = $form.attr('action') + '?s_it='+sit+'&q='+amount+'+'+cFrom+'+to+'+cTo;
+					window.location.href = url;								
+				} 																
+			});			
+		});
+		
+		//BTF ad Call
+		var btfAdElem = $('#btf-mpu-ad-con');
+		btfAdElem.length && btfAdElem.StickyBTF({"boundaryElement": ".lo-left", "topOffset": 50, "bottomOffset": 30, "boundaryObserver": true });
+		
+		//Ghost text
+		AOLUK.GhostTextEffect($("#aol-header-site-search"), $("#site-search-input"));
+		
+		//News Letter
+		var newsLetterElem = $('.lo-left .newsletter-signup-form');
+		newsLetterElem.length && AOLUK.CheckNewsLetterCookie();
+		
+		
+	});
+})(jQuery);

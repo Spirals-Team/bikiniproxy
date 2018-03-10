@@ -1,0 +1,137 @@
+define('shared/scripts/bam/string/1.0/string', function( require, exports, module ) {
+	
+	var STRING = 'string', MODULE = 'bam.string', PRINTF_RX = new RegExp("(\\\\)?(?:\\$(\\d+))","g"),
+		module = {
+			/**
+			* Formats a string pattern replacing placeholders with continuous arguments
+			* Placeholder format: $n
+			* Escape sequence for strings with $ in the context: \\$
+			* Example: 
+			*	bam.string.printf("This is a $0", "test"); //This is a test
+			*	bam.string.printf("This is \\$1.25 $0", "currency"); //This is $1.25 currency
+			*	bam.string.printf("$0 $1 $2", 1, 2, 3); //1 2 3
+			*	bam.string.printf("$0 $1 $1", 1, 2); //1 2 2
+			*/
+			printf: function(/*str, $0, $1 ....*/) {
+				if(arguments.length > 1) {
+					var args = Array.prototype.slice.apply(arguments, [1]);
+					return arguments[0].replace(PRINTF_RX, function($0, $1, $2) {
+						return !$1 ? args[(~~+$2)] : '$'+$2;
+					});
+				}
+			},
+			/** Author: Dimitry Khayzin
+			*	Modifies a block of text to allow HTML wrapping
+			*	@str <String> - long string
+			*	@largestWordLenght <Int> - length of the largest word (20)
+			*	@wordPartSize <Int> - (5)
+			*	@wordBreaker <String>			
+			*/
+			textWrap: function(str, largestWordLength, wordPartSize, wordBreaker) {
+				if( $.type(str) !== STRING) {
+					return str;
+				}
+				else {
+					str = String(str);
+				}
+				
+				largestWordLength = largestWordLength	|| 20;
+				wordPartSize = wordPartSize				|| 5;
+				
+				var userAgent;
+				if (wordBreaker) {
+				} else if((userAgent = navigator.userAgent.match(/Firefox\/([0-9\.]+)/i)) && parseInt(userAgent[1], 10) < 3) {	// FF 2 does not have &shy; support, but does support &#8203;
+					wordBreaker = "&#8203;";
+				} else {
+					wordBreaker = "&shy;";
+				}
+
+				var regex = new RegExp("([a-z0-9\\-_]{" + largestWordLength + ",})([^<]*?>)?", "gi");
+				return str.replace(regex, function() {
+					var match = arguments[1];
+					var result = [];
+					var i = 0;
+
+					if(match.indexOf(wordBreaker) !== -1 || arguments[2]) {
+						if(arguments[2])
+							match += arguments[2];										// the word has already been split or we're inside a long tag
+						return match;
+					}
+
+					while (match.length > 0) {
+						result.push(match.substring(0, wordPartSize));
+						match = match.substring(wordPartSize);
+					}
+					return result.join(wordBreaker);
+				});
+			},
+			/* Escape HTML
+			*	Converts text to html entities
+			*/
+			escapeHTML: function(htmlStr) {
+				var div = document.createElement("div");
+				div["innerText" in div?"innerText":"textContent"] = htmlStr;
+				return div.innerHTML;
+			},
+			/* Unescape HTML to it's original state
+			*	Converts html escaped text to regular text
+			*/
+			unescapeHTML: function(htmlStr) {
+				var div = document.createElement("div");
+				div.innerHTML = htmlStr;
+				return div["innerText" in div?"innerText":"textContent"].replace("&apos;", "'");
+			},
+			/**
+			* @deprecated
+			* StringBuffer class 
+			*	Helps manage large string concatinations by inserting them first into array buffer
+			*	and then outputing a joined string
+			*/
+			StringBuffer: (function() {
+				var sb = function(str) {
+					bam.trackDeprecated({method:"StringBuffer", module:MODULE});
+					this.buff = [];
+					if($.type(str)===STRING) {
+						this.append(str);	
+					}
+				};
+				sb.prototype = {
+					append:function(str) {
+						this.buff.push(str); return this;
+					},
+					clear: function() {
+						this.buff.length = 0; return this;
+					},
+					toString: function() {
+						return this.buff.join('');
+					}
+				};
+				return sb;
+			})(),
+			/**
+			*	@deprected
+			*	Replaces a section of a string with another string
+			*	@str <String> - Old string
+			*	@from <Int> - Starting index
+			*	@to <Int> - ending index
+			*	@val <String> - new string value
+			*/
+			instr: function(str, from, to, val) {
+				bam.trackDeprecated({method:"instr", module:MODULE});
+				var tmp = $.type(str) === STRING && str.split('') || [];
+				tmp.splice(from, Math.abs(to - from), val);
+				return tmp.join('');
+			},
+			/**
+			* @deprecated
+			* Trim function. Removes extra spaces around a string
+			* Relays functionality to $.trim method
+			*/
+			trim: function() {
+				bam.trackDeprecated({method:"trim",module:MODULE});
+				return $.trim.apply($, arguments);
+			}
+		};
+	
+	jQuery.extend(exports, module);
+});

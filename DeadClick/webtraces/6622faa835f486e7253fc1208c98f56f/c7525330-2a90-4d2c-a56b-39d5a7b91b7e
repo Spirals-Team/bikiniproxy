@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link rel="P3Pv1" href="//www.webmd.com/w3c/p3p.xml">
+</head>
+<body>
+<script type="text/javascript">
+    //
+    var host ='//js.webmd.com/dtmcms/live/',
+            file ='webmd/PageBuilder_Assets/JS_static/components/beacon.liveramp.js',
+            referrer = document.referrer,
+            url = document.location.href,
+            beacon = {"key":'liveramp', "value":999999},
+            matchesLiveramp = url.match(/[\?\&]lrid=([\w-]+)/);
+
+    if (referrer && referrer.indexOf('webmddebug=1') > 0) {
+        host='//js.staging.webmd.com/dtmcms/staging/';
+    }
+
+    document.write('<sc'+'ript src="'+host+file+'"></scr'+'ipt>');
+// if the location.href is matched
+    if(matchesLiveramp && matchesLiveramp[1]){
+        beacon.key = 'liveramp';
+        beacon.value = matchesLiveramp[1];//returns url of liveramp beacon if condition is true;
+    }
+</script>
+<script>liveramp.returnID(beacon);</script>
+</body>
+</html>

@@ -1,0 +1,37 @@
+(function () {
+
+	'use strict';
+
+	var $button = $('.buttonblock-responsive a'),
+		pageAlias = DDC.siteSettings.pageAlias,
+		portletId = 'buttonblock.responsive',
+		portletVersion = 'responsive';
+	
+	var fireTrackingEvent = function(widgetInstanceId, buttonLabel, buttonAction, eventLabel) {
+			var widgetName = 'Web:' + pageAlias,
+				eventName = pageAlias + ' > ' + portletId + ' > ' + widgetInstanceId + ' : ' + buttonLabel;
+
+			$(document).trigger('trackEvent',[{
+				widgetName: widgetName,
+				eventName: eventName,
+				data: eventLabel
+			}]);
+		};
+	
+	var initBindings = function () {
+			$button.on('click', function(e){
+
+				var widgetInstanceId = $(this).closest('div').data('widget-id'),
+					buttonLabel = $(this).children('span.ui-button-text').text(),	
+					buttonAction = 'Clicked',
+					eventLabel = 'Navigated to ' + buttonLabel;
+
+				fireTrackingEvent(widgetInstanceId, buttonLabel, buttonAction, eventLabel);
+			})
+		};
+	
+	$(document).ready(function () {
+		initBindings();
+	});
+	
+}());

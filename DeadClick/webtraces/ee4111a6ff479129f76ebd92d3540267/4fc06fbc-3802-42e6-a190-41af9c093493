@@ -1,0 +1,63 @@
+/*jslint browser: true*/
+/*global Juggernaut */
+
+/**
+* Root View class.
+*
+* @class View
+* @namespace Juggernaut.OO.Views
+* @constructor
+* @extends Juggernaut.OO.SuperClass
+*/
+Juggernaut.OO.Views.View = Juggernaut.OO.utils.extendClass(
+  Juggernaut.OO.SuperClass,
+  {
+	/**
+	* .
+	*
+	* @property model
+	* @default undefined
+	* @type Juggernaut.OO.Models.Model
+	*/
+	pubMethods: {
+		/**
+		* .
+		*
+		* @method	initModel
+		* @param {Object} options .
+		* @param {Object} ModelClass .
+		*/
+		initModel: function( options, ModelClass ) {
+			'use strict';
+			ModelClass = ( ModelClass ) ?
+				ModelClass :
+				Juggernaut.OO.Models.Model;
+			var id = ( options.id || options.id === 0 ) ?
+				options.id :
+				this.type + Math.floor( Math.random() * ( 100000000 - 0 ) ) + 0;
+			this._model = new ModelClass();
+			this.model.bindAll( this.model );
+			this.model.createDefaults();
+			this.model.init( { id: id }, this );
+			for( var key in options.config ) {
+				this.model[ key ] = options.config[ key ];
+			}
+	 	},
+
+		/**
+		* .
+		*
+		* @method registerToWonderland
+		*/
+		registerToWonderland: function() {
+			'use strict';
+			if( window.Wonderland && this.model.type ) {
+				window.Wonderland.register( this.model.type, this );
+			} else {
+				$( document ).one( 'wonderlandOpen', this.registerToWonderland );
+			}
+		}
+	}
+  }
+);
+

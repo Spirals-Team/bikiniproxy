@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<link href="./video-js.min.css" rel="stylesheet">
+	<script type="text/javascript" src="./ie8/videojs-ie8.min.js"></script>
+	<script type="text/javascript" src="./video.min.js"></script>
+	<style type="text/css">
+		*{padding:0;margin:0}
+		#video_01 {visibility:hidden;}
+		body{background-color:black;}
+	</style>
+</head>
+
+<body>
+	<video id="video_01" class="video-js vjs-default-skin" controls preload="auto"></video>
+
+	<script type="text/javascript">
+(function(){
+	function debug(string) {
+		if (query && query.debug == '1') {
+			console && console.log && console.log('ds_debug:' + string);
+		}
+	}
+
+	function addListener(obj, evt, fnc) {
+		// W3C model
+		if (obj.addEventListener) {
+			obj.addEventListener(evt, fnc, false);
+			return true;
+		}
+		// Microsoft model
+		else if (obj.attachEvent) {
+			return obj.attachEvent('on' + evt, fnc);
+		}
+		// Browser don't support W3C or MSFT model, go on with traditional
+		else {
+			evt = 'on' + evt;
+			if (typeof obj[evt] === 'function') {
+				// Object already has a function on traditional
+				// Let's wrap it with our own function inside another function
+				fnc = (function(f1, f2) {
+					return function() {
+						f1.apply(this, arguments);
+						f2.apply(this, arguments);
+					}
+				})(obj[evt], fnc);
+			}
+			obj[evt] = fnc;
+			return true;
+		}
+		return false;
+	}
+
+	function escapeRegExp(string) {
+		return string.replace(/([.*+?^=!:${}()|\[\]\/\\])/g, "\\$1");
+	}
+
+	function replaceAll(string, find, replace) {
+		return string.replace(new RegExp(escapeRegExp(find), 'g'), replace);
+	}
+
+	function parseQuery(url) {
+		var hash = {};
+		if (!url) return hash;
+		var kvs = url.replace(/^[^\?]+\??/, '').replace(/\#/, '\t').split(/[\t;&]/);
+		for (var i = 0; i < kvs.length; i++) {
+			var kv = kvs[i].split('=');
+			if (kv && kv.length > 0 && kv[0] !== undefined && kv[0] !== '') {
+				var k = unescape(kv[0]).replace(/^\s*/, '').replace(/\s*$/, '');
+				if (k) {
+					var v = kv[1];
+					if (v !== undefined && v !== '') {
+						v = unescape(v);
+					}
+					hash[k] = v;
+				}
+			}
+		}
+		return hash;
+	}
+
+	function makeQueryObject(query) {
+		for (var i = 0; i < 10; i++) {
+			var numreplaced = 0;
+			for (var key1 in query) {
+				if (query.hasOwnProperty(key1) && key1 == key1.toUpperCase()) {
+					// this is a macro parameter, substitute within others
+					for (key2 in query) {
+						if (query.hasOwnProperty(key2) && query[key2] && key2 != key2.toUpperCase()) {
+							var tmp = replaceAll(replaceAll(query[key2], '_' + key1 + '_', query[key1]), '(' + key1 + ')', encodeURIComponent(query[key1]));
+							if (tmp != query[key2]) {
+								query[key2] = tmp;
+								numreplaced++;
+							}
+						}
+					}
+				}
+			}
+			if (numreplaced == 0) {
+				break;
+			}
+		}
+
+		if (query.adtag && !query.adtag1) {
+			query.adtag1 = query.adtag;
+		}
+		for (var j = 1; j <= 5; j++) {
+			if (query['adtag' + j] && !query['adtag1' + j]) {
+				query['adtag1' + j] = query['adtag' + j];
+			}
+		}
+
+		if (query && query.vurl && query.vurl.match(/^\/\//)) {
+			query.vurl = (document.location.protocol.match(/^https/i) ? 'https:' : 'http:') + query.vurl;
+		}
+		debug(query.vurl);
+		if (query && query.poster && query.poster.match(/^\/\//)) {
+			query.poster = (document.location.protocol.match(/^https/i) ? 'https:' : 'http:') + query.poster;
+		}
+		debug(query.poster);
+
+		if (query && query.controls == "2") {
+			query.inactivityTimeout = 0;
+		} else {
+			query.inactivityTimeout = 2000;
+		}
+
+		if (query) {
+			query.controls = (query.controls == "1" || query.controls == "2" || query.controls == "true")
+		}
+
+		return query;
+	}
+
+	function getVideoType(url) {
+		var ext = "";
+		url = url.replace(/(\?|\#).*/, '');
+		var parts = url.split('.');
+		if (parts.length > 1) {
+			ext = parts[parts.length - 1];
+		}
+		//debug('file ext:'+ext.toLowerCase());
+		switch (ext.toLowerCase()) {
+			case 'webm':
+				return 'video/webm';
+			case 'avi':
+				return 'video/avi';
+			case 'flv':
+				return 'video/x-flv';
+			case 'mp4':
+				return 'video/mp4';
+		}
+		return 'video/' + ext.toLowerCase();
+	}
+
+	var alreadypause = 0;
+	var alreadyplay = 0;
+	addListener(window, 'message', function(event) {
+		debug('listener:' + event.origin + ":" + JSON.stringify(event.data));
+		if ('play' == event.data) {
+			should_paused = false;
+			if (player_ready) {
+				if (should_muted) {
+					player.muted(true);
+					player.volume(0);
+				} else {
+					player.muted(false);
+					player.volume(0.3);
+				}
+				player.play();
+			}
+			alreadyplay++;
+		} else if ('pause' == event.data) {
+			should_paused = true;
+			if (player_ready) {
+				player.pause();
+			}
+			alreadypause++;
+		} else if ('mute' == event.data) {
+			should_muted = true;
+			if (player_ready) {
+				player.muted(true);
+				player.volume(0);
+			}
+		} else if ('unmute' == event.data) {
+			should_muted = false;
+			if (player_ready) {
+				player.muted(false);
+				player.volume(0.3);
+			}
+		} else if ('isPlaying' == event.data) {
+			var isPlaying = !(player.paused() || player.ended());
+			var resp = event.data + ":" + isPlaying;
+			window.parent.postMessage(resp, '*');
+		} else if (typeof event.data === "string" && event.data.indexOf("setVolume") == 0) {
+			var f = parseFloat(event.data.slice(10));
+			if (f && player_ready) {
+				player.muted(f == 0);
+				player.volume(f);
+			}
+		} else if (event.data.indexOf("skip") !== -1){
+			var time = event.data.replace("skip", "");
+			player.currentTime(parseFloat(time));
+		}
+	});
+
+	var query = null;
+	query = makeQueryObject(parseQuery(window.location.href));
+
+	var should_muted = true;
+	var should_paused = false;
+
+	var player_ready = false;
+
+	var playlist = [];
+	var playlistSize = 1;
+	var vidType = getVideoType(query.vurl);
+	var tmploop;
+	if (query && query.loop && !isNaN(tmploop = parseInt(query.loop)) && tmploop > 0) {
+		playlistSize = tmploop;
+	}
+	for (var i = 1; i <= playlistSize; i++) {
+		playlist.push({
+			type: vidType,
+			src: query.vurl
+		});
+	}
+	tmploop = 1;
+
+	var player = videojs('video_01', {
+		"fluid": true,
+		"controls": query.controls,
+		"inactivityTimeout": query.inactivityTimeout,
+		'controlBar': {
+			'children': {
+				'playToggle': true,
+				'progressControl': true,
+				'remainingTimeDisplay': true,
+				'volumeControl': false,
+				'muteToggle': false,
+				'fullscreenToggle': false
+			}
+		},
+		"autoplay": false,
+		"preload": "auto",
+		"loop": false,
+		"poster": query.poster
+	}, function() {
+		// Player (this) is initialized and ready.
+		player_ready = true;
+
+		this.src(playlist);
+
+		// slow video down
+        var slowedVideo = document.querySelector("video");
+		var thisPointer = this;
+
+		setTimeout(function() {
+			thisPointer.playbackRate(query.playbackrate)
+		}, 0);
+
+
+		var vidEl = this.el_;
+		function adjustPadding() {
+			var w = Math.max(document.documentElement.clientWidth, window.innerWidth || 0);
+			var h = Math.max(document.documentElement.clientHeight, window.innerHeight || 0);
+
+			vidEl.style.paddingTop = '' + (h / w * 100) + '%';
+			vidEl.style.visibility = 'visible';
+		}
+		adjustPadding();
+		addListener(window, 'resize', function(event) {
+			adjustPadding();
+		});
+		vidEl.style.visibility = 'visible';
+
+		if (should_muted) {
+			this.muted(true);
+			this.volume(0);
+		} else {
+			this.muted(false);
+			this.volume(0.3);
+		}
+		if (should_paused) {
+			this.pause();
+		} else {
+			this.play();
+		}
+		var endcheck = 0;
+		var pausecheck = 0;
+		var seekcheck = 0;
+		this.on('ended', function() {
+			debug('ended loop ' + tmploop);
+			tmploop++;
+			if (tmploop <= playlistSize) {
+				debug('start again ' + tmploop);
+				if (should_muted) {
+					this.muted(true);
+					this.volume(0);
+				} else {
+					this.muted(false);
+					this.volume(0.3);
+				}
+				window.parent.postMessage("playerstateloop", "*");
+				this.play();
+			} else {
+				endcheck = +new Date();
+				debug('ended final loop ' + tmploop);
+				window.parent.postMessage("playerstateend", "*");
+			}
+		});
+		this.on('timeupdate', function() {
+			window.parent.postMessage("playerpos" + this.currentTime(), "*");
+		});
+		this.on('pause', function() {
+			if (alreadypause <= 0) {
+				pausecheck = +new Date();
+				var that = this;
+				setTimeout(function() {
+					if (that.paused() &&
+						(endcheck == 0 || endcheck > 0 && endcheck < (+new Date() - 2000)) &&
+						(seekcheck == 0 || seekcheck > 0 && seekcheck < (+new Date() - 1000))
+					) {
+						debug('pause loop ' + tmploop);
+						window.parent.postMessage("playerstatepause", "*");
+					} else {
+						debug('false pause loop ' + tmploop);
+					}
+				}, 1000);
+			} else {
+				alreadypause--;
+			}
+		});
+		this.on('play', function() {
+			if (alreadyplay <= 0) {
+				if (
+					(pausecheck == 0 || pausecheck > 0 && pausecheck < (+new Date() - 1000)) &&
+					(seekcheck == 0 || seekcheck > 0 && seekcheck < (+new Date() - 1000))
+				) {
+					window.parent.postMessage("playerstateplay", "*");
+					debug('play loop ' + tmploop);
+				} else {
+					debug('false play loop ' + tmploop);
+				}
+			} else {
+				alreadyplay--;
+			}
+		});
+		this.on('seeked', function() {
+			seekcheck = +new Date();
+			debug('seeked loop ' + tmploop);
+		});
+
+	});
+
+
+})();
+	</script>
+
+</body>
+</html>

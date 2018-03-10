@@ -1,0 +1,415 @@
+// -------------------------------------------------------------------------------------------
+// Participant Portal Bootstrap Extension
+// Bootstrap-portal.js
+// 12/11/2014 14:01 ----- v.4.0.1
+// ------------------------------------------------------------------------------------------
+
+
+/*
+ ** Wizard Anchors
+ **		A anchors having a wizardHxW class will automatically open in
+ **		a new window as a wizard
+ **		Classes: wizard597x720 (urf) wizard800x1200 (sep)
+ */
+function openCenteredWindow(url, height, width, name, parms) {
+	var left = Math.floor( (screen.width - width) / 2);
+	var top = Math.floor( (screen.height - height) / 2);
+	var winParms = "top=" + top + ",left=" + left + ",height=" + height + ",width=" + width;
+	if (parms) { winParms += "," + parms; }
+	var winName = name.replace(/ /g,"_");
+	var win = window.open(url, winName, winParms);
+	if (parseInt(navigator.appVersion) >= 4) { win.window.focus(); }
+	return win;
+}
+
+
+
+$(function(){
+
+
+	$("body").on("click", "a.wizard597x920" , function(event){event.preventDefault();openCenteredWindow($(this).attr('data-url'), 597, 920, $(this).text(),'scrollbars=1 resizable=1');});
+	$("body").on("click", "a.wizard800x1200" , function(event){event.preventDefault();openCenteredWindow($(this).attr('data-url'), 800, 1200, $(this).text(),'scrollbars=1 resizable=1');});
+	$("body").on("click", "a.wizard700x1000" , function(event){event.preventDefault();openCenteredWindow($(this).attr('data-url'), 700, 1000, $(this).text(),'scrollbars=1 resizable=1');});
+	$("body").on("click", "a.wizardNewTab", function(event){ event.preventDefault(); window.open($(this).attr('data-url'),"urf");});
+	$("body").on('click', 'a.modal-window-button', function(event) {
+		event.preventDefault();
+		loading($('#modalWindowBody'));
+		$('#modalWindowBody').load(site.rest + '/' + this.attributes['href'].value);
+		$('#modalWindow').modal();
+	});
+
+	$(".table-json").on("backEndError", function( e ) {
+		$(this).parent().load(window.PP.getPortalPath()  + "desktop/en/fragment/unavailable.html");
+		$('#table-spinner').hide();
+		$(this).show();
+	});
+
+	$(".table-json").on("backEndSuccess", function( e ) {
+		$('#table-spinner').hide();
+		$(this).show();
+	});
+
+
+
+	/**var url = "notificationapp/number.html";
+	 $.ajax({
+			async:false,
+			url: window.PP.getApiBasePath() + url,
+			dataType: 'html',
+			cache: false,
+			success:function(data) {
+			   $("#number_notif_not_read").html(data);
+			},
+			error: function(jqXHR, textStatus, errorThrown) {
+		}});**/
+});
+
+$('.fragment').each(function(index) {
+	var fragment_url = $(this).data('url');
+	// If necessary, massage here the url string
+	// e.g. if $(this).data('options').addpath == true
+	// you may also check if fragment_url != ''
+	// alert (urlExists(fragment_url));
+
+	$(this).load(fragment_url);
+
+});
+
+//tooltip added on the calls home pages
+$('.filterSearch').tooltip({title: 'Filters words in the call title and ID only', placement: 'top'});
+
+$(function(){
+		$("#h2020_link").popover({trigger: "hover"});
+		$("#research_link").popover({trigger: "hover"});
+		$("#cordis_link").popover({trigger: "hover"});
+		$("#olaf_link").popover({trigger: "hover"});}
+);
+
+$('body').on('click', 'a.disabled', function(event) {
+	event.preventDefault();
+});
+
+$("#checkboxagreeConditions").click( function(e){
+	if( $(this).is(':checked') ) {
+
+		$('#termsagree').removeClass('disabled');
+
+	} else {
+		$('#termsagree').addClass('disabled');
+	}
+});
+
+/*
+ * Custom portal javascript
+ */
+
+/**
+ Main FE-Framework controller AMD module. <br />
+ All the application is enclosed to the FEF modules.
+ @module FEF
+ */
+
+if(typeof(FEF)=="undefined") {
+	var FEF={};
+	(function (FEF) { }(FEF));
+}
+
+/**
+ * Portal Utilities
+ */
+
+FEF.portal = (function(){
+
+	/**
+	 * Handles the clicks on the my area menu
+	 * @method handleMyAreaClicks
+	 */
+	function handleMyAreaClicks() {
+
+
+		$("#pp-myarea").click(function(e) {
+			if(!$(this).hasClass('open') && $(this).hasClass('ec-fixed')) {
+				//this should act as a fixed dropdown, without obstructing the content
+				$('body').addClass('my-area-fixed');
+			}
+			if($(this).hasClass('open') && $(this).hasClass('ec-fixed')) {
+				//this should act as a fixed dropdown, without obstructing the content
+				$('body').removeClass('my-area-fixed');
+			}
+		});
+
+	}
+
+	/**
+	 * Shows and hides the filters on the FP7 area
+	 * @method handleFiltersContainer()
+	 **/
+
+	function handleFiltersContainer() {
+
+		$('#btn-filtering').unbind('click').click(function(e) {
+			if(!$('#filterbox').hasClass("open")) $('#filterbox').slideDown(500,null,function(){ $('#filterbox').addClass("open") } );
+			else $('#filterbox').slideUp(500,null,function(){ $('#filterbox').removeClass("open") });
+		});
+	}
+
+	function counter() {
+		if (!$.cookie("unreadnotifs") && $.cookie("unreadnotifs")!="") {
+			$.ajax({
+				async: true,
+				url: window.PP.getApiBasePath() + "notificationapp/counter.json",
+				dataType:'json',
+				cache: false,
+				success:function(data) {
+					$.cookie("unreadnotifs",data, {path:"/"});
+					$("#unreadnotifs").html($.cookie("unreadnotifs"));
+				},
+				error:function(jqXHR, textStatus, errorThrown) {
+				}
+			});
+		}
+	}
+
+	function counterfnotif() {
+		if (!$.cookie("unreadfnotifs") && $.cookie("unreadfnotifs")!="") {
+			$.ajax({
+				async: true,
+				url: window.PP.getApiBasePath() + "fnotification/unreadfnotifications.json",
+				dataType:'json',
+				cache: false,
+				success:function(data) {
+					$.cookie("unreadfnotifs",data, {path:"/"});
+					$("#unreadfnotifs").html($.cookie("unreadfnotifs"));
+				},
+				error:function(jqXHR, textStatus, errorThrown) {
+				}
+			});
+		}
+	}
+
+
+	/*scope*/
+	return {
+		handleMyAreaClicks:handleMyAreaClicks,
+		counter:counter,
+		counterfnotif:counterfnotif,
+		handleFiltersContainer:handleFiltersContainer
+	}
+}());
+
+$(document).ready(function(){
+	$("#expanderHead").click(function(){
+		$("#expanderContent").slideToggle();
+		if ($("#expanderSign").text() == "+"){
+			$("#expanderSign").html("-")
+		}
+		else {
+			$("#expanderSign").text("+")
+		}
+
+
+
+
+	});
+
+	$(document).on('updateMiniDashboardMsg', 'tr td button.details-control', function(e, child) {
+		 var pnumber = $(this).attr('pnumber');
+		 var pid = $(this).attr('pid');
+
+		 child(getMiniDashboardMessages(pid,pnumber)).show();
+	 })
+
+	 function getMiniDashboardMessages ( p1, p2 ) {
+		 var messagesdetails;
+		 var url = "project/getMiniDashboardMessages.json";
+		 $.ajax({
+			 async:false,
+			 url: window.PP.getApiBasePath() + url+"?programId="+p1+"&projectId="+p2,
+			 dataType: 'json',
+			 cache: false,
+			 success:function(d) {
+			 messagesdetails = d;
+			 },
+			 error: function(jqXHR, textStatus, errorThrown) {
+			 messagesdetails = $('#serverError').clone().show().html();
+
+			 }});
+	 return messagesdetails;
+	 }
+	 
+	 
+	 $(document).on('updateHistoricalAccountData', ' a span.details-historical-accountdata', function(e, child) {
+	 var pic = $(this).attr('pic');
+	 var accountHistoryEcasId = $(this).attr('accountHistoryEcasId');
+	 var mappingId = $(this).attr('mappingId');
+	 child(getHistoricalAccountData(pic,accountHistoryEcasId,mappingId)).show();
+	 })
+
+	 function getHistoricalAccountData ( p1, p2, p3 ) {
+		 var messagesdetails =[];
+		 var url = "organisation/getUserAccountHistory.json";
+		 $.ajax({
+			 async:false,
+			 url: window.PP.getApiBasePath() + url+"?pic="+p1+"&accountHistoryEcasId="+p2+"&mappingId="+p3,
+			 dataType: 'json',
+			 cache: false,
+			 success:function(d) {
+				var total = d.length -1;
+				var title1 = "<p>Changes by the user to the ECAS account data</p>"; 
+				messagesdetails.push(title1);
+				$.each(d,function(index,elem){
+					if(index !==total){
+						var details = "<div class=\"container\"><div class=\"row-fluid\"><div class=\"span2 offset1\">" + elem.accountUpdateDateTime + "</div><div class=\"span3\">Changed to " + elem.firstName + " " + elem.lastName + "</div><div class=\"span4\">" + elem.email + "</div></div></div>";
+					}
+					else{
+						var details = "<div class=\"container\"><div class=\"row-fluid\"><div class=\"span2 offset1\">" + elem.accountUpdateDateTime + "</div><div class=\"span3\">Granted as " + elem.firstName + " " + elem.lastName + "</div><div class=\"span4\">" + elem.email + "</div></div></div>";
+					}
+					
+					messagesdetails.push(details);
+				});
+			 },
+			 error: function(jqXHR, textStatus, errorThrown) {
+			 messagesdetails = $('#serverError').clone().show().html();
+
+			 }});
+	 return messagesdetails;
+	 }
+	 
+
+	$("input.select-all").change(function() {
+		var selected = $(this).is(":checked");
+
+		var checkboxGroup = $(this).attr("checkbox-group");
+
+		var changed = [];
+		$("[data-field='" + checkboxGroup + "'] input").each(function(e) {
+			if ($(this).is(":checked") != selected) {
+				$(this).prop("checked", selected);
+				changed.push($(this));
+			}
+		})
+
+		for (var index in changed) {
+			changed[index].trigger("change");
+		}
+	})
+
+	$("#notifs").on("click",function(event) {
+		$.removeCookie("unreadnotifs", {path:"/"});
+	});
+
+	$("#fnotifs").on("click",function(event) {
+		$.removeCookie("unreadfnotifs", {path:"/"});
+	});
+
+	if ($('body').hasClass('secure')) {
+		FEF.portal.counter();
+		FEF.portal.counterfnotif();
+	}
+
+
+	/**
+	 * FAQ Support
+	 */
+
+	FEF.events.dispatcher.addEventListener("REFRESH_VIEW", function(items) {
+		//update url
+		if(typeof(Storage) !== "undefined") {
+			sessionStorage.lastFaqUrl = window.location.href;
+		}
+	})
+
+
+	$("#showArchive").click(function(e) {
+		e.preventDefault();
+		var target = $(this).attr("target-link");
+		//redirect
+		window.location.href = target + window.location.hash;
+
+	});
+
+	$(".buttonBackToSearch").click(function(e) {
+		if(typeof(Storage) !== "undefined"
+			&& sessionStorage.lastFaqUrl) {
+
+			e.preventDefault();
+			window.location.href = sessionStorage.lastFaqUrl;
+		}
+		//otherwise follow default link location
+	})
+
+	//FOR FAQ
+	$(".faqeuropasearchlink").click(function (e) {
+		e.preventDefault();
+		window.open($('#europa-search-link').attr('europa-search') + $('.plaintext-search').val());
+	});
+
+	$(".left-menu-filter").change(function () {
+		var val = $(".plaintext-search").val();
+
+		if (val == "top FAQ") {
+			$(".plaintext-search").val("");
+			$("#btn-search").trigger("click");
+		}
+	});
+
+	//faq was it usefull
+	if ($('#faqId').length > 0) {
+		var faqId = $('#faqId').attr('faqId');
+		var wiuAlreadyAnswered = sessionStorage.getItem("wiufaqId"+faqId);
+        if (!wiuAlreadyAnswered) {
+			$('.faqwiu').show();
+		}
+	}
+
+
+	$('#faqwiu-question a').click(function(e) {
+		e.preventDefault();
+
+		var yesOrNo = $(this).attr("yes-or-no");
+		var faqId = $('#faqId').attr('faqId');
+
+		$('#faqwiu-question').addClass("");
+
+		var animDelay = 1000;
+        $('#faqwiu-question').hide(animDelay);
+		$.post(	window.PP.getApiBasePath() + "/faq/" + faqId + "/wiu.json", {
+				'yesOrNo': yesOrNo
+			}
+		).done(function () {
+				$('#faqwiu-thankyou').show(500);
+				sessionStorage.setItem("wiufaqId"+faqId, true);
+		}).fail(function() {
+				//show - to perhaps try again
+				$('#faqwiu-question').show();
+			});
+
+	});
+
+});
+
+
+/**
+ * Custom components initialisation
+ */
+$(document).ready(function() {
+
+	//initiate portal interactions
+	FEF.portal.handleMyAreaClicks();
+	FEF.portal.handleFiltersContainer();
+
+	//initiates magic line
+	FEF.components.initiateMagicLine();
+
+	//initiates components
+	FEF.components.initiateTables();
+	FEF.components.initiateCarousel();
+	FEF.components.loadTreeEvents();
+	FEF.components.initiateEcTree();
+	FEF.components.initiateAccordion();
+	FEF.components.initiateTabNavigation();
+	FEF.components.initiateSpinning();
+
+
+
+} ); //end document ready

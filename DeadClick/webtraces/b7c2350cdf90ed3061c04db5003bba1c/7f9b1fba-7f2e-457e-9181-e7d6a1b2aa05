@@ -1,0 +1,34 @@
+var url = window.location.href;
+
+if (url.search('/search') < 0){
+    prepare_pdf_preview();
+}
+
+function prepare_pdf_preview(){
+    $(document).ready(function(){
+        var viewed = [];
+        var item = $('.detailedRecordActions:contains("Fulltext:")').first();
+        if(item){
+            var href = $(item).parent().find('a').first().attr('href');
+            if (href.indexOf('pdf') >= 0){
+                viewed.push(href);
+                var $iframe =  $('<iframe />', {
+                        name: 'pdf-previwer',
+                        id:   'pdf-previewer',
+                        width: '600px',
+                        height: '850px',
+                        scrolling: 'no',
+                        frameborder: '0',
+                        src:'/static/pdfjs/web/viewer.html?FILE='+href
+                    });
+                var $tr = $('<tr />');
+                $('<td />', {
+                    class: 'formatRecordLabel',
+                    text: 'Preview'
+                }).appendTo($tr);
+                $('<td />').css({'padding': '10px'}).stop().append($iframe).stop().appendTo($tr);
+                $('.formatRecordTableFullWidth').append($tr)
+            }
+        }
+    });
+}

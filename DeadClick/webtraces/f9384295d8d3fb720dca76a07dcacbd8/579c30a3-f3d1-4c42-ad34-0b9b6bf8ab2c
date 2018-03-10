@@ -1,0 +1,186 @@
+
+
+function wtslog(uid,dbn,ssl,page_name,invisible,text_counter,obj){
+
+if (uid == 'al203206' || uid == 'al202977' || uid=='al215025' || uid=='al199470' || uid=='al208872' || uid=='al208206' || uid=='al228410' || uid=='al208707'){
+   alert('Webmaster: please remove the Zilek section/links from your site\n\nContact support@zilek.com when done for removal of this message');
+}
+
+   if (! page_name || page_name == '#'){
+      page_name = '';
+   }
+
+   if (! invisible || invisible == '#'){
+      invisible = '';
+   }
+
+   if (! text_counter || text_counter == '#'){
+      text_counter = 'no';
+   }
+
+   var prefix = 'https:' == document.location.protocol ? 'https://wts.one' : 'http://wts.one';
+
+   try{var wtsb=top.document;var wtsr=wtsb.referrer;var wtsu=wtsb.URL;}
+   catch(e){var wtsb=document;var wtsr=wtsb.referrer;var wtsu=wtsb.URL;}
+
+   if (page_name.length > 255){
+       page_name = page_name.substring(0,255);
+   }
+   if (document.title.length > 255){
+       document.title = document.title.substring(0,255);
+   }
+   if (wtsr.length > 510){
+       wtsr = wtsr.substring(0,510);
+   }
+   if (wtsu.length > 255){
+       wtsu = wtsu.substring(0,255);
+   }
+
+   var qry= 'old_format::'+uid+':'+dbn+'::'+escape(wtsr)+'::'
++screen.width+'x'+screen.height+'::'+screen.colorDepth+'::'
++encodeURIComponent(page_name)+'::'+invisible+'::'+Math.random()+'::'+escape(wtsu)+'::'+encodeURIComponent(document.title)+'::'+text_counter+'::1';
+
+
+   if (invisible == 'event_track'){
+
+      page_name = 'event_'+page_name;
+      var qry= uid+':'+dbn+'::'+escape(wtsr)+'::'
++screen.width+'x'+screen.height+'::'+screen.colorDepth+'::'
++encodeURIComponent(page_name)+'::'+invisible+'::'+Math.random()+'::'+escape(wtsu)+'::'+encodeURIComponent(document.title)+'::0::1';
+
+      if (obj){
+         var img = new Image();
+         img.onload = function(){ if (obj.target){ window.open(obj.href, obj.target); }else{ window.location = obj.href }; }
+         img.src = eval("prefix+'/count6.pl?'+qry");
+         return false;
+      }
+      else {
+         document.getElementById('wtscount').src=eval("prefix+'/count6.pl?'+qry");
+         pausecomp(1000);
+         return;
+      } 
+
+   }
+   else {
+
+      document.write('<span id="wtstimer" style="display:none;"></span><span id="wtscount" style="text-decoration:none;"></span>');
+
+      document.write('<scr'+'ipt type="text/javascript" src="'+prefix+'/count6.pl?'+qry+'"></sc'+'ript>');
+
+ //     var delay = 2000;
+ //     setTimeout(function() {doPing2(delay);}, delay);
+
+
+      var delay = 2000;
+      var wts_start_time = parseFloat(wts_d0.getTime());
+      setTimeout(function() {doPing(delay,wts_start_time);}, delay);
+
+
+   }
+
+}
+
+
+
+function doPing(wts_delay,wts_start_time) { 
+
+   if (document.getElementById('wtstimer').innerHTML != ''){
+
+      wts_delay = parseFloat(wts_delay);
+      wts_start_time = parseFloat(wts_start_time);
+
+      var wts_d1 = new Date();
+      var wts_curr_time = wts_d1.getTime();
+      var wts_running_time = parseFloat(wts_curr_time) - wts_start_time;
+
+      if (wts_focus && wts_running_time <= 1800000){
+         wts_time_on_page = wts_time_on_page + parseFloat(wts_delay);
+         wts_delay = parseFloat(wts_delay)+parseFloat(1000);
+         sendPing(wts_delay,wts_time_on_page);
+         setTimeout(function(){ doPing(wts_delay,wts_start_time); }, wts_delay);
+      }
+
+   }
+
+} 
+
+function sendPing(wts_delay,wts_time_on_page) {
+
+   var uniqueID = document.getElementById('wtstimer').innerHTML;
+   if (uniqueID != ''){
+      uniqueID = uniqueID+'::'+wts_delay+'::'+wts_time_on_page+'::20::'+Math.random();
+      var msg = document.location.protocol+'//server2.web-stat.com/ping_timer.pl?'+uniqueID;
+      ajaxRequest.open('GET', msg, true);
+      ajaxRequest.send(null);
+   }
+
+}
+
+
+function doPing2(delay) {
+   if (document.getElementById('wtstimer').innerHTML != ''){
+      delay = delay+1000;
+      sendPing2(delay);
+      if (delay < 60000){
+         setTimeout(function() {doPing2(delay);}, delay);
+      }
+   }
+} 
+
+function sendPing2(delay) {
+    var prefix = 'https:' == document.location.protocol ? 'https://wts.one' : 'http://wts.one';
+    var uniqueID = document.getElementById('wtstimer').innerHTML;
+    if (uniqueID != ''){
+       uniqueID = uniqueID+'::'+delay+'::test';
+       var img2 = new Image();
+       img2.src = eval("prefix+'/ping_timer.pl?'+uniqueID");
+
+   }
+}
+
+
+
+function pausecomp(wtsms){
+  wtsd = new Date();
+  while (1){
+    wtsmill=new Date();
+    wtsdiff = wtsmill-wtsd;
+    if(wtsdiff > wtsms){
+      break;
+    }
+  }
+}
+
+
+// set up AJAX request
+ajaxRequest=getXmlHttpObject();
+if (ajaxRequest==null) {
+   alert ("This browser does not support HTTP Request");
+}
+
+function getXmlHttpObject() {
+   if (window.XMLHttpRequest) { return new XMLHttpRequest(); }
+   if (window.ActiveXObject)  { return new ActiveXObject("Microsoft.XMLHTTP"); }
+   return null;
+}
+
+
+var wts_focus = 1;
+var wts_d0 = new Date();
+var wts_time_on_page = 0;
+window.onblur = function (){
+   wts_focus = 0;
+}
+
+window.onfocus = function (){
+   if (! wts_focus){
+      wts_focus = 1;
+      var wts_start_time = parseFloat(wts_d0.getTime());
+      doPing(0,wts_start_time);
+   }
+}
+
+wtslog('al1932','1','','','','');
+
+
+

@@ -1,0 +1,52 @@
+$(".video-player-link").on("click", function (e) {
+    e.preventDefault();
+    openVideoPlayer($(this).attr("href"));
+})
+
+$(".video-player-overlay, .video-player-modal:after").on("click", function () {
+    closeVideoPlayer();
+})
+
+$(".video-player-modal").on("click", function (e) {
+    e.stopPropagation();
+})
+
+
+function openVideoPlayer(videoFile) {
+    $(".video-player-overlay").addClass("active");
+
+    var div = document.createElement('div');
+
+    $(div).attr("id", "video-player-element").appendTo(".video-player-modal");
+
+    var playerInstance = jwplayer("video-player-element");
+
+    playerInstance.setup({
+        file: videoFile,
+        autostart: true,
+        skin: {
+            name: "seven",
+            active: "#95d600",
+            inactive: "white",
+            background: "black"
+        },
+        sharing: {
+            sites: ['facebook', 'twitter', 'linkedin', 'email']
+        }
+    });
+	
+	    $(".video-player-overlay, .video-player-modal:after").on("click", function () {
+        closeVideoPlayer();
+    })
+
+	$(".video-player-modal").on("click", function(e) {
+		e.stopPropagation();
+	})
+}
+
+
+
+function closeVideoPlayer() {
+    $(".video-player-modal").empty();
+    $(".video-player-overlay").removeClass("active");
+}

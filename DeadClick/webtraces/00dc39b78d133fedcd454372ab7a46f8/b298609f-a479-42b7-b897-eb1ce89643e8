@@ -1,0 +1,1232 @@
+var HTTP_ROOT = 'http://test.intleu.jeep.com';
+var fb_page_token = ''; //'BAAGVTVmiKukBAM3StbiBFZBYNHkcwhZB5cgtwZAfBJGLO9cInrDuyErzeg35OaW7xRtzyJepgUrAemi39OUNCtjNvESjtdp7suC16RzIDXmLuvKLZBdczhgqfr6H4UDmiZBITQXRw3aixFggAWZB7kzeFeszDbdU8N6PZAZCKX8ZCHYUUGHs97JyuhORNzhntQE7ZBKPRTk3IQo1w8L6QhVeQFeKXMUk3AYeYZAuPIWyawERwZDZD';
+var scrollpos = Array();
+
+
+var $j = jQuery.noConflict();
+var animation_360 = false;
+var scroll_top_px = 420;
+
+$j.fn.serializeObject = function()
+{
+   var o = {};
+   var a = this.serializeArray();
+   $j.each(a, function() {
+       if (o[this.name]) {
+           if (!o[this.name].push) {
+               o[this.name] = [o[this.name]];
+           }
+           o[this.name].push(this.value || '');
+       } else {
+           o[this.name] = this.value || '';
+       }
+   });
+   return o;
+};
+
+
+function overlay(){
+
+    var str = '<div id="overlay"></div>';
+
+    $j.blockUI({
+
+        css: {
+            background: 'transparent',
+            border: 'none',
+            cursor: 'default',
+            height: '100%',
+            left: '0',
+            margin: '0',
+            padding: '0',
+            position: 'absolute',
+            top: '0',
+            width: '100%'
+        },
+        message: str,
+        overlayCSS: {
+            cursor: 'default',
+            backgroundColor: 'transparent',
+            opacity:'0'
+        },
+        onBlock: function(){
+            $j('#overlay').load(HTTP_ROOT+'/overlay.html');
+        }
+
+    });
+
+}
+
+function filterReel(view, list){
+
+    var filter = list + ' .item.' + view;
+
+    $j(list).find('.item:not('+filter+')').fadeOut(250, function(){
+
+        $j(list + ' .scroll').width( $j(filter).size() * 240 );
+
+        $j(filter).fadeIn(250,function(){
+            $j('.reel').destroy();
+        });
+    });
+}
+
+function filterList(view, list){
+
+    var filter = '';
+
+    for(i in view){
+
+        filter += list+' .item.'+view[i]+',';
+
+    }
+
+    filter = filter.substring(0, filter.length-1);
+
+    $j(filter).fadeIn(250,function(){
+
+        $j(list).find('.item:not('+filter+')').fadeOut(250, function(){
+
+            $j('.reel, .multimedia_list').jScrollPane();
+        });
+    });
+
+}
+
+
+function setZoomGlass(l,t){
+
+    var zoom_w =  $j('.template_360 .zoom').width(),
+        zoom_h =  $j('.template_360 .zoom').height();
+
+    l += zoom_w / 2;
+    t += zoom_h / 2;
+
+    var max_w = $j('.template_360').width(),
+        max_h = $j('.template_360').height();
+
+    var rapp_w = 1800 / max_w,
+        rapp_h = 933 / max_h;
+
+    var newl = (l) * rapp_w - (zoom_w / 2),
+        newt = (t) * rapp_h;
+
+    $j('.template_360 .zoom .glass').css({backgroundPosition: parseInt(-newl)+'px '+parseInt(-newt)+'px'});  //parseInt(-l*1.2)+'px '+parseInt(-t*1.25)+'px'});
+}
+
+function showGalleryList(){
+
+    var filters = $j('#form_gallery_list').serializeObject();
+
+    filters = filters['filters[]'];
+
+    if( $j('.multimedia_list .loading').size() ) return;
+
+    $j('<div class="loading"><div class="loader"></div></div>').appendTo('.multimedia_list').fadeIn(500);
+    /*
+    $j.post('../php/ajax_gallery.php', {'filters': filters}, function(data){
+
+        $j('.multimedia_list').detach();
+        $j('<div class="multimedia_list">'+data+'</div>').appendTo('.multimedia_load').jScrollPane();
+
+        if( $j.inArray('all', filters) != -1 ){
+            $j('.checkbox .check').removeClass('sel');
+            $j('.checkbox .val').val('');
+        }
+     });
+    */
+}
+
+
+function overlay_form(form,model){
+    if( typeof(model) == 'undefined' ) model = '';
+
+    var server_form = 'http://www.jeep-services.eu/jeep-forms/';
+    var forms = {
+      'testdrive': 'testdrive.html',
+      'brochure': 'brochure.html',
+      'getaquote': 'getaquote.html',
+      'kmi': 'kmi.html'
+    };
+
+    var model_id = {
+      'CHEROKEE': 4,
+      'GRAND%20CHEROKEE': 3,
+      'RENEGADE': 29,
+      'WRANGLER': 5
+    };
+
+
+    var tabs_block ="";
+    if(form == 'testdrive'){
+      tabs_block = '<ul class="tabs"><li class="activ"><a href="#" data-iframe="0">Тест-драйв у дилеров</a></li><li><a href="#" data-iframe="1">Тест-драйв на Jeep Territory</a></li></ul>';
+    }
+
+    if(form  == 'kmi-c-suv'){
+      var str = '<div id="overlay_form"><iframe style="z-index:2; opacity:1;height:618px" frameborder="0" scrolling="no" allowtransparency="1" src="/ru/reveal/form.html"></iframe>';
+    }else{
+      var iframeId = "";
+      if(form == 'testdrive')
+        iframeId = "iframe-testdrive-dealers";
+      if(form == 'brochure')
+        iframeId = "iframe-brochure";
+      var str =  tabs_block + '<div id="overlay_form" data-model="' + model + '">'+
+              '<iframe id="' + iframeId + '" style="z-index:2; opacity:1; height:618px" frameborder="0" scrolling="no" allowtransparency="1" src="'+ server_form + forms[form] + '?country=RUS&language=ru'+ (model ? '&model='+ model : '' ) + '"></iframe>';
+    }
+
+    if(form == 'testdrive') {
+      str = str + '<iframe id="iframe-testdrive-territory" style="z-index:1; opacity:0; height:618px" frameborder="0" scrolling="no" allowtransparency="1" src="http://chryslerjeep.ru/testDrive/JT_4.php?source=6&lang=ru'+ (model_id[model] ? '&model='+ model_id[model] : '' ) + '"></iframe>';
+    }
+    str = str + '<a class="close" href="javascript:void(0);" onclick="$j.unblockUI();"></a>' + '</div>';
+
+    var width = '990px';
+    switch (form) {
+      case 'brochure':
+        var height = "570px";
+        var margin = '-285px 0 0 -495px';
+        break;
+      case 'kmi-c-suv':
+        var height = "565px";
+        var margin = '-280px 0 0 -495px';
+        break;
+      default:
+        var height = "660px";
+        var margin = '-326px 0 0 -495px';
+        break;
+    }
+
+    window.scrollTo(0,0);
+
+    $j.blockUI({
+      css: {
+        border: 'none',
+        cursor: 'default',
+        height: height,
+        left: '50%',
+        margin: margin,
+        padding: '0',
+        position: 'absolute',
+        top: '50%',
+        width: width,
+        overflow: 'hidden',
+      },
+      message: str,
+      overlayCSS: {
+        cursor: 'default',
+        backgroundColor: '#000',
+        opacity:'0.7'
+      }
+    });
+    var frameWindow = document.getElementById('iframe-testdrive-territory');
+    if(frameWindow != null) {
+      ga(function(tracker) {
+        var clientId = tracker.get('clientId');
+        setTimeout( function() {
+            frameWindow = document.getElementById('iframe-testdrive-territory');
+            frameWindow.contentWindow.postMessage(clientId, frameWindow.src);
+          },
+          3000
+        );
+      });
+    }
+    frameWindow = document.getElementById('iframe-testdrive-dealers');
+    if(frameWindow != null) {
+      ga(function(tracker) {
+        var clientId = tracker.get('clientId');
+        setTimeout( function() {
+            frameWindow = document.getElementById('iframe-testdrive-dealers');
+            frameWindow.contentWindow.postMessage(clientId, frameWindow.src);
+          },
+          3000
+        );
+      });
+    }
+    frameWindow = document.getElementById('iframe-brochure');
+    if(frameWindow != null) {
+      ga(function(tracker) {
+        var clientId = tracker.get('clientId');
+        setTimeout( function() {
+            frameWindow = document.getElementById('iframe-brochure');
+            frameWindow.contentWindow.postMessage(clientId, frameWindow.src);
+          },
+          3000
+        );
+      });
+    }
+}
+
+function overlay_form_close(){
+    $j.unblockUI();
+}
+
+function colorizer_init(){
+
+  $j('.colorizer .colors a').click(function(){
+
+    var box = $j(this).parents('.colorizer');
+    var car = box.find('.car');
+    var path = box.find('.path').val();
+    var model = box.find('.model').val();
+    var sel = $j(this);
+
+    sel.addClass('sel').siblings().removeClass('sel');
+    box.find('.colors span').remove();
+    sel.append('<span></span>');
+    car.attr('src', '../img/'+ path +'/colorizer/'+ model +'/'+ sel.attr('rel') +'.png');
+  });
+
+  $j('.colorizer').each(function(){
+
+    var box = $j(this);
+    var bg = box.find('.bg');
+    var car = box.find('.car');
+    var path = box.find('.path').val();
+    var model = box.find('.model').val();
+    var sel = null;
+
+    box.find('.colors a').each(function(i){
+
+      $j(this).addClass( 'col_' + $j(this).attr('rel') ).append('<strong>'+color_labels[ $j(this).attr('rel') ]+'</strong>');
+
+      if(i == 0) {
+        sel = $j(this);
+        sel.addClass('sel');
+      }
+    });
+
+    if(box.hasClass('srt')){
+      bg.attr('src', '../img/'+ path +'/colorizer/'+ model +'/bg.png');
+    }else{
+      bg.attr('src', '../img/'+ path +'/colorizer/'+ model +'/bg.jpg');
+    }
+
+
+    sel.click();
+
+
+    if( box.find('.bicolor').size() ){
+
+      box.find('.bicolor').hide();
+      box.append('<a class="bicolor_switch mono" href="javascript:void(0);"></a><a class="bicolor_switch bi" href="javascript:void(0);"></a>');
+
+      box.find('.bicolor_switch.mono').hide().click(function(){
+
+        box.find('.colors a.bicolor').hide();
+        box.find('.colors a:not(.bicolor)').show().first().click();
+
+        $j(this).hide();
+        box.find('.bicolor_switch.bi').show();
+      });
+
+      box.find('.bicolor_switch.bi').show().click(function(){
+
+        box.find('.colors a:not(.bicolor)').hide();
+        box.find('.colors a.bicolor').show().first().click();
+
+        $j(this).hide();
+        box.find('.bicolor_switch.mono').show();
+      });
+
+    }
+
+
+
+  });
+}
+
+
+
+$j(document).ready(function(){
+    $j( "body" ).on( "click", ".tabs > li > a ", function( event ) {
+        event.preventDefault();
+        var visible = {"opacity": 1, "zIndex": 2};
+        var hidden = {"opacity": 0, "zIndex": 1};
+        var indexActiv = $j(this).data('iframe');
+
+        $j('.tabs > li').removeClass('activ');
+        $j(this).parent('li').addClass('activ');
+
+        $j('#overlay_form iframe')
+                .stop()
+                .fadeOut(300, function () {
+                    $j(this).css(hidden)
+                    .css("opacity", 1);
+                })
+                .eq(indexActiv)
+                .fadeIn(300, function () {
+                    $j(this).css(visible);
+                });
+
+        $j('.blockUI.blockPage').css('height', parseInt($j('#overlay_form iframe').eq(indexActiv).attr('height')) + 45);
+    });
+
+    //---hash #test_drive ---------------------------------------------------------------------
+    if(location.hash == "#test_drive"){
+        location.hash= "";
+        overlay_form('testdrive','',this);
+    }
+
+    //--- Link target _blank ---------------------------------------------------------------------
+    $j('a[rel=blank]').attr('target','_blank');
+
+    //--- Input text a scomparsa -----------------------------------------------------------------
+    $j('.scomparsa').focus(function(){
+        if(!$j(this).hasClass('cliccato')){
+            $j(this).attr('alt', $j(this).val());
+            $j(this).val('');
+            $j(this).addClass('cliccato');
+        }
+    });
+
+    $j('.scomparsa').blur(function(){
+
+        if($j(this).hasClass('cliccato') && jQuery.trim($j(this).val()) == ''){
+            $j(this).val($j(this).attr('alt'));
+            $j(this).removeClass('cliccato');
+        }
+    });
+
+
+    //--- Checkbox -----------------------------------------------------------------
+
+    $j('form .checkbox .check').click(function(){
+
+        if( $j(this).hasClass('sel') ){
+            $j(this).siblings('.val').val('');
+            if($j('.multimedia_load input.sel').length != 1){
+            $j(this).removeClass('sel');
+            }
+        }else{
+            $j(this).siblings('.val').val( $j(this).attr('alt') );
+            $j(this).addClass('sel');
+        }
+
+    });
+
+    //$j('form .checkbox .check.sel').click();
+
+    //--- Radiobutton -----------------------------------------------------------------
+
+    $j('form .radiobutton .radio').click(function(){
+
+        var rb = $j(this).parent();
+        var val = rb.find('.val');
+
+        $j(this).addClass('sel').siblings().removeClass('sel');
+        val.val( $j(this).attr('alt') );
+
+    });
+
+    $j('form .radiobutton .radio.sel').click();
+
+
+    //--- CAP NUMERICO -----------------------------------------------------------------
+
+    $j("input[name=cap],input[name=telefono]").keydown(function(e){
+        if(! ( (e.which >= 48 && e.which <= 57) || (e.which >= 96 && e.which <= 105) || e.which==8 || e.which==9 || e.which==46) )
+            e.preventDefault();
+    });
+
+
+
+
+
+
+
+
+    /********** GENERAL **********/
+
+    $j('.scroll_top').click(function(){
+        $j(window).scrollTo(scroll_top_px, 600, {easing: 'easeOutQuad'});
+    });
+
+
+    /********** AUTOMATIC OVERlAY **********/
+    if( location.href.match(/\#form=/) ){
+
+        if( location.href.match(/_/) ){
+
+            var frm = location.href.match(/\#form=(.+)_(.+)/);
+
+            var models = {
+                'chk' : 'CHEROKEE',
+                'newcmp' : 'NUOVA%20COMPASS%202014',
+                'newgchk' : 'NUOVA%20GRAND%20CHEROKEE',
+                'wra' : 'WRANGLER',
+                'wramoab' : 'WRANGLER%20MOAB',
+                'wramount' : 'WRANGLER%20MOUNTAIN',
+                'wrau' : 'WRANGLER%20UNLIMITED'
+            };
+
+            overlay_form(frm[1], models[frm[2]]);
+
+        }else{
+
+            var frm = location.href.match(/\#form=(.+)/);
+            overlay_form(frm[1]);
+        }
+
+    }
+
+
+
+
+    /********** PAGE: HOME **********/
+
+    if( $j('#page_home').size() ){
+
+        $j('.boxes .box').mouseenter(function(){
+
+            $j(this).stop().animate({
+                height: 327
+            },{
+                duration: 400,
+                easing: 'easeOutExpo'
+            })
+
+        });
+
+        $j('.boxes .box').mouseleave(function(){
+
+            $j(this).stop().animate({
+                height: 197
+            },{
+                duration: 400,
+                easing: 'easeOutExpo'
+            })
+
+        });
+
+        $j('#reel_home .info .car').mouseenter(function(){
+            $j(this).find('.menu_car').stop(true,true).fadeIn();
+
+            $j('#reel_home .bg img').css('z-index', 1 );
+
+            //$j('#reel_home .bg img[alt=' + $j(this).attr('id') + ']').css('z-index', 100 ).fadeIn(200,'easeOutQuad');
+            $j('#reel_home .bg img[alt=' + $j(this).attr('id') + ']').css('z-index', 100 ).animate({opacity: 1}, 250,'easeInOutQuad');
+        });
+
+        $j('#reel_home .info .car').mouseleave(function(){
+            $j(this).find('.menu_car').stop(true,true).fadeOut();
+            //$j('#reel_home .bg img').stop().fadeOut();
+            $j('#reel_home .bg img').stop().animate({opacity: 0}, 250,'easeInOutQuad');
+        });
+
+    }
+
+    /********** PAGE: PRODUCT **********/
+
+    if($j('.product_page').size() ){
+        if($j('.multimedia_list').size() ){
+
+
+            $j('#flickrfeed').empty();
+            var settings = {
+                'limit' : 100,
+                'limitThumbs' : false,
+                'ulClass' : 'album',
+                'rel' : 'lightbox[multimedia]',
+                'callback' : '',
+                'title' : true,
+                'thumbSize' : 0,
+                'fullSize' : 0
+            };
+
+            var albums = {
+                'wrangler' : '288196851217812',
+                'grand_cherokee' : '718101461560680',
+                'compass' : '288182331219264',
+                'wrangler_unlimited' : '288198651217632',
+                'cherokee' : '718091514895008'
+            };
+
+
+            var value = $j('.multimedia_list').attr('class').match(/multimedia_list (.*)/);
+                value = value[1];
+
+
+            var album = {};
+            album[value] = albums[value];
+
+            $j.ajax({
+                type: 'GET',
+                url: 'http://cjd-dealers.supportix.ru/facebook/jeep_media/',
+                jsonpCallback: 'jsonCallback',
+                contentType: "application/json",
+                dataType: 'jsonp',
+                data: $j.param({albums: album}),
+                success: function(data) {
+                    var j = 0;
+                    $j.each(data[value], function( i, photo ) {
+                        if(photo.images[0].width / photo.images[0].height > 1.3){
+                            var imgHTML ='',
+                                liClass = 'class="fbThumb"',
+                                liHTML,
+                                fullImg,
+                                thumbImg,
+                                title = "",
+                                href,
+                                rel = 'rel="' + settings.rel + '" '
+                            ;
+
+                            $j.each(photo.images, function( j, img ) {
+                                if(typeof(img.source) != "undefined"){
+                                    if(img.height < 700){
+                                        fullImg = img.source;
+                                        href = 'href="' + fullImg + '" ';
+                                        return false;
+                                    }
+                                };
+                            });
+                            thumbImg = photo.images[photo.images.length - 1].source;
+
+                            imgHTML = '<img src="' + thumbImg + '" alt="facebook album thumbnail" width="100%"/>';
+                            liHTML = '<a class="' + value + '" ' + rel + href + title + '><div>' + imgHTML + '</div><span></span></a>';
+                            $j('.multimedia_list').append(liHTML);
+                            j++;
+                        }
+                        if(j > 7) return false;
+                    });
+                    $j('.multimedia_list').append('<div class="clear"></div> ');
+                }
+            });
+
+        }
+
+        $j('.page_content .product_page .show .model .point').mouseenter(function(){
+            $j(this).stop().animate({
+                width: 250
+            },{
+                duration: 300,
+                easing: 'easeInSine'
+            });
+        }).mouseleave(function(){
+            $j(this).stop().animate({
+                width: 0
+            },{
+                duration: 300,
+                easing: 'easeOutExpo'
+            });
+        }).click(function(){
+
+            if( $j(this).attr('href').match(/html/) )
+                return;
+
+            $j(window).scrollTo( $j('.sections a[name=' + $j(this).attr('rel') + ']') , 500, {easing: 'easeInOutQuart', offset: -130});
+
+        });
+    }
+
+    /********** PAGE: PRODUCT DETAIL **********/
+
+
+    /*if( $j('.product_page').size() ){
+
+
+    }*/
+
+    if( $j('#page_product_detail, #page_product_security').size() ){
+
+        $j(window).scrollTo(scroll_top_px, 600, {easing: 'easeOutQuad'});
+    }
+
+    if( $j('#page_product_detail').size() ){
+
+        $j('.template_switch .switch_buttons a').click(function(){
+
+            $j(this).addClass('sel').siblings().removeClass('sel');
+            $j('#' + $j(this).attr('rel')).fadeIn().siblings().fadeOut();
+
+        });
+
+        $j('.switch_buttons a.sel').click();
+
+
+        if( $j('.template_360').size() ){
+
+            //- Preloader ---------------------------------------------------------------
+            var load360array = []
+
+            function load360(src) {
+                var deferred = $j.Deferred();
+                var sprite = new Image();
+                sprite.onload = function() {
+                    deferred.resolve();
+                };
+                sprite.src = src;
+                return deferred.promise();
+            }
+
+            //--------------------------------------------------------------------------
+
+
+            var model = $j('.template_360 .stage').html();
+            var slides = 36;
+            var stage = '';
+
+            load360array.push(load360('../img/layout/loading.gif'));
+
+            $j('.template_360 .stage').html('<div class="loader"></div>');
+
+            for(var i = 1; i <= slides; i++){
+
+                var pngfile = '../img/'+ model +'/360/slide_'+ ( i < 10 ? '0'+i : i ) +'.png';
+
+                load360array.push(load360(pngfile));
+
+                //stage += '<div class="slide '+ (i == slides ? 'sel' : '') +'"><img src="#" alt="'+ pngfile +'" /></div>';
+                stage += '<div class="slide '+ (i == slides ? 'sel' : '') +'"><img src="'+ pngfile +'" alt="" /></div>';
+
+            }
+
+            $j.when.apply(null, load360array).done(function(){
+
+                $j('.template_360 .stage').html(stage);
+
+                $j('.template_360 .stage').click(function(e){
+
+                    var sel = $j('.template_360 .stage .sel');
+
+                    var l = e.pageX - $j('.template_360').offset().left - $j('.template_360 .zoom').width()/2;
+                    var t = e.pageY - $j('.template_360').offset().top - $j('.template_360 .zoom').width()/2;
+
+                    $j('.template_360 .zoom .glass').css('background-image', 'url('+ sel.find('img').attr('src').replace('.png','.jpg') +')');
+                    $j('.template_360 .zoom').show().css('left', l).css('top', t);
+
+                    setZoomGlass(l,t);
+
+                });
+
+                $j('.template_360 .prev, .template_360 .next').click(function(){
+
+                    if( animation_360 ) return;
+
+                    $j('.template_360 .zoom').hide();
+
+                    var sel = $j('.template_360 .stage .sel');
+
+                    if( !sel.size() )
+                        sel = $j('.template_360 .stage .slide').first().addClass('sel');
+
+                    var next;
+
+                    if( $j(this).hasClass('next') )
+                        next = sel.prev().size() ? sel.prev() : $j('.template_360 .stage .slide').last();
+                    else
+                        next = sel.next().size() ? sel.next() : $j('.template_360 .stage .slide').first();
+
+                    animation_360 = true;
+
+                    if( next.find('img').attr('src') == '#' ){
+
+                        $j('.template_360 .zoom').append('<div class="loader"></div>');
+                        $j('.template_360 .zoom .glass').css('background','#FFFFFF');
+
+                        next.find('img').one('load',function(){
+
+                            $j('.template_360 .loader').detach();
+
+                            sel.removeClass('sel').fadeOut(200);
+                            next.addClass('sel').fadeIn(200);
+
+                            sel = next;
+
+                            //$j('.template_360 .zoom .glass').css('background-image', 'url('+ sel.find('img').attr('src').replace('.png','.jpg') +')');
+                            setZoomGlass( $j('.template_360 .zoom').position().left , $j('.template_360 .zoom').position().top );
+
+                            animation_360 = false;
+
+                        }).attr('src', next.find('img').attr('alt') );
+
+                    }else{
+
+                        sel.removeClass('sel').fadeOut(200);
+                        next.addClass('sel').fadeIn(200);
+
+                        sel = next;
+                        $j('.template_360 .zoom .glass').css('background-image', 'url('+ sel.find('img').attr('src').replace('.png','.jpg') +')');
+                        setZoomGlass( $j('.template_360 .zoom').position().left , $j('.template_360 .zoom').position().top );
+
+                        animation_360 = false;
+                    }
+
+                });
+
+                $j('.template_360 .next').click();
+                setZoomGlass( $j('.template_360 .zoom').position().left , $j('.template_360 .zoom').position().top );
+
+            });
+
+
+
+
+        }
+    }
+
+    if( $j('.tooltip_area').size() ){
+
+        $j('.tooltip_area .item').css('width', Math.floor( $j('.tooltip_area').width() / $j('.tooltip_area .item').size() ) );
+
+        $j('.tooltip_area .item').mouseenter(function(){
+            $j('.tooltip_area .tooltip').html( $j(this).attr('rel') ).stop(true,true).fadeIn();
+        });
+
+        $j('.tooltip_area').mouseleave(function(){
+            $j('.tooltip_area .tooltip').stop(true,true).fadeOut();
+        });
+
+    }
+
+    /********** PAGE: FIND A DEALER **********/
+
+    if( $j('#page_find_dealer').size() ){
+
+        $j('.box_search .search_tabs .tabs a').click(function(){
+
+            $j(this).addClass('sel').siblings().removeClass('sel');
+            $j('.box_search .tab').removeClass('sel');
+            $j('#' + $j(this).attr('id') + '_tab' ).addClass('sel');
+
+        });
+
+    }
+
+
+    /********** PAGE: CONFIGURATOR **********/
+    $j('#page_conf .item:nth-child(3), #page_conf .item:nth-child(6)').addClass('last');
+
+
+    /********** PAGE: JEEP LIFE **********/
+
+    if( $j('#page_jeep_life').size() ){
+
+        $j('#filter_switch_news_events a').click(function(){
+
+            filterReel( $j(this).attr('rel'), '.reel' );
+
+        });
+
+
+    }
+
+
+    /********** PAGE: SPONSORSHIP **********/
+
+    if( $j('.sponsor_gallery').size() ){
+
+        var gallery = $j('.sponsor_gallery');
+        var sponsor = location.href.match(/sponsor_(.+)\.html/);
+        var photos = parseInt( gallery.text() , 10 );
+
+        sponsor = sponsor[1];
+        gallery.html('');
+
+        for(i = 1; i <= photos; i++){
+
+            gallery.append('<a href="../img/sponsorship/'+ sponsor +'/'+ sponsor +'_'+ ( i <= 9 ? '0' : '' )+ i +'.jpg" rel="lightbox[multimedia]"></a>');
+
+
+        }
+
+        /*$j('#filter_switch_news_events a').click(function(){
+
+            filterReel( $j(this).attr('rel'), '.reel' );
+
+        });*/
+
+
+    }
+
+
+
+
+    /********** PAGE: PRODUCT 2014 **********/
+
+    $j('.sections .discover').click(function(){
+
+        $j(document).scrollTo( $j('.sections') , {
+            duration: 500,
+            offset: -130,
+            easing: 'easeInOutQuart'
+        });
+
+    });
+
+    if( $j('.install_scrollnav').size() ){
+
+        var nbox = $j('.template_display').size();
+        var htmlstr = '';
+
+        for(var i = 1; i <= nbox; i++)
+            htmlstr += '<a href="javascript:void(0);">'+ i +'</a>';
+
+        htmlstr = '<div class="scrollnav">' + htmlstr + '</div>';
+
+        for(var i = 0; i < nbox; i++){
+
+            var curr = $j('.sections .template_display:eq('+ i +')');
+            curr.prepend( htmlstr );
+
+            curr.find('.scrollnav a:eq('+ i +')').addClass('sel');
+        }
+
+
+        $j('.scrollnav a').click(function(){
+
+            $j(document).scrollTo( $j('.sections .template_display:eq('+ ($j(this).text()-1) +')') , {
+                duration: 500,
+                offset: -130,
+                easing: 'easeInOutQuart'
+            });
+
+        });
+
+    }
+
+    if( $j('.template_display').size() ){
+
+        $j('.template_display .gallery').data('selcount', 1);
+
+
+        $j('.template_display .gallery .prev, .template_display .gallery .next').click(function(){
+
+            var gallery = $j(this).parents('.gallery');
+            var curr = gallery.find('.outer .sel').size() ? gallery.find('.outer .sel') : gallery.find('.outer .item:first');
+            var next = null;
+
+
+            if( $j(this).hasClass('next') && curr.next().size() ){
+                next = curr.next();
+                gallery.data('selcount', gallery.data('selcount') + 1 );
+                gallery.find('.outer').stop().scrollTo( next , 500 );
+            }
+
+            if( $j(this).hasClass('prev')  && curr.prev().size() ){
+                next = curr.prev();
+                gallery.data('selcount', gallery.data('selcount') - 1 );
+                gallery.find('.outer').stop().scrollTo( next , 500 );
+            }
+
+            next.addClass('sel').siblings().removeClass('sel');
+            gallery.find('.dots span:eq('+ (gallery.data('selcount')-1) +')').addClass('sel').siblings().removeClass('sel');
+
+
+            if( next.next().size() )
+                gallery.find('.next').show();
+            else
+                gallery.find('.next').hide();
+
+
+            if( next.prev().size() )
+                gallery.find('.prev').show();
+            else
+                gallery.find('.prev').hide();
+
+
+        });
+
+
+        $j('.template_display .gallery').each(function(){
+
+            var ni = $j(this).find('.item').size();
+            var dots = '';
+
+            for(var i = 1; i <= ni; i++ ){
+                //dots += '<a '+( i==1 ? 'class="sel"' : ''   )+' href="javascript:void(0);" rel="'+ i +'"></a> ';
+                dots += '<span '+( i==1 ? 'class="sel"' : ''   )+'></span> ';
+            }
+
+            $j(this).find('.dots').html(dots);
+        });
+
+        /*$j('.template_display .gallery .dots a').click(function(){
+
+            var gallery = $j(this).parents('.gallery');
+            var sel = gallery.find('.item:eq('+ ( $j(this).attr('rel') - 1 ) +')');
+
+            $j(this).addClass('sel').siblings().removeClass('sel');
+            gallery.find('.outer').scrollTo( sel , 500 );
+        });*/
+
+
+
+        $j('.template_display .models .choose').mouseenter(function(){
+
+            var bott = $j(this).find('.button_orange').size();
+
+            $j(this).stop(true).animate({
+                top: 360 - bott * 41
+            },{
+                duration: 500,
+                easing: 'easeOutExpo'
+            });
+
+        }).mouseleave(function(){
+
+            $j(this).stop(true).animate({
+                top: 360
+            },{
+                duration: 500,
+                easing: 'easeOutExpo'
+            });
+
+        });
+
+        $j('.template_display .models .choose a').click(function(){
+
+            var display = $j(this).parents('.display');
+            var sel = display.find('.photos .item:eq('+ ($j(this).attr('rel')-1)  +')');
+            var maxz = 0;
+
+            display.find('.photos .item').each(function(){
+                if( $j(this).attr('z-index') > maxz )
+                    maxz = $j(this).css('z-index');
+            });
+
+            sel.hide().css('z-index', maxz + 5);
+            sel.siblings().css('z-index','1');
+            sel.fadeIn();
+
+            $j(this).addClass('sel').siblings().removeClass('sel');
+        });
+
+
+
+
+
+
+    }
+
+
+
+    if( $j('.template_features').size() ){
+
+        $j('.template_features .features a').click(function(){
+
+            var img = $j(this).find('img').attr('src').replace('_thumb', '');
+            var desc = $j(this).find('.longdesc').html();
+
+
+            $j(this).addClass('sel').siblings().removeClass('sel');
+            $j(this).parents('.template_features').find('.title').text( $j(this).find('.desc').text() );
+            $j(this).parents('.template_features').find('.content .image img').attr('src', img);
+            $j(this).parents('.template_features').find('.content .description').html(desc);
+        });
+
+    }
+
+
+
+    if( $j('.circles').size() ){
+
+        $j('.circle a').click(function(){
+            $j(this).addClass('sel').parent().siblings().find('a').removeClass('sel');
+            $j(this).parents('.template_display').find('.change').html( $j(this).attr('rel') );
+        });
+
+    }
+
+
+    if( $j('.switch_2').size() ){
+
+        $j('.switch_2 a').click(function(){
+            $j(this).addClass('sel').siblings().removeClass('sel');
+            $j('#switch_2_text').html( $j(this).attr('rel') );
+            $j('#switch_2_title').html( $j(this).attr('title') );
+            $j('#switch_2_img').attr('src', '../img/wrangler_polar/img_' + $j(this).attr('id') + '.png' );
+        });
+
+    }
+
+
+
+    if( $j('.template_float').size() ){
+
+        $j('.template_float .slides a').fadeTo(0, 0.4).click(function(){
+
+            var img = $j(this).parents('.template_float').find('.img');
+            var text = $j(this).parents('.template_float').find('.text');
+
+            $j(this).addClass('sel').fadeTo(0, 1);
+            $j(this).siblings().removeClass('sel').fadeTo(0, 0.4);
+
+            img.attr('src', $j(this).find('img').attr('src').replace('_thumb.png', '.jpg') );
+            var alt_text = "";
+            if($j(this).find('img').data("alt"))
+                alt_text = $j(this).find('img').data("alt");
+            img.attr('alt', alt_text );
+        });
+
+
+        $j('.template_float .switch .model').click(function(){
+            var sel = $j('#switch_' + $j(this).attr('rel') );
+
+            $j(this).addClass('sel').siblings().removeClass('sel');
+            sel.show().siblings('.colors').hide();
+            sel.find('a:first-child').click();
+        });
+
+        $j('.template_float .switch .colors a').fadeTo(0, 0.4).click(function(){
+
+            //var img = $j(this).parents('.template_float').find('.img');
+
+            $j(this).parents('.template_float').find('.colors a').removeClass('sel').fadeTo(0, 0.4);
+            $j(this).addClass('sel').fadeTo(0, 1);
+
+            //img.attr('src', $j(this).find('img').attr('src').replace('_thumb.png', '.jpg') );
+
+
+        });
+
+        $j('.template_float .slides a:first-child, .template_float .switch .model:first').click();
+
+    }
+
+
+    if( $j('.polar .colors').size() ){
+
+        $j('.polar .colors a').click(function(){
+
+            $j(this).addClass('sel').siblings().removeClass('sel');
+            $j('.polar .colors .img').attr('src', '../img/wrangler_polar/img_polar_' + $j(this).attr('rel') + '.png' );
+
+
+        });
+
+    }
+
+    if( $j('.template_cta').size() ){
+        $j('.template_cta a').mouseenter(function(){
+            $j(this).find('.img').css('opacity', 0.5);
+        }).mouseleave(function(){
+            $j(this).find('.img').css('opacity', 1);
+        });
+
+    }
+
+    if( $j('.install_scrollpos').size()){
+
+        var nav = '';
+
+        $j('.scrollpos').each(function(){
+            nav += '<a href="#'+ $j(this).attr('name') +'" id="scrollpos_'+ $j(this).attr('name') +'" rel="'+ ($j(this).offset().top - 70)  + '">'+ $j(this).attr('rel') +'</a>';
+            scrollpos.push( '#scrollpos_'+ $j(this).attr('name') );
+        });
+
+        scrollpos.reverse();
+
+        var navcta = "";
+        if(typeof sitePage !== "undefined"){
+            navcta = '<div id="cta">'+
+                  '<a name="&amp;lid=2012_testdrive&amp;lpos='+sitePage+'" href="javascript:void(0);" data-adobe="cta:test-drive-request" data-track="testdrive*'+sitePage+'*/'+sitePage+'/scrollpos" id="scrollpos_test_drive"><p>' + 'ТЕСТ-ДРАЙВ' + '</p><img style="width: 60px;margin: 10px auto 0 auto;" src="/ru/renegade_2015/renegade_kit/img/bg_template_cta_testdrive.png" alt=""/></a>'+
+                  '<span class="sep" style="height: 45px;background-repeat: repeat-y;margin-top: 13px;"></span>'+
+                  '<a href="/ru/dealer/" id="scrollpos_find_dealer" data-adobe="cta:dealers"><p>' + 'НАЙТИ ДИЛЕРА' + '</p><img style="width: 26px; margin: 0 auto" src="/ru/renegade_2015/renegade_kit/img/bg_template_cta_dealer.png" alt=""/></a>'+
+                  '</div>';
+        }
+        nav = '<div id="scrollpos">' + navcta + '<div class="links">'+ nav +'</div></div>';
+
+        var positionOfMenu = '';
+
+        if ($j('.bg_product').size()) {
+            positionOfMenu = $j('.bg_product');
+        }
+        else {
+            positionOfMenu = $j('#site-content');
+        }
+
+        positionOfMenu.append( nav );
+
+        $j('.links a').click(function(event){
+            event.preventDefault();
+            window.scrollTo(0, $j(this).attr('rel'));
+        });
+
+        $j(window).scroll(function(e){
+
+            var found = false;
+
+            $j('#scrollpos .sel').removeClass('sel');
+
+            for(var i in scrollpos){
+
+                if( isNaN(parseInt(i,10)) ) continue;
+
+                if( parseInt($j(scrollpos[i]).attr('rel'), 10) < $j(window).scrollTop()+200 ){
+
+                    $j(scrollpos[i]).addClass('sel');
+                    found = true;
+                    break;
+                }
+            }
+
+            if(found){
+                if ($j('#footer')) {
+                    var wTop = $j(window).scrollTop() + $j('body').height();
+                    var topButtonBreakpoint = $j(document).height() - $j('#footer').height();
+                    if (wTop > topButtonBreakpoint) {
+                        $j('#scrollpos').fadeOut('fast');
+                    }
+                    else {
+                        $j('#scrollpos').fadeIn('fast');
+                    }
+                }
+                else {
+                    $j('#scrollpos').fadeIn(100);
+                }
+            }else{
+                $j('#scrollpos').fadeOut(100);
+            }
+
+        });
+        $j(window).scroll();
+    }
+
+    if( $j('#top_button').size()){
+        $j(window).scroll(function(e){
+
+            var found = false;
+
+            if( $j(window).scrollTop() + 100 > $j('.product_page .show').height()){
+                found = true;
+            }
+
+            if(found){
+                if ($j('#footer')) {
+                    var wTop = $j(window).scrollTop() + $j('body').height();
+                    var topButtonBreakpoint = $j(document).height() - $j('#footer').height();
+                    if (wTop > topButtonBreakpoint) {
+                        $j('#top_button').fadeOut(100);
+                    }
+                    else {
+                        $j('#top_button').fadeIn(100);
+                    }
+                }
+                else {
+                    $j('#top_button').fadeIn(100);
+                }
+            }else{
+                $j('#top_button').fadeOut(100);
+            }
+
+        });
+        $j(window).scroll();
+    }
+
+});
+
+$j( window ).load(function() {
+    if( $j('.install_scrollpos').size() ){
+
+        $j('#scrollpos .links a').each(function(){
+            var href = $j(this).attr("href");
+            $j(this).attr('rel', $j(".scrollpos[name='" + href.substring(1, href.length) + "']").offset().top - 70);
+        });
+
+        $j(window).scroll();
+    }
+});
+$j(document).ready(function(){
+    $j('#top_button').click(function(e){
+        $j(window).scrollTo( 0 );
+    });
+});

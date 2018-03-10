@@ -1,0 +1,2321 @@
+/***************************************************************************
+*	Support functions and prototypical object definitions would go here...
+****************************************************************************/
+
+if (typeof(defined) == 'undefined' )
+var defined = function( obj ) {
+	return (typeof(obj) != 'undefined') ;
+}
+
+if ( !defined(in_array) )
+var in_array = function( needle, haystack ) {
+	var found = false ;
+	if (haystack instanceof Array && haystack.length > 0)
+		for ( var i in haystack )
+			found |= ( haystack[i] == needle ) ;
+	return found ;
+}
+
+if ( !defined(is_array) )
+var is_array = function(obj) {
+   return defined(obj) ? obj.constructor.toString().indexOf('Array') != -1 : null ;
+}
+
+// used for escaping the values of ajax POST parameters
+function postEscape( params ) {
+		var p, v, ret = '';
+		var p_arr = defined(params) ? params.split('&') : [] ;
+		if ( p_arr.length )
+			for ( var i in p_arr ) {
+				p = p_arr[i].split('=')[0] ; v = p_arr[i].split('=')[1] ;
+				if (p)
+					ret = ret + '&' + p + '=' + escape(v) ;
+			}
+		return ret;
+}
+// used for delayed execution of any function
+Function.prototype.delayed = function() {
+	var _method = this, args = [];
+	for ( var i=0; i<arguments.length; i++) args[i] = arguments[i];
+	var t = args.shift() ;
+	return window.setTimeout( function(){ return _method.apply( _method, args ); }, t );
+}
+
+// Yoinked this function off http://sastools.com
+// simulates smarty truncate in javascript
+String.prototype.truncate=function(l,p)
+{
+    var words=this.split(" ");
+    var numWords=words.length;
+    var output = new Array();
+    var ol,cWord,w,cwl;
+    for(w=0,ol=0; w<numWords; ++w)
+    {
+        cWord=words[w];
+        cwl=cWord.length;
+        if((ol+cwl)<=l)
+        {
+            output.push(cWord);
+            ol+=cwl+1;
+        }
+        else break;
+    }
+	var ret_str = output.join(" ");
+    p = ( ret_str.length < this.length ) ? p : '' ;
+	return ret_str + p;
+}
+
+/* ***************************************************************
+*																 *
+*					from ala_browserdetectlite.js				 *
+*																 *
+**************************************************************** */
+// Browser Detect Lite  v2.1
+// http://www.dithered.com/javascript/browser_detect/index.html
+// modified by Chris Nott (chris@NOSPAMdithered.com - remove NOSPAM)
+//
+// modified by Michael Lovitt to include OmniWeb and Dreamcast
+
+function BrowserDetectLite() {
+	var ua = navigator.userAgent.toLowerCase();
+	this.ua = ua;
+
+	// browser name
+	this.isGecko     = (ua.indexOf('gecko') != -1);
+	this.isMozilla   = (this.isGecko && ua.indexOf("gecko/") + 14 == ua.length);
+	this.isFF        = (ua.indexOf('gecko') != -1 && ua.indexOf('firefox') + 16 == ua.length );
+	this.isNS        = ( (this.isGecko) ? (ua.indexOf('netscape') != -1) : ( (ua.indexOf('mozilla') != -1) && (ua.indexOf('spoofer') == -1) && (ua.indexOf('compatible') == -1) && (ua.indexOf('opera') == -1) && (ua.indexOf('webtv') == -1) && (ua.indexOf('hotjava') == -1) ) );
+	this.isIE        = ( (ua.indexOf("msie") != -1) && (ua.indexOf("opera") == -1) && (ua.indexOf("webtv") == -1) );
+	this.isOpera     = (ua.indexOf("opera") != -1);
+	this.isKonqueror = (ua.indexOf("konqueror") != -1);
+	this.isIcab      = (ua.indexOf("icab") != -1);
+	this.isAol       = (ua.indexOf("aol") != -1);
+	this.isWebtv     = (ua.indexOf("webtv") != -1);
+	this.isOmniweb   = (ua.indexOf("omniweb") != -1);
+	this.isDreamcast   = (ua.indexOf("dreamcast") != -1);
+
+	// spoofing and compatible browsers
+	this.isIECompatible = ( (ua.indexOf("msie") != -1) && !this.isIE);
+	this.isNSCompatible = ( (ua.indexOf("mozilla") != -1) && !this.isNS && !this.isMozilla);
+
+	// browser version
+	this.versionMinor = parseFloat(navigator.appVersion);
+
+	// correct version number for NS6+
+	if ((this.isNS && this.isGecko) || this.isFF) {
+		this.versionMinor = parseFloat( ua.substring( ua.lastIndexOf('/') + 1 ) );
+	}
+
+	// correct version number for IE4+
+	else if (this.isIE && this.versionMinor >= 4) {
+		this.versionMinor = parseFloat( ua.substring( ua.indexOf('msie ') + 5 ) );
+	}
+
+	// correct version number for Opera
+	else if (this.isOpera) {
+		if (ua.indexOf('opera/') != -1) {
+			this.versionMinor = parseFloat( ua.substring( ua.indexOf('opera/') + 6 ) );
+		}
+		else {
+			this.versionMinor = parseFloat( ua.substring( ua.indexOf('opera ') + 6 ) );
+		}
+	}
+
+	// correct version number for Konqueror
+	else if (this.isKonqueror) {
+		this.versionMinor = parseFloat( ua.substring( ua.indexOf('konqueror/') + 10 ) );
+	}
+
+	// correct version number for iCab
+	else if (this.isIcab) {
+		if (ua.indexOf('icab/') != -1) {
+			this.versionMinor = parseFloat( ua.substring( ua.indexOf('icab/') + 6 ) );
+		}
+		else {
+			this.versionMinor = parseFloat( ua.substring( ua.indexOf('icab ') + 6 ) );
+		}
+	}
+
+	// correct version number for WebTV
+	else if (this.isWebtv) {
+		this.versionMinor = parseFloat( ua.substring( ua.indexOf('webtv/') + 6 ) );
+	}
+
+	this.versionMajor = parseInt(this.versionMinor);
+	this.geckoVersion = ( (this.isGecko) ? ua.substring( (ua.lastIndexOf('gecko/') + 6), (ua.lastIndexOf('gecko/') + 14) ) : -1 );
+
+	// platform
+	this.isWin   = (ua.indexOf('win') != -1);
+	this.isWin32 = (this.isWin && ( ua.indexOf('95') != -1 || ua.indexOf('98') != -1 || ua.indexOf('nt') != -1 || ua.indexOf('win32') != -1 || ua.indexOf('32bit') != -1) );
+	this.isMac   = (ua.indexOf('mac') != -1);
+	this.isUnix  = (ua.indexOf('unix') != -1 || ua.indexOf('linux') != -1 || ua.indexOf('sunos') != -1 || ua.indexOf('bsd') != -1 || ua.indexOf('x11') != -1)
+
+	// specific browser shortcuts
+	this.isNS4x = (this.isNS && this.versionMajor == 4);
+	this.isNS40x = (this.isNS4x && this.versionMinor < 4.5);
+	this.isNS47x = (this.isNS4x && this.versionMinor >= 4.7);
+	this.isNS4up = (this.isNS && this.versionMinor >= 4);
+	this.isNS6x = (this.isNS && this.versionMajor == 6);
+	this.isNS6up = (this.isNS && this.versionMajor >= 6);
+
+	this.isFF1x = (this.isGecko && this.versionMajor == 1);
+	this.isFF1up = (this.isGecko && this.versionMajor >= 1);
+	this.isFF2x = (this.isGecko && this.versionMajor == 2);
+	this.isFF2up = (this.isGecko && this.versionMajor >= 1);
+
+	this.isIE4x = (this.isIE && this.versionMajor == 4);
+	this.isIE4up = (this.isIE && this.versionMajor >= 4);
+	this.isIE5x = (this.isIE && this.versionMajor == 5);
+	this.isIE55 = (this.isIE && this.versionMinor == 5.5);
+	this.isIE5up = (this.isIE && this.versionMajor >= 5);
+	this.isIE6x = (this.isIE && this.versionMajor == 6);
+	this.isIE6up = (this.isIE && this.versionMajor >= 6);
+
+	this.isIE4xMac = (this.isIE4x && this.isMac);
+}
+var browser = new BrowserDetectLite();
+
+// NEED TO WORK THE FOLLOWING INTO THE BROWSER DETECT SCRIPT ABOVE
+// MANY FUNCTIONS IN HERE DEPEND ON 'pngAlpha' - �
+
+// if IE5.5+ on Win32, then display PNGs with AlphaImageLoader
+if ((browser.isIE55 || browser.isIE6x) && browser.isWin32) {
+	var pngAlpha = true;
+	var sizingMethod = 'scale';
+// else, if the browser can display PNGs normally, then do that
+} else if ((browser.isGecko) || (browser.isIE5up && browser.isMac) || (browser.isOpera && browser.isWin && browser.versionMajor >= 6) || (browser.isOpera && browser.isUnix && browser.versionMajor >= 6) || (browser.isOpera && browser.isMac && browser.versionMajor >= 5) || (browser.isOmniweb && browser.versionMinor >= 3.1) || (browser.isIcab && browser.versionMinor >= 1.9) || (browser.isWebtv) || (browser.isDreamcast)) {
+	var pngNormal = true;
+}
+
+/* RATING STARS */
+var starOn = new Image; starOn.src = "/i/2007/bits/star_blue.gif";
+var starOrange = new Image; starOrange.src = "/i/2007/bits/star_orange.gif";
+var starOff = new Image; starOff.src = "/i/2007/bits/star_grey.gif";
+
+function showStars(stars,garters,stripes) {
+	for (var i=1; i <= garters; i++) {
+		var sName = stars + '_' + stripes + '_' + i;
+		document [sName].src = starOn.src;
+	}
+}
+function hideStars(stars,starTotal,stripes) {
+	for (var i=1; i <= starTotal; i++) {
+		var sName = stars + '_' + stripes + '_' + i;
+		document [sName].src = starOff.src;
+	}
+}
+
+function revertStars(stars, garters, stripes) {
+	for(var i=1; i <= garters; i++) {
+		var sName = stars + '_' + stripes + '_' + i;
+		document[sName].src = starOrange.src;
+	}
+}
+
+function clearStars(stars,stripes){
+	for(var i=1; i <= 5; i++){
+		var sName = stars + '_' + stripes + '_' + i;
+		document[sName].src = starOff.src;
+	}
+}
+/* dropdown autochange */
+function setMode(thingName) {
+	var selectBox = document.getElementById(thingName);
+	var indy = selectBox.selectedIndex;
+	var selectBoxChoice = selectBox.options[indy].value;
+	window.location.href = selectBoxChoice;
+}
+/* popups &c. */
+function MM_openBrWindow(theURL,winName,features)
+{	window.open(theURL,winName,features);
+}
+function openBrWindow(theURL,winName,features)
+{	window.open(theURL,winName,features);
+}
+w = window.screen.availWidth;
+h = window.screen.availHeight;
+/* basic ajax functions */
+
+function getHTTPObject() {
+    var xmlhttp = false;
+
+    if (!xmlhttp && typeof XMLHttpRequest != 'undefined') {
+            xmlhttp = new XMLHttpRequest();
+    } else if(!xmlhttp) {
+		xmlhttp = new ActiveXObject("Microsoft.XMLHTTP");
+	}
+    return xmlhttp;
+}
+
+function makeCBRequest( url, callback ) {
+	var xmlhttp = getHTTPObject();
+	if ( typeof callback == 'function' ) {
+		xmlhttp.open("GET", url, true);
+		xmlhttp.onreadystatechange = function() {
+			if (xmlhttp.readyState == 4 && xmlhttp.responseText)
+					callback.call( xmlhttp ); // set scope to xmlhttp
+		}
+		xmlhttp.send(null);
+		xmlhttp.close;
+	}
+}
+
+function makeRequest( url, elementID, callback ) {
+    var xmlhttp = getHTTPObject();
+    var targetElement = document.getElementById(elementID);
+    xmlhttp.open("GET", url, true);
+    xmlhttp.onreadystatechange = function() {
+        if (xmlhttp.readyState == 4 && xmlhttp.responseText) {
+				if (targetElement)
+              	targetElement.innerHTML = xmlhttp.responseText + '\n';
+				(typeof callback == 'function')? callback.call( xmlhttp ) : null ;
+        }
+    }
+    xmlhttp.send(null);
+    xmlhttp.close;
+}
+
+function makePostRequest( url, elementID, parameters, callback ){
+	//alert(parameters);
+	var xmlhttp = getHTTPObject();
+	var targetElement = document.getElementById(elementID);
+
+	xmlhttp.onreadystatechange = function() {
+        if (xmlhttp.readyState == 4 && xmlhttp.responseText) {
+				if (targetElement)
+              	targetElement.innerHTML = xmlhttp.responseText + '\n';
+				(typeof callback == 'function')? callback.call( xmlhttp ) : null ;
+        }
+    }
+	xmlhttp.open('POST', url, true);
+	xmlhttp.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+	xmlhttp.setRequestHeader("Content-length", parameters.length);
+	xmlhttp.setRequestHeader("Connection", "close");
+	xmlhttp.send(parameters);
+}
+
+function showLoadingImage(target) {
+	var el = document.getElementById(target) ;
+	if ( el ) {
+		el.innerHTML = '' ; // start fresh
+		var h = el.offsetHeight > 60 ? el.offsetHeight : 60 ;
+		var mt = parseInt(h / 2) - 30 ;
+		el.innerHTML = '<div style="text-align: center;height:'+h+'px;"><img style="margin-top:'+mt+'px;" src="/i/2007/bits/loadbutton.gif"><div>'+'\n';
+	}
+}
+
+
+function collect(a,f){
+	var n=[];
+	for(var i=0;i<a.length;i++){
+		var v=f(a[i]);
+		if(v!=null)n.push(v)
+	}
+	return n;
+}
+
+function form_serialize(f) {
+	var g=function(n){
+		return f.getElementsByTagName(n)
+	};
+	var nv=function(e){
+		if(e.name)
+			return escape(e.name)+'='+escape(e.value);
+		else
+		return ''
+	};
+	var i=collect(g('input'),function(i){
+			if((i.type!='radio'&&i.type!='checkbox')||i.checked)
+				return nv(i);
+		}
+	);
+	var s=collect(g('select'),nv);
+	var t=collect(g('textarea'),nv);
+	return i.concat(s).concat(t).join('&');
+}
+
+function sendPostForm(url,obj,mydiv){
+	var poststr = form_serialize(obj);
+	makePostRequest(url,mydiv,poststr);
+}
+
+function addsearch(name) {
+//alert(typeof window.external.AddSearchProvider);
+	try {
+	window.external.AddSearchProvider('http://marvel.com/search/'+name+'.xml');
+	}
+	catch(eX) {
+		if ((typeof window.sidebar == 'object') && (typeof window.sidebar.addSearchEngine == 'function'))
+			{window.sidebar.addSearchEngine('http://marvel.com/search/'+name+'.src', 'http:///marvel.com/search/'+name+'.gif', name, 'Web');
+		} else {
+			alert("We're sorry.  Your browser does not support adding search engines.  ");
+		}
+	}
+}
+function showMe(_eid) {
+	if (document.getElementById(_eid).style.display == 'block') {
+		document.getElementById(_eid).style.display = 'none';
+	} else {
+		document.getElementById(_eid).style.display = 'block';
+	}
+}
+function rate(c,t,n,h){
+	document.getElementById( h + '_rating').innerHTML = '<div style="padding: 2px; font-size: 10px;">Recalculating average rating</div>';
+	var url = '/classes/ajax_rating.php?c=' + c + '&t=' + t + '&n=' + n;
+	var element = h + '_rating';
+	setTimeout("makeRequest('"+url+"', '"+element+"')",250);
+
+}
+
+// Moved over from registration.js on 03/10/2008 -vitaliy
+
+// getPageScroll()
+// Returns array with x,y page scroll values.
+// Core code from - quirksmode.org
+//
+function getPageScroll(){
+
+	var yScroll;
+
+	if (self.pageYOffset) {
+		yScroll = self.pageYOffset;
+	} else if (document.documentElement && document.documentElement.scrollTop){	 // Explorer 6 Strict
+		yScroll = document.documentElement.scrollTop;
+	} else if (document.body) {// all other Explorers
+		yScroll = document.body.scrollTop;
+	}
+
+	arrayPageScroll = new Array('',yScroll)
+	return arrayPageScroll;
+}
+
+//
+// getPageSize()
+// Returns array with page width, height and window width, height
+// Core code from - quirksmode.org
+// Edit for Firefox by pHaez
+//
+
+function getPageSize(){
+
+	var xScroll, yScroll;
+
+	if (window.innerHeight && window.scrollMaxY) {
+		xScroll = document.body.scrollWidth;
+		yScroll = window.innerHeight + window.scrollMaxY;
+	} else if (document.body.scrollHeight > document.body.offsetHeight){ // all but Explorer Mac
+		xScroll = document.body.scrollWidth;
+		yScroll = document.body.scrollHeight;
+	} else { // Explorer Mac...would also work in Explorer 6 Strict, Mozilla and Safari
+		xScroll = document.body.offsetWidth;
+		yScroll = document.body.offsetHeight;
+	}
+
+	var windowWidth, windowHeight;
+	if (self.innerHeight) {	// all except Explorer
+		windowWidth = self.innerWidth;
+		windowHeight = self.innerHeight;
+	} else if (document.documentElement && document.documentElement.clientHeight) { // Explorer 6 Strict Mode
+		windowWidth = document.documentElement.clientWidth;
+		windowHeight = document.documentElement.clientHeight;
+	} else if (document.body) { // other Explorers
+		windowWidth = document.body.clientWidth;
+		windowHeight = document.body.clientHeight;
+	}
+
+	// for small pages with total height less then height of the viewport
+	if(yScroll < windowHeight){
+		pageHeight = windowHeight;
+	} else {
+		pageHeight = yScroll;
+	}
+
+	// for small pages with total width less then width of the viewport
+	if(xScroll < windowWidth){
+		pageWidth = windowWidth;
+	} else {
+		pageWidth = xScroll;
+	}
+
+
+	arrayPageSize = new Array(pageWidth,pageHeight,windowWidth,windowHeight)
+	return arrayPageSize;
+}
+
+
+
+function placeIt(mylayer,left_offset) {
+	(document.getElementById) ? dom = true : dom = false;
+	var l = document.getElementById(mylayer);
+
+	if (self.innerHeight) {
+		l.style.top = window.pageYOffset + (window.innerHeight - ((window.innerHeight/2) + 200)) + "px";
+		l.style.left = window.pageXOffset + (window.innerWidth - ((window.innerWidth/2) + left_offset)) + "px";
+
+	} else if (document.documentElement && document.documentElement.clientHeight) {
+		l.style.top = document.documentElement.scrollTop + (document.documentElement.clientHeight - ((document.documentElement.clientHeight/2)+200)) + "px";
+		l.style.left = document.documentElement.scrollLeft + (document.documentElement.clientWidth - ((document.documentElement.clientWidth/2)+left_offset)) + "px";
+	} else if (document.body) {
+		l.style.top = document.body.scrollTop + (document.body.clientHeight - ((document.body.clientHeight/2) + 200)) + "px";
+		l.style.left = document.body.scrollLeft + (document.body.clientWidth - ((document.body.clientWidth/2)+left_offset)) + "px";
+
+	}
+	window.setTimeout("placeIt('"+mylayer+"',"+left_offset+")", 10);
+}
+
+var ok = false;
+
+function hide(element) {
+	document.getElementById(element).style.display = 'none';
+	//alert(document.getElementById(element).style.display);
+}
+
+function unhide(element) {
+	document.getElementById(element).style.display = 'block';
+}
+function showhide(element) {
+	if(	document.getElementById(element).style.display  == 'none') {
+		unhide(element);
+	} else {
+		hide(element);
+	}
+}
+
+function unhideInline(element) {
+	document.getElementById(element).style.display = 'inline';
+}
+
+/* ************* functions for the 'more tweets button on motion comics splash pg ************** */
+
+function extendHeight(element, newHeight) {
+	var object = document.getElementById(element);
+	if (parseInt(object.style.height) <= 1350) {
+	object.style.height = parseInt(object.style.height) + newHeight + "px";
+	}
+}
+
+/* *************  ************** */
+
+function check_myage(){
+	check_mydate();
+
+	var my_year		= document.getElementById('year');
+	var my_month	= document.getElementById('month');
+	var my_day		= document.getElementById('zday');
+
+	var today_date = new Date();
+	var input_date = new Date(my_month.value+"/"+my_day.value+"/"+my_year.value);
+
+	var test_month = input_date.getMonth()+1;
+	var test_year = input_date.getFullYear();
+	var test_day = input_date.getDate();
+
+
+	//var today1_date = new Date(today_m+"/"+today_d+"/"+today_y);
+
+	var sec = (today_date.getTime()/1000.0) - (input_date.getTime()/1000.0);
+	var diff = Math.floor(sec/31564926);
+
+	if (diff < 13) {
+		unhide('underage_disclaimer_div');
+		unhide('parent_email_div');
+	} else {
+		hide('underage_disclaimer_div');
+		hide('parent_email_div');
+	}
+}
+
+function updatepage(str,div){
+		ok = true;
+		if(str == "no"){
+			unhide(div);
+			ok = false;
+		} else {
+			hide(div);
+			ok = true;
+		}
+		return ok;
+	}
+
+function check_avail(myfield,myerrordiv,myurl) {
+	var my_name = document.getElementById(myfield);
+	var myxmlhttp = getHTTPObject();
+	var test;
+	var url = myurl+my_name.value;
+
+	hide(myerrordiv);
+
+	if (my_name.value != ""){
+		myxmlhttp.onreadystatechange = function() {
+		//alert ("test is "+test);
+        	if (myxmlhttp.readyState == 4) {
+				test = updatepage(myxmlhttp.responseText,myerrordiv);
+			}
+		}
+
+
+		myxmlhttp.open("GET", url, true);
+		myxmlhttp.send(url);
+	}
+	//alert (ok);
+}
+
+
+function validate_email(str) {
+	var at="@"
+	var dot="."
+	var lat=str.indexOf(at)
+	var lstr=str.length
+	var ldot=str.indexOf(dot)
+
+	if (str.indexOf(at)==-1){
+		return false
+	}
+
+	if (str.indexOf(at)==-1 || str.indexOf(at)==0 || str.indexOf(at)==lstr){
+	   return false
+	}
+
+	if (str.indexOf(dot)==-1 || str.indexOf(dot)==0 || str.indexOf(dot)==lstr){
+		return false
+	}
+
+	if (str.indexOf(at,(lat+1))!=-1){
+		return false
+	}
+
+	if (str.substring(lat-1,lat)==dot || str.substring(lat+1,lat+2)==dot){
+		return false
+	}
+
+	if (str.indexOf(dot,(lat+2))==-1){
+		return false
+	}
+
+	if (str.indexOf(" ")!=-1){
+		return false
+	}
+
+	return true
+}
+
+function check_myemail(addr) {
+	var s = document.getElementById(addr).value;
+	var test = validate_email(s);
+	hide('email_bad');
+	if (s != ""){
+		if (test == false){
+			unhide('email_bad');
+			return false;
+		} else {
+			hide('email_bad');
+			return true;
+		}
+	} else {
+		unhide('email_blank');
+		return false;
+	}
+}
+
+
+function validate_date(){
+	day = document.getElementById('zday').value;
+	month = document.getElementById('month').value;
+	js_month = month -1;// js months are 0-11 instead of 1-12
+	year = document.getElementById('year').value;
+
+
+	var today_date = new Date();
+
+	var test_month = today_date.getMonth()+1;
+	var test_year = today_date.getFullYear();
+	var test_day = today_date.getDate();
+
+	//alert(month + "/" + day + "/" + year);
+
+	// tests for future dates.
+	if(year > test_year){
+		return false;
+	} else if( year == test_year){
+		if(month > test_month){
+			return false;
+		} else if(month == test_month){
+			if(day > test_day){
+				return false;
+			}
+		}
+	}
+
+	dteDate=new Date(year,js_month,day);
+
+	// tests for invalid dates, like february 31st
+	return ((day==dteDate.getDate()) && (js_month==dteDate.getMonth()) && (year==dteDate.getFullYear()));
+}
+
+function check_mydate(){
+	var x = validate_date();
+	hide('illegal_date_div');
+	if (x == false){
+		unhide('illegal_date_div');
+		document.getElementById('go').disabled = true;
+	} else {
+		document.getElementById('go').disabled = false;
+	}
+}
+
+function check_form(form){
+	var user	= check_avail('member_name','username_taken','/i/2007/php/check_name.php?member_name=');
+	var email	= check_avail('email_address','email_taken','/i/2007/php/check_email.php?email=');
+
+		sendPostForm('/i/2007/php/loadreg.php',form,'registration_panel');
+}
+
+// -- done
+
+function hide_flash_objects(z){
+	var my_obj = new Array(4);
+	my_obj[0] = 'embed';
+	my_obj[1] = 'object';
+	my_obj[2] = 'iframe';
+	my_obj[3] = 'ilayer';
+
+	for (ii = 0; ii < 4; ii++){
+		var x = document.getElementsByTagName(my_obj[ii]);
+		if (x.length > 0){
+			for (i = 0; i < x.length; i++){
+				if (z == 1){
+					x[i].style.display = "none";
+				} else {
+					x[i].style.display = "";
+				}
+			}
+		}
+	}
+}
+
+/* registration stuff */
+function loadSignup(ref, callback) {
+	var arrayPageSize = getPageSize();
+	var arrayPageScroll = getPageScroll();
+	var u = 0;
+	
+	hide_flash_objects(1);
+
+	if ((browser.isIE55 || browser.isIE6x || browser.isIE6up) && browser.isWin32){
+		u = '1';
+	}
+	
+	var overLayMain	= document.getElementById('trans_layer');
+	var overLay		= document.getElementById('registration_panel');
+	var passthru	= document.getElementById('reg_passthru_to_comic');
+
+	overLayMain.style.height = (arrayPageSize[1] +'px');
+	overLayMain.style.display = 'block';
+
+	overLay.style.display = 'block';
+	placeIt('registration_panel',300);
+	placeIt('reg_side',1020);
+
+	var qstring = '?ref='+ref+'&isie='+u ;
+	passthru && ( qstring += '&passthru=1' );
+	makeRequest('/i/2007/php/loadreg.php'+qstring, 'registration_panel', callback);
+}
+
+function submitOnEnter( e,form_id ){
+	var pK = defined(e.which) ? e.which : window.event.keyCode;
+	if ( document.getElementById(form_id) == null ) return true;
+	(pK == 13) ? document.getElementById(form_id).submit() : void(0) ;
+	return (pK == 13) ? false : true ;
+}
+function callOnEnter( e, f ){
+	var pK = defined(e.which) ? e.which : window.event.keyCode;
+	(typeof f == 'function' && pK == 13) ?  f.call() : void(0) ;
+	return (pK == 13) ? false : true ;
+}
+
+function loadSubscribe(i,t){
+	var u = 0;
+	if ((browser.isIE55 || browser.isIE6x || browser.isIE6up) && browser.isWin32){
+		u = '1';
+	}
+	window.location = 'https://marvel.com/digitalcomics/view.htm?iid='+i+'&ref='+t+'&isie='+u	;
+}
+
+
+function closeSignup(step,kid) {
+
+	// per 1.5 spec
+	if (step && step != '1'){
+		makeRequest('/i/2007/php/loadreg.php?action=html&step=3&kid='+kid,'registration_panel');
+	} else {
+		hide_flash_objects(0);
+		document.getElementById('trans_layer').style.display = 'none';
+		document.getElementById('registration_panel').style.display = 'none';
+		document.getElementById('registration_panel').innerHTML = "Loading...";
+	}
+}
+
+
+/* ***************************************************************
+*																 *
+*					from sliders.js								 *
+*																 *
+**************************************************************** */
+// JavaScript Document
+	var _spd = null, _zspd = null;
+	function _moveIt(_eid,_way,_max) {
+		_element = _eid;
+		_direction = _way;
+		var _elem = document.getElementById(_eid);
+		/* alert(_elem.style.left); */
+		_maxrig = 0;
+		if(_max == undefined) {
+			_maxlef = -1200;
+		} else {
+			_maxlef = _max;
+		}
+
+
+		if(_way == 'right' &&  parseInt(_elem.style.left) > _maxlef) {
+			_elem.style.left = parseInt(_elem.style.left) - 20 + 'px';
+		} else if(_way == 'left' && (parseInt(_elem.style.left) < _maxrig)) {
+			_elem.style.left = parseInt(_elem.style.left) + 20 + 'px';
+		}
+
+		if(_way == 'left' &&  (parseInt(_elem.style.left) < _maxrig)) {
+
+			_zspd = setTimeout("_moveIt(_element,_direction,_maxlef)",1);
+		}
+		if(_way == 'right' && (parseInt(_elem.style.left) > _maxlef )) {
+
+			_spd = setTimeout("_moveIt(_element,_direction,_maxlef)",1);
+		}
+	}
+	function _stopIt() {
+		if(_spd != null) {
+			clearTimeout(_spd);
+		}
+		if(_zspd != null) {
+			clearTimeout(_zspd);
+		}
+	}
+
+/* ***************************************************************
+*																 *
+*					from ala_opacity.js							 *
+*																 *
+**************************************************************** */
+
+//---------------------------------------------------------------
+// Opacity Displayer, Version 1.0
+// Copyright Michael Lovitt, 6/2002.
+// Distribute freely, but please leave this notice intact.
+//---------------------------------------------------------------
+
+//---------------------------------------------------------------
+// OPACITY OBJECT
+//
+// Instantiates the object, defines the properties and methods.
+function OpacityObject(divId, strPath) {
+	this.id = divId;
+	this.path = strPath;
+	if (ns){
+		if (browserVersion>=5) {
+			this.layerObject = document.getElementById(divId).style;
+		} else {
+			this.layerObject = eval("document."+divId);
+		}
+	} else {
+		this.layerObject = eval(divId + ".style");
+	}
+	this.setBackground = od_object_setBackground;
+}
+// Uses AlphaImageLoader filter, or the css background property,
+// as appropriate, to apply a PNG or GIF as the background of the layerObject.
+function od_object_setBackground() {
+	if (pngAlpha) {
+		this.layerObject.filter = "progid:DXImageTransform.Microsoft.AlphaImageLoader(src='"+this.path+".png', sizingMethod='scale')";
+	} else if (pngNormal) {
+		this.layerObject.backgroundImage = 'url('+this.path+'.png)';
+	} else {
+		this.layerObject.backgroundImage = 'url('+this.path+'.gif)';
+	}
+}
+//---------------------------------------------------------------
+
+//---------------------------------------------------------------
+// OPACITY DISPLAY FUNCTION
+// Outputs the image as a div with the AlphaImageLoader, or with
+// a standard image tag.
+function od_displayImage(strId, strPath, intWidth, intHeight, strClass, strAlt, strTitle) {
+	if (pngAlpha) {
+		document.write('<div style="height:'+intHeight+'px;width:'+intWidth+'px;filter:progid:DXImageTransform.Microsoft.AlphaImageLoader(src=\''+strPath+'\', sizingMethod=\''+sizingMethod+'\')" id="'+strId+'" class="'+strClass+'" alt="'+strAlt+'" title="'+strTitle+'"/></div>');
+	} else {
+		document.write('<img src="'+strPath+'" width="'+intWidth+'" height="'+intHeight+'" name="'+strId+'" border="0" class="'+strClass+'" alt="'+strAlt+'" title="'+strTitle+'" />');
+	}
+}
+//---------------------------------------------------------------
+
+//---------------------------------------------------------------
+// OPACITY ROLL-OVER FUNCTIONS
+function od_rollOver(strId, strColor) {
+	if (pngAlpha) {
+		document.getElementById(strId).style.backgroundColor = strColor;
+	} else {
+	    if (document.images && (flag == true)) {
+	        document[strId].src = eval(strId + "on.src");
+	    }
+	}
+}
+function od_rollOut(strId, strColor) {
+	if (pngAlpha) {
+		document.getElementById(strId).style.backgroundColor = strColor;
+	} else {
+	    if (document.images) {
+	        document[strId].src = eval(strId + "off.src");
+	    }
+	}
+}
+//---------------------------------------------------------------
+
+//---------------------------------------------------------------
+// global variables
+
+// if IE5.5+ on win32, then display PNGs with AlphaImageLoader
+if ((browser.isIE55 || browser.isIE6up) && browser.isWin32) {
+	var pngAlpha = true;
+	var sizingMethod = 'scale';
+	var strExt = ".png";
+// else, if the browser can display PNGs normally, then do that. that list includes:
+	//     -Gecko Engine: Netscape 6 or Mozilla, Mac or PC
+	//     -IE5+ Mac (OpacityObject applies the background image at 100% opacity)
+	//     -Opera 6+ PC
+	//     -Opera 5+ Mac (Doesn't support dynamically-set background images)
+	//     -Opera 6+ Linux
+	//     -Omniweb 3.1+
+	//     -Icab 1.9+
+	//     -WebTV
+	//     -Sega Dreamcast
+} else if ((browser.isGecko) || (browser.isIE5up && browser.isMac) || (browser.isOpera && browser.isWin && browser.versionMajor >= 6) || (browser.isOpera && browser.isUnix && browser.versionMajor >= 6) || (browser.isOpera && browser.isMac && browser.versionMajor >= 5) || (browser.isOmniweb && browser.versionMinor >= 3.1) || (browser.isIcab && browser.versionMinor >= 1.9) || (browser.isWebtv) || (browser.isDreamcast)) {
+	var pngNormal = true;
+	var strExt = ".png";
+	// otherwise, we use plain old GIFs
+} else {
+	var strExt = ".gif";
+}
+
+var ns = (document.all)?false:true;
+var browserVersion = parseFloat(navigator.appVersion );
+//---------------------------------------------------------------
+// COMIC TABBOX
+function fetch_comics_tab(bfid,type) {
+	tabs = new Object();
+	if(document.getElementById('comic-tab-past')) { tabs.past = document.getElementById('comic-tab-past') };
+	if(document.getElementById('comic-tab-present')) { tabs.present = document.getElementById('comic-tab-present') };
+	if(document.getElementById('comic-tab-future')) { tabs.future = document.getElementById('comic-tab-future') };
+	if(document.getElementById('comic-tab-collection')) { tabs.collection = document.getElementById('comic-tab-collection') };
+	for(i in tabs) {
+		tabs[i].className = 'tab';
+	}
+	tabs[type].className = 'tab_on';
+	document.getElementById('comic-tab-content').innerHTML = '<div style="vertical-align: middle; text-align: center;height:210px;"><br><br><br><img src="/i/2007/bits/loadbutton.gif"><div>'+'\n';
+	url = "/i/2007/js/comic_tab_fetcher.php?bfid="+bfid+"&type="+type;
+	makeRequest(url,'comic-tab-content');
+}
+
+function fetch_news_tab(type) {
+	tabs = new Object();
+	tabs.blogs = document.getElementById('news-tab-blogs');
+	tabs.rss_feeds = document.getElementById('news-tab-rss');
+	tabs.video = document.getElementById('news-tab-video');
+	//alert(tabs['video']);
+	for(i in tabs) {
+		tabs[i].className = 'tab';
+	}
+	tabs[type].className = 'tab_on';
+
+
+	document.getElementById('news-tab-content').innerHTML = '<div style="vertical-align: middle; text-align: center; height: 100%"><br><br><br><img src="/i/2007/bits/loadbutton.gif"><div>'+'\n';
+	url = "/i/2007/js/news_tab_fetcher.php?type="+type;
+	makeRequest(url,'news-tab-content');
+}
+
+function fetch_popular_tab(type,pg_name) {
+// added pg_name param to pass $GLOBAL[pg_name] to the fetcher to be redefined in
+// the fetcher's super global -EAN
+	tabs = new Object();
+	tabs.blogs = document.getElementById('popular-tab-blogs');
+	tabs.news = document.getElementById('popular-tab-news');
+	tabs.comics = document.getElementById('popular-tab-comics');
+	tabs.boards = document.getElementById('popular-tab-boards');
+	//alert(tabs['video']);
+	for(i in tabs) {
+		tabs[i].className = 'tab';
+	}
+	tabs[type].className = 'tab_on';
+
+
+	document.getElementById('popular-tab-content').innerHTML = '<div style="vertical-align: middle; text-align: center; height: 100%"><br><br><br><img src="/i/2007/bits/loadbutton.gif"><div>'+'\n';
+	url = "/i/2007/js/popular_tab_fetcher.php?type="+type+"&pg_name="+pg_name;
+	makeRequest(url,'popular-tab-content');
+}
+
+//---------------------------------------------------------------
+// Object: tabanator
+// Parameters:
+//		eID_list: array of element IDs
+//		content_id: the element id of the content wrapper
+//		load_id(optional): element id of index to load when first instantiated
+//		ajaxURL(optional): allows you to use a custom ajax handler, if need be
+// styling note: assumes css styles <tabstyle>_off for off, <tabstyle>_on for on
+// note: 1. ajax_parameters must be in this format "&parameter1=value1&parameter2=value2 etc"
+//			2. show_loading paremeter will determine if tabanator will show the loading image in the content element
+//			3. tabanator will check for actions property (to actions object) to perform stuff before the ajax call
+//			4. tabanator will also check for a 'callback' method/function after tab is loaded
+//	- �
+function tabanator( eID_list, content_id, load_id, ajaxURL ) {
+
+	this.tabs			= [] ;
+	this.tabIDs			= [] ;
+	this.actions		= {} ;
+	this.content_id	= content_id ;
+	this.load_el		= document.getElementById(load_id) ;
+	this.url				= (typeof ajaxURL == 'string') ? ajaxURL : '/i/2008/php/ajaxTabs.php' ;
+	this.callback		= null ; // set this post-instantiation
+
+	//////////////////////////
+	// methods
+	this.onclick = function() {
+		// remember: this = clicked tab element
+		var tabanator = this._tabanator ;
+		// update all tabs' state
+		for ( var i in tabanator.tabs ) {
+			tabanator.tabs[i].className = tabanator.tabs[i]._cnPrefix + '_off' ; // turn "off" all tabs
+		}
+		this.className = this._cnPrefix + '_on' ; // turn it on
+
+		// perform additional global actions, if needed
+		defined( tabanator.actions.all ) ? tabanator.actions.all.doActions() : null ;
+		// and any localized actions
+		if (defined(tabanator.actions))
+		for ( var i in tabanator.actions )
+			if ( i != 'all' && i == this.parentNode.id ) tabanator.actions[i].doActions();
+
+		// show loading image
+		if ( this._loadImgFlag == null || this._loadImgFlag.toLowerCase() == 'yes' )
+			showLoadingImage( tabanator.content_id );
+
+		// prepare parameters & make ajax call
+		// could avoid using postEscape if used ajax GET method
+		var parameters = '&tab=' + this.parentNode.id + (this._params ? this._params : '') ;
+
+		makePostRequest( tabanator.url, tabanator.content_id, postEscape(parameters), tabanator.callback ) ;
+	} // onclick
+
+	//////////////////////////
+	// constructor, per se
+	// process the list of element ids
+	if ( eID_list instanceof Array && eID_list.length > 0 ) {
+		for ( var i in eID_list ) {
+			var el1 = document.getElementById(eID_list[i]) ;
+			if ( el1 ) {
+				var el2 = el1.getElementsByTagName('DIV')[0] ;
+				el2._loadImgFlag = el1.getAttribute( 'show_loading' ) ; // show loading image? yes or no
+				el2._params = el1.getAttribute( 'ajax_parameters' ) ; // grab localized parameters
+
+				el2._cnPrefix = el2.className.substring( 0, el2.className.lastIndexOf('_') ) ;
+				el2.onclick = this.onclick ;
+				el2._tabanator = this ; // provide self reference
+				this.tabs.push( el2 );
+				this.tabIDs.push( eID_list[i] );
+			}
+		}
+
+		// check to see if first one is not available, load next available tab
+		this.load_el = ( !in_array(eID_list[0],this.tabIDs) ) ? this.tabs[0] : this.load_el ;
+
+		if (this.load_el )
+			this.load_el.onclick(); // fire up the specified tab
+		else {
+			// always visually turn on first available tab
+			this.tabs[0].className = this.tabs[0]._cnPrefix + '_on' ;
+		}
+
+		unhide( this.content_id ); // will assume content_id is hidden
+	}
+
+}
+
+// END Tabanator
+//---------------------------------------------------------------
+
+/* BEGIN NEW NAVIGATION CODE */
+
+// MOUSEOVERS
+function mshow(_ele) {
+	document.getElementById(_ele) ? document.getElementById(_ele).style.display = 'block' : false;
+}
+
+function mhide(_ele) {
+	document.getElementById(_ele) ? document.getElementById(_ele).style.display = 'none' : false;
+}
+
+function bshow(_ele) {
+		_str = document.getElementById(_ele).style.backgroundImage
+		_newval = _str.replace(/off/,"on");
+		//alert(_newval);
+		document.getElementById(_ele).style.backgroundImage = _newval;
+}
+
+function bhide(_ele) {
+		_str = document.getElementById(_ele).style.backgroundImage
+		_newval = _str.replace(/on/,"off");
+		//alert(_newval);
+		document.getElementById(_ele).style.backgroundImage = _newval;
+}
+
+function setupDropdowns(_navdivid) { // call this function AFTER the HTML for the dropdowns - �
+
+	// NAV >> WRAP >> MENU >> LINK >> ANCHOR (node nesting pattern) - �
+
+	// SETUP VARS
+	!_navdivid ? _nid = 'nav' : _nid = _navdivid;
+	_idprefix = 'm';// MENU DIV (e.g. 'm1,' etc...)
+	_bidprefix = 'b';// MAIN MENU DIV (e.g. 'b1,' etc...)
+	_nav = document.getElementById('nav');// CONTAINS THE FLOATING MENUS
+	_wrap_cnt = _nav.childNodes.length;// NUMBER OF MENUS IN THE NAV
+	_tmp_cnt = 1;// INCREMENT COMBINED WITH _idprefix TO ACCESS MENUS BY ID
+
+	// CHECK FOR WRAPS
+
+	for(_cnt = 0; _cnt < _wrap_cnt; _cnt++) {
+		_wrapnode = _nav.childNodes[_cnt];
+
+	// CHECK FOR MENUS
+
+		if(_wrapnode.hasChildNodes() && _wrapnode.nodeType == 1) {
+
+	// SET MOUSEOVERS FOR MENUS
+
+			_curid = _idprefix + _tmp_cnt;
+			_bid = _bidprefix + _tmp_cnt;
+			_wrapnode.onmouseover = new Function('this.className="m_o";mshow("' + _curid + '");bshow("' + _bid + '");');
+			_wrapnode.onmouseout = new Function('this.className="m_x";mhide("' + _curid + '");bhide("' + _bid + '");');
+			_tmp_cnt++;
+			_menu_cnt = _wrapnode.childNodes.length;
+
+	// CHECK FOR LINKS
+
+			for(_cntb = 0; _cntb < _menu_cnt; _cntb++) {
+				_menunode = _wrapnode.childNodes[_cntb];
+				if(_menunode.nodeType == 1 && _menunode.hasChildNodes()) {
+					_link_cnt = _menunode.childNodes.length;
+
+	// SET MOUSEOVERS FOR LINKS
+
+					for(_cntc = 0; _cntc < _link_cnt; _cntc++) {
+						_linknode = _menunode.childNodes[_cntc];
+						if(_linknode.nodeType == 1) {
+							_linknode.onmouseover = new Function('this.className="l_o";');
+							_linknode.onmouseout = new Function('this.className="l_x";');
+
+	// GRAB ANCHOR INSIDE LINK DIV AND SET ONCLICK
+
+							if(_linknode.hasChildNodes()) {
+								_ele_cnt = _linknode.childNodes.length;
+								for(_cntd = 0; _cntd < _ele_cnt; _cntd++) {
+									_elenode = _linknode.childNodes[_cntd];
+									if(_elenode.href) {
+
+										if (_linknode.id) {
+
+											_linknode.onclick = new Function('window.location="'+_elenode.href+'";urchinTracker("'+_linknode.id+'");');
+
+										} else {
+
+											_linknode.onclick = new Function('window.location="'+_elenode.href+'"');
+
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+}// end function
+/* END NAVIGATION CODE */
+/* google search script */
+	function stype(_clicked) {
+	if(_clicked == 'web') {
+		document.getElementById('gsearch').innerHTML = '<a href="javascript:stype(\'marvel\');">Marvel</a>&nbsp;<span style="font-weight:normal;">&nbsp;|&nbsp;</span>&nbsp;Web';
+		document.getElementById('smode').value = '';
+	} else {
+		document.getElementById('gsearch').innerHTML = 'Marvel&nbsp;<span style="font-weight:normal;">&nbsp;|&nbsp;</span>&nbsp;<a href="javascript:stype(\'web\');">Web</a>';
+		document.getElementById('smode').value = 'marvel.com';
+	}
+}
+/* user stuff */
+
+function loadSignin() {
+		document.getElementById('signin_loader').style.display = 'none';
+		document.getElementById('signin_holder').style.display = 'block';
+	}
+
+function closeSignin() {
+		document.getElementById('signin_loader').style.display = 'block';
+		document.getElementById('signin_holder').style.display = 'none';
+	}
+
+/* **************************************************
+*
+*			from marvel movie tab box
+*
+****************************************************/
+function prev_movies() {
+
+	clickCtr=(clickCtr == 0) ? clickCtr : clickCtr-1;
+	updateMovieArrows();
+	movies[clickCtr].forEach( 'doActions' ) ;
+
+}
+function next_movies() {
+
+	clickCtr=(clickCtr == 3)? clickCtr : clickCtr + 1;
+	updateMovieArrows();
+	movies[clickCtr].forEach( 'doActions' ) ;
+}
+
+function updateMovieArrows() {
+	var leftArrow = document.getElementById('leftArrow'),
+		rightArrow = document.getElementById('rightArrow');
+	switch( clickCtr ) {
+		case 0:
+			leftArrow.src = '/i/2007/bits/arrow_l_grey.gif'; break;
+		case 1:
+			leftArrow.src = '/i/2007/bits/arrow_l_blue.gif'; break;
+		case 2:
+			rightArrow.src = '/i/2007/bits/arrow_r_blue.gif'; break;
+		case 3:
+			rightArrow.src = '/i/2007/bits/arrow_r_grey.gif'; break;
+	}
+}
+/* **************************************************
+*
+*			from newsletter signup box
+*
+****************************************************/
+function ajax_signup(email_id){
+	/*email = document.getElementById( email_id ).value;
+	if((email.indexOf('@') == -1)||(email.indexOf('.') == -1)) {
+		document.getElementById('newsletter_error').innerHTML = 'There is something wrong with that email address. Please check to be sure it\'s correct and re-enter.';	
+		return;
+	}
+	if(email != ''){ 
+		makeRequest('/2007/pages/ajaxNewsletter.php?email=' + email + '&page=mf', div_id);
+		document.getElementById('newsletter_error').innerHTML = '';	
+	} else {
+		document.getElementById('newsletter_error').innerHTML = 'Please enter an email address';	
+	}*//*replacing functionality for newsletter per COPPA compliance 5/2009 */
+	var cb = function(){ signup_cb(email_id);}
+	loadSignup( location.href, cb );
+}
+
+function signup_cb(email_id) {
+	document.getElementById('email_address').value = document.getElementById(email_id).value;	
+}
+
+function cancelNewsletterSignup(div_id){
+	makeRequest('/2007/pages/ajaxNewsletter.php?reset=1', div_id);
+}
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////
+// front page movie unit stuff
+// ex. pass array of strings "img1.src|/some/image/path", "anchor.href|/some/url/here","movie_href.onclick|function name"
+// NOTE: supports nested properties as of 7/18/08, e.g. "image_element.style.width|30px"
+// - �
+	function actions( action_list ) {
+
+		this.actionRegistry = [];
+		this.eventsRegistry = [];
+
+		if ( action_list instanceof Array && action_list.length > 0 ) {
+			// verify list contents
+			for ( var i=0; i < action_list.length; i++ ) {
+				var al = action_list[i] ;
+
+				if ( al.indexOf('|') > 0 ) {
+					var left_side = al.split('|')[0] ;
+					var val    = al.split('|')[1] ;
+					var p = left_side.split('.');
+					var el_id = p[0] ;
+					var props  = ( p.length > 2 ) ? p.slice(1) : p[1] ;
+
+					if ( typeof props == 'string' && props.indexOf('on') == 0 ) {
+						var f = window[val];
+						if ( typeof(f) != 'function' ) { alert('Error in actions.actions()\\n: '+ val +' doesn\'t seem to be a function!'); }
+						this.eventsRegistry.push( [ el_id, props, f.toString() ] ); // store a copy of the function
+					} else
+						this.actionRegistry.push( [ el_id, props, val ] ) ;
+				} else if ( al && typeof(al) == 'string' ) {
+					var el, tmp_name, p = al.split('.') ;  
+					var obj_name = ( p.length > 2 ) ? p.slice(0,-1).join('.') : ( p.length == 2 ? p[0] : null ) ;
+					var func_name = ( p.length > 2 ) ? p.slice(-1)[0] : ( p.length == 2 ? p[1] : al ) ;
+
+					var _obj_ = ( el=document.getElementById(obj_name) ) ? el
+						: ( p.length > 2 ? eval( 'window.'+ obj_name ) : window[obj_name] ) ;
+
+					var f = obj_name ? _obj_[func_name] : window[func_name] ;
+					var func_source = ( typeof f == 'function' ) ? f.toString() : '' ;
+					this.eventsRegistry.push( [ obj_name, func_name, func_source ] );
+				}
+
+			}
+		}
+		// define some methods
+
+		// generally - called by object manager's forEach() method
+		this.doActions = function () {
+			if ( this.actionRegistry.length == 0 && this.eventsRegistry.length == 0 ) return;
+
+			var el,el_id,prop,val,reg = this.actionRegistry ;
+			var eval_list = [ 'null', 'true', 'false' ] ; // when to use eval() on val
+			for ( var i=0; i < reg.length; i++ ) {
+				el_id = reg[i][0] ; el=document.getElementById(el_id);
+				prop = reg[i][1] ;
+				val = reg[i][2];
+				val = in_array( val, eval_list ) ? eval(val) : val ;
+				val = ( !val && typeof el[prop] == 'string' ) ? '' : val ; // null/false = blank string
+				if ( el ) {
+					if ( prop instanceof Array )
+						eval( "el['"+ prop.join("']['") + "'] = val;" ); // for nested properties
+					else
+						el[prop] = val ; // for a single property
+				} else
+					{ alert( 'Error in actions.doActions():\nElement id ['+el_id+'] is not defined!' ); break; }
+			}
+
+			var tmp,sourceCode,func,_obj_; reg = this.eventsRegistry;
+			for ( var i=0; i < reg.length; i++ ) {
+				el_id = reg[i][0] ;
+				func = reg[i][1] ;
+				_obj_ = (el=document.getElementById(el_id)) ? el
+					: ( el_id ? eval( 'window.'+el_id ) : window )  ;
+				tmp = reg[i][2];
+
+				// TODO: add late source lookups
+				//if (!in_array(tmp,eval_list) && typeof(_obj_[func]) == 'function' )
+				//	tmp = _obj_[func].toString() ; // attempt late source lookup
+
+				sourceCode = tmp.substring( tmp.indexOf('{')+1, tmp.lastIndexOf('}') );
+				if ( typeof _obj_[func] == 'function' && !in_array(tmp,eval_list) )
+					_obj_[func].call(_obj_) ; // invoke callback function using object's scope
+				else if ( el && tmp )
+					el[func] = (tmp != 'null') ? new Function( sourceCode ) : null ;
+			}
+
+		}
+
+		return this; // allow object chaining
+	}
+
+	function objectManager( ) {
+
+		this.mode = null ; // array or hash mode
+		this.objSets = {} ; // using this object as assoc array
+		this.arr     = [] ; // using this to store internal array
+
+		this.addSet = function ( setName, setArr ) {
+			if ( this.mode == 'array' )
+			{ alert('objectManager Error:\\nNot allowed to switch object mode.'); return; }
+			else this.mode = 'hash' ;
+
+			if ( typeof setArr != 'object' || setArr.length == 0 )
+				{ alert('objectManager.addSet() Error:\\nsetArr is empty!'); return; }
+			if ( typeof setName != 'string' || setName.length == 0 )
+				{ alert('objectManager.addSet() Error:\\nsetName is not set!'); return; }
+
+			this.objSets[setName] = setArr ;
+		}
+
+		// this object will maintain an internal array object
+		// trying to extend the base Array object is troublesome like you wouldn't believe
+		this.push = function( stuff ) {
+			if ( this.mode == 'hash' )
+			{ alert('objectManager.push() Error:\\nNot allowed to switch object mode.'); return; }
+			else this.mode = 'array' ;
+
+			this.arr.push( stuff );
+		}
+
+		// don't really want to add a removeSet, since seems redundant for our needs
+
+		// func - method name
+		// setName - the name of the set to affect
+		this.forEach = function( func, setName ) {
+
+			if ( this.mode == null || this.mode == 'hash' ) {
+				for ( var sn in this.objSets )
+					for ( var j in this.objSets[sn] )
+					if ( typeof this.objSets[sn][j][func] == 'function' ) {
+						var f = this.objSets[sn][j][func];
+						f.call(this.objSets[sn][j]); // make the call and set function's scope to array element
+					}
+			} else {
+				for ( var i in this.arr )
+					if ( typeof this.arr[i][func] == 'function' ) {
+						var f = this.arr[i][func] ;
+						f.call( this.arr[i] ); // make the call and set function's scope to array element
+					}
+			}
+		} // this.forEach
+
+
+	}
+/* BEGIN MG ACCORDIAN + DOTS SCRIPT - � */
+
+// ACCORDIAN CONTROL
+
+function ac_toggle(_cid) {
+	if(_cid != _curtitle) { // do nothing if clicked content is open
+		_nexcon = document.getElementById('c' + _cid); // next content to open
+		_curcon = document.getElementById('c' + _curtitle); // current content already active
+		document.getElementById('t' + _cid).className = 'ac_title_on'; // style
+		document.getElementById('t' + _curtitle).className = 'ac_title_off'; // style
+		_nexheight = _nexcon.style.height;
+		_curheight = _curcon.style.height;
+		ac_move(_cid);
+
+	}
+}
+function ac_move(_cid) {
+		if(parseInt(_nexheight) < _maxheight) {
+			_nexcon.style.height = parseInt(_nexcon.style.height) + 120 + 'px'; // grow next content
+			_nexcon.style.display = 'block'; // toggle display b/c ie6 !understand height:0px;
+		}
+		if(parseInt(parseInt(_curheight)) > 0) { // check current content height
+			_curcon.style.height = parseInt(_curcon.style.height) - 120 + 'px'; // shrink current content
+			_curcon.style.display = 'none';
+		}
+		/*
+		if(parseInt(_nexheight) < _maxheight) { // check next content height
+			_nexcon.style.display = 'block'; // toggle display b/c ie6 !understand height:0px;
+			_nexcon.style.height = parseInt(_nexcon.style.height) + 120 + 'px'; // grow next content
+		}
+		if(parseInt(_curheight) > 0) { // check current content height
+			_curcon.style.height = parseInt(_curcon.style.height) - 120 + 'px'; // shrink current content
+		}
+		if(parseInt(_curheight) == 5) { //
+			_curcon.style.display = 'none'; // toggle display b/c ie6 !understand height:0px;
+		}
+
+		if((parseInt(_nexheight) < _maxheight) || (parseInt(_curheight) > 0)) {
+			_acspd = setTimeout('ac_toggle('+_cid+')',1); // animator
+		} else {
+			_curtitle = _cid; // store new active content
+		}
+		*/
+		_curtitle = _cid; // store new active content
+}
+// SETUP ACCORDIAN
+
+function setup_ac() {
+	window._maxheight = 120;
+	window._curtitle = 1;
+	window._nextitle = 2;
+}
+
+// SWAP MAIN GRAPHIC
+
+function mg_swap(_dnum,_source,sz) {
+	if(_source && defined(window._mgspd) ) { // if a dot was clicked, let everything get reset
+		clearTimeout(_mgspd);
+	}
+	//alert(sz);
+	if(sz == undefined) {
+		sz = 18;
+	}
+	//alert(sz);
+	var _arr = [];
+	var _arr = _mg_data[_dnum].split("|");
+	var _did = 'd' + _dnum;
+	var _dnum = new Number(_dnum);
+	var _def_html, _acts_list = [] ;
+	// 1:title 2:link 3:text 4:urchin id
+	switch ( parseInt(_source) ) {
+		case 2: // mdc something cool unit
+			_def_html = _arr[3] ;
+			_acts_list = [ 'something_cool_title.innerHTML|' + _arr[1],
+								'something_cool_link.href|' + _arr[2] ] ;
+			break;
+		case 1: // for marvel frontpage
+		default:
+			_def_html = '<a href="'+_arr[2]+'"><img src="/site/genr8.php?txt='+escape(_arr[1])+'&sz='+sz+'&bg=ffffff&c=505050&ttf=u85.ttf" border="0" alt="'+_arr[1]+'" title="'+_arr[1]+'"></a><br><div class="mg_subtxt">'+_arr[3]+' [&nbsp;<a href="'+_arr[2]+'">FULL STORY</a>&nbsp;]</div>';
+	}
+
+	// cache some DOM image elements to avoid firefox memleak
+	var w = window, mg = document.getElementById('mg') ;
+	defined( w._mg_images ) ? null : w._mg_images = [] ;
+	if ( !defined( w._mg_images[_dnum] ) ) {
+		w._mg_images[_dnum] = document.createElement('img');
+		w._mg_images[_dnum].id = 'mg' ;
+		w._mg_images[_dnum].src = _arr[0] ;
+	}
+
+	document.getElementById('mg_image').onclick = new Function('window.location="'+_arr[2]+'";urchinTracker("'+_arr[4]+'");');
+	mg.parentNode.replaceChild( w._mg_images[_dnum], mg );
+	document.getElementById('mg_headline_wrap').innerHTML = _def_html ;
+	document.getElementById('d' + _curdot).className = 'mg_dot_off';
+	document.getElementById(_did).className = 'mg_dot_act';
+	(new actions( _acts_list )).doActions() ; // perform any additional DOM updates
+
+	_curdot = _dnum;
+	(_dnum + 1) > _ttldot ? _nexdot = 1 : _nexdot = _dnum + 1;
+	(_dnum - 1) == 0 ? _predot = _ttldot : _predot = _dnum - 1;
+	//alert(sz);
+	if(_mg_autoplay == 1) {
+		_nexdot = defined(_mg_data[_nexdot]) ? _nexdot : '1' ;
+		window._mgspd = setTimeout('mg_swap('+_nexdot+','+_source+','+sz+')',6*1000);// loop it
+	} else
+	if ( defined(window._mgspd) ) {
+		clearTimeout(_mgspd);
+	}
+}
+
+// TOOLTIP ON
+
+function tt_on(_dnum,offset) {
+	if (!defined( _mg_data[_dnum] )) return false ;
+	var _arr = [];
+	var _arr = _mg_data[_dnum].split("|");
+	var _did = 'd' + _dnum;
+	_offset = (defined(offset) && offset) ? offset : 0 ;
+	if(_dnum != _curdot) {
+		document.getElementById(_did).className = 'mg_dot_on';
+		document.getElementById(_ttid + '_txt').innerHTML = _arr[1];
+		var _tt = document.getElementById(_ttid);
+		_tt.style.left = parseInt(_tt.style.left) + (_dnum * 25) + _offset + 'px';
+		_tt.style.display = 'block';
+	}
+
+}
+
+// TOOLTIP OFF
+function tt_off(_dnum) {
+	if (!defined( _mg_data[_dnum] )) return false ;
+	var _did = 'd' + _dnum;
+	if(_dnum != _curdot) {
+		document.getElementById(_did).className = 'mg_dot_off';
+	}
+	var _tt = document.getElementById(_ttid);
+	_tt.style.display = 'none';
+	_tt.style.left = '-46px';
+}
+
+// CONTROLS
+
+function mg_toggle(_cmd,_source,sz) {
+	clearTimeout(_mgspd);
+	switch(_cmd) {
+		case 'prev':
+			mg_swap(_predot,_source,sz);
+			break;
+		case 'next':
+			mg_swap(_nexdot,_source,sz);
+			break;
+		case 'pause':
+			if(_mg_autoplay == 1) {
+				document.getElementById('mg_tog').className = 'mg_con_play';
+				_mg_autoplay = 0;
+			} else {
+				document.getElementById('mg_tog').className = 'mg_con_pause';
+				_mg_autoplay = 1;
+				mg_swap(_nexdot,_source,sz);
+			}
+			break;
+		default:
+			break;
+	}
+}
+
+// SETUP MAIN GRAPHIC / DOTS / ETC...
+
+function setup_mg(_ttl,sz) {
+	window._ttid = 'mg_tooltip';
+	window._ttldot = _ttl;
+	window._curdot = 1;
+	window._nexdot = 2;
+	window._predot = _ttldot;
+	window._mg_autoplay = 1;
+	//mg_swap(_curdot,null,sz); // should move this call outside
+}
+/* END MG ACCORDIAN + DOTS SCRIPT */
+/* GENERIC AJAX BOXES...USES MAKE POST REQUEST ABOVE */
+function package_ajx_slider(start,total,action,id) {
+	document.getElementById(id).innerHTML = '<div class="loadingimageholder"><img src="/i/2008/fb/loading.gif" width="54" height=62"></div>'
+	parameters='action='+encodeURIComponent(action)+'&start='+start+'&total='+total;
+	url = '/i/2008/php/generic_ajax_handler.php';
+	var callback = defined(window.marvel_ajax_box) ? window.marvel_ajax_box.onchange : null ; // an js level interactive object
+	makePostRequest(url,id,parameters,callback);
+}
+
+//v1.7
+// Flash Player Version Detection
+// Detect Client Browser type
+// Copyright 2005-2007 Adobe Systems Incorporated.  All rights reserved.
+var isIE  = (navigator.appVersion.indexOf("MSIE") != -1) ? true : false;
+var isWin = (navigator.appVersion.toLowerCase().indexOf("win") != -1) ? true : false;
+var isOpera = (navigator.userAgent.indexOf("Opera") != -1) ? true : false;
+
+function ControlVersion()
+{
+	var version;
+	var axo;
+	var e;
+
+	// NOTE : new ActiveXObject(strFoo) throws an exception if strFoo isn't in the registry
+
+	try {
+		// version will be set for 7.X or greater players
+		axo = new ActiveXObject("ShockwaveFlash.ShockwaveFlash.7");
+		version = axo.GetVariable("$version");
+	} catch (e) {
+	}
+
+	if (!version)
+	{
+		try {
+			// version will be set for 6.X players only
+			axo = new ActiveXObject("ShockwaveFlash.ShockwaveFlash.6");
+
+			// installed player is some revision of 6.0
+			// GetVariable("$version") crashes for versions 6.0.22 through 6.0.29,
+			// so we have to be careful.
+
+			// default to the first public version
+			version = "WIN 6,0,21,0";
+
+			// throws if AllowScripAccess does not exist (introduced in 6.0r47)
+			axo.AllowScriptAccess = "always";
+
+			// safe to call for 6.0r47 or greater
+			version = axo.GetVariable("$version");
+
+		} catch (e) {
+		}
+	}
+
+	if (!version)
+	{
+		try {
+			// version will be set for 4.X or 5.X player
+			axo = new ActiveXObject("ShockwaveFlash.ShockwaveFlash.3");
+			version = axo.GetVariable("$version");
+		} catch (e) {
+		}
+	}
+
+	if (!version)
+	{
+		try {
+			// version will be set for 3.X player
+			axo = new ActiveXObject("ShockwaveFlash.ShockwaveFlash.3");
+			version = "WIN 3,0,18,0";
+		} catch (e) {
+		}
+	}
+
+	if (!version)
+	{
+		try {
+			// version will be set for 2.X player
+			axo = new ActiveXObject("ShockwaveFlash.ShockwaveFlash");
+			version = "WIN 2,0,0,11";
+		} catch (e) {
+			version = -1;
+		}
+	}
+
+	return version;
+}
+
+// JavaScript helper required to detect Flash Player PlugIn version information
+function GetSwfVer(){
+	// NS/Opera version >= 3 check for Flash plugin in plugin array
+	var flashVer = -1;
+
+	if (navigator.plugins != null && navigator.plugins.length > 0) {
+		if (navigator.plugins["Shockwave Flash 2.0"] || navigator.plugins["Shockwave Flash"]) {
+			var swVer2 = navigator.plugins["Shockwave Flash 2.0"] ? " 2.0" : "";
+			var flashDescription = navigator.plugins["Shockwave Flash" + swVer2].description;
+			var descArray = flashDescription.split(" ");
+			var tempArrayMajor = descArray[2].split(".");
+			var versionMajor = tempArrayMajor[0];
+			var versionMinor = tempArrayMajor[1];
+			var versionRevision = descArray[3];
+			if (versionRevision == "") {
+				versionRevision = descArray[4];
+			}
+			if (versionRevision[0] == "d") {
+				versionRevision = versionRevision.substring(1);
+			} else if (versionRevision[0] == "r") {
+				versionRevision = versionRevision.substring(1);
+				if (versionRevision.indexOf("d") > 0) {
+					versionRevision = versionRevision.substring(0, versionRevision.indexOf("d"));
+				}
+			}
+			var flashVer = versionMajor + "." + versionMinor + "." + versionRevision;
+		}
+	}
+	// MSN/WebTV 2.6 supports Flash 4
+	else if (navigator.userAgent.toLowerCase().indexOf("webtv/2.6") != -1) flashVer = 4;
+	// WebTV 2.5 supports Flash 3
+	else if (navigator.userAgent.toLowerCase().indexOf("webtv/2.5") != -1) flashVer = 3;
+	// older WebTV supports Flash 2
+	else if (navigator.userAgent.toLowerCase().indexOf("webtv") != -1) flashVer = 2;
+	else if ( isIE && isWin && !isOpera ) {
+		flashVer = ControlVersion();
+	}
+	return flashVer;
+}
+
+// When called with reqMajorVer, reqMinorVer, reqRevision returns true if that version or greater is available
+function DetectFlashVer(reqMajorVer, reqMinorVer, reqRevision)
+{
+	versionStr = GetSwfVer();
+	if (versionStr == -1 ) {
+		return false;
+	} else if (versionStr != 0) {
+		if(isIE && isWin && !isOpera) {
+			// Given "WIN 2,0,0,11"
+			tempArray         = versionStr.split(" "); 	// ["WIN", "2,0,0,11"]
+			tempString        = tempArray[1];			// "2,0,0,11"
+			versionArray      = tempString.split(",");	// ['2', '0', '0', '11']
+		} else {
+			versionArray      = versionStr.split(".");
+		}
+		var versionMajor      = versionArray[0];
+		var versionMinor      = versionArray[1];
+		var versionRevision   = versionArray[2];
+
+        	// is the major.revision >= requested major.revision AND the minor version >= requested minor
+		if (versionMajor > parseFloat(reqMajorVer)) {
+			return true;
+		} else if (versionMajor == parseFloat(reqMajorVer)) {
+			if (versionMinor > parseFloat(reqMinorVer))
+				return true;
+			else if (versionMinor == parseFloat(reqMinorVer)) {
+				if (versionRevision >= parseFloat(reqRevision))
+					return true;
+			}
+		}
+		return false;
+	}
+}
+
+function AC_AddExtension(src, ext)
+{
+  if (src.indexOf('?') != -1)
+    return src.replace(/\?/, ext+'?');
+  else
+    return src + ext;
+}
+
+function AC_Generateobj(objAttrs, params, embedAttrs)
+{
+  var str = '';
+  if (isIE && isWin && !isOpera)
+  {
+    str += '<object ';
+    for (var i in objAttrs)
+    {
+      str += i + '="' + objAttrs[i] + '" ';
+    }
+    str += '>';
+    for (var i in params)
+    {
+      str += '<param name="' + i + '" value="' + params[i] + '" /> ';
+    }
+    str += '</object>';
+  }
+  else
+  {
+    str += '<embed ';
+    for (var i in embedAttrs)
+    {
+      str += i + '="' + embedAttrs[i] + '" ';
+    }
+    str += '> </embed>';
+  }
+
+  document.write(str);
+}
+
+function AC_FL_RunContent(){
+  var ret =
+    AC_GetArgs
+    (  arguments, ".swf", "movie", "clsid:d27cdb6e-ae6d-11cf-96b8-444553540000"
+     , "application/x-shockwave-flash"
+    );
+  AC_Generateobj(ret.objAttrs, ret.params, ret.embedAttrs);
+}
+
+function AC_SW_RunContent(){
+  var ret =
+    AC_GetArgs
+    (  arguments, ".dcr", "src", "clsid:166B1BCA-3F9C-11CF-8075-444553540000"
+     , null
+    );
+  AC_Generateobj(ret.objAttrs, ret.params, ret.embedAttrs);
+}
+
+function AC_GetArgs(args, ext, srcParamName, classid, mimeType){
+  var ret = new Object();
+  ret.embedAttrs = new Object();
+  ret.params = new Object();
+  ret.objAttrs = new Object();
+  for (var i=0; i < args.length; i=i+2){
+    var currArg = args[i].toLowerCase();
+
+    switch (currArg){
+      case "classid":
+        break;
+      case "pluginspage":
+        ret.embedAttrs[args[i]] = args[i+1];
+        break;
+      case "src":
+      case "movie":
+        args[i+1] = AC_AddExtension(args[i+1], ext);
+        ret.embedAttrs["src"] = args[i+1];
+        ret.params[srcParamName] = args[i+1];
+        break;
+      case "onafterupdate":
+      case "onbeforeupdate":
+      case "onblur":
+      case "oncellchange":
+      case "onclick":
+      case "ondblclick":
+      case "ondrag":
+      case "ondragend":
+      case "ondragenter":
+      case "ondragleave":
+      case "ondragover":
+      case "ondrop":
+      case "onfinish":
+      case "onfocus":
+      case "onhelp":
+      case "onmousedown":
+      case "onmouseup":
+      case "onmouseover":
+      case "onmousemove":
+      case "onmouseout":
+      case "onkeypress":
+      case "onkeydown":
+      case "onkeyup":
+      case "onload":
+      case "onlosecapture":
+      case "onpropertychange":
+      case "onreadystatechange":
+      case "onrowsdelete":
+      case "onrowenter":
+      case "onrowexit":
+      case "onrowsinserted":
+      case "onstart":
+      case "onscroll":
+      case "onbeforeeditfocus":
+      case "onactivate":
+      case "onbeforedeactivate":
+      case "ondeactivate":
+      case "type":
+      case "codebase":
+      case "id":
+        ret.objAttrs[args[i]] = args[i+1];
+        break;
+      case "width":
+      case "height":
+      case "align":
+      case "vspace":
+      case "hspace":
+      case "class":
+      case "title":
+      case "accesskey":
+      case "name":
+      case "tabindex":
+        ret.embedAttrs[args[i]] = ret.objAttrs[args[i]] = args[i+1];
+        break;
+      default:
+        ret.embedAttrs[args[i]] = ret.params[args[i]] = args[i+1];
+    }
+  }
+  ret.objAttrs["classid"] = classid;
+  if (mimeType) ret.embedAttrs["type"] = mimeType;
+  return ret;
+}
+
+
+//////////////////////////////////////////////////////////////////////////////
+// Create a JSON object only if one does not already exist.
+// Closure technique is used to avoid creating extra globals.
+// methods:
+//		var json_string = JSON.encode( javascript data );
+//		var js_data = JSON.decode( json_string );
+//	Yoinked from http://www.json.org/json2.js
+//	and renamed the methods to be more like PHP -�
+
+if (!this.JSON) {
+    JSON = {};
+}
+(function () {
+
+    function f(n) {
+        // Format integers to have at least two digits.
+        return n < 10 ? '0' + n : n;
+    }
+
+    if (typeof Date.prototype.toJSON !== 'function') {
+
+        Date.prototype.toJSON = function (key) {
+
+            return this.getUTCFullYear()   + '-' +
+                 f(this.getUTCMonth() + 1) + '-' +
+                 f(this.getUTCDate())      + 'T' +
+                 f(this.getUTCHours())     + ':' +
+                 f(this.getUTCMinutes())   + ':' +
+                 f(this.getUTCSeconds())   + 'Z';
+        };
+
+        String.prototype.toJSON =
+        Number.prototype.toJSON =
+        Boolean.prototype.toJSON = function (key) {
+            return this.valueOf();
+        };
+    }
+
+    var cx = /[\u0000\u00ad\u0600-\u0604\u070f\u17b4\u17b5\u200c-\u200f\u2028-\u202f\u2060-\u206f\ufeff\ufff0-\uffff]/g,
+        escapable = /[\\\"\x00-\x1f\x7f-\x9f\u00ad\u0600-\u0604\u070f\u17b4\u17b5\u200c-\u200f\u2028-\u202f\u2060-\u206f\ufeff\ufff0-\uffff]/g,
+        gap,
+        indent,
+        meta = {    // table of character substitutions
+            '\b': '\\b',
+            '\t': '\\t',
+            '\n': '\\n',
+            '\f': '\\f',
+            '\r': '\\r',
+            '"' : '\\"',
+            '\\': '\\\\'
+        },
+        rep;
+
+
+    function quote(string) {
+        escapable.lastIndex = 0;
+        return escapable.test(string) ?
+            '"' + string.replace(escapable, function (a) {
+                var c = meta[a];
+                if (typeof c === 'string') {
+                    return c;
+                }
+                return '\\u' + ('0000' + a.charCodeAt(0).toString(16)).slice(-4);
+            }) + '"' :
+            '"' + string + '"';
+    }
+
+    function str(key, holder) {
+        var i,          // The loop counter.
+            k,          // The member key.
+            v,          // The member value.
+            length,
+            mind = gap,
+            partial,
+            value = holder[key];
+
+        if (value && typeof value === 'object' &&
+                typeof value.toJSON === 'function') {
+            value = value.toJSON(key);
+        }
+
+        if (typeof rep === 'function') {
+            value = rep.call(holder, key, value);
+        }
+
+        switch (typeof value) {
+        case 'string':
+            return quote(value);
+
+        case 'number':
+            return isFinite(value) ? String(value) : 'null';
+        case 'boolean':
+        case 'null':
+            return String(value);
+        case 'object':
+            if (!value) {
+                return 'null';
+            }
+            gap += indent;
+            partial = [];
+            if (typeof value.length === 'number' &&
+                    !value.propertyIsEnumerable('length')) {
+                length = value.length;
+                for (i = 0; i < length; i += 1) {
+                    partial[i] = str(i, value) || 'null';
+                }
+                v = partial.length === 0 ? '[]' :
+                    gap ? '[\n' + gap +
+                            partial.join(',\n' + gap) + '\n' +
+                                mind + ']' :
+                          '[' + partial.join(',') + ']';
+                gap = mind;
+                return v;
+            }
+            if (rep && typeof rep === 'object') {
+                length = rep.length;
+                for (i = 0; i < length; i += 1) {
+                    k = rep[i];
+                    if (typeof k === 'string') {
+                        v = str(k, value);
+                        if (v) {
+                            partial.push(quote(k) + (gap ? ': ' : ':') + v);
+                        }
+                    }
+                }
+            } else {
+                for (k in value) {
+                    if (Object.hasOwnProperty.call(value, k)) {
+                        v = str(k, value);
+                        if (v) {
+                            partial.push(quote(k) + (gap ? ': ' : ':') + v);
+                        }
+                    }
+                }
+            }
+            v = partial.length === 0 ? '{}' :
+                gap ? '{\n' + gap + partial.join(',\n' + gap) + '\n' +
+                        mind + '}' : '{' + partial.join(',') + '}';
+            gap = mind;
+            return v;
+        }
+    }
+
+// If the JSON object does not yet have a encode method, give it one.
+
+    if (typeof JSON.encode !== 'function') {
+        JSON.encode = function (value, replacer, space) {
+            var i;
+            gap = '';
+            indent = '';
+            if (typeof space === 'number') {
+                for (i = 0; i < space; i += 1) {
+                    indent += ' ';
+                }
+            } else if (typeof space === 'string') {
+                indent = space;
+            }
+            rep = replacer;
+            if (replacer && typeof replacer !== 'function' &&
+                    (typeof replacer !== 'object' ||
+                     typeof replacer.length !== 'number')) {
+                throw new Error('JSON.encode');
+            }
+            return str('', {'': value});
+        };
+    }
+    if (typeof JSON.decode !== 'function') {
+        JSON.decode = function (text, reviver) {
+            var j;
+
+            function walk(holder, key) {
+                var k, v, value = holder[key];
+                if (value && typeof value === 'object') {
+                    for (k in value) {
+                        if (Object.hasOwnProperty.call(value, k)) {
+                            v = walk(value, k);
+                            if (v !== undefined) {
+                                value[k] = v;
+                            } else {
+                                delete value[k];
+                            }
+                        }
+                    }
+                }
+                return reviver.call(holder, key, value);
+            }
+            cx.lastIndex = 0;
+            if (cx.test(text)) {
+                text = text.replace(cx, function (a) {
+                    return '\\u' +
+                        ('0000' + a.charCodeAt(0).toString(16)).slice(-4);
+                });
+            }
+            if (/^[\],:{}\s]*$/.
+test(text.replace(/\\(?:["\\\/bfnrt]|u[0-9a-fA-F]{4})/g, '@').
+replace(/"[^"\\\n\r]*"|true|false|null|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?/g, ']').
+replace(/(?:^|:|,)(?:\s*\[)+/g, ''))) {
+
+                j = eval('(' + text + ')');
+                return typeof reviver === 'function' ?
+                    walk({'': j}, '') : j;
+            }
+            throw new SyntaxError('JSON.decode');
+        };
+    }
+})();
+
+/*
+ * Object: marvel_loader
+ * Purpose: this loads data from our php objects via an ajax call. It converts the results
+ *		into json, xml or templated output depending on the mode selected in the request object.
+ *	Simple example:
+ *		var loader = marvel_loader.init( 'catalog/catalog' );
+ *		loader.request = {
+ *			params: [ {"s.series_name": "Ultimate Spider-Man"} ],
+ *			mode: 'json',
+ *			expire: 3600,
+ *		};
+ *		loader.callback = update_my_content_function;
+ *		loader.energize();
+ *
+ *	Note:
+ *		For detailed explanation of all the features visit http://devblog.crossbow
+ */
+var marvel_loader = function() {
+
+	this.base_url = '/i/2008/php/ajaxanator.php/' ;
+	this.req_details = {} ;
+   this.supported_modes = [ 'json','xml','htm' ] ;
+	this.hash = {};
+
+   this.validate_request = function() {
+
+      var err, r = this.request ;
+      if ( !defined(r) ) { err = 'Request is not defined!'; }
+		else {
+	      // verify params
+      	if ( !defined(r.params) )
+				{ err = 'params is required'; } // will leave this in to encourage use of parameters
+      	// check for mode(s)
+			if ( defined(r.mode) ) {
+				var valid_modes = true, modes = r.mode.split(',') ;
+				for ( var i in modes )
+					valid_modes = valid_modes && in_array( modes[i], this.supported_modes );
+				if ( !valid_modes  )
+					{ err = r.mode + ' is not supported mode(s)'; }
+			}
+		}
+      // check url
+      if ( !defined(this.req_id) ) { err = 'Request URL is not defined or incorrect!'; }
+      
+      return err ;
+   }
+
+
+   this.energize = function( eid,subset ) {
+
+		// first validate
+		var err = this.validate_request() ;
+
+		if ( !err ) {
+			var req_id = this.req_id ;
+			if ( this.req_details[this.req_id].post_params )
+				var post_params = this.req_details[this.req_id].post_params ;
+			else {
+				// encode the parameters
+				var post_params = this.request ;
+				!is_array(post_params.params) || ( post_params.params = JSON.encode( this.request.params ) );
+				defined(this.request.cparams) && is_array(post_params.cparams)
+					? post_params.cparams = JSON.encode( this.request.cparams ) : null ;
+
+				this.req_details[this.req_id].post_params = post_params ;
+				if ( typeof this.callback == 'function' )
+					this.req_details[this.req_id].callback = this.callback ;
+			}
+			this.mode = defined(post_params.mode) ? post_params.mode : 'json' ;
+			
+			var post_arr = [] ;
+			defined( subset ) ? post_params.subset = subset : null ;
+			for ( var i in post_params )
+				post_arr.push( i+'='+ this.clean_param(post_params[i]) ) ;
+			post_arr.push( 'mhash='+ this.get_hash(req_id) ) ;
+
+			if (eid) this.req_details[this.req_id].el_id = eid ;
+			var closure_cb = function() { marvel_loader.catch_data.call(this, req_id); };
+			makePostRequest( this.url, null, post_arr.join('&'), closure_cb ) ;
+		} else
+			alert( "Error: "+ err ) ;
+
+		return req_id ;
+   }
+
+	// grab the data returned
+	// obj context should be xmlhttp object
+	this.catch_data = function(req_id) {
+
+		var ml = window.marvel_loader ;
+		var req = ml.req_details[req_id] ;
+		var modes = ml.mode.indexOf(',') > -1 ? ml.mode.split(',') : [ ml.mode ];
+
+		if ( this.responseText ) {
+			if ( in_array('htm',modes) ) {
+				var resText,id = defined(req.el_id) ? req.el_id : null ;
+				if ( in_array('json',modes) ) {
+					var response_info = ml.handle_htmSubset_response( this.responseText ) ;
+					resText = response_info.text ;
+					req.result = response_info.result ;
+				} else
+					resText = this.responseText ;
+				!id || ( document.getElementById(id).innerHTML = resText );
+			}
+			else if ( in_array('xml',modes) )
+				req.result = this.responseXML ;
+			else
+				try {
+					req.result = JSON.decode( this.responseText ) ;
+				} catch(err) {
+					alert( 'Error: Unexpected response\n'+ this.responseText );
+				}
+		}
+
+		if ( typeof req.callback == 'function' )
+			req.callback.call( req ) ;
+	}
+	this.handle_htmSubset_response = function( res ) {
+		var ret = res;
+		var result = null ;
+		var arr = res.split('|||') ;
+		if ( arr.length == 2 ) {
+			try { result = JSON.decode(arr[0]); }
+				catch (e) { alert('Error: Unexpected response'); }
+		} 
+		return { "result": result, "text": arr[1] } ;
+	}
+	this.get_hash = function(rid) {
+		if ( !this.hash[rid] ) {
+			var e = document.getElementsByTagName('meta'),i=e.length;
+			while (i--)
+				if ( e[i].getAttribute('name') == rid ) {
+					this.hash[rid] = e[i].getAttribute('content');
+				}
+		}
+		return this.hash[rid];
+	}
+	this.clean_param = function(txt) {
+		return ( defined(txt.indexOf) && (txt.indexOf('&') >= 0 || txt.indexOf('=') >= 0) ) ?  escape(txt) : txt ;
+	}
+
+	this.prev = function(eid,rid) {
+		!rid || this.set_reqId(rid);
+		var r = this.req_details[this.req_id].result ;
+		defined(r.subset) && this.energize(eid,r.subset.previous) ;
+	}
+	this.next = function(eid,rid) {
+		!rid || this.set_reqId(rid);
+		var r = this.req_details[this.req_id].result ;
+		defined(r.subset) && this.energize(eid,r.subset.next) ;
+	}
+	// check and set the request id
+	this.set_reqId = function(req_id) {
+		var s = req_id.split('/');
+		if ( req_id && s.length == 2 )
+			this.req_id = s.join('|') ;
+		else if ( req_id && this.req_details[req_id] ) {
+			this.req_id = req_id ;
+			this.url = this.base_url + req_id.split('|').join('/') ;
+		}
+	}
+
+	this.init = function( cm_str ) {
+		// check for the dependencies
+		if ( typeof makePostRequest !== 'function' )
+			alert( 'marvel_loader: makePostRequest() is not found' ) ;
+		if ( typeof JSON !== 'object' )
+			alert( 'marvel_loader: JSON object is not found' ) ;
+		var len = cm_str.split('/').length ;
+		if ( len > 2 ) {
+			this.base_url = cm_str.split('/').slice(0, len-2 ).join('/') + '/' ;
+			cm_str = cm_str.split('/').slice(-2).join('/') ;
+		}
+		else if ( len <= 1 )
+			alert( 'marvel_loader: marvel loader initialized with '+ cm_str +
+				'\nShould be in this format:\n class/method OR\nfull relative path to ajaxanator.php' );
+      
+		this.set_reqId( cm_str );
+		if ( this.req_id ) {
+			this.url = this.base_url + cm_str ;
+			this.req_details[this.req_id] = {} ;
+			this.req_details[this.req_id].result = {} ;
+			this.req_details[this.req_id].callback = this.callback = null ;
+		}
+
+		return this ;
+	}
+}
+
+window.marvel_loader = new marvel_loader() ;
+
+/* BRIGHTCOVE 3 WRAPPER FUNCTIONS */
+//HOME PAGE/COMIC&MOVIE FAMILY FUNCTIONS:
+
+
+// BRIGHTCOVE JS API WRAPPERS //
+	document.bc_dump = new Object;
+	document.bc_dump.listeners = new Object;
+	function onTemplateLoaded(message) {
+		if(defined(document.bc_dump.listeners)) {
+			for(eventName in document.bc_dump.listeners) {
+				callFlash("addEventListener", eventName, document.bc_dump.listeners[eventName]);	
+			}
+		}
+		document.bc_dump.bc_init = true;
+	}
+	function onTitleLoad(infoObj) {
+		var titleDTO = infoObj.parameters.title;
+		callFlash("loadTitleById", titleDTO.id);
+	}	
+	
+	function getTitleById_Result(message) {
+		if(typeof(message)=='undefined') {
+			document.bc_dump.video_is_loaded = false;
+		} else {
+			document.bc_dump.video_is_loaded = true;
+		}
+	}
+	// used by individual video page
+	function onContentLoad() {
+		callFlash("getTitleById",document.bc_dump.video_loader);
+		if(!document.bc_dump.video_is_loaded) {
+			callFlash("fetchTitleById",document.bc_dump.video_loader);
+		} 
+	}
+	function swapVid(titleId) {
+		if(defined(document.bc_dump.bc_init)) {
+			callFlash("getTitleById",titleId);
+			if(document.bc_dump.video_is_loaded) {
+				callFlash("loadTitleById", titleId);
+			} else {
+				callFlash("fetchTitleById", titleId);
+			}
+		} else {
+			alert('Please wait for the player to load before switching videos.');	
+		}
+	}	
+
+	function comic_locator() { // this is for comic shop locator box throughout the site
+		var zz = document.getElementById('Zip'); // zipcode field
+		var zy = document.getElementById('ziperror'); // error field
+		
+		if (zz.value == ''){
+			zy.style.display = '';
+		} else {
+			zy.style.display = 'none';
+			MM_openBrWindow('http://marvel.com/map.php?Zip='+zz.value,'Zipfinder','status=no,resizable=yes,width=460,height=695,scrollbars=no');
+		}
+		return false;
+	}
+	function fw_config(){
+		return { networkId:12880,cb_profile:"marvel_brightcove",siteSectionNetworkId:12880, videoAssetNetworkId:12880,fw_server:"http://3250.v.fwmrm.net/ad/p/1?",renderersXML:"http://m2.fwmrm.net/p/lib/bc/renderers.xml",siteSection:document.fwSiteSection,autoplay:false,video_profile:"marvel_video",needsCARU:false,CARU_width:230,CARU_location:"http://marvelkids.marvel.com/i/flash/freewheel_preroll.swf",amLocation:"http://adm.fwmrm.net/p/marvel_live/AdManager.swf" };
+	}	
+
+
+// facebook post it func
+function fbs_click() {u=location.href;t=document.title;window.open('http://www.facebook.com/sharer.php?u='+encodeURIComponent(u)+'&t='+encodeURIComponent(t),'sharer','toolbar=0,status=0,width=626,height=436');return false;}

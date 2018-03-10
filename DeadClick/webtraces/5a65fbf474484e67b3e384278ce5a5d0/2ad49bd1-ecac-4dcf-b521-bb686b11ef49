@@ -1,0 +1,129 @@
+$('#modal-form-submit').on('click', function (e) {
+   e.preventDefault();
+   $('#modal-form').submit();
+});
+var chatWindow;
+
+function OpenWebCallbackWindow() {
+   window.open("WebCallback.html", "Unified IP® Web Callback", "width=770,height=500,left=0,resizable=yes,scrollbars=no,menubar=0,location=0");
+}
+
+function OpenWebCallbackWindowAngular() {
+   window.open("WebCallbackAngular.html", "Unified IP® Web Callback", "width=770,height=500,left=0,resizable=yes,scrollbars=no,menubar=0,location=0");
+}
+
+function OpenWebCallbackWindowOverlay() {
+   $("body").append("<div class='embed-responsive' sytle='max-width=770; max-height=500'><iframe id='webCallbackOverlay' class='embed-responsive-item' src='/WebCallback/WebCallbackAngular.html'></iframe></div>");
+
+}
+
+function OpenChatDivOverlay() {
+   // Check to see if the div already exists
+   if (!$("#overlay").length) {
+      $("body").append("<iframe id='overlay'></iframe>");//.slideUp("slow");// show("fast");
+      $("#overlay").attr("src", "/webchat/ChatRequest.html");
+      //$("#overlay").show("slow");
+   }
+}
+
+function OpenChatDivOverlay2() {
+   $("body").append("<div class='embed-responsive' id='overlayWrapper'><iframe id='overlay' class='embed-responsive-item' src='/webchat/ChatDiv.html'></iframe></div>");
+}
+
+var CHAT_PARAMETERS;
+
+$(document).ready(function () {
+   // Load parameters from chat_config.json to create customized ChatRequest.html
+   $.getJSON("/webchat/chat_config.json", function (data) {
+      CHAT_PARAMETERS = data;
+      if (CHAT_PARAMETERS.EnableConfig) {
+         $("#ChatSetup").show();
+      }
+      else {
+         $("#ChatSetup").hide();
+      }
+   });
+
+   $("#chatWindow").click(function (e) {
+      var windowURL = "ChatWindow.html?CustName=Joe&ServiceID=" + CHAT_PARAMETERS.ChatRequest.UserSelectableServices[0].ServiceId + "&Timezone=" + GetTimeZoneOffset();
+      //var windowURL = "/webchat/ChatRequest.html";
+      chatWindow = window.open(windowURL, "Unified IP® Chat", "width=425,height=425,left=0,resizable=yes,scrollbars=no,menubar=0,location=0");
+   });
+
+   $("#Request-Chat-With-Agent").hover(function () {
+      // Mouse over (move button left)
+      $(this).animate({right: "-30px"}, {queue: false, duration: 500});
+   }, function () {
+      // Mouse exit (return button to original position)
+      $(this).animate({right: "-40px"}, {queue: false, duration: 500});
+   });
+
+   var isContactUsContainerOpen = false;
+   $("#ContactUsContainer").click(function () {
+      if (isContactUsContainerOpen) {
+         $(this).animate({right: "-300px"}, {queue: false, duration: 500});
+         isContactUsContainerOpen = false;
+      }
+      else {
+         $(this).animate({right: "0px"}, {queue: false, duration: 500});
+         isContactUsContainerOpen = true;
+      }
+   });
+   $("#ContactUsContainer").hover(function () {
+      if (!isContactUsContainerOpen) {
+         // Mouse over (move button left)
+         $(this).animate({right: "-290px"}, {queue: false, duration: 500});
+      }
+   }, function () {
+      // Mouse exit (return button to original position)
+      if (!isContactUsContainerOpen) {
+         $(this).animate({right: "-300px"}, {queue: false, duration: 500});
+      }
+   });
+
+   $("#webCallbackButton").click(function (e) {
+      e.preventDefault();
+      OpenWebCallbackWindowAngular();
+   });
+
+   $("#webCallbackButton2").click(function (e) {
+      e.preventDefault();
+      $("#modalWebCallback").modal({
+         'show': true
+      });
+      $("#modalWebCallback-title").text("Web Callback");
+      $("#modalWebCallback-body").load("WebCallbackModal.html");
+   });
+
+   $("#webCallbackButton3").click(function (e) {
+      e.preventDefault();
+      $("#modalWebCallback").modal({
+         'show': true
+      });     
+      $("#modalWebCallback-title").text("Web Callback");    
+      $("#modalWebCallback-body").load("WebCallbackModal.html");
+   });
+
+ 
+
+   $("#LaunchSetup").click(function (e) {
+      e.preventDefault();
+      $("#modalSetup").modal({
+         'show': true
+      });
+      $("#modalSetup-title").text("Chat Setup");
+      $("#modalSetup-body").load("setup.html");
+   });
+});
+
+
+
+/** 
+ * Decimal value representing GMT offset for client in minutes (may be a negative value, i.e. "-210").
+ * Offset is used to display the local time in the client chat window history.
+ */
+function GetTimeZoneOffset() {
+   var currentDate = new Date( );
+   var gmtOffset = -currentDate.getTimezoneOffset( );
+   return gmtOffset;
+}

@@ -1,0 +1,276 @@
+define(['angular/core/services'],
+	function() {
+
+	var securityServices = angular.module('graphdb.framework.security.services', [
+		'ngCookies',
+		'toastr'
+	]);
+
+
+	securityServices.factory('$unauthorizedInterceptor',["$q", "$location", "$cookies", "$rootScope", function($q, $location, $cookies, $rootScope){
+		return {
+			 'responseError': function(response) {
+				if (response.status == 401) {
+					$rootScope.redirectToLogin();
+					return $q.reject(response);
+				}
+				else if (response.status == 403) {
+					if ($rootScope.setPermissionDenied($location.path())) {
+						console.log("Permission to page denied. Some errors in the console are normal.");
+					} else {
+						$rootScope.redirectToLogin();
+					}
+					return $q.reject(response);
+				}
+				else if(response.status == 409){
+					// TODO: is there a cleaner way to communicate this to the service without using a cookie?
+					$cookies['com.ontotext.graphdb.reauth' + $location.port()] = true;
+					$rootScope.redirectToLogin();
+					return $q.reject(response);
+				}
+				else{
+					return $q.reject(response);
+				}
+			 }
+		};
+	}]);
+
+	securityServices.service( '$jwtAuth', ["$http", "$cookies", "$cookieStore", "toastr", "$location", "$rootScope", function($http, $cookies, $cookieStore, toastr, $location, $rootScope){
+		var jwtAuth = this;
+
+		$rootScope.deniedPermissions = {};
+		$rootScope.setPermissionDenied = function(path) {
+			if (path === '/' || path === '/login' || !jwtAuth.isAuthenticated()) {
+				return false;
+			}
+			$rootScope.deniedPermissions[path] = true;
+			return true;
+		}
+		$rootScope.hasPermission = function() {
+			var path = $location.path();
+			return !$rootScope.deniedPermissions[path];
+		}
+		$rootScope.redirectToLogin = function() {
+		    if ($location.url().indexOf('/login') !== 0) {
+		        // remember where we were so we can return there
+		        $rootScope.returnToUrl = $location.url();
+		    }
+            $location.path('/login');
+		}
+
+		this.principalCookieName = 'com.ontotext.graphdb.principal' + $location.port();
+		this.authCookieName = 'com.ontotext.graphdb.auth' + $location.port();
+		this.reauthCookieName = 'com.ontotext.graphdb.reauth' + $location.port();
+
+		this.auth = $cookies[this.authCookieName];
+		this.principal = $cookieStore.get(this.principalCookieName);
+
+		this.securityEnabled = true;
+		this.freeAccess = false;
+		this.hasOverrideAuth = false;
+
+		var that = this;
+
+		$http.get('rest/security').then(function(res) {
+			that.securityEnabled = res.data;
+
+			if (that.securityEnabled) {
+                $http.get('rest/security/freeaccess').then(function(res){
+                    that.freeAccess = res.data.enabled;
+                    if (that.freeAccess) {
+                        that.freeAccessPrincipal = { authorities: res.data.authorities };
+                        if (that.auth === undefined) {
+                            that.principal = that.freeAccessPrincipal;
+                        }
+                    }
+                    $rootScope.$broadcast('securityInit', that.securityEnabled, that.auth !== undefined, that.freeAccess);
+                });
+            } else {
+                $http.get('rest/security/overrideauth').then(function(res) {
+                    that.hasOverrideAuth = res.data.enabled;
+                    if (that.hasOverrideAuth) {
+                        that.principal = { name: 'overrideauth', authorities: res.data.authorities };
+                    }
+                    $rootScope.$broadcast('securityInit', that.securityEnabled, that.auth !== undefined, that.hasOverrideAuth);
+                });
+            }
+		});
+		
+
+		this.isSecurityEnabled = function(){
+			return this.securityEnabled;
+		};
+		
+		this.isFreeAccessEnabled = function(){
+			return this.freeAccess;
+		};
+
+		this.isDefaultAuthEnabled = function() {
+		    return this.hasOverrideAuth && this.principal && this.principal.name == 'overrideauth';
+		}
+
+		this.getAuthToken = function() {
+			return this.auth;
+		}
+
+		this.authenticationHasExpired = function() {
+			return $cookies[this.reauthCookieName];
+		}
+
+		this.toggleSecurity = function(enabled){
+			if(enabled != this.securityEnabled){
+				this.securityEnabled = enabled;
+				$http.post('rest/security', enabled ? "true" : "false").then(function(res){
+					toastr.success("Security has been "+ (enabled ? 'enabled.' : 'disabled.'));
+				}, function(err){
+					toastr.error(err.data.error.message, "Error");
+				});
+				$rootScope.$broadcast('securityInit', this.securityEnabled, this.auth !== undefined, this.freeAccess);
+			}
+		};
+		
+		this.toggleFreeAccess = function(enabled, authorities){
+			if(enabled != this.freeAccess){
+				this.freeAccess = enabled;
+				if (enabled) {
+				    this.freeAccessPrincipal = { authorities: authorities };
+				} else {
+				    this.freeAccessPrincipal = undefined;
+				}
+				$http.post('rest/security/freeaccess', {enabled : enabled ? "true" : "false", authorities : authorities}).then(function(res){
+					toastr.success("Free access has been "+ (enabled ? 'enabled.' : 'disabled.'));
+				}, function(err){
+					toastr.error(err.data.error.message, "Error");
+				});
+				$rootScope.$broadcast('securityInit', this.securityEnabled, this.auth !== undefined, this.freeAccess);
+			}
+		};
+
+		this.setAuthHeaders = function() {
+			$http.defaults.headers.common["X-AUTH-TOKEN"] = this.auth;
+			$.ajaxSetup()['headers'] = $.ajaxSetup()['headers'] || {};
+			$.ajaxSetup()['headers']["X-AUTH-TOKEN"] = this.auth;
+		};
+		this.setAuthHeaders();
+
+		this.authenticate = function(data, headers){
+			this.auth = headers("X-AUTH-TOKEN");
+			this.principal = data;
+			$cookies[this.authCookieName] = this.auth;
+			$cookieStore.put(this.principalCookieName, this.principal);
+			this.setAuthHeaders();
+			$rootScope.deniedPermissions = {};
+			$rootScope.$broadcast('securityInit', this.securityEnabled, this.auth !== undefined, this.freeAccess);
+		};
+
+		this.getPrincipal = function(){
+			return this.principal;
+		}
+
+		this.clearAuthentication = function(){
+			this.auth = undefined;
+			this.principal = this.freeAccessPrincipal;
+			delete $cookies[this.authCookieName];
+			delete $cookies[this.reauthCookieName];
+			$cookieStore.remove(this.principalCookieName);
+			this.setAuthHeaders();
+			$rootScope.$broadcast('securityInit', this.securityEnabled, this.auth !== undefined, this.freeAccess);
+		}
+
+		this.isAuthenticated = function(){
+			return !this.securityEnabled || this.auth !== undefined;
+		}
+
+		this.hasPermission = function() {
+		}
+
+		this.hasRole = function(role){
+			if(role !== undefined && (this.securityEnabled || this.hasOverrideAuth)){
+                if ("string" === typeof role) {
+                    role = [role];
+                }
+				if(_.isEmpty(this.principal)){
+					return false;
+				}
+				return _.intersection(role, this.principal.authorities).length > 0;
+			}
+			else{
+				return true;
+			}
+		}
+
+		this.checkForWrite = function(menuRole, location, repo) {
+			if ('REPO_SECURE' === menuRole) {
+				return this.canWriteRepo(location, repo);
+			}
+			return this.hasRole(menuRole);
+		}
+
+		this.hasAdminRole = function() {
+		    return this.hasRole('ROLE_ADMIN') || this.hasRole('ROLE_REPO_ADMIN');
+		}
+
+		this.canWriteRepo = function(location, repo){
+			if (_.isEmpty(location) || _.isEmpty(repo)) {
+				return false;
+			}
+			if(this.securityEnabled || this.hasOverrideAuth){
+				if(_.isEmpty(this.principal)){
+					return false;
+				}
+				else if(this.hasAdminRole()){
+					return true;
+				}
+				return this.checkRights(location, repo, 'WRITE');
+			}
+			else{
+				return true;
+			}
+		}
+
+		this.canReadRepo = function(location, repo){
+			if (_.isEmpty(location) || _.isEmpty(repo)) {
+				return false;
+			}
+			if(this.securityEnabled){
+				if(_.isEmpty(this.principal)){
+					return false;
+				}
+				else if(this.hasAdminRole()){
+					return true;
+				}
+				return this.checkRights(location, repo, 'READ');
+			}
+			else{
+				return true;
+			}
+		}
+
+		this.checkRights = function(location, repo, action) {
+			var canRead = false;
+			for(var i = 0; i < this.principal.authorities.length; i++){
+				var authRole = this.principal.authorities[i];
+				var parts = authRole.split('_');
+				if(parts.length >= 4){
+					if (parts[0] != action) {
+						continue;
+					}
+					if (parts.length > 4) {
+						parts[3] = _.takeRight(parts, parts.length - 3).join('_');
+					}
+					if(parts[2] == '*'){
+						canRead = repo == parts[3];
+					}
+					else{
+						canRead = location.uri == parts[2] && repo == parts[3];
+					}
+				}
+				if(canRead){
+					break;
+				}
+			}
+			return canRead;
+		}
+	}]);
+    return securityServices;
+});

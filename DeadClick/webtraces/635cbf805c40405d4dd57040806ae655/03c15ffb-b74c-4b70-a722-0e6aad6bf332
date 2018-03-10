@@ -1,0 +1,2689 @@
+/*
+ BFMTV
+ JS v2.1.4
+ required: jquery
+ */
+
+
+//Variable global pour la gestion autorefresh et stoprefresh !
+var timer = null;
+var refresh = true;
+
+
+$(window).load(function () {
+    showAllMenu(); //sous menu
+    toogleNav();
+    toggleMenuOpe();
+    activeLinks();
+});
+
+$(document).ready(function () {
+    brouillelien();
+    alert_download_apps();
+    sharrebuttons();
+    forceresponsivewidth();
+    imgLazyLoad();
+    showMobileNav();
+    cookies_msg();
+    enableBxSliders();
+    bxsliderMultiple();
+    searchForm();
+    magnificPopupInit();
+    sticky();
+    PageTransitions.init();
+    pool_Init();
+    smoothScroll();
+    autoRefreshGlobal();
+    if (!isConnected() && !(site == 'rmcsport' || site == 'goredforwomen' || site == 'mediaplayer' || site == 'site01net')) {
+        isbourse();
+    }
+    scrollbar();
+    
+    // Object Stickyads / match Google
+    var nodeStickyAds = {
+        "type": "img",
+        "parent": null,
+        "attributes": [
+            {"width": "1"},
+            {"height": "1"},
+            {"border": "0"},
+            {"src": "https://ads.stickyadstv.com/auto-user-sync"}
+        ],
+
+    };
+    if(!isConnected()){
+        insertNode(nodeStickyAds.type, nodeStickyAds.parent, nodeStickyAds.attributes);
+    }
+
+
+    // Header sites
+    if (!isConnected() && !(site == 'rmcsport' || site == 'goredforwomen' || site == 'mediaplayer' || site == 'site01net')) {
+        showMeteo();
+        showBourse();
+        $('.bourse .dropdown').click(function(){
+            window.open('https://www.tradingsat.com/cac-40-FR0003500008/', '_blank');
+        });
+    }
+
+    if ( site == 'site01net' && !isMobile.any() ) { //&& $(window).width() > 1300
+        if ($("#article").length){
+            $(".sticky").append('<script type="text/javascript" async="true" src="//fo-api.omnitagjs.com/fo-api/ot.js?Placement=1d3215f740b8da19d1dd9d8dcefab889"></script>')
+        }
+    }
+
+    if ( site == 'people' && !isMobile.any() ) { //&& $(window).width() > 1300
+        if ($("#article").length){
+            $("#bfmtv-news").append('<script type="text/javascript">var aylEl = document.createElement("script"); aylEl.setAttribute("async", "async"); aylEl.setAttribute("src", "//fo-api.omnitagjs.com/fo-api/ot.js?Placement=b04328512803365948833c96dce7b77b"); top.document.body.appendChild(aylEl);</script>');
+        }
+    }
+
+    if ( site == 'high-tech' && !isMobile.any() ) { //&& $(window).width() > 1300
+        if ($("#article").length){
+            $("#bfmtv-news").append('<script type="text/javascript">var aylEl = document.createElement("script"); aylEl.setAttribute("async", "async"); aylEl.setAttribute("src", "//fo-api.omnitagjs.com/fo-api/ot.js?Placement=3ec4b85bd4d152f018f31526e8e6f7ba"); top.document.body.appendChild(aylEl);</script>');
+        }
+    }
+
+    if(window.location.href.indexOf('www.bfmtv.com/societe/') > -1  && !isMobile.any()){
+        if ($("#article").length){
+            $(".sharing-tool-wrapper").find('li').eq(4).append('<script type="text/javascript">var aylEl = document.createElement("script"); aylEl.setAttribute("async", "async"); aylEl.setAttribute("src", "//fo-api.omnitagjs.com/fo-api/ot.js?Placement=3666f767ce907521b7092618a0119d58"); top.document.body.appendChild(aylEl);</script>');
+        }
+    }
+
+    // print js
+    $('.print').click(function(){
+        window.print();
+    });
+
+});
+
+// window resize
+$(window).resize(function () {
+    showAllMenu();
+});
+
+function initSmart(element) {
+    var content = element || "body",
+        smart_refresh = '',
+        format_id = '',
+        target = $(".sticky-wrapper"),
+        child = $(".sticky-wrapper > .sticky-child");
+
+    calculateHeight();
+
+    $(content).find('[data-smart-target]').each(function (key, val) {
+        try {
+            if (typeof sas === 'undefined') {
+                console.log("[Criteo] - object sas (smartadserver) does not exist");
+                var target = this, className = 'onf-ad';
+                unForceAdsBlock(target, format_id, site, className);
+            } else {
+                format_id = this.getAttribute('data-smart-target');
+                smart_refresh = this.getAttribute('data-smart-refresh');
+                sas.render(format_id);
+                if (smart_refresh < 1 || smart_refresh == '') {
+                    smart_refresh = 420000;
+                }
+                refreshsmart(smart_refresh, format_id, 0);
+
+                // interval to calculateHeight async
+
+                if(site === 'bfmbusiness'){
+                    console.log("site bfmbusiness 2");
+
+                    child.change(function(changes, observer) {
+                        /**
+                         * need setInterval while ad is loading.
+                         * duration 10s
+                         */
+                        var setInt;
+                        var limit    = 0;
+                        var duration = 5;
+                        var time     = 1000;
+
+                        setInt = setInterval(function(){
+                            if( limit >= duration ){
+                                limit = 0;
+                                clearInterval( setInt );
+                            } else {
+                                limit ++;
+                                calculateHeight();
+                            }
+                        }, time)
+                    });
+
+                    // Instantiate the sticky plugin
+                    $(function() {
+                        return $("[data-sticky_column]").stick_in_parent({
+                            parent: "[data-sticky_parent]",
+                            offset_top: 5
+                        });
+                    });
+                }
+            }
+        } catch (e) {
+            throw e;
+        }
+    });
+}
+
+// a minimal jQuery library for reacting to innerHTML changes
+(function($) {
+    $.fn.change = function(cb, e) {
+        e = e || { subtree:true, childList:true, characterData:true };
+        $(this).each(function() {
+            function callback(changes) { cb.call(node, changes, this); }
+            var node = this;
+            (new MutationObserver(callback)).observe(node, e);
+        });
+    };
+})(jQuery);
+
+
+function calculateHeight(){
+    // set/get sticky element
+    var child = $(".sticky-wrapper > .sticky-child");
+    var childHeight = child.height();
+    //var childHeight = child[0].clientHeight;
+    // console.log("[RECALCULATE HEIGHT IN REFRESHSMART] - child =>", child);
+    // console.log("[RECALCULATE HEIGHT IN REFRESHSMART] - child height =>", childHeight);
+
+    // set/get sticky WRAPPERR element
+    var parent = $(".sticky-wrapper"); // Remplacer la recuperation de la hauteur par un .attribute height
+    var parentHeight = parent.height();
+    //var elStyle = window.getComputedStyle(parent[0], null);
+    // console.log("[RECALCULATE HEIGHT IN REFRESHSMART] - parent =>", parent);
+    // console.log("[RECALCULATE HEIGHT IN REFRESHSMART] - parent height OLD style", parentHeight);
+
+    // set new height for sticky wrapper element
+    var newHeight = childHeight + 350 + 'px';
+    parent.css('height', newHeight);
+    // console.log("[RECALCULATE HEIGHT IN REFRESHSMART] - parent newHeight =>", newHeight);
+    // console.log("[RECALCULATE HEIGHT IN REFRESHSMART] - parent height NEW style", parent);
+}
+
+function refreshsmart(smart_refresh, format_id, init) {
+    if (init == 1) {
+        sas.refresh(format_id);
+    } else {
+        setInterval(function () {
+            refreshsmart(smart_refresh, format_id, 1);
+        }, smart_refresh);
+    }
+}
+
+// Script to break use AdBlock with Criteo snippet
+function unForceAdsBlock(target, format_id, site, className) {
+    var response = {
+            "brand": {
+                "bfmtv": {
+                    "format_id": {
+                        "98": {
+                            "dimension": {
+                                "width": 300,
+                                "height": 250
+                            },
+                            "display": {
+                                "zoneid": 798853,
+                                "containerid": "crt-2f9d8788",
+                                "overrideZoneFloor": false
+                            }
+                        },
+                        "289": {
+                            "dimension": {
+                                "width": 300,
+                                "height": 600
+                            },
+                            "display": {
+                                "zoneid": 798854,
+                                "containerid": "crt-2f9d8b70",
+                                "overrideZoneFloor": false
+                            }
+                        }
+                    }
+                },
+                "site01net": {
+                    "format_id": {
+                        "98": {
+                            "dimension": {
+                                "width": 300,
+                                "height": 250
+                            },
+                            "display": {
+                                "zoneid": 798856,
+                                "containerid": "crt-2f9d9340",
+                                "overrideZoneFloor": false
+                            }
+                        },
+                        "289": {
+                            "dimension": {
+                                "width": 300,
+                                "height": 250
+                            },
+                            "display": {
+                                "zoneid": 798858,
+                                "containerid": "crt-2f9d9b10",
+                                "overrideZoneFloor": false
+                            }
+                        }
+                    }
+                },
+                "rmcsport": {
+                    "format_id": {
+                        "98": {
+                            "dimension": {
+                                "width": 300,
+                                "height": 250
+                            },
+                            "display": {
+                                "zoneid": 798859,
+                                "containerid": "crt-2f9d9ef8",
+                                "overrideZoneFloor": false
+                            }
+                        },
+                        "289": {
+                            "dimension": {
+                                "width": 300,
+                                "height": 600
+                            },
+                            "display": {
+                                "zoneid": 798860,
+                                "containerid": "crt-2f9da2e0",
+                                "overrideZoneFloor": false
+                            }
+                        }
+                    }
+                },
+                "rmc": {
+                    "format_id": {
+                        "98": {
+                            "dimension": {
+                                "width": 300,
+                                "height": 250
+                            },
+                            "display": {
+                                "zoneid": 798863,
+                                "containerid": "crt-2f9dae98",
+                                "overrideZoneFloor": false
+                            }
+                        },
+                        "289": {
+                            "dimension": {
+                                "width": 300,
+                                "height": 600
+                            },
+                            "display": {
+                                "zoneid": 798864,
+                                "containerid": "crt-2f9db280",
+                                "overrideZoneFloor": false
+                            }
+                        }
+                    }
+                },
+                "bfmbusiness": {
+                    "format_id": {
+                        "98": {
+                            "dimension": {
+                                "width": 300,
+                                "height": 250
+                            },
+                            "display": {
+                                "zoneid": 798866,
+                                "containerid": "crt-2f9dba50",
+                                "overrideZoneFloor": false
+                            }
+                        },
+                        "289": {
+                            "dimension": {
+                                "width": 300,
+                                "height": 600
+                            },
+                            "display": {
+                                "zoneid": 798867,
+                                "containerid": "crt-2f9dbe38",
+                                "overrideZoneFloor": false
+                            }
+                        }
+                    }
+                },
+                "rmcd": {
+                    "format_id": {
+                        "98": {
+                            "dimension": {
+                                "width": 300,
+                                "height": 250
+                            },
+                            "display": {
+                                "zoneid": 798870,
+                                "containerid": "crt-2f9dc9f0",
+                                "overrideZoneFloor": false
+                            }
+                        },
+                        "289": {
+                            "dimension": {
+                                "width": 300,
+                                "height": 600
+                            },
+                            "display": {
+                                "zoneid": 798872,
+                                "containerid": "crt-2f9dd1c0",
+                                "overrideZoneFloor": false
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        result = {'zoneid': 0, 'containerid': '', 'overrideZoneFloor': false},
+        divWidth = 300,
+        divHeight = 0,
+        format_id = $(target)[0].id.substr(4),
+        html = '',
+        elementDOM = '';
+
+    if(format_id === "98" || format_id === "289") {
+        var brands = Object.keys(response.brand);
+        brands.forEach(function (brand) {
+            if (brand === site) {
+                var formats = Object.keys(response.brand[brand]["format_id"]);
+                formats.forEach(function (format) {
+                    if (format === format_id) {
+                        divHeight = format_id === "98" ? 250 : 600;
+                        result = {
+                            "zoneid": response.brand[brand]["format_id"][format].display.zoneid,
+                            "containerid": response.brand[brand]["format_id"][format].display.containerid,
+                            'overrideZoneFloor': false
+                        };
+                        console.log("brand result for format_id ", format, " is ", result);
+                    }
+                });
+                html = '<div class="unForceAdBlock">';
+                html += '<div id="' + result.containerid + '"style="width:' + divWidth + 'px;height:' + divHeight + 'px;"></div>';
+                html += '</div>';
+
+                elementDOM = $(target).closest('.' + className).parent();
+
+                $(html).insertBefore(elementDOM);
+            }
+        });
+        Criteo.events.push(function () {
+            Criteo.DisplayAcceptableAdIfAdblocked(result);
+        });
+    }
+}
+
+
+/**
+ *
+ * Insert node element in the dom with its attributes
+ * @param node: dom element to insert - String
+ * @param parent: dom element embedding node - String
+ * @param attributes: propertises describing the node - Array of objects
+ */
+function insertNode(node, parent, attributes){
+    parent = parent ? parent : document.body;
+    var el = document.createElement(node);
+    if (typeof(el) !== 'undefined' && el !== null && typeof(parent) !== 'undefined' && parent !== null)
+    {
+        attributes.forEach(function(attr){
+            for(var key in  attr){
+                el.setAttribute(key, attr[key]);
+            }
+        });
+        parent.appendChild(el);
+    }
+
+}
+
+
+function scrollbar(element) {
+    var content = element || "body";
+    $(content).find('[data-scroller="true"]').each(function (key, val) {
+        $(this).css('overflow', 'hidden');
+        $(this).perfectScrollbar();
+    });
+}
+
+function smoothScroll() {
+    // Smooth scroll
+    // See: http://css-tricks.com/snippets/jquery/smooth-scrolling/
+    // a[href*=#]:not([href=#])
+
+    $('a[href*=#]').not('[data-anchor="false"]').click(function () {
+        if (location.pathname.replace(/^\//, '') == this.pathname.replace(/^\//, '') && location.hostname == this.hostname) {
+            var target = $(this.hash);
+            goToAnchor(target);
+        }
+    });
+}
+
+// Lazy Load - jQuery plugin for lazy loading images
+function imgLazyLoad(element) {
+    var content = element || "body";
+
+    $(content).find("img.lazy").lazyload();
+
+    $(content).find("img.lazy_resp:not(:hidden)").lazyload({
+        effect: "fadeIn",
+        threshold: 0,
+        failure_limit: 100
+    });
+
+    $(content).find('img.lazy_resp:hidden[data-mobile]')
+        .show()
+        .lazyload({
+            effect: 'fadeIn',
+            data_attribute: 'mobile',
+            threshold: 0,
+            failure_limit: 100
+        });
+
+    $(window).trigger("scroll");
+
+}
+
+function magnificPopupInit(element) {
+    var content = element || "body";
+    // Inline popups
+    $(content).find('.inline-popups').magnificPopup({
+        delegate: '.link-inline-popups',
+        removalDelay: 500, // delay removal by X to allow out-animation
+        callbacks: {
+            beforeOpen: function () {
+                $("#bb5-site-wrapper").addClass("blur");
+                this.st.mainClass = this.st.el.attr('data-effect');
+            },
+            open: function () {
+                // Will fire when this exact popup is opened
+                // this - is Magnific Popup object
+            },
+            close: function () {
+                $("#bb5-site-wrapper").removeClass("blur");
+                // Will fire when popup is closed
+            }
+        },
+        midClick: true // allow opening popup on middle mouse click. Always set it to true if you don't provide alternative source.
+    });
+    /*$(content).find('.inline-popups-ajax').magnificPopup({
+     type: 'ajax',
+     overflowY: 'scroll',
+     removalDelay: 500, // delay removal by X to allow out-animation
+     callbacks: {
+     beforeOpen: function () {
+     $("#bb5-site-wrapper").addClass("blur");
+     // just a hack that adds mfp-anim class to markup
+     this.st.image.markup = this.st.image.markup.replace('mfp-figure', 'mfp-figure mfp-with-anim');
+     this.st.mainClass = this.st.el.attr('data-effect');
+     },
+     open: function () {
+     // Will fire when this exact popup is opened
+     // this - is Magnific Popup object
+     },
+     close: function () {
+     $("#bb5-site-wrapper").removeClass("blur");
+     // Will fire when popup is closed
+     }
+     },
+     midClick: true // allow opening popup on middle mouse click. Always set it to true if you don't provide alternative source.
+     });*/
+    // Image popups
+    $(content).find('.image-popups').magnificPopup({
+        delegate: 'img',
+        type: 'image',
+        gallery: {
+            enabled: true
+        },
+        removalDelay: 500, //delay removal by X to allow out-animation
+        callbacks: {
+            beforeOpen: function () {
+                $("#wrap").addClass("blur");
+                // just a hack that adds mfp-anim class to markup
+                this.st.image.markup = this.st.image.markup.replace('mfp-figure', 'mfp-figure mfp-with-anim');
+                this.st.mainClass = this.st.el.attr('data-effect');
+            },
+            open: function () {
+                // Will fire when this exact popup is opened
+                // this - is Magnific Popup object
+            },
+            close: function () {
+                $("#wrap").removeClass("blur");
+                // Will fire when popup is closed
+            }
+        },
+        closeOnContentClick: true,
+        midClick: true // allow opening popup on middle mouse click. Always set it to true if you don't provide alternative source.
+    });
+    // Hinge effect popup
+    $(content).find('a.hinge').magnificPopup({
+        mainClass: 'mfp-with-fade',
+        removalDelay: 1000, //delay removal by X to allow out-animation
+        callbacks: {
+            beforeClose: function () {
+                this.content.addClass('hinge');
+            },
+            close: function () {
+                this.content.removeClass('hinge');
+            }
+        },
+        midClick: true
+    });
+}
+//********** End magnificPopupInit
+
+function toogleNav() {
+    // Ouverture / Ferture du sous-menu de la nav
+    $(".navbar-nav-rub-toggle").bind('click', function () {
+        $(this).find('i').toggleClass('fa-toggle-down fa-toggle-up');
+        $(this).parent('.navbar-wrapper').toggleClass('navbar-opened');
+    });
+}
+function toggleMenuOpe() {
+    $(".navbar-ope-toggle").bind('click', function () {
+        $(this).find('i').toggleClass('fa-caret-down fa-caret-up');
+        $(this).parent('#bs-slide-dropdown').toggleClass('navbar-opened');
+    });
+}
+
+
+//PAGE AUTO-REFRESH
+function autoRefreshGlobal() {
+    if (typeof(refreshTemp) != 'undefined') {
+        timer = setInterval(autoRefresh, refreshTemp);
+    }
+}
+
+function autoRefresh() {
+    //Test pour le blocage de l'auto refresh
+    if (refresh == null && typeof refresh != "undefined") {
+        return false;
+    }
+    self.location.reload(true);
+}
+//Allow to stop autorefresh
+function stopAutoRefresh() {
+    clearInterval(timer);
+    autoRefresh = null;
+    void 0;
+}
+//END PAGE AUTO-REFRESH
+
+
+// Brouillage de liens
+function decode64(e) {
+    var t = "";
+    var n = "";
+    var r, i, s = "";
+    var o, u, a, f = "";
+    var l = 0;
+    e = e.replace(/[^A-Za-z0-9\+\/\=]/g, "");
+    do {
+        o = b64array.indexOf(e.charAt(l++));
+        u = b64array.indexOf(e.charAt(l++));
+        a = b64array.indexOf(e.charAt(l++));
+        f = b64array.indexOf(e.charAt(l++));
+        r = o << 2 | u >> 4;
+        i = (u & 15) << 4 | a >> 2;
+        s = (a & 3) << 6 | f;
+        t = t + String.fromCharCode(r);
+        if (a != 64) {
+            t = t + String.fromCharCode(i)
+        }
+        if (f != 64) {
+            t = t + String.fromCharCode(s)
+        }
+        r = i = s = "";
+        o = u = a = f = ""
+    } while (l < e.length);
+
+    return t
+}
+
+var b64array = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=";
+
+
+function brouillelien(element) {
+    var content = element || "body";
+    var b64array = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=";
+
+    $(content).find('.f_01').each(function () {
+        var e = $(this).attr("rel");
+        if (e) {
+            var t = decode64(e);
+            $(this).removeClass("f_01");
+            $(this).removeAttr("rel");
+            className = $(this).attr("class");
+            var skip = false;
+            var brouillecontent = '';
+            var currentContent = '';
+            $(this).nextUntil('.f_01').each(function (i) {
+                if (!skip) {
+                    if ($(this).hasClass("skip")) {
+                        skip = true;
+                    } else {
+                        brouillecontent += $(this).context.outerHTML;
+                        $(this).remove();
+                    }
+                }
+            });
+            if (!className) {
+                $(this).after(t);
+                currentContent = $(this).next().html();
+                $(this).next().html(currentContent + brouillecontent)
+                $(this).remove();
+            } else {
+                $(this).html(t);
+            }
+
+        }
+    });
+}
+// END Brouillage de liens
+
+function goToAnchor(target, delta) {
+    if (isNaN(delta)) {
+        delta = 120;
+    }
+
+    if (typeof this.hash === 'undefined') {
+        return false;
+    }
+
+    target = target.length ? target : $('[name=' + this.hash.slice(1) + ']');
+    //console.log(target)
+    if (target.length) {
+        var height = parseInt(target.offset().top) - parseInt(delta);
+        $('html,body').animate({
+            scrollTop: height
+        }, 1000);
+
+        return false;
+    }
+}
+
+function enableBxSliders(element) {
+    var content = element || "body";
+    var slider_array = new Array();
+
+    $(content).find('[data-bxslider="true"]').each(function (index, element) {
+        var id = $(element).attr('id');
+        slider_array[index] = $(this).bxSlider({
+            controls: true,
+            pager: false,
+            adaptiveHeight: true,
+            nextText: '',
+            prevText: '',
+            onSlideAfter: function () {
+                // do mind-blowing JS stuff here
+                $(window).trigger("scroll");
+            }
+        });
+    });
+}
+
+function bxsliderMultiple(element) {
+    var content = element || "body";
+    // initialise multiples Box slider
+    var bxSliderInstances = {};
+    // Use a class rather than an ID
+    var $slider = $(content).find('.box-slider');
+
+    // For each result
+    $slider.each(function (index, element) {
+        var id = $(element).attr('id');
+        var dataSlides = $(element).attr('data-slides');
+        var dataSlidesMob = $(element).attr('data-slides-mob');
+        if (dataSlides) {
+            if (isMobile.any()) {
+                slides = dataSlidesMob;
+            }
+            else {
+                slides = dataSlides;
+            }
+        }
+        else {
+            if (isMobile.any() ) {
+                minslides = '1';
+                maxslides = '1';
+            }
+            else if ( !isMobile.any() && site == 'mediaplayer') {
+                minslides = '1';
+                maxslides = '3';
+            }
+            else {
+                minslides = '3';
+                maxslides = '3';
+            }
+        }
+        // Initialise a slider using the current index value
+        bxSliderInstances["slider" + index] = $slider.eq(index).bxSlider({
+            auto: false,
+            pager: false,
+            duration: 500,
+            nextSelector: '#slider-button-next-' + id,
+            prevSelector: '#slider-button-prev-' + id,
+            nextText: '<i class="fa fa-angle-right"></i><span class="sr-only">Suivant</span>',
+            prevText: '<i class="fa fa-angle-left"></i><span class="sr-only">Précédent</span>',
+            minSlides: minslides,
+            maxSlides: maxslides,
+            slideWidth: 338,
+            onSlideAfter: function () {
+                // do mind-blowing JS stuff here
+                $(window).trigger("scroll");
+            }
+        });
+
+        // If there is more than 1 image
+        if ($(element).find('img').length > 1) {
+        }
+
+    });
+}
+
+function applyResponsiveVideos(selector) {
+    $(selector).each(function () {
+        $(this).parent().fitVids({
+            customSelector: 'iframe[src*="dailymotion.com"]'
+        });
+    });
+}
+
+function forceresponsivewidth() {
+    //Force element with width not responsive to width 100% in Article content
+    $('#article iframe').css('width', '100%');
+}
+
+function iframeLongFormat(laLargeur, laHauteur){
+    $('#iframeLongFormat').css('width', laLargeur);
+    var longFormatWidth = $('#iframeLongFormat').parent().width();
+    var longFormatHeight = ((longFormatWidth*laHauteur)/laLargeur);
+    $('#iframeLongFormat').css({'height': longFormatHeight, 'width': longFormatWidth});
+    $('#iframeLongFormat').parent().css({'height': longFormatHeight, 'width': longFormatWidth});
+}
+
+// Sharrre
+function sharrebuttons(element) {
+
+    var content = element || "body";
+    $(content).find('.twitter').each(function () {
+        var enableCount = false;
+        if ($(this).data('count') !== undefined) {
+            enableCount = true;
+        }
+        var a = $(this).attr('id');
+        var e_id = parseInt(a.split("_")[1]);
+        $('#' + a).sharrre({
+            share: {
+                twitter: enableCount
+            },
+            template: '<a class="box" href="#"><i class="fa fa-twitter"></i><div class="count" href="#">{total}</div><div class="share"><span></span>Tweeter</div></a>',
+            enableHover: false,
+            enableTracking: true,
+            enableCounter: true,
+            click: function (api, options) {
+                api.simulateClick();
+                api.openPopup('twitter');
+            },
+            render: function (api, options) {
+                var counter = $('#' + a + " .count");
+                if (counter.html() < 4) {
+                    counter.hide()
+                }
+            }
+        });
+
+    });
+
+    $(content).find('.facebook').each(function () {
+        var enableCount = false;
+        if ($(this).data('count') !== undefined) {
+            enableCount = true;
+        }
+        var a = $(this).attr('id');
+        var e_id = parseInt(a.split("_")[1]);
+
+        $('#' + a).sharrre({
+            share: {
+                facebook: enableCount
+            },
+            template: '<a class="box" href="#"><i class="fa fa-facebook"></i><div class="count" href="#">{total}</div><div class="share"><span></span>Partager</div></a>',
+            enableHover: false,
+            enableTracking: true,
+            enableCounter: true,
+            click: function (api, options) {
+                api.simulateClick();
+                api.openPopup('facebook');
+            },
+            render: function (api, options) {
+                var counter = $('#' + a + " .count");
+                if (counter.html() < 4) {
+                    counter.hide()
+                }
+            }
+        });
+    });
+
+    $(content).find('.linkedin').each(function () {
+        var enableCount = false;
+        if ($(this).data('count') !== undefined) {
+            enableCount = true;
+        }
+        var a = $(this).attr('id');
+        var e_id = parseInt(a.split("_")[1]);
+
+        $('#' + a).sharrre({
+            share: {
+                linkedin: enableCount
+            },
+            template: '<a class="box" href="#"><i class="fa fa-linkedin"></i><div class="count" href="#">{total}</div><div class="share"><span></span>Partager</div></a>',
+            enableHover: false,
+            enableTracking: true,
+            enableCounter: true,
+            click: function (api, options) {
+                api.simulateClick();
+                api.openPopup('linkedin');
+            },
+            render: function (api, options) {
+                var counter = $('#' + a + " .count");
+                if (counter.html() < 4) {
+                    counter.hide()
+                }
+            }
+        });
+    });
+
+}
+
+//display pop-up or not according to window width for subscribe
+
+/* begin js for subscribe newsletter block */
+var form = $('form[name=newsletter]');
+var divTitle = $('#title-newsletter');
+var img = $('#img-newsletter');
+var nl = $('#div-newsletter');
+var cont = $('#bfmtv-news');
+var contDiv = $('#bfmtv-news > div');
+var dim = $('#bfmtv-news div[name="dimension"]');
+var figure = $('#bfmtv-news figure');
+var media = $('div[name="mediaNews"] p');
+var mediaImg = $('div[name="mediaNews"] figure');
+
+var testForm = $('#01net-news');
+
+$('.modal').css('z-index', '9999');
+nl.on('click', function (e) {
+    e.preventDefault();
+    if ($(window).width() < 1301 && isArticle) {
+        $('.bs-artshare-modal-sm').appendTo("body").modal('show');
+    }
+    $('.bs-01net-modal-sm').appendTo("body").modal('show');
+});
+
+$('div[name="mediaNews"]').on('click', function (e) {
+    e.preventDefault();
+    $('.bs-videoshare-modal-sm').appendTo("body").modal('show');
+});
+
+var isArticle = $('#article')[0] != undefined;
+var isMediaplayer = $('#mediaplayer')[0] != undefined;
+
+if ($(window).width() < 1301 && isArticle) {
+    nl.hover(function () {
+        $(this).css('cursor', 'pointer');
+    });
+    $('.modal').css('top', '250px');
+    form.css('display','none');
+    divTitle.css('display', 'none');
+    dim.removeClass('col-xs-2 col-md-1000-2 col-md-2').addClass('col-xs-4 col-xs-offset-4 col-md-1000-4 col-md-1000-offset-4');
+    contDiv.removeClass('padding-leftx1-5');
+    img.attr('title', 'S\'inscrire à la newsletter');
+    cont.css('width', '40px');
+    figure.removeClass('padding-inside-all-xs padding-top');
+    figure.css({'margin-top': '7px', 'margin-bottom': '7px'});
+} else if($(window).width() < 1301 && isMediaplayer){
+    media.css('display', 'none');
+    mediaImg.removeClass('padding-right padding-bottom-s').css({'padding-left': '11px', 'padding-right': '11px'});
+} else {
+    nl.attr('data-target', '');
+}
+if ( $(window).width()<650 && isMobile.any() ){
+    form.css('display','block');
+    divTitle.css('display', 'block');
+}
+
+$(window).resize(function() {
+    if ($(window).width() < 1301 && isArticle)  {
+        nl.hover(function () {
+            $(this).css('cursor', 'pointer');
+        });
+        form.css('display','none');
+        divTitle.css('display','none');
+        dim.removeClass('col-xs-2 col-md-1000-2 col-md-2').addClass('col-xs-4 col-xs-offset-4 col-md-1000-4 col-md-1000-offset-4');
+        contDiv.removeClass('padding-leftx1-5');
+        nl.attr('data-target', '.bs-example-modal-sm');
+        img.attr('title', 'S\'inscrire à la newsletter');
+        cont.css('width', '40px');
+        figure.css('margin-top', '7px');
+        $('img#img-newsletter').css('margin-left', '');
+        figure.removeClass('padding-inside-all-xs padding-top');
+        figure.css({'margin-top': '7px', 'margin-bottom': '7px'});
+
+    } else if($(window).width() < 1301 && isMediaplayer){
+        media.css('display', 'none');
+        mediaImg.removeClass('padding-right padding-bottom-s').css({'padding-left': '11px', 'padding-right': '11px'});
+    } else {
+        form.css('display','block');
+        divTitle.css('display','block');
+        dim.removeClass('col-xs-4 col-xs-offset-4 col-md-1000-4 col-md-1000-offset-4').addClass('col-xs-2 col-md-1000-2 col-md-2');
+        contDiv.addClass('padding-leftx1-5');
+        nl.hover(function () {
+            $(this).css('cursor', 'default');
+        });
+        nl.attr('data-target', '');
+        img.attr('title', '');
+        cont.css('width', '155px');
+        figure.addClass('padding-inside-all-xs padding-top');
+        figure.css('margin-top', '');
+        media.css('display', 'block');
+        mediaImg.css({'padding-left': '', 'padding-right': ''}).addClass('padding-right padding-bottom-s');
+
+    }
+
+});
+
+function validateEmail(email) {
+    var re = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
+    return re.test(email);
+}
+
+var siteName;
+
+if(site=='bfmtv') siteName="BFMTV";
+if(site=='bfmbusiness') siteName="BFM Business";
+if(site=='site01net') siteName="01NET";
+if(site=='rmc') siteName="RMC";
+if(site=='rmcsport') siteName="RMC Sport";
+
+/* $('#bfmtv-news-mobile form input#email').focus(function() {
+ $(this).attr('placeholder', 'Votre email')
+ }).blur(function() {
+ $(this).attr('placeholder', 'Newsletter ' +  siteName)
+ }); */
+
+$('form#subscribe_newsletter').on('submit', function (e) {
+    e.preventDefault();
+    var formNewsletter = $(this);
+    var inputMail = $(this).find('#email');
+    if (!isMobile.any()){
+        var buttonSubscribe = $(this).find('button[type=submit]');
+    }
+    else{
+        var buttonSubscribe = $('#bfmtv-news-mobile');
+    }
+
+    var imgSubscribe = $(this).parent('#bfmtv-news').find('img#img-newsletter');
+    var imgSubscribePopup = $('img#img-newsletter-pop');
+
+    if (!isMobile.any()){
+        var helpBlock = $(this).find('#helpBlock2');
+    }
+    else{
+        var helpBlock = $('#helpBlock2');
+    }
+
+    var pixel = $(this).find('#pixel');
+    var track = $(this).find('#track');
+
+    if (helpBlock !== undefined) {
+        helpBlock.remove();
+    }
+
+    if(getCookie(inputMail.val()) == 'ok') {
+        buttonSubscribe.after(
+            '<p id="helpBlock2" class="text-danger title-normal txt-left">' +
+            'Vous êtes déjà inscrit' +
+            '</p>'
+        );
+        return false;
+    }
+
+    if (inputMail.val() == '') {
+        buttonSubscribe.after(
+            '<p id="helpBlock2" class="text-danger title-normal txt-left">' +
+            'L\'email est vide' +
+            '</p>'
+        );
+        return false;
+    }
+    if (!validateEmail(inputMail.val())) {
+        buttonSubscribe.after(
+            '<p id="helpBlock2" class="text-danger title-normal txt-left">' +
+            'L\'email doit être valide' +
+            '</p>'
+        );
+        return false;
+    }
+
+    buttonSubscribe.after('<span id="helpBlock3" class="text-success">' +
+        '<img src="http://img.bfmtv.com/ressources/img/loader.gif" />' +
+        '</span>'
+    );
+    /*var date = new Date();
+     var day = date.getDate();
+     if (date.getDate() > 0 && date.getDate() < 10) {
+     day = '0' + date.getDate();
+     }
+     var date_format = date.getFullYear()+ '' + (date.getMonth() + 1) + '' +  day;*/
+    $.ajax({
+        url: '/subscribe/newsletters',
+        data: $(this).serialize()
+    }).done(function (data) {
+        $('#helpBlock3').remove();
+        //$('form#subscribe_newsletter').css('display', 'none');
+        //Mode non-popup
+        if (typeof imgSubscribe[0] != "undefined") {
+            $('.pres-bfmtv-news').html('');
+            if (imgSubscribe.attr('src') == 'http://www.bfmtv.com/static/nxt-bfmtv/newsletter/structure/news-gris.png') {
+                imgSubscribe.attr('src', 'http://www.bfmtv.com/static/nxt-bfmtv/newsletter/structure/news-confirmation-gris.png');
+            } else if (imgSubscribe.attr('src') == 'http://www.bfmtv.com/static/nxt-bfmtv/newsletter/structure/news-bleu.png') {
+                imgSubscribe.attr('src', 'http://www.bfmtv.com/static/nxt-bfmtv/newsletter/structure/news-confirmation-bleu.png');
+            } else if (imgSubscribe.attr('src') == 'http://www.bfmtv.com/static/nxt-bfmtv/newsletter/structure/news-rouge.png') {
+                imgSubscribe.attr('src', 'http://www.bfmtv.com/static/nxt-bfmtv/newsletter/structure/news-confirmation-rouge.png');
+            }
+            imgSubscribe.css('margin-left', '50px');
+            form.html(
+                '<p id="helpBlock2" class="padding-top color-txt title-normal txt-left" style="padding-left: 5px;text-align:center;">' +
+                data.message +
+                '</p>'
+            );
+            //Mode popup
+        }
+        //Mode mobile
+        else if  (isMobile.any()) {
+            $('.pres-bfmtv-news').html('');
+            var imgToReplace = $('#bfmtv-news-mobile #img-newsletter');
+
+            if (imgToReplace.attr('src') == 'http://www.bfmtv.com/static/nxt-bfmtv/newsletter/structure/news-gris.png'){
+                $('#bfmtv-news-mobile').prepend('<img src="http://www.bfmtv.com/static/nxt-bfmtv/newsletter/structure/news-confirmation-gris.png" width="37" class="pull-left pull-left padding-top padding-right ">');
+            }
+            else if (imgToReplace.attr('src') == 'http://www.bfmtv.com/static/nxt-bfmtv/newsletter/structure/news-bleu.png') {
+                $('#bfmtv-news-mobile').prepend('<img src="http://www.bfmtv.com/static/nxt-bfmtv/newsletter/structure/news-confirmation-bleu.png" width="37" class="pull-left pull-left padding-top padding-right ">');
+            }
+            else if (imgToReplace.attr('src') == 'http://www.bfmtv.com/static/nxt-bfmtv/newsletter/structure/news-rouge.png') {
+                $('#bfmtv-news-mobile').prepend('<img src="http://www.bfmtv.com/static/nxt-bfmtv/newsletter/structure/news-confirmation-rouge.png" width="37" class="pull-left pull-left padding-top padding-right ">');
+            }
+            $('#bfmtv-news-mobile').css("background", "#f8f8f8");
+            form.html(
+                '<p id="helpBlock2" class="padding-top color-txt title-normal txt-left" style="padding-left: 5px;text-align:center;">' +
+                data.message +
+                '</p><img src="' + pixel.val() + '" width="1" height="1" >'
+            );
+
+
+
+
+
+
+        }
+        else {
+            $('.pres-bfmtv-news-popup').html('');
+            if (imgSubscribePopup.attr('src') == 'http://www.bfmtv.com/static/nxt-bfmtv/newsletter/structure/news-gris.png') {
+                imgSubscribePopup.attr('src', 'http://www.bfmtv.com/static/nxt-bfmtv/newsletter/structure/news-confirmation-gris.png');
+            } else if (imgSubscribePopup.attr('src') == 'http://www.bfmtv.com/static/nxt-bfmtv/newsletter/structure/news-bleu.png') {
+                imgSubscribePopup.attr('src', 'http://www.bfmtv.com/static/nxt-bfmtv/newsletter/structure/news-confirmation-bleu.png');
+            } else if (imgSubscribePopup.attr('src') == 'http://www.bfmtv.com/static/nxt-bfmtv/newsletter/structure/news-rouge.png') {
+                imgSubscribePopup.attr('src', 'http://www.bfmtv.com/static/nxt-bfmtv/newsletter/structure/news-confirmation-rouge.png');
+            }
+            formNewsletter.removeClass('padding-leftx2');
+            formNewsletter.html(
+                '<div style="width:100%;">' +
+                '<p id="helpBlock2" class="padding-top color-txt title-normal txt-left" style="padding-left: 5px;text-align:center;">' +
+                data.message +
+                '</p>' +
+                '</div>'
+            );
+        }
+        document.cookie = inputMail.val()+"=ok;";
+
+        return xt_adc(this, pixel.val());
+    });
+});
+/* end js for subscribe newsletter block */
+
+
+//Meganav ShowHide FX
+function showHideContent(selector) {
+    if ($(selector).parent().css("top").replace("px", "") != 0) {
+        $(selector).parent().find("> div").css({display: "none"});
+        $(selector).css({display: "block"});
+        $(selector).parent().animate({top: '0px'}, 400);
+    } else {
+        if ($(selector).css('display') != 'block') {
+            $(selector).parent().find("> div").css({display: "none"});
+            $(selector).css({display: "block"});
+        } else {
+            $(selector).parent().animate({top: '-324px'}, 400);
+        }
+    }
+
+}
+
+//podacast player
+function playPodcast(playerId, audioUrl, pubUrl, mode, autoplay) {
+    var loops = 0;
+
+    $("#" + playerId).jPlayer({
+        ready: function () {
+            if (!mode) {
+                $(this).jPlayer("setMedia", {
+                    mp3: pubUrl
+                });
+            }
+            else {
+                $(this).jPlayer("setMedia", {
+                    mp3: audioUrl
+                });
+            }
+            if (autoplay !== false) {
+                $(this).jPlayer("play");
+            }
+
+        },
+        play: function () { // To avoid multiple jPlayers playing together.
+            if (stop_video_player == true) {
+                $('.brightcove_container').remove();
+            }
+            $(this).jPlayer("pauseOthers");
+        },
+        ended: function () {
+            if (loops == 0 && !mode) {
+                $(this).jPlayer("setMedia", {
+                    mp3: audioUrl
+                });
+                $(this).jPlayer("play");
+                loops = 1;
+                mode = true;
+            }
+        },
+        swfPath: "/ressources/js",
+        solution: "flash,html",
+        supplied: "mp3",
+        preload: "auto",
+        wmode: "transparent",
+        smoothPlayBar: true,
+        keyEnabled: true
+    });
+
+    var seekBarEl = $('#jp_container_1').find('.jp-seek-bar'),
+        playBarEl = seekBarEl.find('.jp-play-bar');
+
+    seekBarEl.click(function () {
+        if (!mode) {
+            $("#" + playerId).jPlayer("playHead", ( playBarEl.width() / seekBarEl.width() * 100));
+        }
+    });
+
+
+}
+
+function initInfiniteScroll(start, countdown, uid, parentObject, parent, select, totalPages) {
+    $('#infiniteScroll_' + uid).infinitescroll({
+            navSelector: "div.navigation_" + uid,
+            // selector for the paged navigation (it will be hidden)
+            nextSelector: "div.navigation_" + uid + " a:first",
+            // selector for the NEXT link (to page 2)
+            itemSelector: "#infiniteScroll_" + uid + " " + select,
+            maxPage: totalPages,
+            // selector for all items you'll retrieve
+            loading: {
+                finished: undefined,
+                finishedMsg: "<em>Il n'y a plus d'articles.</em>",
+                img: "/ressources/img/loader.gif",
+                msg: null,
+                msgText: "Chargement...",
+                selector: null,
+                speed: 'fast',
+                start: undefined
+            },
+            state: {
+                isDuringAjax: false,
+                isInvalidPage: false,
+                isDestroyed: false,
+                isDone: false, // For when it goes all the way through the archive.
+                isPaused: false,
+                currPage: start
+            },
+            behavior: undefined,
+            binder: parent
+        }, function (newElements, data, url) {
+            countdown--;
+            /*if (scrollContent[uid] !== undefined ) {
+             scrollContent[uid].refresh();
+             }*/
+            if (countdown < 1) {
+                $('#next_' + uid).html('<a class="btn border-s" id="nextLink_' + uid + '">plus de contenu</a>');
+                parent.unbind('.infscr');
+                $('a#nextLink_' + uid).click(function () {
+                    $('#infiniteScroll_' + uid).infinitescroll('retrieve');
+                    return false;
+                });
+            }
+            brouillelien(newElements);
+            enableBxSliders(newElements);
+            bxsliderMultiple(newElements);
+            sharrebuttons(newElements);
+            imgLazyLoad(newElements);
+            PageTransitions.init(newElements);
+        }
+    );
+    if (countdown == 0 || parentObject != 'window') {
+        $('#next_' + uid).html('<a class="btn border-s" id="nextLink_' + uid + '">plus de contenu</a>');
+        parent.unbind('.infscr');
+        $('a#nextLink_' + uid).click(function () {
+            $('#infiniteScroll_' + uid).infinitescroll('retrieve');
+            return false;
+        });
+    }
+}
+
+
+var parametresBlocCsa = function (idBloc, nombreAnnonces, topAds, query) {
+
+    var parametres = {
+        'container': idBloc,
+        //'adLoadedCallback' : callbackBloc(idBloc),
+        'fontFamily': 'verdana',
+        'titleBold': false,
+        'fontSizeTitle': 16,
+        'fontSizeDescription': 12,
+        'fontSizeDomainLink': 11,
+        'width': '640px',
+        'lines': '3',
+        'colorText': '#575757',
+        'colorDomainLink': '#136',
+        'colorTitleLink': '#136',
+        'longerHeadlines': false,
+        'rolloverLinkBold': true,
+        'rolloverLinkColor': '#298A08'
+    };
+
+    // La clé correspondant au nombre d'annonces dépend de si l'on requête des top ads ou non
+    var cleNombreAnnonces = topAds ? 'minTop' : 'number';
+    parametres[cleNombreAnnonces] = nombreAnnonces;
+    return parametres;
+
+};
+
+// Définition des paramètres généraux CSA (indépendants d'un bloc donné)
+function setParamCsa(query, channel) {
+    var param = {
+        'pubId': 'pub-6670715538753503', // Make sure this the correct client ID!
+        'query': query,
+        'adPage': 1,
+        'hl': 'fr',
+        'channel': channel,
+        'location': false,
+        'sellerRatings': false,
+        'siteLinks': false,
+        'linkTarget': '_blank',
+        'domainLinkAboveDescription': true,
+        'queryLink': '',
+        'queryContext': '',
+        'ie': 'utf8',
+        'oe': 'utf8',
+        'adsafe': 'medium'
+
+        /* OLD CSA CONFIG
+         'pubId': '01net-radios',
+         'channel': 'BFMTV',
+         'query': query,
+         'adPage': 1,
+         'queryLink': '',
+         'queryContext': '',
+         'ie': 'utf8',
+         'oe': 'utf8',
+         'adsafe': 'medium',
+         'hl': 'fr',
+         'linkTarget': '_blank',
+         'domainLinkAboveDescription': true*/
+    };
+    return param;
+}
+
+
+function utmx_section() {
+}
+function utmx() {
+}
+(function () {
+    var k = '0633481334', d = document, l = d.location, c = d.cookie;
+
+    function f(n) {
+        if (c) {
+            var i = c.indexOf(n + '=');
+            if (i > -1) {
+                var j = c.indexOf(';', i);
+                return escape(c.substring(i + n.
+                        length + 1, j < 0 ? c.length : j))
+            }
+        }
+    }
+
+    var x = f('__utmx'), xx = f('__utmxx'), h = l.hash;
+    d.write('<sc' + 'ript src="' +
+        'http' + (l.protocol == 'https:' ? 's://ssl' : '://www') + '.google-analytics.com'
+        + '/siteopt.js?v=1&utmxkey=' + k + '&utmx=' + (x ? x : '') + '&utmxx=' + (xx ? xx : '') + '&utmxtime='
+        + new Date().valueOf() + (h ? '&utmxhash=' + escape(h.substr(1)) : '') +
+        '" type="text/javascript" charset="utf-8"></sc' + 'ript>')
+})();
+
+
+function openfx(pagex, y) {
+    window.open('http://www.crm-metrix.fr/Projects/2010/sc/rmcrsq45/tform1.asp?sID=' + pagex + '&sRate=' + y, 'exit', 'top=2,left=2,height=' + screen.height * 0.90 + ',width=' + screen.width * 0.96 + ',resizable=yes,scrollbars=yes');
+}
+
+//Focntion qui supprime les accents dans une de caractères
+function noaccent(s) {
+    var temp = s.replace(/[àâä]/gi, "a");
+    temp = temp.replace(/[éèêë]/gi, "e");
+    temp = temp.replace(/[îï]/gi, "i");
+    temp = temp.replace(/[ôö]/gi, "o");
+    temp = temp.replace(/[ùûü]/gi, "u");
+    return temp;
+}
+
+// ALLOW TO APPEND CONTENT FROM PMU DEAL DEPEND OF RUB
+function fillBetBlocDesk(id, rubrique) {
+    //FOR DEBUG
+    $.ajax({
+        url: '/bet-article/' + noaccent(rubrique),
+        type: 'get',
+        success: function (data) {
+            var htmlContent = '<div class="title-xs bg-color-pmu color-txt-0 cap text-center padding-inside-all-xs">Cotes des<br>prochains matchs</div>';
+            var event = data.event;
+            var sport = data.sportName;
+            var competitionName = '';
+            if (event == undefined) {
+                var htmlContent = '<li class="sticky"><a class="btn box bg-color-pmu" href="/paris-sportifs/"><img src="http://rmcsport.bfmtv.com/static/nxt-rmcsport/evenement/paris-sportifs/img/picto-paris.png" class="btn-paris-sportifs" alt="Paris sportifs"><div class="share"><span></span>Parier</div></a></li>';
+                $('.art-boutton-sharre').append(htmlContent);
+                sticky();
+                return;
+            }
+
+            htmlContent += '<div class="bloc text-center">';
+            for (var i in event) {
+                if (event[i].market == undefined){
+                    var htmlContent = '<li class="sticky"><a class="btn box bg-color-pmu" href="/paris-sportifs/"><img src="http://rmcsport.bfmtv.com/static/nxt-rmcsport/evenement/paris-sportifs/img/picto-paris.png" class="btn-paris-sportifs" alt="Paris sportifs"><div class="share"><span></span>Parier</div></a></li>';
+                    $('.art-boutton-sharre').append(htmlContent);
+                    sticky();
+                    return;
+                }
+                else {
+                    if (i < 6) {
+                        var eventHeader = event[i][Object.keys(event[i])[0]];
+                        if (eventHeader.typeName != competitionName) {
+                            competitionName = eventHeader.typeName;
+                            htmlContent += '<div class="title-xs strong border-s border-color-pmu padding-inside-all-xs">' + sport + ' - ' + competitionName + '</div>';
+                        }
+                        if (sport === 'Football') {
+                            var market = event[i].market[0];
+                        } else {
+                            var market = event[i].market;
+                        }
+                        if (typeof market != "undefined") { //on test si l'objet existe !
+                            if (market[Object.keys(market)[0]].name == '1N2' || sport != 'Football') {
+                                var homeName = market.outcome[0][Object.keys(market.outcome[0])[0]].name;
+                                var homeOdd = market.outcome[0][Object.keys(market.outcome[0])[0]].oddsDecimal;
+                                var awayName = market.outcome[2][Object.keys(market.outcome[2])[0]].name;
+                                var awayOdd = market.outcome[2][Object.keys(market.outcome[2])[0]].oddsDecimal;
+                                var drawOdd = market.outcome[1][Object.keys(market.outcome[1])[0]].oddsDecimal;
+                            }
+
+                            var day = eventHeader.date.split("-");
+                            var time = eventHeader.time.split(":");
+                            day = day[2] + '/' + day[1] + '/' + day[0].substring(2, 4);
+                            time = time[0] + ':' + time[1];
+                            htmlContent += '<div class="title-xs padding-inside-all-xs strong">' + homeName + ' - ' + awayName + '</div>';
+                            htmlContent += '<div class="title-xs padding-inside-all-xs bg-color-0">' + homeOdd + ' | ' + drawOdd + ' | ' + awayOdd + '</div>';
+                        }
+                    }
+                }
+            }
+            htmlContent +='<div class="padding-top-s btn-paris-sticky sticky"><a target="_blank" class="content_full_size title-xxs btn-xs cap btn border-s btn-radius bg-color-pmu color-txt-0 padding-inside-all-s strong" href="'+ data.link +'">Pariez sur <i>PMU.FR</i></a><a target="_blank" class="content_full_size title-xxs bg-color-1 btn-xs cap btn border-s btn-radius padding-inside-all-s strong" href="'+ data.linkAccount +'">J\'ai un compte <i><span class="color-pmu">PMU</span><span class="text-danger">.FR</span></i></a></div>';
+            htmlContent += '</div>';
+            $('#' + id).html(htmlContent);
+            sticky();
+
+        },
+        error: function () {
+            $('#' + id).hide();
+        }
+    });
+    $('#' + id).html();
+}
+
+function fillBetBlocMob(id, rubrique) {
+    //FOR DEBUG
+    $.ajax({
+        url: '/bet-article/' + noaccent(rubrique),
+        type: 'get',
+        success: function (data) {
+            var htmlContent = '<div class="title-big color bloc bet-container">Les cotes des prochains matchs</div>';
+            var event = data.event;
+            var sport = data.sportName;
+            var competitionName = '';
+            if (event == undefined) {
+                $('#' + id).hide();
+                return;
+            }
+
+            htmlContent += '<div class="bet bloc"><table class="table table-condensed">';
+            for (var i in event) {
+                if (event[i].market == undefined){
+                    $('#' + id).hide();
+                    return;
+                }
+                else {
+                    if (i < 6) {
+                        var eventHeader = event[i][Object.keys(event[i])[0]];
+                        if (eventHeader.typeName != competitionName) {
+                            competitionName = eventHeader.typeName;
+                            htmlContent += '<tr><td colspan="7" class="title-medium text-left competition">' + sport + ' - ' + competitionName + '</td></tr>';
+                        }
+                        if (sport === 'Football') {
+                            var market = event[i].market[0];
+                        } else {
+                            var market = event[i].market;
+                        }
+                        if (typeof market != "undefined") { //on test si l'objet existe !
+                            if (market[Object.keys(market)[0]].name == '1N2' || sport != 'Football') {
+                                var homeName = market.outcome[0][Object.keys(market.outcome[0])[0]].name;
+                                var homeOdd = market.outcome[0][Object.keys(market.outcome[0])[0]].oddsDecimal;
+                                var awayName = market.outcome[2][Object.keys(market.outcome[2])[0]].name;
+                                var awayOdd = market.outcome[2][Object.keys(market.outcome[2])[0]].oddsDecimal;
+                                var drawOdd = market.outcome[1][Object.keys(market.outcome[1])[0]].oddsDecimal;
+                            }
+
+                            var day = eventHeader.date.split("-");
+                            var time = eventHeader.time.split(":");
+                            day = day[2] + '/' + day[1] + '/' + day[0].substring(2, 4);
+                            time = time[0] + ':' + time[1];
+                            htmlContent += '<tr class="border-b-s">';
+                            htmlContent += '<td class="hidden-xs no-border"><span class="time">' + day + '<br/>' + time + '</span></td>';
+                            htmlContent += '<td class="no-border">' + homeName + '</td>';
+                            htmlContent += '<td class="cotes no-border">' + homeOdd + '</td>';
+                            htmlContent += '<td class="cotes no-border">' + drawOdd + '</td>';
+                            htmlContent += '<td class="cotes no-border">' + awayOdd + '</td>';
+                            htmlContent += '<td class="no-border">' + awayName + '</td>';
+                            //htmlContent +='<td class="hidden-xs"><a target="_blank" class="pull-right cap btn btn-default btn-radius btn-warning btn-sm" href="'+ data.link +'">Je parie </a></td> <tr class="visible-xs"><td colspan="9"><a class="cap btn btn-default btn-radius btn-warning btn-sm btn-block bloc" target="_blank" href="'+ data.link +'">Je parie </a></td></tr>';
+                            htmlContent += '<td class="hidden-xs btn-paris-bloc-small no-border"><a target="_blank" class="title-xxs btn-xs cap btn border-s btn-radius bg-color-pmu color-txt-0 btn-paris-small" href="' + data.link + '">Pariez sur <i>PMU.FR</i></a><a target="_blank" class="title-xxs btn-xs bg-color-1 cap btn border-s btn-radius btn-paris-small" href="' + data.linkAccount + '">J\'ai un compte <i><span class="color-pmu">PMU</span><span class="text-danger">.FR</span></i></a></td> <tr class="visible-xs padding-bottom-s"><td colspan="9"><div class="padding-bottom-s"><a class="title-xxs cap btn border-s btn-radius bg-color-pmu color-txt-0" target="_blank" href="' + data.link + '">Pariez sur <i>PMU.FR</i></a>&nbsp;&nbsp;<a class="title-xxs cap btn border-s btn-radius" target="_blank" href="' + data.linkAccount + '">J\'ai un compte <i><span class="color-pmu">PMU</span><span class="text-danger">.FR</span></i></a></div></td></tr>';
+                            htmlContent += '</tr>';
+                        }
+                    }
+                }
+            }
+            htmlContent += '</table></div>';
+            $('#' + id).html(htmlContent);
+
+        },
+        error: function () {
+            $('#' + id).hide();
+        }
+    });
+    $('#' + id).html();
+}
+
+var openTicker = window.XMLHttpRequest.prototype.open,
+    sendTicker = window.XMLHttpRequest.prototype.send;
+
+function openReplacement(method, url, async, user, password) {
+    this._url = url;
+    return openTicker.apply(this, arguments);
+}
+
+function sendReplacement(data) {
+    if(this.onreadystatechange) {
+        this._onreadystatechange = this.onreadystatechange;
+    }
+    /**
+     * PLACE HERE YOUR CODE WHEN REQUEST IS SENT
+     */
+    this.onreadystatechange = onReadyStateChangeReplacement;
+    return sendTicker.apply(this, arguments);
+}
+
+function onReadyStateChangeReplacement() {
+    if (this._url.substr(this._url.length - 12) == 'TickerAlerte') {
+        msgTicker('bfm');
+    }
+
+    if(this._onreadystatechange) {
+        return this._onreadystatechange.apply(this, arguments);
+    }
+}
+
+window.XMLHttpRequest.prototype.open = openReplacement;
+window.XMLHttpRequest.prototype.send = sendReplacement;
+
+//Script Ticker
+function msgTicker(TypeTicker) {
+    var data = null;
+    //console.log($.cookie('cookie_ticker_bfm'));
+    $('#ticker').css({'display': 'none'});
+    if ($.cookie('cookie_ticker_bfm') == null) {
+        if (TypeTicker == 'bfm') {
+            var fullUrl = '/tickers/';
+            $.ajax({
+                url: fullUrl,
+                type: 'get',
+                datatype: 'json',
+                success: function (data) {
+                    var cpt = 1;
+                    if ($('div.alerte-info')[0] === undefined) {
+                        $('#ticker').append('<ul class="bxsliderTicker">');
+                        $('#ticker').prepend('<div class="alerte-info big-font pull-left"><div class="alerte">Alerte</div><div class="info">info</div></div>');
+                        $.each(data, function (i, item) {
+                            $.each(item, function (key, value) {
+                                $.each(value, function (key2, value2) {
+                                    if (key2) {
+                                        $('.bxsliderTicker').append('<li class="' + i + '"> ' + key2 + " : " + value2 + '</li>');
+                                    } else {
+                                        $('.bxsliderTicker').append('<li class="' + i + '"> ' + value2 + '</li>');
+                                    }
+
+                                });
+                                cpt++;
+                            });
+                        });
+                        $('#ticker').append('</ul>');
+                        //$('#ticker').append('<a class="fermeTicker"><i class="fa fa-times-circle fa-2x"></i></a>');
+
+                        $('#ticker').css('display', 'block');
+                        /*$('a.fermeTicker').click(function(){
+                         $('#ticker').hide(500);
+                         $.cookie('cookie_ticker_bfm', 'ticker bfm fermer', { expires: 90, path: '/', domain: '.bfmtv.com' });
+                         })*/
+
+                        var speed = 100000 * (cpt / 10);
+                        $('.bxsliderTicker').bxSlider({
+                            mode: 'vertical',
+                            minSlides: 1,
+                            maxSlides: 3,
+                            autoControls: false,
+                            controls: false,
+                            autoHover: true,
+                            auto: true
+                        });
+                    }
+                },
+                error: function () { /* Nothing to do */
+                }
+            });
+        }
+    }
+}
+
+//Localisation Paris
+var default_latitude = 48.856614;
+var default_longitude = 2.3522219000000177;
+
+
+var options = {
+    enableHighAccuracy: true,
+    timeout: 5000,
+    maximumAge: 0
+};
+
+function success(pos) {
+    var crd = pos.coords;
+    var pst = crd.latitude + '|' + crd.longitude;
+    console.log(document.cookie.indexOf('bfm_pst='));
+
+    if (document.cookie.indexOf('bfm_pst=') == -1) {
+        createCookie('bfm_pst', pst, 7);
+    }
+
+    hydrateDataHeader(crd.latitude, crd.longitude);
+
+};
+
+function error(err) {
+    hydrateDataHeader(default_latitude, default_longitude);
+};
+
+//Gestion de la méto sur le header
+function showMeteo() {
+    if (document.cookie.indexOf('bfm_pst=') != -1) {
+        var CookiePst = readCookie('bfm_pst').split('|');
+        hydrateDataHeader(CookiePst[0], CookiePst[1]);
+
+        //console.log(ck.split('|'));
+        //hydrateDataHeader(crd.latitude, crd.longitude);
+    } else {
+        /*navigator.geolocation.getCurrentPosition(success, error, options);*/
+        hydrateDataHeader(default_latitude, default_longitude);
+    }
+
+
+    // hydrateDataHeader(default_latitude, default_longitude);
+    // if (navigator.geolocation) {
+    //   navigator.geolocation.getCurrentPosition(showPositionHeader, erreurPositionHeader);
+    // }
+}
+
+function createCookie(name, value, days) {
+    if (days) {
+        var date = new Date();
+        date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
+        var expires = "; expires=" + date.toGMTString();
+    }
+    else var expires = "";
+    document.cookie = name + "=" + value + expires + "; path=/";
+}
+
+function readCookie(name) {
+    var nameEQ = name + "=";
+    var ca = document.cookie.split(';');
+    for (var i = 0; i < ca.length; i++) {
+        var c = ca[i];
+        while (c.charAt(0) == ' ') c = c.substring(1, c.length);
+        if (c.indexOf(nameEQ) == 0) return c.substring(nameEQ.length, c.length);
+    }
+    return null;
+}
+
+function hydrateDataHeader(latitude, longitude) {
+
+    $.ajax({
+        url: "/ajax/weather-localisation/",
+        data: {
+            lat: latitude,
+            lon: longitude
+        },
+        success: function (result) {
+            if (result != "") {
+                var tabDay = new Array;
+                tabDay['Sun'] = 'Dim';
+                tabDay['Mon'] = 'Lun';
+                tabDay['Tue'] = 'Mar';
+                tabDay['Wed'] = 'Mer';
+                tabDay['Thu'] = 'Jeu';
+                tabDay['Fri'] = 'Ven';
+                tabDay['Sat'] = 'Sam';
+
+                var day0 = result['day'][0];
+
+                $('.tempHome').text(day0['current_timeperiod']['temp'] + '°');
+
+                $('#font-faXS').attr('class', 'wi wi-' + day0['current_timeperiod']['symb']);
+                $('#font-fa-bloc').attr('class', 'wi wi-' + day0['current_timeperiod']['symb']);
+                $('#font-fa').attr('class', 'wi wi-' + day0['current_timeperiod']['symb']);
+                $('.icon-meteo').attr('class', 'wi wi-' + day0['current_timeperiod']['symb']);
+
+                $('.ville').html('<strong>' + result['ville'] + '</strong>');
+                $('.tendance').text(day0['current_timeperiod']['txt']);
+                $('.tendance.bloc').text('Vent : ' + day0['current_timeperiod']['windforce'] + 'km/h' + ' - UV : ' + day0['current_timeperiod']['uv']);
+                $('.vent').text('Vent : ' + day0['current_timeperiod']['windforce'] + 'km/h' + ' - UV : ' + day0['current_timeperiod']['uv']);
+
+                $('#meteo-ville').attr('href', 'http://www.bfmtv.com/meteo-des-villes/' + result['ville'] + '/');
+            }
+        }
+    });
+}
+
+function showPositionHeader(position) {
+    hydrateDataHeader(position.coords.latitude, position.coords.longitude);
+}
+
+function erreurPositionHeader(error) {
+    hydrateDataHeader(default_latitude, default_longitude);
+}
+
+
+function weatherSearchHeader() {
+    var value = $('#city').val();
+    if (value != '') {
+        window.location = '/meteo-des-villes/' + value + '/';
+        return false;
+    } else {
+        return false;
+    }
+}
+
+
+function weatherSearchHeaderHomeBloc() {
+    var value = $('#cityHomeBloc').val();
+    if (value != '') {
+        window.location = '/meteo-des-villes/' + value + '/';
+        return false;
+    } else {
+        return false;
+    }
+}
+
+
+function weatherSearchHeaderBloc() {
+    var value = $('#cityBloc').val();
+    if (value != '') {
+        window.location = '/meteo-des-villes/' + value + '/';
+        return false;
+    } else {
+        return false;
+    }
+}
+
+function isbourse(){
+    var element = $(".bloc_bourse_top");
+    if(element.length){
+        showBourse(447027);
+        showBourse(527336);
+        showBourse(459906);
+        showBourse(24264);
+        showBourse(527357);
+    }
+    else {
+        element = $(".bloc_bourse");
+        if(element.length){
+            showBourse(447027);
+            showBourse(527357);
+            showBourse(24264);
+        }
+    }
+}
+
+//Get CAC40
+function showBourse(idValeur) {
+    if (idValeur == '' || idValeur == undefined) {
+        idValeur = '447027';
+    }
+    var bourseAPI = '/rest/1/bourse/instrument/';
+    var apiExt = 'json';
+    var UrlApi = bourseAPI + idValeur + '.' + apiExt ;
+    $.getJSON( UrlApi , function(data) {
+        $.each( data, function( key, val ) {
+            if (key == 'name') {
+                $('.name_'+ idValeur).text(val);
+            }
+            if (key == 'price') {
+                $('.price_'+ idValeur).text(val);
+                $('.extend_price_'+ idValeur).html(val);
+            }
+            if (key == 'variation_color' && val == 'down') {
+                $('.variationColor_'+ idValeur).removeClass( "fa-caret-up" ).removeClass( "fa-caret-right").addClass( "fa-caret-down" );
+                $('.variationColor_'+ idValeur).removeClass( "text-success" ).removeClass( "text-info" ).addClass( "text-danger" );
+                $('.variation_'+ idValeur).removeClass( "text-success" ).removeClass( "text-info" ).addClass( "text-danger" );
+            } else {
+                if (key == 'variation_color' && val == 'neutral') {
+                    $('.variationColor_'+ idValeur).removeClass( "fa-caret-down" ).removeClass( "fa-caret-up" ).addClass( "fa-caret-right");
+                    $('.variationColor_'+ idValeur).removeClass( "text-danger" ).removeClass( "text-success" ).addClass('text-info');
+                    $('.variation_'+ idValeur).removeClass( "text-danger" ).addClass( "text-success" ).addClass('text-info');
+                } else {
+                    $('.variationColor_'+ idValeur).removeClass( "fa-caret-down" ).removeClass( "fa-caret-right").addClass( "fa-caret-up" );
+                    $('.variationColor_'+ idValeur).removeClass( "text-danger" ).addClass( "text-success" );
+                    $('.variation_'+ idValeur).removeClass( "text-danger" ).removeClass( "text-info" ).addClass( "text-success" );
+                }
+            }
+            if (key == 'variation_value') {
+                $('.variation_'+ idValeur).html('&nbsp;'+ val);
+                $('.extend_variation_'+ idValeur).html(val);
+            }
+            if (key == 'open') {
+                $('.extend_open_'+ idValeur).html(val);
+            }
+            if (key == 'close') {
+                $('.extend_close_'+ idValeur).html(val);
+            }
+
+        });
+    });
+}
+
+
+function searchBourse() {
+    //search-bourse/
+    var fullUrl = window.location.origin + '/search-bourse';
+    var value = $('#valeur').val();
+    if (value != '') {
+        $.ajax({
+            url: fullUrl,
+            type: 'get',
+            datatype: 'json',
+            data: 'q=' + $('#valeur').val(),
+            success: function (data) {
+                if (data.name) {
+                    window.location = 'https://www.tradingsat.com/' + data.name + '-' + data.code + '/';
+                }
+            },
+            error: function () { /* Nothing to do */
+            }
+        });
+    }
+
+    return false;
+}
+
+
+function searchBourseBloc() {
+    //search-bourse/
+    var fullUrl = window.location.origin + '/search-bourse';
+    var value = $('#valeurBloc').val();
+    if (value != '') {
+        $.ajax({
+            url: fullUrl,
+            type: 'get',
+            datatype: 'json',
+            data: 'q=' + $('#valeurBloc').val(),
+            success: function (data) {
+                if (data.name) {
+                    window.location = 'https://www.tradingsat.com/' + data.name + '-' + data.code + '/';
+                }
+            },
+            error: function () { /* Nothing to do */
+            }
+        });
+    }
+
+    return false;
+}
+
+function alert_download_apps() {
+
+    if (/(^|;)\s*visited=/.test(document.cookie)) {
+        // Returning visitor
+    } else {
+
+        document.cookie = "visited=true; max-age=" + 60 * 60 * 24 * 7; // 60 seconds to a minute, 60 minutes to an hour, 24 hours to a day, and 7 days.
+        // New visit
+        // Detection du devise et affichage d'un message en fonction
+        if ((isMobile.iOS()) && (AppReferer == false)) {
+            // Action à entreprendre
+            if(site == 'bfmtv'){
+                //$('#download-app').show();
+                $(".link-download-appli").attr("href", "https://itunes.apple.com/fr/app/bfmtv-1ere-chaine-dinformation/id325658560?mt=8");
+            } else if (site == 'rmc'){
+                //$('#download-app').show();
+                $(".link-download-appli").attr("href", "https://itunes.apple.com/fr/app/rmc-info-talk-sport/id340390698?mt=8");
+            } else if (site == 'bfmbusiness'){
+                //$('#download-app').show();
+                $(".link-download-appli").attr("href", "https://itunes.apple.com/fr/app/bfm-business-1ere-chaine-dinformation/id403747057?mt=8");
+            } else if (site == 'rmcsport'){
+                //$('#download-app').show();
+                $(".link-download-appli").attr("href", "https://itunes.apple.com/fr/app/rmc-sport-actualites-et-resultats/id375165547?mt=8");
+            } else {
+                //$('#download-app').show();
+                $(".link-download-appli").attr("href", "https://itunes.apple.com/fr/app/bfmtv-1ere-chaine-dinformation/id325658560?mt=8");
+            }
+        }
+
+        if ((isMobile.Android()) && (AppReferer == false)) {
+            // Action à entreprendre
+            if(site == 'bfmtv'){
+                //$('#download-app').show();
+                $(".link-download-appli").attr("href", "https://play.google.com/store/apps/details?id=com.nextradiotv.bfmtvandroid");
+            } else if (site == 'rmc'){
+                //$('#download-app').show();
+                $(".link-download-appli").attr("href", "https://play.google.com/store/apps/details?id=com.nextradiotv.rmc");
+            } else if (site == 'bfmbusiness'){
+                //$('#download-app').show();
+                $(".link-download-appli").attr("href", "https://play.google.com/store/apps/details?id=com.nextradiotv.bfmbusiness");
+            } else if (site == 'rmcsport'){
+                //$('#download-app').show();
+                $(".link-download-appli").attr("href", "https://play.google.com/store/apps/details?id=com.nextradiotv.rmcsport");
+            } else {
+                //$('#download-app').show();
+                $(".link-download-appli").attr("href", "https://play.google.com/store/apps/details?id=com.nextradiotv.bfmtvandroid");
+            }
+        }
+    }
+
+}
+
+//Fonction pour afficher les éléments de sous-menu non visibles
+function showAllMenu() {
+    var navigationwrapperRubriques = $("#main-nav-rubriques .navbar-wrapper").width();
+    $('#main-nav-rubriques ul.navbar-nav-rub').each(function () {
+        var t = $(this),
+            tW = 0;
+        $('li', t).each(function () {
+            tW += $(this).width();
+        });
+        if (tW > navigationwrapperRubriques) {
+            $('#main-nav-rubriques .navbar-nav-rub-toggle').show();
+        }
+        else {
+            $('#main-nav-rubriques .navbar-nav-rub-toggle').hide();
+        }
+    });
+    var navigationwrapperServices = $("#main-nav-services .navbar-wrapper").width();
+    $('#main-nav-services ul.navbar-nav-rub').each(function () {
+        var t = $(this),
+            tW = 0;
+        $('li', t).each(function () {
+            tW += $(this).width();
+        });
+        if (tW > navigationwrapperServices) {
+            $('#main-nav-services .navbar-nav-rub-toggle').show();
+        }
+        else {
+            $('#main-nav-services .navbar-nav-rub-toggle').hide();
+        }
+    });
+    var navigationwrapperOpe = $("#nav-ope").innerWidth();
+    $('#nav-ope .navbar-nav').each(function () {
+        var t = $(this),
+            tW = 0;
+        $('li', t).each(function () {
+            tW += $(this).innerWidth();
+            var elem = $(this).attr('title');
+        });
+        if (tW > navigationwrapperOpe) {
+            $('.navbar-ope-toggle').show();
+        }
+        else {
+            $('.navbar-ope-toggle').hide();
+        }
+    });
+    /* picto mobile */
+    $(".picto-nav-mobile").click(function() {
+        $(this).toggleClass("fa-caret-up");
+    });
+}
+// Check le lien actif dans le menu ope spe
+function activeLinks() {
+    var pgurl = window.location.href;
+    $("#nav-ope ul li a").each(function(){
+        var allurl = $(this).attr("href");
+        if(allurl == pgurl)
+            $(this).addClass("active");
+    });
+}
+
+//Fonction qui permet de diviser la home en plusieurs blocs via un infinite scroll
+function scrollhome(nbrscrollshome) {
+    $('.infiscroll').infinitescroll({
+        navSelector: "#next",
+        nextSelector: "#next",
+        bufferPx: 1000,
+        loading: {
+            finishedMsg: "",
+            img: "http://img.bfmtv.com/ressources/img/loader.gif",
+            msgText: '<span class="bloc title-small">Chargement ...</span>',
+        },
+        itemSelector: ".infiscroll",
+        maxPage: nbrscrollshome,
+    }, function (newElements, data, url) {
+        if ($('.pws-pos').length > 0) {
+            window.PWS=(function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0],v=window.PWS||{};if(d.getElementById(id))return v;js=d.createElement(s);js.id = id;js.src="//cdn.powerspace.com/pws.js";fjs.parentNode.insertBefore(js, fjs);return v;}(document,"script","pws-js"));
+        }
+        brouillelien(newElements);
+        enableBxSliders(newElements);
+        bxsliderMultiple(newElements);
+        sharrebuttons(newElements);
+        imgLazyLoad(newElements);
+        PageTransitions.init(newElements);
+        initSmart(newElements);
+        pool_Init(newElements);
+        if (!isConnected()) {
+            showMeteo();
+            if (!(site == 'rmcsport' || site == 'goredforwomen' || site == 'mediaplayer' || site == 'site01net')) {
+                isbourse();
+            }
+        }
+        stopAutoRefresh();
+    });
+}
+
+/*********************************
+ SCRIPTS POOL
+ **********************************/
+
+function checkPoolCookie(pool_id) {
+    var user = getCookie("poll-" + pool_id);
+    if (user != "") {
+        $('#poll-choice-' + pool_id).hide();
+        $('#poll-result-' + pool_id).show();
+    }
+}
+
+function pool_Init(element) {
+    var content = element || "body";
+    $(content).find('[data-pool-id]').each(function (key, val) {
+        var pool_id = this.getAttribute('data-pool-id');
+        var needmember = this.getAttribute('data-needmember');
+
+        checkPoolCookie(pool_id);
+
+        $('a.poll-vote-action.poll-' + pool_id).on('click', function (event) {
+            if (needmember == '1') {
+                if (nextmembers && null === nextmembers.getMember()) {
+                    return nextmembers.connect();
+                }
+            }
+            ;
+            event.preventDefault();
+            var $form = $(this).parent();
+            $form.find('input#' + $(this).data('choice-id')).trigger('click');
+            $form.submit();
+        });
+
+    });
+}
+
+/*********************************
+ SCRIPTS COOKIES
+ **********************************/
+
+//BEGIN BFM COOKIES MESSAGE
+function cookies_msg() {
+    if (($.cookie('cookie_cnil_01net') == null) && ($.cookie('cookie_cnil_bfm') == null)) {
+        $('#conteneurCookies').css('display', 'block');
+        $('a.fermeCookie').click(function () {
+            $('#conteneurCookies').hide(500);
+            if (site == 'site01net') {
+                $.cookie('cookie_cnil_01net', 'cnil 01net ok', {expires: 90, path: '/', domain: '.01net.com'});
+            }
+            else {
+                $.cookie('cookie_cnil_bfm', 'cnil bfm ok', {expires: 90, path: '/', domain: '.bfmtv.com'});
+            }
+        })
+    }
+    ;
+}
+
+function getCookie(cname) {
+    var name = cname + "=";
+    var ca = document.cookie.split(';');
+    for (var i = 0; i < ca.length; i++) {
+        var c = ca[i];
+        while (c.charAt(0) == ' ') c = c.substring(1);
+        if (c.indexOf(name) != -1) return c.substring(name.length, c.length);
+    }
+    return "";
+}
+
+// END BFM COOKIES MESSAGE
+
+/*********************************
+ SCRIPTS PUB
+ **********************************/
+
+
+/*********************************
+ NEXT HEADER / MENU
+ **********************************/
+function showMobileNav() {
+    // Permet d'afficher le sous menu de nav sur mobile (A revoir -> RMC)
+    $('#mobile-nav').click(function () {
+        setTimeout(function () {
+            $('#selectedSite').find('a').click()
+        }, 300);
+    });
+}
+
+function searchForm() {
+    $('.searchForm').each(function (index, element) {
+        var form = $(element);
+        form.submit(function (event) {
+            if ($(this).find("input").val() == '') {
+                return false;
+            }
+        });
+    });
+}
+
+/*********************************
+ STICKY
+ required: jquery + jquery.sticky
+ **********************************/
+
+function sticky() { // document ready
+
+    if (!!$('.sticky').offset()) { // make sure ".sticky" element exists
+
+        var stickyTop = $('.sticky').offset().top; // returns number
+
+        $(window).scroll(function () { // scroll event
+
+            var windowTop = $(window).scrollTop(); // returns number
+
+            if (stickyTop < windowTop) {
+                $('.sticky').css({position: 'fixed', top: '0px'});
+                if( $(".main-video.aside").length>0){
+                    $('.sticky').css({'padding-top': '170px'});
+                }
+                else{
+                    $('.sticky').css({'padding-top': '10px'});
+                }
+            }
+            else {
+                $('.sticky').css('position', 'static');
+                $('.sticky').css({'padding-top': '7px'});
+            }
+
+        });
+
+    }
+
+}
+
+/*********************************
+ * SECTION URL
+ * Get current url, Fecth section contained in the url AND return section to an url
+ * /**
+ * @param String url
+ * @param String string
+ * @return string
+ **********************************/
+
+function fetchSection(url, string){
+    if(url){
+        var rubrique = getSection(url);
+        string = string.concat(rubrique);
+        return string;
+    }
+}
+function getSection(url){
+    return /[^/]+/.exec(url)[0].substr();
+}
+
+/*********************************
+ NEXT ARTICLE
+ **********************************
+
+ /*********************************
+ LP NEXT+DIGITAL
+ JS v1.0.2
+ required: jquery + jquery ui
+ **********************************/
+
+// Document ready
+$(document).ready(function () {
+
+    //$(function () {
+
+    //VARS
+    var viewport = $(window);
+    var menuPane = "#pane-menu";
+    var paneWrapper = "#pane-wrapper";
+    var paneMenuNav = "pane-menu-nav";
+    var paneMenuNavWidth = 265;
+    if ( site == 'plugin') {
+        var paneMenuNavWidthUnit = '100%';
+        var toggleBtnAsideMenu = ".navbar-toggle";
+        var mainPane = "#pane-content-plugin";
+    } else {
+        var mainPane = "#pane-content";
+        var paneMenuNavWidthUnit = '265px';
+        var toggleBtnAsideMenu = "#portail-bar .navbar-header .navbar-toggle";
+    }
+
+    var breadcrumMenuArray = new Array();
+    var transEndEventNames = {
+        'WebkitTransition': 'webkitTransitionEnd',// Saf 6, Android Browser
+        'MozTransition': 'transitionend',      // only for FF < 15
+        'transition': 'transitionend'       // IE10, Opera, Chrome, FF 15+, Saf 7+
+    };
+    var sectionClass = "";
+
+    //TOGGLE ASIDE MENU
+    $(toggleBtnAsideMenu).on('click', function (event) {
+        event.stopPropagation();
+        event.preventDefault();
+        var thisBtn = this;
+        buildMenu();
+        //Interdiction du sroll sur la partie principale de la page
+        $(mainPane).on('touchmove', stopScrolling);
+        //Ajout de la classe 'open' sur la partie principale de la page
+        $(mainPane).addClass("open");
+        //Transalation de la partie principale de la page
+        if (Modernizr.csstransitions) {
+            if ( site == 'plugin') {
+                $(paneWrapper).css(Modernizr.prefixed('transform'), 'translate3d(' + paneMenuNavWidthUnit + ', 0px, 0px)');
+            } else {
+                $(paneWrapper).css(Modernizr.prefixed('transform'), 'translate3d(' + paneMenuNavWidth + 'px, 0px, 0px)');
+            }
+
+        } else {
+            $(paneWrapper).css({width: $(mainPane).width(), left: paneMenuNavWidth});
+        }
+        //Au clic, fermeture du panneau
+        $(mainPane).one('click', function (event) {
+            if (Modernizr.csstransitions) {
+                $(paneWrapper).css(Modernizr.prefixed('transform'), 'translate3d(0px, 0px, 0px)');
+            } else {
+                $(paneWrapper).css({left: 0});
+            }
+            $(mainPane).removeClass("open");
+            event.stopPropagation();
+            event.preventDefault();
+            //Actication du scroll  sur la partie principale
+            $(mainPane).off('touchmove', stopScrolling);
+            return false;
+        });
+    });
+
+    /*Add event on menu*/
+    $(menuPane).delegate("ul.nav li a, ul.mobile-nav li .btn-return", "click", function (event) {
+        event.stopPropagation();
+        event.preventDefault();
+        var thisMenu = $(this).closest("ul.mobile-nav");
+        var thisSection = $(this).closest("li");
+        var menuLevel = (thisMenu.hasClass("rub-nav")) ? "rub-nav" : (thisMenu.hasClass("navbar-nav-rub")) ? "navbar-nav-rub" : (thisMenu.hasClass("list-sub-rub")) ? "list-sub-rub" : "undefined";
+        var direction = $(event.currentTarget).hasClass("btn-return") ? "prev" : "next";
+        switch (direction) {
+            case "prev":
+                var newMenu;
+                if (Modernizr.csstransitions) {
+                    if ( site == 'plugin') {
+                        newMenu = $(breadcrumMenuArray[0]).css(Modernizr.prefixed('transform'), 'translate3d(-' + 2 * paneMenuNavWidthUnit + ', 0px, 0px)').appendTo(menuPane + " ." + paneMenuNav);
+                    } else {
+                        newMenu = $(breadcrumMenuArray[0]).css(Modernizr.prefixed('transform'), 'translate3d(-' + 2 * paneMenuNavWidth + 'px, 0px, 0px)').appendTo(menuPane + " ." + paneMenuNav);
+                    }
+
+                    setTimeout(function () {
+                        newMenu.addClass("nav-transition");
+                        if ( site == 'plugin') {
+                            newMenu.css(Modernizr.prefixed('transform'), 'translate3d(-' + paneMenuNavWidthUnit + ', 0px, 0px)');
+                        } else {
+                            newMenu.css(Modernizr.prefixed('transform'), 'translate3d(-' + paneMenuNavWidth + 'px, 0px, 0px)');
+                        }
+                        //Translation du menu en cours et suppression
+                        thisMenu.css(Modernizr.prefixed('transform'), 'translate3d(0px, 0px, 0px)');
+                        thisMenu.one(transEndEventNames[Modernizr.prefixed('transition')], function (event) {
+                            $(this).remove();
+                        });
+                    }, 10);
+                } else {
+                    newMenu = $(breadcrumMenuArray[0]).appendTo(menuPane + " ." + paneMenuNav);
+                    newMenu.css({left: 0});
+                    thisMenu.remove();
+                }
+                breadcrumMenuArray.shift();
+                break;
+            case "next":
+                //Test si on fait slider le menu
+                if ((menuLevel == "rub-nav" && thisSection.hasClass("active")) || menuLevel != "rub-nav") {
+                    //Creation du nouveau menu
+                    //Suppression retour home a.navbar-brand
+                    var newMenu;
+                    switch (menuLevel) {
+                        case "rub-nav":
+                            newMenu = $("#subheader .navbar-nav-rub").clone().addClass("mobile-nav").appendTo(menuPane + " ." + paneMenuNav);
+                            sectionClass = thisSection.attr("class");
+                            newMenu.find('li>a.navbar-brand').parent('li').remove();
+                            newMenu.prepend("<li class='" + sectionClass + "'><span class='menu-header'><a href='" + $(this).attr("href") + "'>" + $(this).html() + "<i class='fa fa-home'></i></a></span></li>");
+                            newMenu.prepend("<li><span class='btn-return'>Précedent</span></li>");
+                            break;
+                        case "navbar-nav-rub":
+                            window.location = $(this).attr('href');
+                            break;
+                    }
+                    if (undefined === newMenu.html()) {
+                        return;
+                    }
+                    //Ajout du menu dans le breadcrumb
+                    breadcrumMenuArray.unshift(thisMenu);
+                    //Ajout du boutton Retour
+
+                    if (Modernizr.csstransitions) {
+
+                        setTimeout(function () {
+                            newMenu.addClass("nav-transition");
+                            if ( site == 'plugin') {
+                                newMenu.css(Modernizr.prefixed('transform'), 'translate3d(-' + paneMenuNavWidthUnit + ', 0px, 0px)');
+                                //Translation du menu en cours et suppression
+                                thisMenu.addClass("nav-transition").css(Modernizr.prefixed('transform'), 'translate3d(-' + 2 * paneMenuNavWidthUnit + ', 0px, 0px)');
+                            } else {
+                                newMenu.css(Modernizr.prefixed('transform'), 'translate3d(-' + paneMenuNavWidth + 'px, 0px, 0px)');
+                                //Translation du menu en cours et suppression
+                                thisMenu.addClass("nav-transition").css(Modernizr.prefixed('transform'), 'translate3d(-' + 2 * paneMenuNavWidth + 'px, 0px, 0px)');
+                            }
+                            thisMenu.one(transEndEventNames[Modernizr.prefixed('transition')], function (event) {
+                                $(this).remove();
+                            });
+                        }, 10);
+                    } else {
+                        newMenu.css({left: 0});
+                        thisMenu.remove();
+                    }
+                    return false;
+                } else {
+                    window.location = $(this).attr('href');
+                }// Fin Test si on fait slider le menu
+                break;
+        }//switch direction
+
+    });
+
+    //FUNCTIONS MENU MOBILE
+    /*Stop scrolling on main pane*/
+    function stopScrolling(event) {
+        event.stopPropagation();
+        event.preventDefault();
+        return false;
+    }
+
+    /*Build menu*/
+    function buildMenu() {
+        //Search Form
+        if ($(menuPane).find("#navbar-search").length == 0) {
+            $("#navbar-search").clone().appendTo(menuPane);
+        }
+        //Menu
+        if ($(menuPane).find("." + paneMenuNav).length == 0) {
+            $("<div></div>").addClass(paneMenuNav).appendTo(menuPane);
+        } else {
+            $(menuPane + " ." + paneMenuNav + " > ul").remove();
+        }
+        var menuClone = $("#portail-bar .rub-nav").clone().addClass("mobile-nav");
+        if (Modernizr.csstransitions) {
+            if ( site == 'plugin') {
+                menuClone.css(Modernizr.prefixed('transform'), 'translate3d(-' + paneMenuNavWidthUnit + ', 0px, 0px)');
+            } else {
+                menuClone.css(Modernizr.prefixed('transform'), 'translate3d(-' + paneMenuNavWidth + 'px, 0px, 0px)');
+            }
+        } else {
+            menuClone.css({left: 0});
+        }
+        menuClone.appendTo(menuPane + " ." + paneMenuNav);
+
+    }
+
+
+    //});
+    //End mobile menu
+
+//END ready
+});
+
+/*********************************
+ Desktop left menu for Mediaplayer page
+ **********************************/
+$(document).ready(function () {
+    // set active link in menu
+    function setActiveLink() {
+        var pgurl = window.location.href;
+        $(".slideup-menu ul li a").each(function(){
+            var allurl = $(this).attr("href");
+            if(allurl == pgurl)
+                $(this).addClass("active");
+        })
+    }
+    //push main content
+    function indentCalculation(menuWidth){
+        var containerIndent = menuWidth, windowSize = $(window).width(), wrapWidth = $('#mediaplayer #wrap .container').width();
+        if (windowSize > 980 && windowSize < 1300){
+            wrapWidth = 998;
+        }
+        var currentIndent = (windowSize - wrapWidth)/2;
+        if (currentIndent < containerIndent){
+            containerIndent = containerIndent - currentIndent;
+        }
+        else{
+            containerIndent = 0;
+        }
+        if($(window).width() < 980) {
+            containerIndent = menuWidth;
+        }
+        // push content
+        $(".slideup-menu").css({"transform": "translateX(0)", "transition-duration": "0.5s"});
+        $("#mediaplayer #wrap").css({"transform": "translateX(" + containerIndent + "px)", "transition-duration": "0.5s"});
+        // css fix pour mosaic icon vidéo sous chrome , à supprimer avec nouvelle version brightcove
+        $("#mediaplayer #live-video-megaplayer .BrightcoveExperience").css({"transform": "translateX(" + containerIndent*(-1) + "px)", "transition-duration": "0.1s !important", "left": containerIndent});
+        $("#mediaplayer footer").css({"transform": "translateX(" + containerIndent + "px)", "transition-duration": "0.5s"});
+
+    }
+    // show left menu
+    function showSlideupMenu(menuWidth){
+        $(".slideup-menu-open").hide();
+        $(".slideup-menu-close").show();
+        indentCalculation(menuWidth);
+        showScrollMenu();
+    }
+    // hide left menu
+    function hideSlideupMenu(menuWidth){
+        $("#mediaplayer #wrap").css({'transform': 'translateX(0)', "transition-duration": "0.5s"});
+        // css fix pour mosaic icon vidéo sous chrome , à supprimer avec nouvelle version brightcove
+        $("#mediaplayer #live-video-megaplayer .BrightcoveExperience").css({'transform': 'translateX(0)', "transition-duration": "0.1s !important", "left": "0"});
+        $("footer").css({'transform': 'translateX(0)', "transition-duration": "0.5s"});
+        $(".slideup-menu").css({"transform": "translateX(-" + menuWidth + "px)", "transition-duration": "0.5s"});
+        $(".slideup-menu-open").show();
+        $(".slideup-menu-close").hide();
+    }
+    // large screen is always with menu showed
+    function largeScreenCheck(menuWidth){
+        return ($(window).width() > $('#mediaplayer #wrap .container').width() + menuWidth)
+    }
+    //cookie verification
+    function cookieMenuCheck(menuWidth){
+        if (document.cookie.indexOf('mediaplayer_menu=') == -1) {
+            createCookie('mediaplayer_menu', 'on', 3650);
+            showSlideupMenu(menuWidth);
+        }
+        else if (largeScreenCheck(menuWidth)){
+            showSlideupMenu(menuWidth);
+        }
+        else{
+            hideSlideupMenu(menuWidth + 40);
+        }
+    }
+
+    // height calculation for scroll container in desktop
+    function showScrollMenu(){
+        var menuHeight = $(window).height();
+        if ($(window).width()>980 ) {
+            // show header big
+            if ($(document).scrollTop() == 0 && !isMobile.any()){
+                $(".slideup-menu").addClass("fixed").css({"height": menuHeight-103, "margin-top": "103px"});
+            }
+            // show small header
+            else {
+                $(".slideup-menu").addClass("fixed").css({"height": menuHeight-61, "margin-top": "49px"});
+            }
+        }
+        // small screen desktop or mobile
+        else{
+            $(".show-menu-holder").css({"margin-top": "0"});
+            if (!isMobile.any()){
+                $(".slideup-menu").css({"height": menuHeight-61});
+            }
+        }
+    }
+    // header reduit
+    function showHeaderTopFixed(){
+        // header model set for tablette or desktop
+        if ( ($(window).width()>980 && isMobile.any()) || (!isMobile.any()) ){
+            showScrollMenu();
+            // header fixed for tablette or desktop with scroll > 0
+            if ( $(document).scrollTop() > 0  || isMobile.any() ){
+                $(".header-fixed").addClass("activated");
+                $(".slideup-menu").addClass("fixed").css("margin-top", "61px" );
+                if(isMobile.any()){
+                    //main content top indent for give space for header reduit in conditions of scrollTop 0 in tablette
+                    $(".show-menu-holder").css({"margin-top": "41px"});
+                }
+            }
+            // if desktop scrollTop = 0
+            else{
+                $(".header-fixed").removeClass("activated");
+                if ( $(window).width()<980 && !isMobile.any() ){
+                    $(".slideup-menu").css("margin-top", "53px");
+                }
+            }
+        }
+        // header model set for mobile width < 980
+        else if (isMobile.any()) {
+            $(".slideup-menu").css({"margin-top": "53px", "height":"auto"}).removeClass("fixed");
+            $(".header-fixed").removeClass("activated");
+            $(".show-menu-holder").css({"margin-top": "0"});
+        }
+    }
+    // IOS safari fix for transform
+    $(".slideup-menu").css({'transform': 'translateX(-265px)'});
+    //hide scroll init if in mobile mode
+    if ( !isMobile.any() || (isMobile.any() && $(window).width() > 980) ) {
+        $("#slideScroll").attr("data-scroller", "true");
+        scrollbar();
+    }
+    // set active link
+    setActiveLink();
+    // show header fixed for tablette width > 980 px or for desktop if scroll activated
+    showHeaderTopFixed();
+
+    $('#mediaplayer #wrap').css("min-height", ($(window).height() - $("footer").height()));
+    if (!isMobile.any()) {
+        $(".mobile-menu, .slideup-menu .hidden-md").show();
+        cookieMenuCheck(235);
+    }
+    //else{
+    $('body').addClass("mobileMode")
+    $('#mediaplayer .slideup-menu').css("height", "auto");
+    $("#mediaplayer .slideup-menu-open").show();
+    $("#mediaplayer .slideup-menu-close").hide();
+    //}
+    if (/*isMobile.any() &&*/ $(window).width() > 650 ) {
+        cookieMenuCheck(235);
+    }
+    // click events
+    $("#mediaplayer .slideup-menu-open").on("click", function() {
+        showSlideupMenu(235);
+    });
+    $("#mediaplayer .slideup-menu-close").on("click", function() {
+        hideSlideupMenu(235+40);
+    });
+    // search for mobile version
+    $(".search-control").on("click", function() {
+        $(".search-container").toggleClass("inactive-search");
+        $(".search-control").toggleClass("inactive-search");
+    });
+    $(".search-mobile-close").on("click", function() {
+        $(".search-container").addClass("inactive-search");
+        $(".search-control").removeClass("inactive-search");
+    });
+    $(document).on("scroll", showHeaderTopFixed);
+    // resize window
+    $(window).resize( function(){
+        if (largeScreenCheck(235) || (parseInt($(".slideup-menu").css('transform').split(',')[4]) == 0) ){
+            showSlideupMenu(235);
+        }
+        if ($(window).width() > 650 && $(window).width() < 1300) {
+            hideSlideupMenu(235+40);
+        }
+        showHeaderTopFixed();
+        bxsliderMultiple();
+    });
+    // separator for 01net in MP menu
+    $(".insertLineInMenu").each(function(){
+        $(".insertLineInMenu").parents("li").prepend('<div class="hidden-xs hidden-sm" style="padding:0 50px 0px 31px;  margin-bottom:-16px;"><div class="border-b-s margin-indices"></div></div><div class="hidden-md padding-inside-l-r" style="padding:0 14px; margin: 0 0 -20px;"><div class="border-b-s"></div></div>');
+    });
+
+});
+
+
+// MP reduit by scroll event
+var onTemplateLoaded,
+    onTemplateReady;
+onTemplateLoaded = function (experienceID){
+    player = brightcove.api.getExperience(experienceID);
+    APIModules = brightcove.api.modules.APIModules;
+}
+onTemplateReady = function (evt){
+    videoPlayer = player.getModule(APIModules.VIDEO_PLAYER);
+    videoPlayer.play();
+}
+$(function() {
+    function topCoordinateFixCalculation(checkViewFlag){
+        var asideFlag = false;
+        var step = 100;
+        if($('.main-video').length > 0 && $('.main-video').children().length != 0  ){
+            var vid = $('.main-video'); // init pour vidéo dans article
+            if (!isMobile.any()){
+                asideFlag = true;
+                step=20;
+            }
+        }
+        else if( $(".brightcove_container [id*='live-']").length > 0){
+            var vid = $(".brightcove_container [id*='live-']"); // init pour bfmtv direct page (brightcove)
+            if (!isMobile.any()){
+                asideFlag = true;
+            }
+        }
+        else if( $(".live_container #liveStitching").length > 0){
+            var vid = $(".live_container"); // init pour les directs page avec livestitching MP
+            asideFlag = true;
+            step =100;
+        }
+        if ( $('#widget_live').length > 0 ){
+            asideFlag = false;
+        }
+        if (typeof vid != 'undefined') {
+            var player,
+                APIModules,
+                videoPlayer;
+            var top = vid.offset().top;//  - parseFloat(vid.css('margin-top').replace(/auto/, 0));
+            $(window).on('scroll', function(event) {
+                if(  asideFlag == true){ //+ vid.height()/step
+                    if (this.scrollY >= top  || (step == 100 && y > 0 )) {
+                        vid.addClass('aside');
+                        $('#article h1').css('padding-top', 350);
+                        if( $(".live_container #liveStitching").length > 0){
+                            $(".main_containt .bloc-rub-video .infos-video").css('padding-top', 350);
+                        }
+                    }
+                }
+                var y = this.scrollY; // + vid.height()/step
+                if (y >= top  || (step == 100 && y > 0 )) { // si top marge du scroll est plus que 1/100 du hauteur de MP, on affiche MP reduit
+                    if (vid.is('.aside') ) {
+                        if (checkViewFlag == "true"){
+                            // mediaplayer desktop version
+                            if (!isMobile.any()){
+                                vid.css('top', this.scrollY + 70 + 'px');
+                            }
+                            // width 650-980px pages livestitching MP
+                            else if ($(window).width() < 980 && $(window).width() > 650 && isMobile.any()){
+                                vid.css('top', this.scrollY - 50 + 'px');
+                            }
+                            // mobile phone page livestitching MP
+                            else{
+                                vid.css('top', this.scrollY + 12 + 'px');
+                            }
+                        }
+                        vid.css('position','fixed');
+                        return;
+                    }
+
+                }
+                else { // si coordonée top du scroll est moins que 1/step du hauteur de MP on affiche full MP block
+                    vid.css({"top": 0});
+                    vid.removeClass('aside');
+                    $('#article h1').css('padding-top', 0);
+                    $(".main_containt .bloc-rub-video .infos-video").css('padding-top', 0);
+                    vid.css({"top": 20, "position": "static"});
+                }
+            });
+            if (isMobile.any() && $(window).width() < 980){
+                $('.main-video').css("margin-left", "0px");
+            }
+        }
+    }
+
+    function checkView(){ // checkViewFlag = true pour les pages avec transform sur parent, position top est calculé dans function topCoordinateFixCalculation
+        var checkViewFlag = false;
+        // MP direct livestitching desktop or mobile page
+        if ($(".live_container #liveStitching").length > 0){
+            checkViewFlag = "true";
+        }
+        // MP directs pages desktop
+        if ($('#mediaplayer').length && !isMobile.any()) {
+            checkViewFlag = "true";
+        }
+        topCoordinateFixCalculation(checkViewFlag);
+    }
+    checkView();
+    $(window).on('resize', function(event) {
+        checkView();
+    });
+    $(window).load(function () {
+        checkView();
+    });
+    initSmart();
+});
+// END MP reduit by scroll event

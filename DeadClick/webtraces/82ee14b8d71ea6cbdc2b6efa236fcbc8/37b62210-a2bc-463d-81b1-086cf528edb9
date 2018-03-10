@@ -1,0 +1,687 @@
+define('shared/scripts/bam/datetime/2.0/datetime', function( require, exports, module ) {
+	/*
+	Datetime library
+
+	Provides a set of tools for working with Dates in javascript
+
+	Dependencies: jQuery, require, string, number 
+
+	*/
+
+	var stringModule = require('shared/scripts/bam/string/1.0/string');
+	var numberModule = require('shared/scripts/bam/number/1.0/number');
+	
+		
+		/**
+		 * TimeSpan Class represents a span/duration in time (Immutable)
+		 * Constructor would except 3 signatures
+		 * a) no arguments are present
+		 * b) all arguments are present (dd, hr [,min, sec, ms])
+		 * c) only @ms is present
+		 * @class TimeStamp class
+		 * @param {float} days Days
+		 * @param {float} hr   Hours
+		 * @param {float} min  Minutes
+		 * @param {float} sec  Seconds
+		 * @param {float} mill Milliseconds
+		 */
+
+		function TimeSpan( /* dd, hr, mm, sec, ms */ ) {
+			var args = $.makeArray(arguments),
+				fragments = {
+					dd: 0,
+					hr: 0,
+					mm: 0,
+					sec: 0,
+					ms: 0
+				};
+
+			this.TotalMilliseconds = 0;
+
+			if (args.length === 1) {
+				fragments.ms = parseFloat(args[0]);
+				this.TotalMilliseconds = fragments.ms || 0;
+
+			} else if (args.length > 1) {
+				var i = 0;
+				$.each(fragments, function(n) {
+					fragments[n] = parseFloat(args[i++] || 0);
+				});
+
+				this.TotalMilliseconds += (fragments.dd * (60000 * 60 * 24));
+				this.TotalMilliseconds += (fragments.hr * (60000 * 60));
+				this.TotalMilliseconds += (fragments.mm * 60000);
+				this.TotalMilliseconds += (fragments.sec * 1000);
+				this.TotalMilliseconds += (fragments.ms);
+			}
+			//Values in mathematical units
+			this.TotalDays = Math.floor(this.TotalMilliseconds / (60000 * 60 * 24));
+			this.TotalHours = Math.floor(this.TotalMilliseconds / (60000 * 60));
+			this.TotalMinutes = Math.floor(this.TotalMilliseconds / 60000);
+			this.TotalSeconds = Math.floor(this.TotalMilliseconds / 1000);
+			//Values in Date/Time measurable units (remainders are cascaded)
+			this.Milliseconds = Math.floor((this.TotalMilliseconds / 1000 % 1) * 1000);
+			this.Seconds = Math.floor(((this.TotalMilliseconds / 1000) % 60) + (this.Milliseconds % 1));
+			this.Minutes = Math.floor(((this.TotalSeconds / 60) % 60) + (this.Seconds % 1));
+			this.Hours = Math.floor(((this.TotalMinutes / 60) % 24) + (this.Minutes % 1));
+			this.Days = Math.floor((this.TotalHours / 24) + (this.Hours % 1));
+		}
+		//Static Functions
+		$.extend(TimeSpan, {
+			FromMilliseconds: function(n) {
+				return new TimeSpan(+n);
+			},
+			FromSeconds: function(n) {
+				return new TimeSpan(n * 1000);
+			},
+			FromMinutes: function(n) {
+				return new TimeSpan(n * 60000);
+			},
+			FromHours: function(n) {
+				return new TimeSpan(n * (60000 * 60));
+			},
+			FromDays: function(n) {
+				return new TimeSpan(n * (60000 * 60 * 24));
+			}
+		});
+		//Inherited Functions
+		TimeSpan.prototype = {
+			toString: function() {
+				var buff = [];
+				buff.push([(this.Days ? this.Days + '.' : '') + numberModule.padZeroes(this.Hours), numberModule.padZeroes(this.Minutes), numberModule.padZeroes(this.Seconds) + (this.Milliseconds ? (this.Milliseconds / 1000).toPrecision(5).slice(1) : '')].join(':'));
+				return buff.join('');
+			},
+			valueOf: function() {
+				return this.TotalMilliseconds;
+			},
+			/** Adds another TimeSpan and returns a new TimeSpan value */
+			add: function(ts) {
+				if (ts instanceof TimeSpan) {
+					return new TimeSpan(this.TotalMilliseconds + ts.TotalMilliseconds);
+				}
+			},
+			/** Subtracts another TimeSpan and returns a new TimeSpan value */
+			subtract: function(ts) {
+				if (ts instanceof TimeSpan) {
+					return new TimeSpan(this.TotalMilliseconds - ts.TotalMilliseconds);
+				}
+			}
+		};
+
+		var
+		DATE = "date",
+			NUMBER = "number",
+			STRING = "string",
+			DATE_CONSTANTS = {
+				EN: {
+					MonthNames: ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"],
+					DOWNames: ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
+				},
+				ES: {
+					MonthNames: ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"],
+					DOWNames: ["domingo", "lunes", "martes", stringModule.unescapeHTML("mi&eacute;rcoles"), "jueves", "viernes", stringModule.unescapeHTML("s&aacute;bado")]
+				}
+			},
+			module = {
+				DateFormats: {
+					ShortDate: "MM/dd/yyyy",
+					LongDate: "EEEE, dd MMMM yyyy",
+					FullDateTime: "EEEE, dd MMMM yyyy HH:mm:ss",
+					MonthDay: "MMMM dd",
+					RFC1123: "EEE, dd MMM yyyy HH':'mm':'ss Z",
+					ISO8601: "yyyy'-'MM'-'dd'T'HH':'mm':'ss",
+					SortableDateTime: "yyyy'-'MM'-'dd'T'HH':'mm':'ss",
+					ShortTime: "HH:mm",
+					LongTime: "HH:mm:ss",
+					UniversalDateTime: "yyyy'-'MM'-'dd HH':'mm':'ss.S",
+					YearMonth: "yyyy MMMM",
+					YMD: "yyyyMMdd",
+					XMLDate: "yyyy-MM-ddTHH:mm:ss.So"
+				},
+				//DateDiff object for comparing dates
+				DateDiff: function(d1, d2) {
+					var out;
+					if (($.type(d1) === "date") && ($.type(d2) === "date") && !isNaN(d1) && !isNaN(d2)) {
+						out = new TimeSpan(Math.abs(d1 - d2));
+					}
+					return out;
+				},
+				//Is Leap year
+				isLeapYear: function(y) {
+					var leap = (y % 4 === 0) && ((y % 100 !== 0) || (y % 400 === 0));
+					return leap;
+				},
+				/** DST in USA starts on the 2nd Sunday of March and Ends on 1st Sunday of November
+				 * Before 2007: starts on 1st Sunday of April and ends on last Sunday of October
+				 */
+				isDST: function(dtObj) {
+					if ($.type(dtObj) === DATE) {
+						var year = dtObj.getFullYear(),
+							dstStart = year < 2007 ? new Date(dtObj.getFullYear(), 3, 7) : new Date(dtObj.getFullYear(), 2, 14),
+							dstEnd = year < 2007 ? new Date(dtObj.getFullYear(), 9, 28) : new Date(dtObj.getFullYear(), 10, 7),
+							utcOffset = (dtObj.getTimezoneOffset() / 60);
+
+						//Time-zones that do not observe DST (from EST(DST) to PST(DST))
+						if (utcOffset < 4 || utcOffset >= 10) {
+							return false;
+						}
+						//Adjust Day to be sunday
+						if (dstStart.getDay() !== 0) {
+							dstStart.setDate(dstStart.getDate() - dstStart.getDay());
+						}
+						if (dstEnd.getDay() !== 0) {
+							dstEnd.setDate(dstEnd.getDate() - dstEnd.getDay());
+						}
+
+						return (dtObj >= dstStart && dtObj <= dstEnd);
+					}
+				},
+				/**
+				 * Returns month length. Number of days in a month.
+				 * @param  {int} m Month
+				 * @param  {int} y Year
+				 * @return {int}   Month length
+				 */
+				getMonthLength: function(m, y) {
+					return 32 - new Date(y, m, 32).getDate();
+				},
+				/**
+				 *	All name getters now take a 2 letter culture code. Default code is "en" which corresponds to English set.
+				 *	Specify "es" for spanich version.
+				 */
+				//Month names
+				getMonthName: function(m, culture) {
+					return DATE_CONSTANTS[(culture || "en").toUpperCase()].MonthNames[m].slice(0, 3) || "";
+				},
+				//Full month name
+				getMonthFullName: function(m, culture) {
+					return DATE_CONSTANTS[(culture || "en").toUpperCase()].MonthNames[m] || "";
+				},
+				//Get day name
+				getDayName: function(d, culture) {
+					return DATE_CONSTANTS[(culture || "en").toUpperCase()].DOWNames[d - 1].slice(0, 3) || "";
+				},
+				//Full day name
+				getDayFullName: function(d, culture) {
+					return DATE_CONSTANTS[(culture || "en").toUpperCase()].DOWNames[d - 1] || "";
+				},
+				//Returns Time Zone offset (despite of DST)
+				getTimeZone: function() {
+					var now = new Date(),
+						isDST = this.isDST(now),
+						ts = TimeSpan.FromMinutes(now.getTimezoneOffset()),
+						tz = (ts.TotalHours + (( !! isDST) ? 1 : 0)) * (-1);
+					return tz;
+				},
+				//Returns a Week of the Year number (0 - 52)
+				getWOY: function(y, m, d) {
+					var firstDay = new Date(y, 0, 1),
+						now = $.type(this) === DATE ? this : new Date(y, m, d);
+					return (Math.ceil((((now - firstDay) / 86400000) + firstDay.getDay() + 1) / 7)) - 1;
+				},
+				/**
+				 * Formats date accoring to pattern (Java formatting)
+				 * @param {Date} date Date object that needs to be formatted
+				 * @param {string} mask string mask to use for formatting
+				 * @param {string} utc "UTC:" forces all dates to UTC values
+				 * @param {string} culture Setting default "en", if set to "es" will translate to spanish
+				 * @return {string} Formatted date
+				 */
+				formatDate: (function() {
+					var token = new RegExp("d{1,2}|E{3,4}|M{1,4}|yy(?:yy)?|([HhmsAa])\\1?|[LloSZ]|\"[^\"]*\"|\'[^\']*'", "g"),
+						timezone = new RegExp("\\b(?:[PMCEA][SDP]T|(?:Pacific|Mountain|Central|Eastern|Atlantic) (?:Standard|Daylight|Prevailing) Time|(?:GMT|UTC)(?:[-+]\\d{4})?)\\b", "g"),
+						timezoneClip = new RegExp("[^-+\\dA-Z]", "g"),
+						digitsRx = new RegExp("\\d"),
+						pad = function(v) {
+							return ((v < 10) ? "0" : "") + v;
+						};
+
+					// Regexes and supporting functions are cached through closure
+					return function(date, mask, utc, culture) {
+						// You can't provide utc if you skip other args (use the "UTC:" mask prefix)
+						if (arguments.length == 1 && $.type(date) == "string" && !digitsRx.test(date)) {
+							mask = date;
+							date = undefined;
+						}
+
+						// Passing date through Date applies Date.parse, if necessary
+						date = date ? new Date(date) : new Date();
+						if (isNaN(date)) throw SyntaxError("invalid date");
+
+						mask = String(module.DateFormats[mask] || mask || module.DateFormats.FullDateTime);
+
+						// Allow setting the utc argument via the mask
+						if (mask.slice(0, 4) == "UTC:") {
+							mask = mask.slice(4);
+							utc = true;
+						}
+
+						var _ = utc ? "getUTC" : "get",
+							d = date[_ + "Date"](),
+							E = date[_ + "Day"](),
+							M = date[_ + "Month"](),
+							y = date[_ + "FullYear"](),
+							H = date[_ + "Hours"](),
+							m = date[_ + "Minutes"](),
+							s = date[_ + "Seconds"](),
+							S = date[_ + "Milliseconds"](),
+							o = utc ? 0 : date.getTimezoneOffset(),
+							flags = {
+								d: d,
+								dd: pad(d),
+								EEE: DATE_CONSTANTS[(culture || "en").toUpperCase()].DOWNames[E].slice(0, 3),
+								EEEE: DATE_CONSTANTS[(culture || "en").toUpperCase()].DOWNames[E],
+								M: M + 1,
+								MM: pad(M + 1),
+								MMM: DATE_CONSTANTS[(culture || "en").toUpperCase()].MonthNames[M].slice(0, 3),
+								MMMM: DATE_CONSTANTS[(culture || "en").toUpperCase()].MonthNames[M],
+								yy: String(y).slice(2),
+								yyyy: y,
+								h: H % 12 || 12,
+								hh: pad(H % 12 || 12),
+								H: H,
+								HH: pad(H),
+								m: m,
+								mm: pad(m),
+								s: s,
+								ss: pad(s),
+								S: pad(S > 99 ? Math.round(S / 10) : S),
+								a: H < 12 ? "am" : "pm",
+								A: H < 12 ? "AM" : "PM",
+								Z: utc ? "UTC" : (String(date).match(timezone) || [""]).pop().replace(timezoneClip, ""),
+								o: (o > 0 ? "-" : "+") + pad(Math.floor(Math.abs(o) / 60) * 100 + Math.abs(o) % 60, 4),
+								P: ["th", "st", "nd", "rd"][d % 10 > 3 ? 0 : (d % 100 - d % 10 != 10) * d % 10]
+							};
+
+						return mask.replace(token, function($0) {
+							return $0 in flags ? flags[$0] : $0.slice(1, $0.length - 1);
+						});
+					};
+				})(),
+				/**
+				 * Parses date based on pattern matching
+				 * @param  {string} pattern Date pattern restrincted only to dd, MM, mm, hh, ss, yyyy
+				 * @param  {string} dateStr Date as string
+				 * @returns {Date} new Date object based on parsed date
+				 */
+				parseDate: (function(undef) {
+					var dtElements = {
+						"d": /d{1,2}/,
+						"m": /m{1,2}/,
+						"h": /h{1,2}/,
+						"y": /y{4}|y{2}/,
+						"M": /M{3,4}|M{1,2}/,
+						"s": /s{1,2}/
+					},
+						months_short = {
+							"jan": 1,
+							"feb": 2,
+							"mar": 3,
+							"apr": 4,
+							"may": 5,
+							"jun": 6,
+							"jul": 7,
+							"aug": 8,
+							"sep": 9,
+							"oct": 10,
+							"nov": 11,
+							"dec": 12
+						};
+					return function(pattern, dtStr) {
+						var now = new Date(),
+							tempDate = {
+								M: now.getMonth() + 1,
+								d: now.getDate(),
+								y: now.getFullYear(),
+								h: now.getHours(),
+								m: now.getMinutes(),
+								s: now.getSeconds(),
+								a: null
+							},
+							dtOut, start, tMap, len, rx, ex, subset;
+						for (var m in dtElements) {
+							if (dtElements.hasOwnProperty(m)) {
+								rx = dtElements[m];
+								ex = rx.exec(pattern);
+								if (ex) {
+									start = ex.index;
+									len = ex[0].length;
+									tMap = m;
+									subset = dtStr.slice(start, start + len);
+									tempDate[tMap] = (tMap === "M" && len === 3) ? months_short[subset.toLowerCase()] : +subset;
+								}
+							}
+						}
+						dtOut = new Date(tempDate.y, tempDate.M - 1, tempDate.d, tempDate.h, tempDate.m, tempDate.s);
+						return new module.DateTime(dtOut);
+					};
+				})(),
+				//Factory to augment native Date object with additional functionality
+				DateTime: (function() {
+					var dateValue, rxDateTest = new RegExp("(\\d{4})-(\\d{1,2})-(\\d{1,2})"),
+						//tests for yyyy-mm-dd
+						utils = {
+							isLeapYear: function() {
+								return module.isLeapYear(this.getFullYear());
+							},
+							isDST: function() {
+								return module.isDST(this);
+							},
+							getMonthLength: function() {
+								return module.getMonthLength(this.getMonth(), this.getFullYear());
+							},
+							getMonthName: function(culture) {
+								return module.getMonthName(this.getMonth(), culture);
+							},
+							getMonthFullName: function(culture) {
+								return module.getMonthFullName(this.getMonth(), culture);
+							},
+							getDayName: function(culture) {
+								return module.getDayName(this.getDay(), culture);
+							},
+							getDayFullName: function(culture) {
+								return module.getDayFullName(this.getDay(), culture);
+							},
+							getWOY: function() {
+								return module.getWOY(this.getFullYear(), this.getMonth(), this.getDate());
+							},
+							formatDate: function() {
+								var args = $.makeArray(arguments);
+								args.unshift(this);
+								return module.formatDate.apply(null, args);
+							},
+							adjustYear: function(val) {
+								this.setFullYear(this.getFullYear() + val);
+								return this;
+							},
+							adjustMonth: function(val) {
+								this.setMonth(this.getMonth() + val);
+								return this;
+							},
+							adjustDate: function(val) {
+								this.setDate(this.getDate() + val);
+								return this;
+							},
+							adjustWeeks: function(val) {
+								var wDays = val * 7;
+								this.setDate(this.getDate() + wDays);
+								return this;
+							},
+							adjustHours: function(val) {
+								this.setHours(this.getHours() + val);
+								return this;
+							},
+							adjustMinutes: function(val) {
+								this.setMinutes(this.getMinutes() + val);
+								return this;
+							},
+							adjustSeconds: function(val){
+								this.setSeconds(this.getSeconds() + val);
+								return this;
+							},
+							setTimeZone: function(val, dst) {
+								var ts = TimeSpan.FromMinutes(this.getTimezoneOffset()),
+									utcOffsetHours = ts.TotalHours;
+								if (!dst) {
+									this.adjustHours(utcOffsetHours + val);
+								} else {
+									this.adjustHours((utcOffsetHours + 1) + val);
+								}
+								return this;
+							},
+							toShortDate: function() {
+								return this.formatDate(module.DateFormats.ShortDate);
+							},
+							toYMD: function() {
+								return this.formatDate(module.DateFormats.YMD);
+							},
+							toYMDHM: function() {
+								return this.formatDate(module.DateFormats.YMD + "HHmm");
+							},
+							toXMLDate: function() {
+								return this.formatDate(module.DateFormats.XMLDate);
+							},
+							toDatabaseDate: function() {
+								return this.formatDate("yyyy-MM-dd");
+							},
+							clone: function() {
+								return module.clone(this);
+							},
+							equals: function(dtObj) {
+								if ($.type(dtObj) === DATE) {
+									return this.valueOf() === dtObj.valueOf();
+								}
+								return false;
+							}
+						};
+
+					//Return an augmented version of Date object
+					return function(dtObj, isUTC) {
+						dateValue = null; //initialize
+						switch ($.type(dtObj)) {
+						case DATE:
+							dateValue = dtObj;
+							break;
+						case STRING:
+							//Try parsing all supported date expressions
+							switch (true) {
+							case (dateValue = module.parseShortDate(dtObj)) ? true:
+								false : break;
+							case (dateValue = module.parseDatabaseDate(dtObj)) ? true:
+								false : break;
+							case (dateValue = module.parseXMLDate(dtObj)) ? true:
+								false : break;
+							case (dateValue = module.parseYMD(dtObj)) ? true:
+								false : break;
+							case (dateValue = module.parseYMDHM(dtObj)) ? true:
+								false : break;
+							case (dateValue = new Date(dtObj)) ? true:
+								false : break;
+							}
+							break;
+						case NUMBER:
+							dateValue = new Date(dtObj);
+							break;
+						default:
+							dateValue = new Date();
+						}
+						if (isNaN(dateValue)) {
+							return;
+						} else {
+							$.extend(dateValue, utils);
+						}
+
+						return dateValue;
+					};
+				})(),
+				//Creates a new date object based on existing date
+				clone: function(dtObj) {
+					return this.DateTime(dtObj.valueOf());
+				},
+				//Get Week (range) by week number (0-52)
+				getWeekByWOY: function(wk, y) {
+					wk = +wk;
+					if (wk >= 0 && wk <= 52) {
+						var foy = this.DateTime(new Date(y, 0, 1));
+						foy.adjustDate(0 - foy.getDay());
+						foy.adjustWeeks((wk));
+
+						var fd = foy.clone();
+						foy.adjustDate(6);
+						return {
+							first: fd,
+							last: foy
+						};
+					}
+					return {
+						first: null,
+						last: null
+					};
+				},
+				//Returns number of weeks per month
+				getWeeksInMonth: function(m, y) {
+					var fdom = this.DateTime(new Date(y, m, 1)).getDay(),
+						maxDays = this.getMonthLength(m, y),
+						weeks = Math.ceil((maxDays + (fdom - 7)) / 7);
+
+					return weeks;
+				},
+				//Floors a date object to the first day of the year at 0 hour
+				floorDate: function(flr /*, date, clone */ ) {
+					var clone = (arguments[2] === true),
+						date = (typeof arguments[1] !== 'undefined') ? arguments[1] : new Date();
+
+					if (clone || !(date instanceof Date)) {
+						date = new Date(date);
+					}
+
+					switch (flr) {
+					case 'year':
+						date.setMonth(0);
+					case 'month':
+						date.setDate(1);
+					case 'day':
+						date.setHours(0);
+					case 'hour':
+						date.setMinutes(0);
+					case 'minute':
+						date.setSeconds(0);
+					default:
+						date.setMilliseconds(0);
+					}
+
+					return date;
+				},
+				//Parses XML Date format (i.e. "2002-05-30T09:30:10-05:00" or "2002-05-30T09:30:10Z")
+				parseXMLDate: (function() {
+					var rx = new RegExp("^(\\d{4})-(\\d{2})-(\\d{2})T(\\d{2}):(\\d{2}):(\\d{2})(?:\\.(\\d{1,3}))?(Z|[\\d:\\-\\+]+)?$"),
+						R, dt, tzOffset;
+
+					return function(dtStr) {
+						if (rx.test(dtStr)) {
+							try {
+								R = rx.exec(dtStr);
+								if (R && R.length > 7) {
+									R[8] = R[8] || ''; //Sometimes Time Zone offset is undefined
+									tzOffset = (R[8] === "Z") ? 0 : parseFloat(R[8].replace(/0+/g, '').replace(':', '.')); //Timezone Offset specified in the XML Date string (i.e. -400, +02:00)
+									dt = this.DateTime(
+									isNaN(tzOffset) ? new Date(
+									R[1], //year
+									(+R[2] - 1), //month
+									+
+									R[3], //date
+									+
+									R[4], //hours
+									+
+									R[5], //minutes
+									+
+									R[6], //seconds
+									R[7] || 0 //milliseconds
+									) : Date.UTC(
+									R[1], //year
+									(+R[2] - 1), //month
+									+
+									R[3], //date
+									+
+									R[4], //hours
+									+
+									R[5], //minutes
+									+
+									R[6], //seconds
+									R[7] || 0 //milliseconds
+									));
+
+									//Fix tzOffset if specified without ':' (ex. -400 instead of -04:00)
+									tzOffset = (tzOffset > 12) ? tzOffset / 100 : tzOffset;
+
+									//Apply timeZone offset if specified
+									if (tzOffset) {
+										dt.adjustHours(tzOffset * -1);
+									}
+
+									return dt;
+								}
+								return null;
+							} catch (e) {
+								throw new Error("Unable to parse date string");
+							}
+						}
+					};
+				})(),
+				//Parses ISO8601/Sortable Date format (i.e. "2002-05-30T09:30:10")
+				parseISODate: function() {
+					return this.parseXMLDate.apply(this, arguments);
+				},
+				//Parse short date as Date (i.e. MM/dd/yyyy | M/d/yyyy)
+				parseShortDate: (function() {
+					var rx = new RegExp("^(\\d{1,2})\\/(\\d{1,2})\\/(\\d{4})$"),
+						dp, out;
+					//We cache rx expression
+					return function(dtStr) {
+						if (rx.test(dtStr)) {
+							dp = rx.exec(dtStr);
+							if (dp && dp.length > 3) {
+								out = new Date(
+								dp[3], (+dp[1]) - 1, dp[2]);
+							}
+							return !out || isNaN(out) ? null : this.DateTime(out);
+						}
+					};
+				})(),
+				//Parse YMD, supports yyyyMMdd | yyyyMd
+				parseYMD: (function() {
+					var rx = new RegExp("^(\\d{4})(\\d{1,2})(\\d{1,2})$"),
+						dp, out;
+
+					return function(dtStr) {
+						if (rx.test(dtStr)) {
+							dp = rx.exec(dtStr.slice(0, 8));
+							if (dp && dp.length > 3) {
+								out = new Date(
+								dp[1], (+dp[2]) - 1, dp[3]);
+							}
+
+							return !out || isNaN(out) ? null : this.DateTime(out);
+						}
+					};
+				})(),
+				//Parse YMDHM (i.e. 201006151716)
+				parseYMDHM: (function() {
+					// yyyy    MM     dd     hh    mm
+					var rx = new RegExp("^(\\d{4})(\\d{2})(\\d{2})(\\d{2})(\\d{2})$"),
+						dp, out;
+
+					return function(dtStr, daystart) {
+						if (rx.test(dtStr)) {
+							dp = rx.exec(dtStr.slice(0, 12));
+							if (dp && dp.length > 5) {
+								out = new Date(
+								dp[1], (+dp[2]) - 1, dp[3], (+dp[4]) - (daystart || 0), dp[5]);
+							}
+
+							return !out || isNaN(out) ? null : this.DateTime(out);
+						}
+					};
+				})(),
+				//Parse database date yyyy-MM-dd | yyyy-M-d
+				parseDatabaseDate: (function() {
+					var rx = RegExp("^(\\d{4})-(\\d{1,2})-(\\d{1,2})$"),
+						dp, out;
+
+					return function(dtStr) {
+						if (rx.test(dtStr)) {
+							dp = rx.exec(dtStr.slice(0, 10));
+							if (dp && dp.length > 3) {
+								out = new Date(
+								dp[1], (+dp[2]) - 1, dp[3]);
+							}
+							return !out || isNaN(out) ? null : this.DateTime(out);
+						}
+					};
+				})()
+			};
+
+		//Add TimeSpan to Module
+		exports.TimeSpan = TimeSpan;
+		jQuery.extend(exports, module);
+	});

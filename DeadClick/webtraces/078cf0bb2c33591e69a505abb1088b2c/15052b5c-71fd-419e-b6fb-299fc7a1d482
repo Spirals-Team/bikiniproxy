@@ -1,0 +1,296 @@
+//load scripts asynchrounously
+function loadScript(src, callback)
+{
+  var s,
+      r,
+      t;
+  r = false;
+  s = document.createElement('script');
+  s.type = 'text/javascript';
+  s.src = src;
+  s.async = 'true';
+  s.onload = s.onreadystatechange = function() {
+    //console.log( this.readyState ); //uncomment this line to see which ready states are called.
+    if ( !r && (!this.readyState || this.readyState == 'complete') )
+    {
+      r = true;
+      if(callback) callback();
+    }
+  };
+  t = document.getElementsByTagName('script')[0];
+  t.parentNode.insertBefore(s, t);
+}
+
+
+//we are executing all the 3rd party scripts below
+(function () {
+
+  var city = digitalData.page.pageInfo.city;
+  var cityLang = city + '-' + digitalData.page.pageInfo.language;
+
+//skimlinks start
+//use this object for rolling out across a whole city (regardless of language)
+  var lookup = {
+    'London': '1564287',
+    'Chicago': '1564288',
+    'Los Angeles': '1564289',
+    'New York': '1564286',
+    'United States' : '1567676',
+    'New York Kids':'1569411',
+    'Lisboa':'1569413',
+    'Porto':'1569415',
+    'Hong Kong':'1569416',
+    'Melbourne':'1569418',
+    'Sydney':'1569419',
+    'Miami':'1569064',
+    'Austin':'1569065',
+    'San Francisco':'1569066',
+    'Philadelphia':'1569067'
+  };
+
+  //this object's value will overwrite the previous value if found. It allows you to add a different ID to just one language site of a city
+  var langLookup = {
+  	'Paris-en':'1569412',
+    'Paris-fr':'1573303',
+    'Lisboa-pt':'1573304'
+  }
+
+  var skimId = lookup[city];
+  skimId = langLookup[cityLang] || skimId;
+
+  if(typeof skimId != "undefined") {
+    loadScript('//s.skimresources.com/js/107033X' + skimId + '.skimlinks.js');
+  }
+//skimlinks end
+
+
+//clicktripz start
+    loadScript('//static.clicktripz.com/custom/timeout/cti_timeout.js');
+//clicktripz end
+
+
+//comscore start
+  /*
+    var comScoreId = "";
+		var siteDomain = window.location.host;
+  
+    var comScoreIdLookup = {
+        'www.timeout.com' : '7021684',
+        'www.timeout.es' : '26054283',
+        'www.timeout.cat' : '26054283'
+    };
+  
+    if(comScoreIdLookup[siteDomain]) {
+        comScoreId = comScoreIdLookup[siteDomain];
+        console.log(comScoreId);
+        var _comscore = _comscore || [];
+        _comscore.push({ c1: "2", c2: comScoreId });
+        console.log(_comscore);
+
+        (function() {
+            var s = document.createElement("script"), el = document.getElementsByTagName("script")[0]; s.async = true;
+            s.src = (document.location.protocol == "https:" ? "https://sb" : "http://b") + ".scorecardresearch.com/beacon.js";
+            el.parentNode.insertBefore(s, el);
+          })();
+    }    
+    */
+//comscore end
+
+
+
+//GWIQ start
+    function gwiqCallback() {
+         try { gwiq.asyncjs("cid=c0246&site="+digitalData.pageInstanceID.split('.')[0].split('-')[1]+"&city="+digitalData.pageInstanceID.split('.')[0].split('-')[2]);} catch (e) { }
+    }
+    loadScript('//gwiqcdn.globalwebindex.net/gwiq/gwiq.js',gwiqCallback);
+//GWIQ end
+
+
+
+//adwords remarketing 
+    function adwordsCallback() {
+      window.google_trackConversion({
+        google_conversion_id: 946258416, 
+        google_remarketing_only: true
+      });
+    }
+
+  loadScript('//www.googleadservices.com/pagead/conversion_async.js', adwordsCallback);
+
+//adwords remarketing end
+
+//bing 
+(function(w,d,t,r,u){var f,n,i;w[u]=w[u]||[],f=function(){var o=
+   {ti:"5601622"}
+   ;o.q=w[u],w[u]=new UET(o),w[u].push("pageLoad")},n=d.createElement(t),n.src=r,n.async=1,n.onload=n.onreadystatechange=function()
+   {var s=this.readyState;s&&s!=="loaded"&&s!=="complete"||(f(),n.onload=n.onreadystatechange=null)}
+   ,i=d.getElementsByTagName(t)[0],i.parentNode.insertBefore(n,i)})(window,document,"script","//bat.bing.com/bat.js","uetq");
+
+//bing end
+
+
+
+//nielsen v60
+    function nielsenCallback() {
+     var pvar = { cid: "timeout-au", content: "0", server: "secure-gl" };
+     var trac = nol_t(pvar);
+     trac.record().post();
+    }
+
+    loadScript('//secure-au.imrworldwide.com/v60.js',nielsenCallback);
+//nielsen v60 end
+
+
+
+
+//Nielsen ggcmb510
+    function nielsenggcmbCallback() {
+      var currentCity = document.location.pathname.split('/')[1];
+
+
+      var nielsenIdLookup = {
+        'melbourne' : 'P71BC7C30-37EF-4719-A8CB-9D94ACAA79B7',
+        'sydney' : 'PFB077FAF-28D3-4A5E-895C-C0B3118B03CA',
+        'brisbane' : 'P0136F4F3-912F-4EC3-8F72-B5A4A2F0F871',
+        'adelaide' : 'PE79AF0E0-C9EB-4F1D-8469-4ED6470D79E1',
+        'perth' : 'P72F25E4A-2970-4D12-8B71-166614838E82'
+      };
+
+      var nielsenId = 'P91030027-67F4-4268-B65E-117552E163A8';
+
+      if(nielsenIdLookup[currentCity]) {
+        nielsenId = nielsenIdLookup[currentCity];
+      }
+
+      var nielsenSection = "Time Out - brand only";
+
+      var nielsenSectionLookup = {
+        'melbourne' : 'Time Out Melbourne',
+        'sydney' : 'Time Out Sydney',
+        'brisbane' : 'Time Out Brisbane',
+        'adelaide' : 'Time Out Adelaide',
+        'perth' : 'Time Out Perth'
+      };
+
+
+      if(nielsenSectionLookup[currentCity]) {
+        nielsenSection = nielsenSectionLookup[currentCity];
+      }
+
+         var _nolggGlobalParams = {
+             sfcode:"dcr", //use "dcr" when in prod; never use "dcr-cert" in prod.
+             apid: nielsenId,
+             apn:"TimeOut",
+             nsdkv:"511"
+         };
+         var nSdkInstance = NOLCMB.getInstance(_nolggGlobalParams.apid);
+         nSdkInstance.ggInitialize(_nolggGlobalParams);
+      
+      var city = digitalData.page.pageInfo.city;
+
+      if(typeof city == "undefined" && document.location.pathname.split('/')[2]=="shop") {
+        city = digitalData.page.attributes.siteCity.toLowerCase();
+      }
+
+      var pageName="";
+
+      if(typeof digitalData.page.pageInfo.pageName !="undefined"){
+        var pageName = digitalData.page.pageInfo.pageName.replace(/(\'|\")/g,"\\\"").toLowerCase()  
+      }
+
+      
+         
+    var dcrStaticMetadataObject = {
+        type:"static", //Required: the same for every static asset
+      dataSrc:"cms", //Required: always use cms
+      assetid: city+":"+pageName, //Required: assign this per asset
+      section : nielsenSection //Required: please discuss values with Nielsen
+    };
+
+            nSdkInstance.ggPM("staticstart", dcrStaticMetadataObject);
+
+    }
+
+    loadScript('//secure-dcr.imrworldwide.com/novms/js/2/ggcmb510.js',nielsenggcmbCallback);
+
+
+//Nielsen ggcmb510 end
+
+  
+
+//opentable logo hotfix
+if(document.location.pathname.indexOf('restaurants/')) {
+
+  (function () {
+    function defer(method) {
+      function _later(_method) {
+        return setTimeout(function () {
+          defer(_method);
+        }, 1000);
+      }
+      if (typeof $ !== 'undefined') {
+        if (method() === false) {
+          _later(method);
+        }
+      } else {
+        _later(method);
+      }
+    }
+
+    defer(function () {
+      var layout = '<div class="opentable" style="padding: 10px 0;">' +
+        '  <span>Powered by  </span><img src="https://brand.opentable.com/wp-content/themes/opentable/assets/images/logo_v3.png" width="150" alt="logo">' +
+        '</div>';
+
+        if($('.booking_widget').length===0) {
+          return false;
+        }
+
+      var marker = $('.booking_widget').data().params;
+
+      if (!marker || (marker && !marker.providerName.includes('OpenTable'))) {
+        return true;
+      }
+
+      if ($('.booking_widget__submit') === 0) {
+        return false;
+      }
+      $('.booking_widget__submit').on('click', function () {
+        defer(function () {
+          if ($('.booking_widget__overlay .booking_widget__submit').length === 0) {
+            return false;
+          }
+          $('.booking_widget__overlay .booking_widget__submit').before(layout);
+          return true;
+        });
+      });
+
+      $('.time_slots__button').on('click', function () {
+        setTimeout(function () {
+          $('.booking_widget__overlay #booking_submit').before(layout);
+        }, 10);
+      });
+
+      $('#booking').append(layout);
+
+      return true;
+    });
+  })();
+
+}
+//end opentable logo hotfix
+
+  
+//FB pixel
+if (typeof fbq == 'undefined') { 
+  loadFacebookLibrary();
+}
+
+fbq('init', '1493036311000359');
+if (digitalData.page.pageInfo.city == "Hong Kong") {
+  fbq('addPixelId', '231594307392299');
+}
+fbq('track', "PageView");
+
+
+})();

@@ -1,0 +1,98 @@
+     if ($(window).width() <= 767){
+         if ($(".bookdetails .distributor-header").length){
+             jQuery('.buythisbook').detach().insertAfter('.bookdetails .distributor-header');
+         }
+          else {
+             jQuery('.buythisbook').detach().insertAfter('.bookdetails .author');
+         }
+         jQuery('.addthis_sharing_toolbox').detach().insertAfter('.buythisbook');
+         jQuery('#tab-content').detach().appendTo('.mobile-content-div');
+         jQuery('#promo-1 .mobile-series-browseOptions').detach().appendTo('.mobile-series-browseOptions-div');
+         jQuery('#promo-1 .mobile-subject-browseOptions').detach().appendTo('.mobile-subject-browseOptions-div');
+         jQuery('.publisher-booklist #promo-1 .sub-text').detach().appendTo('.mobile-publisher-browseOptions-div');
+         jQuery('#promo-1 .mobile-vc-browseOptions').detach().appendTo('.mobile-vc-browseOptions-div');
+         jQuery('.subject-booklist #promo-2 .sub-text').detach().appendTo('.mobile-subject-list-div');
+         jQuery('.mobile-subject-list').detach().insertAfter('.mobile-browse-options');
+     }
+
+     function expandTab(clickedElement) {
+         $(clickedElement).next().slideToggle("slow");
+         var image = $(clickedElement).find("img");
+         if (image.attr('src') ==  '/dam/ucp/images/layout/expand-plus-green-icon.png') {
+             image.attr('src', '/dam/ucp/images/layout/expand-minus-green-icon.png' )
+          }
+          else {
+             image.attr('src','/dam/ucp/images/layout/expand-plus-green-icon.png' );
+          }
+     }
+
+     function showMenu() {
+         $('.mobile-nav').slideToggle();
+     }
+
+     function infoExpandTab(clickedElement) {
+         $(clickedElement).next().slideToggle("slow");
+         var text = $(clickedElement).find("span");
+         text.toggleClass("rotate");
+     }
+
+     function pressReleaseExpandTab(clickedElement) {
+         $(clickedElement).next().slideToggle("slow");
+         var text = $(clickedElement).find("span");
+         text.toggleClass("rotate");
+         if (!($(clickedElement).next().hasClass("ui-accordion-content-active"))){
+             $(clickedElement).parent().parent().find(".ui-accordion-content-active").prev().find("span").toggleClass("rotate");
+         }
+     }
+
+     function mobileInfiniteScroll(){
+         var getActiveTab =  $('li.ui-state-active a').attr("href");
+         var tabName = getActiveTab.substring(1);
+         var activeTab =  document.getElementById( tabName );
+         var tabList =  document.getElementById( "tab-list" );
+         var totalBooks = books.length;
+         var booksLeft = totalBooks - booksDisplayed;
+         var author = document.getElementById( "tab-author" );
+         var title = document.getElementById( "tab-title" );
+         var pubDate = document.getElementById( "tab-date" );
+
+         var contentHeight = tabList.offsetHeight; //how much content the page has vertically pixelwise
+         var yOffset = window.pageYOffset; //vertical scroll position
+         var y = yOffset + window.innerHeight; // knowing the inner window height to target the bottom of the page
+
+         //condition is if the scroller hit the bottom of the page
+         if(y >= contentHeight){
+             var booksDisplayed = $('#' + tabName).children().length;
+             if (booksDisplayed < totalBooks){
+                 if ( tabName.indexOf("author") != -1 ){
+                     activeTabBooksArray =  byAuthor.slice(booksDisplayed, booksDisplayed + 10);
+                     author += iterate( activeTabBooksArray, author );
+                 }
+                 else if ( tabName.indexOf("title") != -1 ){
+                     activeTabBooksArray =  byTitle.slice(booksDisplayed, booksDisplayed + 10);
+                     title += iterate( activeTabBooksArray, title );
+                 }
+
+                 else if ( tabName.indexOf("date") != -1 ){
+                     activeTabBooksArray =  byDate.slice(booksDisplayed, booksDisplayed + 10);
+                     pubDate += iterate( activeTabBooksArray, pubDate );
+                 }
+             }
+         } // end if scroll bar is at bottom
+
+     } //end mobileInfiniteScroll function
+
+     function mobileDefaultDisplay () {
+         var author = document.getElementById( "tab-author" );
+         var title = document.getElementById( "tab-title" );
+         var pubDate = document.getElementById( "tab-date" );
+         var books2Display = 10; //default number of books to be displayed
+         if ($(window).scrollTop() == 0) {
+             var slicedByAuthor = byAuthor.slice(0,books2Display);
+             var slicedByTitle = byTitle.slice(0,books2Display);
+             var slicedByDate = byDate.slice(0,books2Display);
+             iterate( slicedByAuthor, author );
+             iterate( slicedByTitle, title );
+             iterate( slicedByDate, pubDate );
+         } // end if scroll bar at top
+     }

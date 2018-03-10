@@ -1,0 +1,114 @@
+_satellite.pushAsyncScript(function(event, target, $variables){
+      (function(){
+
+    	var videoDictionary = {
+    		"/london/things-to-do/christmas-lights-in-london" : {
+    			"videoId" : "coV6uq1U9HI",
+    			"position" : "0"
+    		},
+    		"/london/things-to-do/five-stories-you-didnt-know-about-the-tower-of-london" : {
+    			"videoId" : "SYsu5TkLsZ0",
+    			"position" : "0"
+    		},
+            "/london/things-to-do/southbank-centre-winter-festival-guide" : {
+                "videoId" : "p9ewia4cKuU",
+                "position" : "0"
+            },
+            "/london/shopping/christmas-markets-and-fairs-in-london" : {
+                "videoId" : "p9ewia4cKuU",
+                "position" : "3"
+            },
+            "/london/things-to-do/the-cosiest-winter-pop-ups-in-london" : {
+                "videoId" : "kt2CZakwdus",
+                "position" : "0"
+            },
+            "/london/things-to-do/ice-skating-in-london" : {
+                "videoId" : "Vz98maKXQq4",
+                "position" : "0"
+            },
+            "/london/things-to-do/101-things-to-do-in-london" : {
+                "videoId" : "6TnK5hlq7CM",
+                "position" : "0"
+            },
+            "/london/kids/activities/best-london-christmas-activities-for-children" : {
+                "videoId" : "p9ewia4cKuU",
+                "position" : "0"
+            },
+            "/london/things-to-do/london-events-in-december" : {
+                "videoId" : "HOkjZ2EUnyI",
+                "position" : "0"
+            },
+            "/london/attractions/top-london-museums" : {
+                "videoId" : "SKr91AkpIyM",
+                "position" : "1"
+            }
+
+    	}
+
+    	var currentPath = document.location.pathname;
+
+    if(videoDictionary[currentPath]) {
+
+        function defer(method) {
+            if (window.jQuery) {
+                method();
+            } else {
+                setTimeout(function() {
+                    defer(method)
+                }, 500);
+            }
+        }
+
+        defer(function() {
+        	$("<link/>", {
+			   rel: "stylesheet",
+			   type: "text/css",
+			   href: "https://cdnjs.cloudflare.com/ajax/libs/fancybox/2.1.5/jquery.fancybox.min.css"
+			}).appendTo("head");
+
+			$(".youtube_test").css("top", "0 !important;");
+			$(".youtube_test").css("margin-bottom", "0 !important;");
+			$("video_splash_test").css("top", "0 !important;");
+
+	    	var thumbImage = $('.zone').eq(0).find('.feature-item__wrapper').eq(videoDictionary[currentPath].position).find('img').attr('src');
+
+	        var content = '<a href="#" class="open-video-popup" video-link-popup="https://www.youtube.com/watch?v='+videoDictionary[currentPath].videoId+'&autoplay=1" data-track-click="{&quot;events&quot;:[&quot;event139&quot;],&quot;pev2&quot;:&quot;Video test on top lon attr&quot;}">';
+	            content += '<div class="video">';
+	            content += '<img class="video_splash" data-src="'+thumbImage+'" src="'+thumbImage+'">';
+	            content += '<span class="play_button"></span>';
+	            content += '</div>';
+	            content += '</a>';
+
+            $('.feature-item__wrapper').eq(videoDictionary[currentPath].position).html(content);
+
+            $.getScript("https://cdnjs.cloudflare.com/ajax/libs/fancybox/2.1.5/jquery.fancybox.min.js")
+                .done(function(script, textStatus) {
+                    $(".open-video-popup").click(function(e) {
+                        e.preventDefault();
+
+                        $.fancybox.open([{
+                            'padding': 0,
+                            'autoScale': false,
+                            'transitionIn': 'none',
+                            'transitionOut': 'none',
+                            'title': this.title,
+                            'width': 640,
+                            'height': 385,
+                            'href': $(this).attr('video-link-popup').replace(new RegExp("watch\\?v=", "i"), 'v/'),
+                            'type': 'swf',
+                            'swf': {
+                                'wmode': 'transparent',
+                                'allowfullscreen': 'true'
+                            }
+                        }]);
+                    });
+
+                });
+
+        });
+
+
+    }
+
+    })();
+});

@@ -1,0 +1,21 @@
+var slPlayerSetup = function(player, playlist_url){
+  player.setup({
+    playlist: playlist_url,
+    mute: true,
+    autostart: true
+  });
+  player.on('ready', slPlayerReady);
+}
+
+var slPlayerReady = function(e){  
+  // this.play();
+  //muting/click-to-unmute
+  $(this.getContainer()).click({player: this}, function(e){
+    player = e.data.player;
+    if (!player._setlistUnmuted && player.getMute()){
+      player._setlistUnmuted = true;
+      player.setMute(false);
+      player.seek(0);
+    }
+  });
+}

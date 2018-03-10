@@ -1,0 +1,1 @@
+!function(a){a(".wef-measure").each(function(){a(this).next().attr("data-width",a(this).outerWidth()+"px")})}(jQuery);

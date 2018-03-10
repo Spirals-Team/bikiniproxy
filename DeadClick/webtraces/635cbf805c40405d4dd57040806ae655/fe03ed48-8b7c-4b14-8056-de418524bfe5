@@ -1,0 +1,134 @@
+<html>
+<head></head>
+<body>
+<script type="text/javascript">
+	
+function parseId(p)
+			{
+			var i;
+	    var out_smart = "";
+	    var out_VP = "";
+	    
+	    var WAudId = new Array();
+	    var VPAudId = new Array();
+	    
+	    WAudId[1] = 2744;  VPAudId[1] = 'aa';
+      WAudId[2] = 2779;  VPAudId[2] = 'ab';
+      WAudId[3] = 2780;  VPAudId[3] = 'ac';
+      WAudId[4] = 2781;  VPAudId[4] = 'ad';
+      WAudId[5] = 2782;  VPAudId[5] = 'ae';
+      WAudId[6] = 2783;  VPAudId[6] = 'af';
+      WAudId[7] = 2784;  VPAudId[7] = 'ag';
+      WAudId[8] = 2785;  VPAudId[8] = 'ah';
+      WAudId[9] = 2786;  VPAudId[9] = 'ai';
+      WAudId[10] = 2836;  VPAudId[10] = 'aj';
+      WAudId[11] = 3025;  VPAudId[11] = 'ak';
+      WAudId[12] = 3026;  VPAudId[12] = 'al';
+      WAudId[13] = 3148;  VPAudId[13] = 'am';
+      WAudId[14] = 3449;  VPAudId[14] = 'an';
+      WAudId[15] = 5953;  VPAudId[15] = 'ao';
+      WAudId[16] = 5997;  VPAudId[16] = 'ap';
+      WAudId[17] = 5998;  VPAudId[17] = 'aq';
+      WAudId[18] = 6000;  VPAudId[18] = 'as';
+      WAudId[19] = 6299;  VPAudId[19] = 'at';
+      WAudId[20] = 8192;  VPAudId[20] = 'au';
+      WAudId[21] = 8467;  VPAudId[21] = 'av';
+      WAudId[22] = 8468;  VPAudId[22] = 'aw';
+      WAudId[23] = 8470;  VPAudId[23] = 'ax';
+      WAudId[24] = 8471;  VPAudId[24] = 'ay';
+      WAudId[25] = 8472;  VPAudId[25] = 'az';
+      WAudId[26] = 8473;  VPAudId[26] = 'ba';
+      WAudId[27] = 8474;  VPAudId[27] = 'bb';
+      WAudId[28] = 8475;  VPAudId[28] = 'bc';
+      WAudId[29] = 8476;  VPAudId[29] = 'bd';
+      WAudId[30] = 11704;  VPAudId[30] = 'be';
+
+    	    	    
+	    for(i = 0; i <   p.audiences.length; i++) 
+		    {
+					 	out_smart += p.audiences[i] + '=1;';
+
+		        for (var j=1;j<=WAudId.length;j++)
+						{
+						if (p.audiences[i] == WAudId[j])
+							{
+							out_VP += VPAudId[j] + '%3D' + WAudId[j] + '%2C';
+		        	}
+		        }
+       
+		    }
+
+			if (out_smart.length != 0)
+				{
+				out_smart = out_smart.substring(0, out_smart.length - 1);
+				image_url_smart = '//securite.01net.com/track/compginc.asp?keyword=' + out_smart;
+				img_smart = new Image();
+				img_smart.src = image_url_smart;
+				}
+
+			if (out_VP.length != 0)
+				{
+				out_VP = out_VP.substring(0, out_VP.length - 3);
+				image_url_VP = '//fr-groupe01.videoplaza.tv/proxy/pixel/v2?dmpParam=' + out_VP;
+				img_VP = new Image();
+				img_VP.src = image_url_VP;		
+				}
+			}
+
+	
+var r=parseInt(Math.random()*1000000);
+var Config = {
+    cookieName : '_xttrk_NR'   
+};
+
+var Utils = {
+    areCookiesEnabled : function () {
+        var cookieEnabled = (navigator.cookieEnabled) ? true : false,
+            ua = navigator.userAgent.toLowerCase(),
+            isIE = (ua.indexOf('msie') !== -1 || ua.indexOf('trident') !== -1);
+
+        // try to set a test cookie if we can't see any cookies and we're using
+        // either a browser that doesn't support navigator.cookieEnabled
+        // or IE (which always returns true for navigator.cookieEnabled)
+        if ((navigator.cookieEnabled === undefined) || isIE) {
+            document.cookie = "__wtestcookie";
+            cookieEnabled = (document.cookie.indexOf("__wtestcookie") !== -1) ? true : false;
+        }
+        return cookieEnabled;
+    }
+};
+
+(function (doc) {
+    var isCookieSet,
+        today = new Date(),
+        year,
+        expiryDate,
+        cookieLifetime = 1, // cookieLifetime is in days
+        trackerIncrement;
+
+    // try to detect if the user has already been synced on this domain using a cookie.
+    isCookieSet = doc.cookie.match('(^|;) ?' + Config.cookieName + '=([^;]*)(;|$)');
+
+    // if the cookie is set or cookies are not supported, leave the function. (stop propagation)
+    if (isCookieSet || Utils.areCookiesEnabled() === false) {
+        return;
+    }
+
+    // calculate expiry date
+    year = today.getYear() < 2000 ? today.getYear() + 1900 : today.getYear();
+    expiryDate = new Date(year, today.getMonth(), today.getDate() + cookieLifetime).toGMTString();
+
+    // set the cookie if it was not set before.
+    doc.cookie = Config.cookieName + '=1; expires=' + expiryDate + '; path=/;';
+
+    // call trackers
+	  (function () {
+		var wsc = document.createElement('script');
+		wsc.type = 'text/javascript';
+		wsc.src = '//aimfar.solution.weborama.fr/fcgi-bin/dispatch.fcgi?d.A=prd&d.format=jsonp&d.key=hskDDwNhHcKG&d.callback=parseId';
+		var s = document.getElementsByTagName('script')[0];
+		   s.parentNode.insertBefore(wsc, s);
+		})();
+}(document));
+</script>
+</body></html>

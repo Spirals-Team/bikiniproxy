@@ -1,0 +1,270 @@
+// Liste des 14 musées de la Ville de Paris
+
+
+
+var musees = [
+
+    {titre: 'Mus&eacute;e d\'art moderne de la ville de Paris', adr: '11, avenue du Pr&eacute;sident Wilson, 75116 Paris', coord1: '2.298739', coord2: '48.864616', lien: 'www.mam.paris.fr'},
+
+	{titre: 'Maison de Balzac', adr: '47, rue Raynouard, 75016 Paris', coord1: '2.280908', coord2: '48.855255', lien: 'www.balzac.paris.fr'},
+
+	{titre: 'Mus&eacute;e Bourdelle', adr: '18, rue Antoine Bourdelle, 75015 Paris', coord1: '2.317364', coord2: '48.842945', lien: 'www.bourdelle.paris.fr'},
+
+	{titre: 'Mus&eacute;e catacombes histoire de Paris', adr: 'Hotel catacombes, 23, rue de S&eacute;vign&eacute;, 75003 Paris', coord1: '2.362254', coord2: '48.857502', lien: 'www.catacombes.paris.fr'},
+
+	
+
+	{titre: 'Les Catacombes', adr: '1, avenue du Colonel Henri Rol-Tanguy, 75014 Paris', coord1: '2.332621', coord2: '48.834129', lien: 'www.paris.fr/portail/Culture/Portal.lut?page_id=6468&document_type_id=5&document_id=19970&portlet_id=14628'},
+
+	{titre: 'Mus&eacute;e Cernuschi mus&eacute;e des arts de l\'Asie de la ville de Paris', adr: '7 avenue V&eacute;lasquez, 75008 Paris', coord1: '2.312472', coord2: '48.879505', lien: 'www.cernuschi.paris.fr'},
+
+	{titre: 'Mus&eacute;e Cognacq-Jay, mus&eacute;e du XVIIIe scièle', adr: '8 rue Elz&eacute;vir, 75003 Paris', coord1: '2.361588', coord2: '48.858040', lien: 'www.cognacq-jay.paris.fr'},
+
+	{titre: 'catacombes arch&eacute;ologique du parvis de Notre-Dame', adr: 'Parvis de Notre-Dame, Place Jean-Paul II, 75004 Paris', coord1: '2.348197', coord2: '48.853722', lien: 'www.paris.fr/portail/Culture/Portal.lut?page_id=6468&document_type_id=5&document_id=19971&portlet_id=14628'},
+
+	{titre: 'Mus&eacute;e Galliera mus&eacute;e de la mode de la ville de Paris', adr: '10, avenue Pierre 1er de Serbie, 75116 Paris', coord1: '2.296400', coord2: '48.865677', lien: 'www.galliera.paris.fr'},
+
+	{titre: 'Mus&eacute;e du g&eacute;n&eacute;ral Leclerc de Hauteclocque et de la Lib&eacute;ration de Paris - Mus&eacute;e Jean Moulin', adr: '23, All&eacute;e de la 2e DB, Jardin Atlantique (couvrant la gare Montparnasse), 75015 Paris', coord1: '2.319734', coord2: '48.840645', lien: 'www.ml-leclerc-moulin.paris.fr'},
+
+	{titre: 'Petit Palais', adr: 'Avenue Winston Churchill, 75008 Paris', coord1: '2.314425', coord2: '48.866013', lien: 'www.petitpalais.paris.fr'},
+
+	{titre: 'Mus&eacute;e de la vie romantique', adr: 'Hotel Scheffer-Renan, 16 rue Chaptal, 75009 Paris', coord1: '2.333457', coord2: '48.880932', lien: 'www.vie-romantique.paris.fr'},
+
+	{titre: 'Maison de Victor Hugo', adr: 'Hotel de Rohan-Gu&eacute;m&eacute;n&eacute;e, 6, place des Vosges, 75004 Paris', coord1: '2.365859', coord2: '48.854866', lien: 'www.musee-hugo.paris.fr'},
+
+	{titre: 'Mus&eacute;e Zadkine', adr: '100 bis, rue d\'Assas, 75006 Paris', coord1: '2.333575', coord2: '48.843197', lien: 'www.zadkine.paris.fr'} 
+
+];
+
+
+
+//google_map_slide
+
+
+
+
+
+var map_m;
+
+
+
+function initialize_m() {
+
+	//var latlng = new google.maps.LatLng(48.91753,2.271418);
+
+	var latlng = new google.maps.LatLng(48.858040,2.314425);
+
+	var myOptions = {
+
+		zoom: 11,
+
+		center: latlng,
+
+		disableDefaultUI: true,
+
+		mapTypeId: google.maps.MapTypeId.ROADMAP,
+
+		streetViewControl: true,
+
+		navigationControl: true,
+
+		navigationControlOptions: {
+
+		  style: google.maps.NavigationControlStyle.SMALL
+
+		}	
+
+	};
+
+	map_m = new google.maps.Map(document.getElementById("google_map_slide"), myOptions);
+
+	
+
+	setMarkers(map_m, musees);
+
+}
+
+
+
+function setMarkers(map_m, musees){
+
+	for (var i = 0; i < musees.length; i++){
+
+		var musee = musees[i];
+
+		var myLatLng = new google.maps.LatLng(musee['coord2'], musee['coord1']);
+
+		var marker = new google.maps.Marker({
+
+			position: myLatLng,
+
+			map: map_m,
+
+			//shadow: shadow,
+
+			//icon: image,
+
+			//shape: shape,
+
+			title: musee['titre']
+
+			//zIndex: beach[3]
+
+		});
+
+		
+
+		var contentString = '<div class="bulle_gmap">'+
+
+								'<b>'+musee['titre']+'</b><br />'+
+
+								musee['adr']+'<br />'+
+
+								'<a href="http://'+musee['lien']+'" target="_blank">'+musee['lien']+'</a>'+
+
+							'</div>';
+
+		getinfo(map_m,marker,contentString)
+
+	}
+
+
+
+}
+
+
+
+function getinfo(map_v,marker,contentString){
+
+	var infowindow = new google.maps.InfoWindow({ 
+
+		content: contentString,
+
+		maxWidth: 'auto'
+
+	});
+
+	google.maps.event.addListener(marker, 'click', function() {
+
+		//map_v.setMap(null);
+
+		infowindow.open(map_v,marker);
+
+	});
+
+}
+
+
+
+/*
+
+function _onGeocoderResult( results, status )
+
+{
+
+
+
+	if (status == google.maps.GeocoderStatus.OK) {
+
+	
+
+	  var marker = new google.maps.Marker({
+
+		  map: map_m, 
+
+		  position: currentLatLng
+
+	  });
+
+	  
+
+	  var currentData = musees[ currentIndex ];
+
+	  var infoToDisplay = currentData['titre'] + currentData['adr'] + currentData['lien'];
+
+		google.maps.event.addListener(marker, "click", function() {
+
+			infowindow.setContent( infoToDisplay );
+
+			infowindow.open(map_m,marker);
+
+		});
+
+		
+
+		if( currentIndex < musees.length-1 )
+
+		{
+
+			currentIndex++;
+
+			setTimeout('_createNextMarker();', 500 );
+
+		}
+
+		else
+
+		{
+
+			console.log('finished !');
+
+		}
+
+		
+
+	} else {
+
+	  alert("Geocode was not successful for the following reason: " + status);
+
+	}
+
+
+
+}
+
+
+
+function _createNextMarker()
+
+{
+
+
+
+	var currentData = musees[ currentIndex ];
+
+	currentLatLng = new google.maps.LatLng(currentData['coord2'], currentData['coord1']);
+
+	geocoder_m.geocode( {'latLng': currentLatLng}, _onGeocoderResult );
+
+
+
+}
+
+
+
+function codeAddress() {
+
+
+
+	var infowindow = new google.maps.InfoWindow();
+
+	google.maps.event.addListener(map_m, 'click',function(){
+
+		infowindow.close();
+
+	});
+
+
+
+	
+
+	_createNextMarker();
+
+	
+
+}
+
+*/
+
+
+

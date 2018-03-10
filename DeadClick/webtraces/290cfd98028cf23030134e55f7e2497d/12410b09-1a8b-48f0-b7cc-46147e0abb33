@@ -1,0 +1,74 @@
+<!doctype html>
+<html>
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+	<meta name="ad.size" content="width=728,height=90">
+    <title>AUDI FASTSTART</title>
+    <link rel="stylesheet" href="style.css" />
+    <script src="script.js"></script>
+	<script type="text/javascript">var clickTag = "http://www.google.com"; </script>
+<script type="text/javascript">
+    
+      (function() {
+        var relegateNavigation = '';
+        var handleClickTagMessage = function(e) {
+          try {
+            var eventData = JSON.parse(e.data);
+          } catch (err) {
+            return;
+          }
+          if (eventData.isInitClickTag) {
+            if (eventData.clickTags) {
+              for (var i = 0; i < eventData.clickTags.length; i++) {
+                var clkTag = eventData.clickTags[i];
+                window[clkTag.name] = clkTag.url;
+              }
+            } else if (eventData.clickTag) {
+              window.clickTag = eventData.clickTag;
+            }
+            relegateNavigation = eventData.relegateNavigation;
+          }
+        };
+
+        if (open.call) {
+          window.open = function(open) {
+            return function(url, name, features) {
+              if (relegateNavigation === 'parent') {
+                var message = {'clickTag': url, 'isPostClickTag': true};
+                parent.postMessage(JSON.stringify(message), '*');
+              } else {
+                var args = [url, name];
+                if (features) {
+                  args.push(features);
+                }
+                open.apply(window, args);
+              }
+            };
+          }(window.open);
+        }
+
+        if (window.addEventListener) {
+          window.addEventListener(
+              'message', handleClickTagMessage, false);
+        } else {
+          window.attachEvent('onmessage', handleClickTagMessage);
+        }
+      })();
+    
+  </script></head>
+<body>
+    <div id="ad">
+        <div id="slide_1" class="full slide_1"></div>
+        <div id="slide_2" class="full slide_2"></div>
+        <div id="txt_1" class="full txt_1"></div>
+        <div id="txt_2" class="full txt_2"></div>
+        <div id="txt_3" class="full txt_3"></div>
+        <div id="ml" class="full ml"></div>
+        <div id="cta" class="full cta"></div>
+        <div id="header" class="full header"></div>
+		<a href="javascript:window.open(window.clickTag)"><div class="full clickthrough"></div></a>
+    </div>
+</body>
+</html>

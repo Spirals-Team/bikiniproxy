@@ -1,0 +1,240 @@
+var animcntrl,setbubble;
+var creative = {};
+var hotel_logo = [];
+var promoimg = [];
+var hotelnametxt = [];
+var locationnametxt = [];
+var ratingimg = [];
+var pctatxt = [];
+var exiturl = [];
+var originaltext = [];
+var duplictext = [];
+var originaltext1 = [];
+var duplictext1 = [];
+var brandlogo = [];
+
+
+
+function reducetext(){  
+    var gettext = hotelnametxt[0];
+	var gettext1 = locationnametxt[0];
+    originaltext.push(gettext);
+    originaltext1.push(gettext1);	
+    var getlength = gettext.length;
+	var getlength1 = gettext1.length;
+	console.log(getlength);
+	console.log(getlength1);
+    if(getlength>40){		
+    var createsub = gettext.substring(0, 40);       
+    var duptext = createsub+" ...";    
+    duplictext.push(duptext);    	
+    hotelnametxt[0] = duptext;
+   document.getElementById("hotelnametxt").addEventListener("mouseover", showfullpd,false);
+   document.getElementById("hotelnametxt").addEventListener("mouseout", hidefullpd,false);
+    }else{            
+    duplictext.push(gettext);    
+    }
+}
+
+function showfullpd(){ 
+    this.parentElement.style.transform = "scale(1, 1) translate(0px,-2px)";
+    this.style.fontSize = "10px";
+    this.style.padding = "2px";    
+    this.style.border = "1px solid #2D6244";
+    this.style.borderRadius = "2px";
+    this.style.backgroundColor = "#991952";
+    this.style.color = "#ffffff";
+    this.style.zIndex = "5";
+    this.innerHTML = originaltext[0];
+    this.parentElement.style.transitionDuration = "0s";
+    this.parentElement.style.width = "260px"; 	
+}
+
+function hidefullpd(){
+    this.parentElement.style.transform = "scale(1, 1) translate(0px,0px)";
+    this.style.fontSize = "";
+    this.style.padding = "";
+    this.style.border = "";
+    this.style.borderRadius = "";
+    this.style.backgroundColor = "";
+    this.style.color = "";
+    this.style.zIndex = "0";
+    this.innerHTML = duplictext[0];   
+    this.parentElement.style.transitionDuration = "0s"; 
+    this.parentElement.style.width = ""; 	
+}
+
+
+
+function brandlogoset(){
+	var logop = document.createElement("div");
+	var logoc = document.createElement("img");
+	var getele = document.getElementById("promoimgparent");
+	logop.setAttribute("style","width:58px;height:64px;position:absolute;top:0px;right:0px;");
+	logoc.setAttribute("style","width:34px;height:auto;position:absolute;top:10px;left:0px;right:0px;margin:0 auto;");
+	logoc.setAttribute("src",hotel_logo[0]);
+	logop.appendChild(logoc);
+	getele.appendChild(logop);	
+}
+
+var cntrl = 0;
+var allcntrl = 0;
+var cntrlnext = 0;
+var cntrlprev = 0;
+function carousalanimation(){
+	cntrl+=1;
+	var fader1,fader2,prev;
+	var adder1 = 0;var adder2 = 0;		
+	var current = document.getElementById('promoimg'+cntrl);
+	for(var r=1;r<=3;r++){var getvisible = document.getElementById('item'+r).getAttribute("current");if(getvisible=="1"){prev = document.getElementById('promoimg'+r);}}
+	setTimeout(function (){fader1 = setInterval(fadeoff, 10);},0);	
+	function fadeoff(){if(adder1==100){clearInterval(fader1);}else{adder1+=1;prev.style.opacity=1-(0.01*adder1)};}	
+	setTimeout(function (){fader2 = setInterval(fadein, 10);},0);	
+	function fadein(){if(adder2==100){clearInterval(fader2);}else{adder2+=1;current.style.opacity=0+(0.01*adder2)};}
+	if(cntrl==3){cntrl=0}
+}
+function animationcontrol(){
+	allcntrl+=1;
+	if(allcntrl==1){		
+	document.getElementById('promoimg1').style.opacity ="1";	
+	}else{
+	cntrl+=1;cntrlnext = cntrl+1;	
+	var fader1,fader2;
+	var adder1 = 0;var adder2 = 0;	
+	if(cntrl==3){cntrlnext=1}
+	var current = document.getElementById('promoimg'+cntrl);
+	var next = document.getElementById('promoimg'+cntrlnext);
+	setTimeout(function (){fader1 = setInterval(fadeoff, 10);},0);	
+	function fadeoff(){if(adder1==100){clearInterval(fader1);}else{adder1+=1;current.style.opacity=1-(0.01*adder1);};}	
+	setTimeout(function (){fader2 = setInterval(fadein, 10);},0);	
+	function fadein(){if(adder2==100){clearInterval(fader2);}else{adder2+=1;next.style.opacity=0+(0.01*adder2);};}
+	if(cntrl==3){cntrl=0}
+    }
+	if(allcntrl==7){clearInterval(animcntrl);}	
+}
+var bublectrl=0;
+function bubbleblink(){
+for(var i=1;i<=3;i++){
+		document.getElementById("item"+i).style.backgroundColor = "";
+		document.getElementById("item"+i).setAttribute("current","0");
+}    	
+for(var t=1;t<=3;t++){
+var getproele = document.getElementById("promoimg"+t).style.opacity;
+if(getproele>0.5){	
+document.getElementById("item"+t).style.backgroundColor = "rgb(107, 100, 100)";
+document.getElementById("item"+t).setAttribute("current","1");
+}}        
+}
+
+
+function loadafter(){
+	document.getElementById('animationcss').setAttribute("href","animation.css");
+	document.getElementById('main-container').style.opacity = '1';
+	animationcontrol();   
+    animcntrl = setInterval(animationcontrol,4000);
+    setbubble = setInterval(bubbleblink,0);
+    setTimeout(function(){document.getElementById('pcta').setAttribute("class","mcommon flashanim");},4000);	
+}
+
+function createdom(){
+    document.getElementById('hotel-logo').data = hotel_logo[0];
+    document.getElementById('hotelnametxt').innerHTML = hotelnametxt[0];
+	console.log(hotelnametxt[0]);
+    document.getElementById('locationnametxt').innerHTML = locationnametxt[0];
+    document.getElementById("ratingimg").src = ratingimg[0];
+    document.getElementById("pctatxt").innerHTML = "RÉSERVER";   
+    for(var r=1; r<=3; r++){
+    document.getElementById("promoimg"+r).src = promoimg[r-1]; 
+    }  
+	brandlogoset();	
+}
+
+function fnalert(){reducetext();createdom();
+for(var i=0;i<3;i++){
+  document.getElementsByClassName('listitem')[i].addEventListener("click",function(){if(this.getAttribute("current")!="1"){clearInterval(animcntrl);clearInterval(setbubble);var splitid=this.id.split("item");cntrl=Number(splitid[1])-1;carousalanimation();for(var i=1;i<=3;i++){document.getElementById("item"+i).style.backgroundColor = "";document.getElementById("item"+i).setAttribute("current","0");}this.style.backgroundColor = "rgb(107, 100, 100)";this.setAttribute("current","1");}})
+  }
+}
+
+function preInit() {
+  if (Enabler.isInitialized()) {
+    init();
+  } else {
+    Enabler.addEventListener(studio.events.StudioEvent.INIT,init);
+  }
+}
+
+function init() {
+  if (Enabler.isPageLoaded()) {
+    pageLoadedHandler();
+  } else {
+    Enabler.addEventListener(studio.events.StudioEvent.PAGE_LOADED, pageLoadedHandler);
+  }
+ 
+   Enabler.setProfileId(10021925);
+    var devDynamicContent = {};
+
+    devDynamicContent.S2_FR__JET___Feed_S2_FR__JET__Campaign_Feed= [{}];
+    devDynamicContent.S2_FR__JET___Feed_S2_FR__JET__Campaign_Feed[0]._id = 0;
+    devDynamicContent.S2_FR__JET___Feed_S2_FR__JET__Campaign_Feed[0].Hotel_Code = "H21142";
+    devDynamicContent.S2_FR__JET___Feed_S2_FR__JET__Campaign_Feed[0].Hotel_Name = "Orca Praia";
+    devDynamicContent.S2_FR__JET___Feed_S2_FR__JET__Campaign_Feed[0].Hotel_Portal_Name = "ORCA PRAIA";
+    devDynamicContent.S2_FR__JET___Feed_S2_FR__JET__Campaign_Feed[0].Placement_ID = "111111111";
+    devDynamicContent.S2_FR__JET___Feed_S2_FR__JET__Campaign_Feed[0].Start_Date = {};
+    devDynamicContent.S2_FR__JET___Feed_S2_FR__JET__Campaign_Feed[0].Start_Date.RawValue = "01/09/2018";
+    devDynamicContent.S2_FR__JET___Feed_S2_FR__JET__Campaign_Feed[0].Start_Date.UtcValue = 1515456000000;
+    devDynamicContent.S2_FR__JET___Feed_S2_FR__JET__Campaign_Feed[0].End_Date = {};
+    devDynamicContent.S2_FR__JET___Feed_S2_FR__JET__Campaign_Feed[0].End_Date.RawValue = "6/30/2018";
+    devDynamicContent.S2_FR__JET___Feed_S2_FR__JET__Campaign_Feed[0].End_Date.UtcValue = 1530316800000;
+    devDynamicContent.S2_FR__JET___Feed_S2_FR__JET__Campaign_Feed[0].Market = "France Thomas Cook";
+    devDynamicContent.S2_FR__JET___Feed_S2_FR__JET__Campaign_Feed[0].Advert_Region_Copy = "Funchal, Mad\u00E8re";
+    devDynamicContent.S2_FR__JET___Feed_S2_FR__JET__Campaign_Feed[0].Price_Prefix = "";
+    devDynamicContent.S2_FR__JET___Feed_S2_FR__JET__Campaign_Feed[0].Price = "";
+    devDynamicContent.S2_FR__JET___Feed_S2_FR__JET__Campaign_Feed[0].Price_Suffix = "";
+    devDynamicContent.S2_FR__JET___Feed_S2_FR__JET__Campaign_Feed[0].CTA = "BOOK NOW";
+    devDynamicContent.S2_FR__JET___Feed_S2_FR__JET__Campaign_Feed[0].Image_1 = {};
+    devDynamicContent.S2_FR__JET___Feed_S2_FR__JET__Campaign_Feed[0].Image_1.Url = "https://coah.mein-reiseportal.de/cdn/?filename=YToyOntzOjY6InNvdXJjZSI7czozOiJjbWkiO3M6MzoidXJsIjtzOjM5OiJGTkNfUFRfRk5DX09yY2FfUHJhaWFfYmRmZ2RkYl8wMDAwOS5qcGciO30&m=resizeCut&w=768&h=580&q=70";
+    devDynamicContent.S2_FR__JET___Feed_S2_FR__JET__Campaign_Feed[0].Image_2 = {};
+    devDynamicContent.S2_FR__JET___Feed_S2_FR__JET__Campaign_Feed[0].Image_2.Url = "https://i2.tmsck.fr///images-to.orchestra-platform.com/jettours-nurvis/media.1583334.jpg";
+    devDynamicContent.S2_FR__JET___Feed_S2_FR__JET__Campaign_Feed[0].Image_3 = {};
+    devDynamicContent.S2_FR__JET___Feed_S2_FR__JET__Campaign_Feed[0].Image_3.Url = "https://i2.tmsck.fr///images-to.orchestra-platform.com/jettours-nurvis/asset.2a21e.jpg";
+    devDynamicContent.S2_FR__JET___Feed_S2_FR__JET__Campaign_Feed[0].Rating = "3 Star";
+    devDynamicContent.S2_FR__JET___Feed_S2_FR__JET__Campaign_Feed[0].Rating_Path = {};
+    devDynamicContent.S2_FR__JET___Feed_S2_FR__JET__Campaign_Feed[0].Rating_Path.Type = "file";
+    devDynamicContent.S2_FR__JET___Feed_S2_FR__JET__Campaign_Feed[0].Rating_Path.Url = "https://s0.2mdn.net/ads/richmedia/studio/45598825/45598825_20161128015336237_3Stars.svg";
+    devDynamicContent.S2_FR__JET___Feed_S2_FR__JET__Campaign_Feed[0].Rating_Portal_Path = {};
+    devDynamicContent.S2_FR__JET___Feed_S2_FR__JET__Campaign_Feed[0].Rating_Portal_Path.Url = "https://s0.2mdn.net/creatives/assets/2187455/3Stars.svg";
+    devDynamicContent.S2_FR__JET___Feed_S2_FR__JET__Campaign_Feed[0].Hotel_Logo = {};
+    devDynamicContent.S2_FR__JET___Feed_S2_FR__JET__Campaign_Feed[0].Hotel_Logo.Url = "https://scdn3.thomascook.com/crop?imageUrl=http://cdn.thomascook.com/images/uploads/1498645419/Orca_Praia.png&maxWidth=0&maxHeight=0";
+    devDynamicContent.S2_FR__JET___Feed_S2_FR__JET__Campaign_Feed[0].Hotel_Pricing_Key = "21142";
+    devDynamicContent.S2_FR__JET___Feed_S2_FR__JET__Campaign_Feed[0].Exit_URL = {};
+    devDynamicContent.S2_FR__JET___Feed_S2_FR__JET__Campaign_Feed[0].Exit_URL.Url = "https://www.thomascook.fr/madere/orca-praia_88975#dpci=PAR&minMan=7,7";
+    devDynamicContent.S2_FR__JET___Feed_S2_FR__JET__Campaign_Feed[0].Hero = true;
+    Enabler.setDevDynamicContent(devDynamicContent);
+	
+	hotel_logo.push(dynamicContent.S2_FR__JET___Feed_S2_FR__JET__Campaign_Feed[0].Hotel_Logo.Url);
+	promoimg.push(dynamicContent.S2_FR__JET___Feed_S2_FR__JET__Campaign_Feed[0].Image_1.Url);
+	promoimg.push(dynamicContent.S2_FR__JET___Feed_S2_FR__JET__Campaign_Feed[0].Image_2.Url);
+	promoimg.push(dynamicContent.S2_FR__JET___Feed_S2_FR__JET__Campaign_Feed[0].Image_3.Url);
+	ratingimg.push(dynamicContent.S2_FR__JET___Feed_S2_FR__JET__Campaign_Feed[0].Rating_Path.Url);	
+	hotelnametxt.push(dynamicContent.S2_FR__JET___Feed_S2_FR__JET__Campaign_Feed[0].Hotel_Name);
+	locationnametxt.push(dynamicContent.S2_FR__JET___Feed_S2_FR__JET__Campaign_Feed[0].Advert_Region_Copy);	 
+	//pricetxt.push(dynamicContent.S2_FR__JET___Feed_S2_FR__JET__Campaign_Feed[0].Price);
+	//pctatxt.push(dynamicContent.S2_FR__JET___Feed_S2_FR__JET__Campaign_Feed[0].CTA);
+    exiturl.push(dynamicContent.S2_FR__JET___Feed_S2_FR__JET__Campaign_Feed[0].Exit_URL.Url+"?utm_source=dcm&utm_medium=mp_ban&utm_campaign=Hotel_Everywhere");
+	//brandlogo.push("blogo.jpg");
+    fnalert();
+	
+	
+}
+
+function exitClickHandler() {
+  Enabler.exitOverride("exit_url", exiturl[0]);
+}
+
+function pageLoadedHandler() {
+  document.getElementById('clicklayer').addEventListener('click', exitClickHandler, false); 
+  document.getElementById('feature').addEventListener('click', exitClickHandler, false);
+}
+
+
+window.addEventListener('load', preInit);

@@ -1,0 +1,1 @@
+typeof TreasureJSONPCallback0 === 'function' && TreasureJSONPCallback0({"created":true});

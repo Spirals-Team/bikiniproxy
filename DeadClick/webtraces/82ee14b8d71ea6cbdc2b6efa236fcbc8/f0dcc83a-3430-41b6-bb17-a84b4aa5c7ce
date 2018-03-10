@@ -1,0 +1,92 @@
+// JavaScript Document
+({
+	cookies: (function(){
+		//Load dependent libs
+		bam.loadSync(bam.homePath + "bam.validation.js");
+		var _self = {
+			set: function(cObj) {
+				var _pv = [];
+				if(typeof(cObj) === "object") {
+					if(typeof(cObj.name) === "string" && !bam.validation.isEmpty(cObj.name) && (typeof(cObj.value) === "string" || typeof(cObj.value) === "number" || typeof(cObj.value) === "boolean")) {
+						_pv.push($.trim(cObj.name)+"="+escape(cObj.value));
+					}
+					if(bam.object.typeOf(cObj.expires) === "date") {
+						_pv.push("expires=" + cObj.expires.toGMTString());
+					}
+					if(typeof(cObj.path) === "string") {
+						_pv.push("path=" + cObj.path);
+					}
+					if(typeof(cObj.domain) === "string") {
+						_pv.push("domain=" + cObj.domain);
+					}
+					if(typeof(cObj.secure) === "boolean") {
+						if(cObj.secure) {
+							_pv.push("secure");
+						}
+					}
+					document.cookie = _pv.join(";");
+				}
+			},
+			//Accepts an array of objects (i.e. {name:string, value:string/int, expires:date, path:string, domain:string, secure:boolean}) to set cookies in bulk
+			setBulk: function(data) {
+				for(var vp in data) {
+					if (!data.hasOwnProperty || data.hasOwnProperty(vp)) {
+						_self.set(data[vp]);
+					}
+				}
+			},
+			//Returns a value by cookie name
+			get: function(name) {
+				var _ac = _self.getAll();
+				if(typeof(_ac[name]) !== "undefined") {
+					return 	_ac[name];
+				}
+				return null;
+			},
+			//Returns an object with fields being a cookie name = values
+			getAll: function() {
+				var out = {};
+				var dc = document.cookie;
+				if(!bam.validation.isEmpty(dc)) {
+					var _n, _v; _n=_v=null;
+					var _kvp = null;
+					var _ca = dc.split(";");
+					var _c = _ca.length-1;
+					if(_c >=0) {
+						do {
+							_kvp = _ca[_c].split("=");									
+							_n = $.trim(_kvp[0]);_v=_kvp[1];
+							if(_n !== "expires" && typeof(_v) !== "undefined") {
+								out[_n] = _v;
+							}
+						} while(_c--);
+					}
+				}
+				return out;
+			},
+			//Deletes a cookie?	Accepts an object {name:string, domain:string, secure:boolean, path:string}				
+			remove: function(obj) {
+				var cObj = {};
+				if(bam.object.typeOf(obj) === "string") {
+					cObj.name = obj;
+				} else if(typeof(obj) === "object") {
+					$.extend(cObj, obj);
+				}
+				if(!!cObj) {					
+					cObj.value = "";
+					cObj.expires = new Date(0);
+					_self.set(cObj);
+				}
+			},
+			//Accepts an array of cookie objects to remove in bulk
+			removeBulk: function(data){
+				for(var vp in data) {
+					if (!data.hasOwnProperty || data.hasOwnProperty(vp)) {
+						_self.remove(data[vp]);
+					}
+				}
+			}			
+		};
+		return _self;
+   })()
+})

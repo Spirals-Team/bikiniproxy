@@ -1,0 +1,18 @@
+(function($){$.fn.smartSuggest=function(options){var defaults={boxId:'%-suggestions',classPrefix:'ss-',timeoutLength:500,src:'',resultsText:'$ of % results',noResultsText:'No results.',showEmptyCategories:false,fillBox:false,fillBoxWith:'primary',executeCode:true,showImages:true,minChars:2,params:''};var options=$.extend(defaults,options);options.boxId=options.boxId.replace('%',$(this).attr('id'));var lastQuery='';var data;$(this).wrap('<div class="'+options.classPrefix+'wrap"></div>');$(this).attr('autocomplete','off');$(this).after('<ul class="'+options.classPrefix+'box" id="'+options.boxId+'" style="display: none;"></ul>');var inputObj=$(this);var boxObj=$('#'+options.boxId);var timeout=null;inputObj.keyup(function(event){if(event.keyCode!=13&&event.keyCode!=9)
+{var q=inputObj.val();if(q==''||q.length<options.minChars)
+{boxObj.fadeOut();unsetTimeout(timeout);}
+else
+{if(timeout!=null)
+{unsetTimeout(timeout);}
+timeout=setTimeout(function(){inputObj.addClass(options.classPrefix+'input-thinking');lastQuery=q;$.getJSON(options.src+"?q="+q+'&'+options.params,function(data,textStatus){if(textStatus=='success')
+{var output="";var has_data=false;$.each(data,function(i,group){if(group['data'].length>0)
+{has_data=true;}});if(!has_data)
+{output+='<li class="'+options.classPrefix+'header">'+"\n";output+='<p class="'+options.classPrefix+'header-text">'+options.noResultsText+'</p>'+"\n";output+='<p class="'+options.classPrefix+'header-limit">0 results</p>'+"\n";output+='</li>';}
+else
+{$.each(data,function(i,group){if(options.showEmptyCategories||(!options.showEmptyCategories&&group['data'].length!=0))
+{var limit=group['header']['limit'];var count=0;output+='<li class="'+options.classPrefix+'header">'+"\n";output+='<p class="'+options.classPrefix+'header-text">'+group['header']['title']+'</p>'+"\n";output+='<p class="'+options.classPrefix+'header-limit">'+options.resultsText.replace("%",group['header']['num']).replace("$",(group['header']['limit']<group['data'].length?group['header']['limit']:group['data'].length))+'</p>'+"\n";output+='</li>';var fill_code=(options.fillBox)?'document.getElementById(\''+inputObj.attr('id')+'\').value = \'%\';':'';$.each(group['data'],function(j,item){if(count<limit)
+{var link_open='<a href="';link_open+=(item['url']!=undefined)?item['url']:'javascript: void(0);';link_open+='" ';link_open+=(item['onclick']!=undefined)?' onclick="'+fill_code.replace("%",item[options.fillBoxWith])+(options.executeCode?item['onclick']:'')+'" ':'';link_open+='>';output+='<li class="'+options.classPrefix+'result">'+link_open+"\n";output+='<table border="0" cellspacing="0" cellpadding="0" width="100%"><tr>';output+=(item['image']!=undefined&&options.showImages)?'<td width="40"><img src="'+item['image']+'" /></td>'+"\n":'';output+='<td>';output+='<p>';output+=(item['primary']!=undefined)?'<span class="'+options.classPrefix+'result-title">'+item['primary']+"</span><br />\n":'';output+=(item['secondary']!=undefined)?''+item['secondary']+''+"\n":'';output+='</p>'+"\n";output+='</td>';output+='</tr></table>';output+='</a></li>'+"\n";}
+count++;});}});}
+boxObj.html(output);boxObj.css('position','absolute');boxObj.fadeIn();inputObj.removeClass(options.classPrefix+'input-thinking');}});},options.timeoutLength);}}});inputObj.blur(function(){boxObj.fadeOut();});inputObj.focus(function(){if(inputObj.val()==lastQuery&&inputObj.val()!='')
+{boxObj.fadeIn();}});};function unsetTimeout(timeout)
+{clearTimeout(timeout);timeout=null;};})(jQuery);

@@ -1,0 +1,154 @@
+// JavaScript Document
+
+// Input Fields
+setInputs = function() {
+	$(':input[title]').each(function() {
+	  var $this = $(this);
+	  if($this.val() === '') {
+		$this.val($this.attr('title'));
+		$this.addClass('watermark');
+	  }
+	  $this.focus(function() {
+		if($this.val() === $this.attr('title')) {
+		  $this.val('');
+		  $this.removeClass('watermark');
+		}
+	  });
+	  $this.blur(function() {
+		if($this.val() === '') {
+		  $this.val($this.attr('title'));
+		  $this.addClass('watermark');
+		}
+	  });
+  	});
+}
+
+// Show-Hide Tabs 
+setTabs = function() {
+	$("#tabs .content").hide(); 
+	$($("#tabs ul.titles .active").attr("href")).show();
+	$("#tabs ul.titles li a").on("click",function(){
+		$("#tabs ul.titles li a").removeClass("active");
+		$(this).addClass("active");
+		$("#tabs .content").hide(); 
+		$($(this).attr("href")).show();
+		return false;
+	});
+
+	$("#tabs1 .content").hide(); 
+	$($("#tabs1 ul.titles1 .active").attr("href")).show();
+	$("#tabs1 ul.titles1 li a").on("click",function(){
+		$("#tabs1 ul.titles1 li a").removeClass("active");
+		$(this).addClass("active");
+		$("#tabs1 .content").hide(); 
+		$($(this).attr("href")).show();
+		return false;
+	});
+}
+
+
+
+// Set Cells width
+setCells = function() {
+	$("#brands li a").width("auto");
+	$("#brands li a").width($("#brands li").width());
+	$("#adverts .photo img").width("auto");
+	$("#adverts .photo img").width($("#adverts .photo").width());
+	$("#product .bigphoto a").width("auto");
+	$("#product .bigphoto a").width($("#product .bigphoto").width());
+}
+
+// get touch ability
+function isTouchDevice() {
+ return (('ontouchstart' in window)
+      || (navigator.MaxTouchPoints > 0)
+      || (navigator.msMaxTouchPoints > 0));
+}
+
+// Touchscreen 
+function setTouchscreen() {
+	// Navigation
+	$("#navigation ul > li > div").each(function(){
+		$(this).prev().on("click",function(){
+			return false;
+		})
+	})
+	// Acount box
+	$(".acountbox ul li.acount > a, .acountbox ul li.more > a").on("click",function(){
+		return false;
+	})
+}
+
+$(document).ready(function() {
+  // Functions
+	if (isTouchDevice() == true) {
+		$("body").addClass("is-touch");
+		setTouchscreen();
+	} else {
+		$("body").addClass("no-touch");
+	}
+  setInputs();
+  setCells();
+  setTabs();
+  setTabs();
+	
+  // Carousels 
+  $("#owl-mainbanner").owlCarousel({
+	  singleItem:	true,
+	  autoPlay:		5000,
+	  navigation:	true,
+	  pagination:	true,
+	  autoHeight : true,
+	  responsive:	true
+  });
+  $("#owl-brands").owlCarousel({
+	  items:				6,
+	  autoPlay:				5000,
+	  navigation:			true,
+	  pagination:			false,
+	  responsive:			true,
+      itemsDesktop:			[1000,6], 
+      itemsDesktopSmall:	[979,5],
+      itemsTablet: 			[768,4], 
+	  itemsTabletSmall:		[600,3],
+      itemsMobile : 		[450,2]
+  });
+  $("#tabs ul.products").owlCarousel({
+	  items:				4,
+	  scrollPerPage:		true,
+	  autoPlay:				false,
+	  navigation:			true,
+	  pagination:			false,
+	  responsive:			true,
+      itemsDesktop:			[1000,4], 
+      itemsDesktopSmall:	[979,4],
+      itemsTablet: 			[768,3], 
+	  itemsTabletSmall:		[600,2],
+      itemsMobile : 		[400,1]
+  });
+  
+    $("#tabs1 ul.products").owlCarousel({
+	  items:				4,
+	  scrollPerPage:		true,
+	  autoPlay:				false,
+	  navigation:			true,
+	  pagination:			false,
+	  responsive:			true,
+      itemsDesktop:			[1000,4], 
+      itemsDesktopSmall:	[979,4],
+      itemsTablet: 			[768,3], 
+	  itemsTabletSmall:		[600,2],
+      itemsMobile : 		[400,1]
+  });
+  
+ 
+});
+
+$(window).resize(function() {
+	setCells();
+});
+
+$(window).load(function() {
+  // Functions
+  setCells();
+});

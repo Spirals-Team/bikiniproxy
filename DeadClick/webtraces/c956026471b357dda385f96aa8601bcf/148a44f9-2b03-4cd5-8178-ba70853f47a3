@@ -1,0 +1,93 @@
+var $j = jQuery.noConflict();
+var mainDomain = "https://metizapps.com";
+var baseUrl = mainDomain + '/eucookie';
+
+$j('head').append('<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-cookie/1.4.1/jquery.cookie.js"></script>');
+$j('head').append('<link rel="stylesheet" href="' + baseUrl + '/assets/css/eustyle.css" type="text/css" />');
+
+$j(document).ready(function () {
+
+    var cookieExpireTime = '';
+
+    getEuCookie();
+    function getEuCookie()
+    {
+        var url = baseUrl + '/banner/getBannerAjax';
+        var shopurl = Shopify.shop;
+        $j.ajax({
+            type: "POST",
+            url: url,
+            data: {'shop_url': shopurl},
+            success: function (response) {
+                //console.log(response);return false;
+                if (response) {
+                    var cookieName = $j.cookie('DisableBanner');
+                    if (cookieName != 'dismiss')
+                    {
+                        var obj = $j.parseJSON(response);
+                        cookieExpireTime = obj.content[0].iCookieExpireTime;
+                        //console.log(obj.content[0]);
+                        var appendData =
+                                '<div class="cc-window cc-banner cc-type-info cc-theme-block cc-bottom cc-color-override--732197953 " style="">'
+                                + '<span id="cookieconsent:desc" class="cc-message">' + obj.content[0].vMessage
+                                + '<a tabindex="0" class="cc-link" href="' + obj.content[0].vPrivacyPolicyUrl + '" target="_blank">' + obj.content[0].vInfoLinkText + '</a>'
+                                + '</span>'
+                                + '<div class="cc-compliance">'
+                                + '<a tabindex="0" class="cc-btn cc-dismiss dismissCookie">' + obj.content[0].vOkBtnText + '</a>'
+                                + '</div>'
+                                + '</div>';
+                        $j('body').append(appendData);
+
+                        if (obj.content[0].vBannerLayout == 'top') {
+                            $j(".cc-window").css("top", '0');
+                            $j(".cc-window").css("bottom", '');
+                        } else {
+                            $j(".cc-window").css("bottom", '0');
+                            $j(".cc-window").css("top", '');
+                        }
+
+                        /**	Banner background color */
+                        $j(".cc-window").css("background-color", '#' + obj.content[0].vBannerBackgroundColor);
+
+                        /** Font size, color**/
+                        $j(".cc-window").css('font-size', obj.content[0].iFontSize + 'px');
+                        $j(".cc-window").css('color', '#' + obj.content[0].vBannerFontColor);
+
+                        /** Banner hight */
+                        $j(".cc-window").css('height', obj.content[0].banner_height + 'px');
+
+                        /** Link font size, color**/
+                        $j(".cc-link").css('font-size', obj.content[0].iLinkFontSize + 'px');
+                        $j(".cc-link").css("color", '#' + obj.content[0].vLinkFontColor);
+
+                        /**	Button background, font sizem font color**/
+                        $j(".cc-btn").css("background-color", '#' + obj.content[0].vButtonBackgroundColor);
+                        $j(".cc-btn").css("color", '#' + obj.content[0].vButtonFontColor);
+                        $j(".cc-btn").css('font-size', obj.content[0].iButtonFontSize + "px");
+                        $j(".cc-btn").css("border-color", '#' + obj.content[0].vButtonBorderColor);
+
+                        if(obj.content[0].vCustomCss != '')
+                        {
+                            $j(".cc-window.cc-banner").css('z-index', '9999999999');
+                            //$j(".cc-window.cc-banner").css('background-color', 'transparent');
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    $j(document).on("click", ".dismissCookie", function ()
+    {
+        if(cookieExpireTime == '')
+        {
+            cookieExpireTime = 365
+        }
+        //alert(cookieExpireTime);return false;
+        $j.cookie('DisableBanner', 'dismiss', {expires: parseInt(cookieExpireTime)});
+        $j(".cc-window").hide();
+        //getEuCookie();
+    });
+});
+
+var $ = $j.noConflict();

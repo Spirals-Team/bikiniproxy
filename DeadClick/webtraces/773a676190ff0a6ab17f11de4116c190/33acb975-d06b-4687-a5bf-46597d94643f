@@ -1,0 +1,83 @@
+function getCookieMultiValue(cookiename,cookiekey)
+{
+	var cookievalue=getCookie(cookiename);
+	if ( cookievalue == "")
+	return "";
+	cookievaluesep=cookievalue.split("&");
+	for (c=0;c<cookievaluesep.length;c++)
+	{
+		cookienamevalue=cookievaluesep[c].split("=");
+		if (cookienamevalue.length > 1) //it has multi valued cookie
+		{
+			if ( cookienamevalue[0] == cookiekey )
+				return cookienamevalue[1].toString();
+		}
+		else
+		return "";
+	}
+	return "";
+}
+
+
+function getCookie(name) 
+{
+	var result = "";
+	var myCookie = " " + document.cookie + ";";
+	var searchName = " " + name + "=";
+	var startOfCookie = myCookie.indexOf(searchName);
+	var endOfCookie;
+	if (startOfCookie != -1) 
+	{
+		startOfCookie += searchName.length;
+		endOfCookie = myCookie.indexOf(";", startOfCookie);
+		result = unescape(myCookie.substring(startOfCookie, endOfCookie));
+	}
+	return result;
+}
+
+function setCookieMultiValue(cookiename,cookiekey,cookiekeyvalue)
+{
+	var cookievalue=getCookie(cookiename);
+	if ( cookievalue.trim() == "" )	
+	{
+		setCookie(cookiename,cookiekey+"="+cookiekeyvalue);
+	return;
+	}		
+                    	
+	//check if cookie already exist
+	getcookiekeyvalue=getCookieMultiValue(cookiename,cookiekey);
+	newCookieValue=cookievalue.trim();
+	if ( getcookiekeyvalue == "")	//key cookie never exist		
+		newCookieValue += "&" + cookiekey + "=" + cookiekeyvalue;
+	else
+	{
+		if ( newCookieValue.substr(0,cookiekey.length+1) == (cookiekey + "=") ) //Check if at first location . no beginning with &
+		{
+			//pick rest keys = keylength+equalsign+cookiekeyvalue+nextampesand
+			totalcookiekeylength=cookiekey.length+1+getCookieMultiValue(cookiename,cookiekey).length+1;
+            newCookieValue = newCookieValue.substr(totalcookiekeylength);
+            if (newCookieValue.trim() == "")			
+				newCookieValue = cookiekey + "=" + cookiekeyvalue;
+			else
+				newCookieValue += "&" + cookiekey + "=" + cookiekeyvalue;
+        }
+        else 
+		{
+			fullcookiekey="&"+cookiekey+"="+getcookiekeyvalue;
+            if ( newCookieValue.indexOf(fullcookiekey) != -1 ) //cookie key inside the cookie value
+			{
+                newCookieValue = ReplaceAll(newCookieValue, fullcookiekey, "");
+				if (newCookieValue.trim() == "")			
+					newCookieValue = cookiekey + "=" + cookiekeyvalue;
+                else
+					newCookieValue += "&" + cookiekey + "=" + cookiekeyvalue;
+            }
+        }
+    }
+	setCookie(cookiename,newCookieValue);
+}
+
+function setCookie(cname,value) {
+	document.cookie= cname +"="+value;
+}
+

@@ -1,0 +1,141 @@
+//Start
+if (!init) {
+    addJquery(apTableWidgetResize);
+}
+
+
+function addJquery(callback) {
+    //Add jQuery if is not already loaded
+    if (!window.jQuery) {
+        var script = document.createElement("script");
+        script.type = "text/javascript";
+        script.src = "http://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js";
+        document.getElementsByTagName("head")[0].appendChild(script);
+        script.onload = callback;
+    }
+    else {
+        callback;
+    }
+}
+function apTableWidgetResize() {
+    if (window.jQuery) {
+        jQuery('.table-widget-wrapper').each(function () {
+            var elementId = jQuery(this).attr('id');
+            var apTableWidget = document.getElementById(elementId);
+            var apTableWidth = document.getElementById(elementId).parentNode.offsetWidth;  //for borders from both sides;
+            if (apTableWidth < 620) {
+                jQuery(apTableWidget).addClass('verticle');
+                if (typeof window.changeElementPosition == 'function') {
+                    changeElementPosition();
+                }
+
+            } else {
+                jQuery(apTableWidget).removeClass('verticle');
+                if (typeof window.changeElementPosition == 'function') {
+                    changeElementPosition();
+                }
+            }
+            customAction(elementId);
+        });
+    } else {
+        addJquery(apTableWidgetResize);
+    }
+}
+
+var customAction = function (elementId) {
+    if (window.jQuery) {
+        var widgetTypeClasses = jQuery('#' + elementId).attr('type-class');
+        jQuery('#' + elementId).addClass(widgetTypeClasses);
+        if (jQuery('#' + elementId).attr('data-type') == 'table-widget') {
+            onClickfunctions(elementId);
+        }
+
+        //IE8 Fix
+        if (navigator.appName.indexOf("Internet Explorer") != -1) {
+            var ie8 = (navigator.appVersion.indexOf("MSIE 8") != -1);
+            if (ie8) {
+                jQuery('#' + elementId).off('click', 'button.button-left');
+                jQuery('#' + elementId).on('click', 'button.button-left', function () {
+                    var url = jQuery(this).parent('a').attr('href');
+                    window.open(url);
+                    return false;
+                });
+
+                jQuery('#' + elementId).off('click', 'button.button-right');
+                jQuery('#' + elementId).on('click', 'button.button-right', function () {
+                    var url = jQuery(this).parent('a').attr('href');
+                    window.open(url);
+                    return false;
+                });
+            }
+        }
+    }
+};
+
+var onClickfunctions = function (elementId) {
+    //Poll Widget - Link to poll when click rows and title
+    if (jQuery('#' + elementId).hasClass('poll-table')) {
+        jQuery('#' + elementId).off('click', 'tr.even, tr.odd');
+        jQuery('#' + elementId).on('click', 'tr.even, tr.odd', function (e) {
+            var url = jQuery(this).parents('.table-widget-wrapper').find('a.poll-link').attr('href');
+            window.open(url);
+        });
+    }
+    //Racing Schedule Widget
+    if (jQuery('#' + elementId).hasClass('schedule-table')) {
+        jQuery('#' + elementId).off('click', 'tr.even, tr.odd');
+        jQuery('#' + elementId).on('click', 'tr.even, tr.odd', function (e) {
+            var url = jQuery(this).parents('.inner-frame').find('a.poll-link').attr('href');
+            window.open(url);
+        });
+    }
+    
+    //Medal counter Wintergames
+//    if (jQuery('#' + elementId).hasClass('medals-count-table')) {
+//        jQuery('#' + elementId).off('click', 'td.link-to-team');
+//        jQuery('#' + elementId).on('click', 'td.link-to-team', function () {
+//            var url = jQuery(this).parents('.table-widget-wrapper').find('a.poll-link').attr('href');
+//            window.open(url);
+//        });
+//    }
+};
+
+window.onresize = function () {
+    apTableWidgetResize();
+}
+
+
+function fixFirstImage(image) {
+
+    jQuery(image).css('visibility', 'visible');
+
+    if (jQuery(image).width() > jQuery(image).height()) {//checks if the first image verticle or horizontal
+
+        jQuery(image)
+            .removeClass('center-portrait')
+            .addClass('center-landscape')
+            .attr('title', jQuery(image).attr('alt'))
+            .css({'margin-top': ((219 - jQuery(image).height()) / 2) + 'px'}); //placing image in the middle, if horizontal
+
+    } else {
+
+        jQuery(image)
+            .removeClass('center-landscape')
+            .addClass('center-portrait');
+
+        var marginLeft = ((300 - jQuery(image).width()) / 2);
+
+        jQuery(image)
+            .css({'margin-left': marginLeft + 'px'})
+            .attr('title', jQuery(image).attr('alt'));
+
+    }
+
+}
+
+function goTo(image) {
+    var link = jQuery(image).attr('data');
+    window.open(link, '_blank');
+}
+
+var init = true;

@@ -1,0 +1,26 @@
+_satellite.pushAsyncScript(function(event, target, $variables){
+  if (/\/travel\/destinations\/.*\/hotels\/$/.test(window.location.pathname)) {
+    var hotelNames = document.querySelectorAll('.product-article-listing__headline');
+    var trackHotelNameCopy = function(e) {
+        var hotelName = e.target.textContent.replace(/(?:\r\n|\r|\n|\t)/g,' ');
+        s.eVar78 = hotelName;
+        s.events = 'event20';
+        s.linkTrackEvents = 'event20';
+        s.linkTrackVars = 'eVar78' + _satellite.getVar('TMG linkTrackVars');
+        s.tl(true, 'o', 'Travel - Hotel Name Copied');
+    };
+    for (var i = 0; i < hotelNames.length; i++) {
+        hotelNames[i].addEventListener('copy', trackHotelNameCopy);
+    }
+} else if (/\/travel\/destinations\/.*\/hotels\//.test(window.location.pathname)) {
+    document.querySelector('.product-card__name').addEventListener('copy', function(e) {
+        var hotelName = e.target.textContent.replace(/(?:\r\n|\r|\n|\t)/g,' ');
+        s.eVar78 = hotelName;
+        s.events = 'event20';
+        s.linkTrackEvents = 'event20';
+        s.linkTrackVars = 'eVar78' + _satellite.getVar('TMG linkTrackVars');
+        s.tl(true, 'o', 'Travel - Hotel Name Copied');
+    });
+}
+
+});

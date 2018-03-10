@@ -1,0 +1,36 @@
+var CTR = (typeof CTR !== "undefined" &&  typeof CTR === "object") ? CTR : {};
+(function($) {
+	// <Current View>
+	CTR.viewName 	= $("html").attr("data-route") 		|| false;
+	CTR.path		= $("html").attr("data-bs-view") 	|| false;
+	// </Current View>
+	$(window).on("load", function() {
+	
+		!!CTR.setBeaconForcentralNav && CTR.setBeaconForcentralNav();
+
+		!!CTR.setBeaconForGlobalHF && CTR.setBeaconForGlobalHF({
+			elem_siteLogo: 		{ id: $('.m-logo'), type: 'img-lnk', iterate: false },
+			elem_hatLinks: 		{ id: $('#aol-links > li'), type: 'lnk', iterate: true },
+			elem_optionLinks: 	{ id: $('.m-option-box > li'), type: 'option-lnk', iterate: true },
+			elem_SearchBtn: 	{ id: $('#web-search-icon'), type: 'btn', iterate: true },
+			elem_headerTools: 	{ id: $('.m-quick-nav a'), type: 'img-lnk', iterate: true },
+			elem_footer: 		{ id: $("#global-legal-footer ul li"), type: 'lnk', iterate: true }
+		});
+		
+		if ( CTR.viewName === "permalink" ) {
+			
+			!!CTR.ShareButton && CTR.ShareButton({
+				top: '.aol_share_top',
+				bottom: '.aol_share_bottom'
+			});
+		}
+
+		if ( CTR.viewName === "recipe" ) {
+			
+			if (CTR.path == "recipe" ) {
+
+				!!CTR.ShareButton && CTR.ShareButton({top: '.aol-share'});	
+			}
+		}
+	});
+})(jQuery);

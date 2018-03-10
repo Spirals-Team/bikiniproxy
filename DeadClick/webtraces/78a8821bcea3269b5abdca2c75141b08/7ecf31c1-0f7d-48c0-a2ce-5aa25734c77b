@@ -1,0 +1,25 @@
+_satellite.pushAsyncScript(function(event, target, $variables){
+  (function checkReady_Object(c) { 
+    var count = c;
+    var waitingLimit = 10;   
+    var recursionFrequency = 500;    	
+    if ((typeof window.s === "object") && (typeof window.s.eVar15 === "string")) { 
+		try{			
+        fbq('track', 'ViewContent', { 
+              content_type: 'product',
+              content_ids: [s.eVar15],
+        }); 							
+			}catch(err){
+				console.log("DTM:", err);  
+			}
+    } else {  
+        if (count >= waitingLimit) {   
+        } else { 
+            count++;
+            window.setTimeout(function () {
+                checkReady_Object(count);
+            }, recursionFrequency);
+        }
+    }
+})(1);
+});

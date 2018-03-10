@@ -1,0 +1,20 @@
+_satellite.pushAsyncScript(function(event, target, $variables){
+  (function(){
+  var now = (new Date).getTime();
+  var expires = new Date;
+
+  expires.setFullYear(expires.getFullYear() + 1);
+
+  getCookie = function(name) {
+    match = document.cookie.match(new RegExp(name + '=([^;]+)'));
+    if (match) return match[1];
+  }
+
+  //Check if the cookie has not been cleared
+  if(getCookie('_TO_Cookie_Consent') &&!getCookie('_TO_Cookie_reset')){
+    document.cookie = '_TO_Cookie_Consent=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;'; // destroy old cookie
+    document.cookie = '_TO_Cookie_reset='+ now +'; Path=/; Expires='+expires.toGMTString()+';';
+  }
+})();
+
+});

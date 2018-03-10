@@ -1,0 +1,129 @@
+document.addEventListener('DOMContentLoaded', function(){ /* READY ? */ }, false);
+r(function(){
+  startAnimation();
+});
+function r(f){/in/.test(document.readyState)?setTimeout('r('+f+')',9):f()}
+
+
+
+/*Calcule des positions des produits : */
+var bannerW = 300;
+var bannerH = 250;
+var spaceForProduct = 135;
+var produt1 = document.getElementById("f_product_1");
+var produt2 = document.getElementById("f_product_2");
+var produt3 = document.getElementById("f_product_3");
+var produt4 = document.getElementById("f_product_4");
+var produt5 = document.getElementById("f_product_5");
+var produt6 = document.getElementById("f_product_6");
+var productPosStart_1 = bannerW - spaceForProduct + (spaceForProduct - produt1.offsetWidth)/2;
+var productPosStart_2 = bannerW - spaceForProduct + (spaceForProduct - produt2.offsetWidth)/2;
+var productPosStart_3 = bannerW - spaceForProduct + (spaceForProduct - produt3.offsetWidth)/2;
+var productPosStart_4 = bannerW - spaceForProduct + (spaceForProduct - produt4.offsetWidth)/2;
+var productPosStart_5 = bannerW - spaceForProduct + (spaceForProduct - produt5.offsetWidth)/2;
+var productPosStart_6 = bannerW - spaceForProduct + (spaceForProduct - produt6.offsetWidth)/2;
+var productPosEnd_1 = 0 - produt1.offsetWidth;
+var productPosEnd_2 = 0 - produt2.offsetWidth;
+var productPosEnd_3 = 0 - produt3.offsetWidth;
+var productPosEnd_4 = 0 - produt4.offsetWidth;
+var productPosEnd_5 = 0 - produt5.offsetWidth;
+var productPosEnd_6 = 0 - produt6.offsetWidth;
+var step1LogoX = (bannerW - 146)/2;
+var step2LogoX = 22;
+
+// DEBUT DE L'ANIMATION
+function startAnimation(){
+  render = Cquence.combine(
+
+    Cquence.sequence( 
+      Cquence.sleep( 300 ),
+        Cquence.easeOut('f_logo', 2000, { opacity:0 }, { opacity:1 })
+    ),
+    
+    /* Anim dÃ©calage 1 */    
+    Cquence.sequence( 
+      Cquence.sleep( 600 ),
+      
+      
+      /* SHOW PRODUCT 1 */
+      Cquence.sleep( 1000 ),
+      Cquence.combine(
+        Cquence.easeOut('f_logo', 1500, { left:step1LogoX }, { left:step2LogoX }),
+        Cquence.easeOut('f_product_1', 3000, { opacity:0 }, { opacity:1 }),
+      ),
+
+      /* SHOW PRODUCT 2 */
+      Cquence.sleep( 800 ),
+      Cquence.combine(
+        Cquence.easeOut('f_product_1', 3000, { opacity:1 }, { opacity:0 }),
+        Cquence.easeOut('f_product_1', 3000, { bottom:0 }, { bottom:0-bannerH }),
+
+        Cquence.easeOut('f_product_2', 3000, { opacity:0 }, { opacity:1 }),
+        Cquence.easeOut('f_product_2', 3000, { bottom:bannerH }, { bottom:0 })
+      ),
+
+      /* SHOW PRODUCT 3 */
+      Cquence.sleep( 800 ),
+      Cquence.combine(
+        Cquence.easeOut('f_product_2', 3000, { opacity:1 }, { opacity:0 }),
+        Cquence.easeOut('f_product_2', 3000, { bottom:0 }, { bottom:0-bannerH }),
+
+        Cquence.easeOut('f_product_3', 3000, { opacity:0 }, { opacity:1 }),
+        Cquence.easeOut('f_product_3', 3000, { bottom:bannerH }, { bottom:0 })
+      ),
+
+      /* SHOW PRODUCT 4 */
+      Cquence.sleep( 800 ),
+      Cquence.combine(
+        Cquence.easeOut('f_product_3', 3000, { opacity:1 }, { opacity:0 }),
+        Cquence.easeOut('f_product_3', 3000, { bottom:0 }, { bottom:0-bannerH }),
+
+        Cquence.easeOut('f_product_4', 3000, { opacity:0 }, { opacity:1 }),
+        Cquence.easeOut('f_product_4', 3000, { bottom:bannerH }, { bottom:0 })
+      ),
+
+      /* SHOW PRODUCT 5 */
+      Cquence.sleep( 800 ),
+      Cquence.combine(
+        Cquence.easeOut('f_product_4', 3000, { opacity:1 }, { opacity:0 }),
+        Cquence.easeOut('f_product_4', 3000, { bottom:0 }, { bottom:0-bannerH }),
+
+        Cquence.easeOut('f_product_5', 3000, { opacity:0 }, { opacity:1 }),
+        Cquence.easeOut('f_product_5', 3000, { bottom:bannerH }, { bottom:0 })
+      ),
+
+      /* SHOW PRODUCT 6 */
+      Cquence.sleep( 800 ),
+      Cquence.combine(
+        Cquence.easeOut('f_product_5', 3000, { opacity:1 }, { opacity:0 }),
+        Cquence.easeOut('f_product_5', 3000, { bottom:0 }, { bottom:0-bannerH }),
+
+        Cquence.easeOut('f_product_6', 3000, { opacity:0 }, { opacity:1 }),
+        Cquence.easeOut('f_product_6', 3000, { bottom:bannerH }, { bottom:0 })
+      ),
+
+      /* SHOW FINAL */
+      Cquence.sleep( 800 ),
+      Cquence.combine(
+        Cquence.easeOut('f_logo', 1500, { left:step2LogoX }, { left:step1LogoX }),
+        Cquence.easeOut('f_product_6', 1500, { opacity:1 }, { opacity:0 })
+      ),
+      Cquence.sleep( 500 ),
+      Cquence.easeOut('f_logo', 2000, { top:100 }, { top:25 })
+      
+
+    ),
+    
+    Cquence.sequence( 
+      Cquence.sleep( 27000 ),
+      Cquence.easeOut('f_texte', 2500, { opacity:0 }, { opacity:1 })
+    ),
+    Cquence.sequence( 
+      Cquence.sleep( 27500 ),
+      Cquence.easeOut('f_baseline', 2500, { opacity:0 }, { opacity:1 })
+    )
+
+
+  );
+  Cquence.renderloop();
+}

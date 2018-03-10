@@ -1,0 +1,21 @@
+(function ($) {
+	// Attach functionality to DOM
+    $(document).ready(function() {
+       $('<div class="response" style="display: none;"></div>').appendTo('#aloha-pos-form .inner');
+       $("#aloha-pos-form input[type=submit]").click(function() {
+            var cardnumber = $("#cardnumber").val();
+            
+            $.post(
+                aloha_pos_ajax.ajaxurl,
+                {
+                    action : 'aloha-pos-card-lookup',
+                    cardnumber : cardnumber
+                },
+                function( response ) {
+                    $("#aloha-pos-form .response").html(response).show();
+                }
+            );            
+            
+       }) ;
+    });
+}(jQuery));

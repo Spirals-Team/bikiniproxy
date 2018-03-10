@@ -1,0 +1,156 @@
+
+$(document).ready(function () {
+    $(".ellipsable").dotdotdot();
+});
+
+jQuery(document).ready(function () {
+
+    var et_disable_toptier = jQuery("meta[name=et_disable_toptier]").attr('content'),
+        et_theme_folder = jQuery("meta[name=et_theme_folder]").attr('content'),
+        $et_top_menu = jQuery('ul#top-menu > li > ul'),
+        $et_secondary_menu = jQuery('ul#secondary-menu li ul');
+
+    jQuery('ul.nav').superfish({
+        delay: 300,                            // one second delay on mouseout
+        animation: { opacity: 'show', height: 'show' },  // fade-in and slide-down animation
+        speed: 'fast',                          // faster animation speed
+        cssArrows: true,                           // disable generation of arrow mark-up
+        dropShadows: false                            // disable drop shadows
+    });
+
+    jQuery('ul.nav > li > a.sf-with-ul').parent('li').addClass('sf-ul');
+
+    if ($et_secondary_menu.length) {
+        $et_secondary_menu.find('>li:odd').addClass('even-item');
+    }
+
+    SmartLoadImages();
+    ImageUploadDetector();
+    OrderEntrySetup();
+    StoreTypeSetup();
+
+});
+
+
+function NavigatePage(direction) {
+    var link = "/Search/Navigate" + direction;
+
+
+
+    jQuery.ajax({
+        url: link,
+        cache: false
+    })
+        .done(function (html) {
+            jQuery("#sidebar-navigator").html(html);
+        });
+
+}
+
+function SmartLoadImages() {
+
+    var theObject = jQuery(".preload-image").each(function (x, el) {
+        
+        jQuery(this).load(function () {
+            var loadClass = jQuery(this).attr("load-class");
+            jQuery(this).addClass(loadClass);
+        });
+        jQuery(this).attr("src", jQuery(this).attr("trueurl"));
+    });
+
+}
+
+function ImageUploadDetector() {
+    jQuery(".smart-image").change(function () {
+
+        var editor = jQuery(this);
+        var url = editor.attr("upload-url");
+        var recSrc = editor.attr("upload-receive-src");
+        var recVal = editor.attr("upload-receive-val");
+        var data = new FormData();
+        var files = editor.get(0).files;
+        if (files.length > 0) {
+            data.append("HelpSectionImages", files[0]);
+        }
+
+        jQuery.ajax({
+            url: url,
+            type: "POST",
+            processData: false,
+            contentType: false,
+            data: data,
+            success: function (response) {
+                //code after success
+
+                jQuery(recSrc).attr("src", response);
+                jQuery(recVal).val(response);
+            },
+            error: function (er) {
+                alert(er.status);
+            }
+
+        });
+    });
+}
+
+function OrderEntrySetup() {
+
+    jQuery(".order-entry").keyup(function () {
+
+        var entry = jQuery(this);
+        var isbn13 = entry.attr("isbn13");
+        var id = "status-" + isbn13;
+        jQuery('#' + id).removeClass("entry-approved");
+        jQuery('#' + id).addClass("entry-waiting"); 
+
+        var value = entry.val();
+        if (value == null | value == "") value = "0";
+        value = isNaN(value) ? "0" : value;
+
+        var url = "/Order/UpdateOrder?isbn13=" + isbn13 + "&qty=" + value;
+        
+        jQuery.ajax({
+            url: url,
+            cache: false
+        })
+        .done(function (data) {
+            setTimeout(function () {
+                var isbn13 = data.ISBN13;
+                var id = "status-" + isbn13;
+                jQuery('#' + id).removeClass("entry-waiting");
+                jQuery('#' + id).addClass("entry-approved");
+                jQuery("#order-confirmation").text(data.LineStatus);
+                jQuery("#order-summary").html(data.Html);
+                jQuery("#order-summary").show();
+            }, 600);
+
+        })
+        .error(function () {
+            alert('error');
+        });
+    });
+}
+
+
+
+function StoreTypeSetup() {
+
+    jQuery("#StoreType").change(function () {
+
+        var value = jQuery("#StoreType option:selected").val();
+ 
+        if (value == "EXISTING_NO_CODE" | value == "NEW_ACCOUNT") {
+            jQuery("#existing-store").show();
+            jQuery("#new-store").hide();
+            if (value == "EXISTING_NO_CODE") jQuery('#store-title').html('Existing Account without Code');
+            if (value == "NEW_ACCOUNT") jQuery('#store-title').html('New Account');
+        }
+
+        if (value == "EXISTING_WITH_CODE") {
+            jQuery("#existing-store").slideUp();
+            jQuery("#new-store").slideDown();
+
+        }
+    });
+
+}

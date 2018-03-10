@@ -1,0 +1,326 @@
+//===============================================
+//button state handlers
+
+function overNav(button){
+    button.style.backgroundColor = "#dadada";
+    button.style.color = "#5d5d5d";
+}
+
+function outNav(button){
+    button.style.backgroundColor = "#999999";
+    button.style.color = "#ffffff";
+}
+
+function pressNav(page){
+    document.location.href = page;
+}
+
+function overSideNav(button){
+    button.style.backgroundColor = "#dbdbfa";
+    hideFeatured();
+}
+
+function outSideNav(button){
+    button.style.backgroundColor = "#f0efef";
+}
+
+function overTab(button){
+    button.style.backgroundColor = "#dbdbfa";
+}
+
+function offTab(button){
+    button.style.backgroundColor = "#e7e7e7";
+}
+
+function overButton(button){
+    if(button.className == "button-gray"){
+        button.className = "button-gray-over";
+    }
+    if(button.className == "button-blue"){
+        button.className = "button-blue-over";
+    }
+}
+
+function offButton(button){
+    if(button.className == "button-gray-over"){
+        button.className = "button-gray";
+    }
+    if(button.className == "button-blue-over"){
+        button.className = "button-blue";
+    }  
+}
+
+function overAdvancedSearchButton(button){
+    button.style.backgroundColor = "#ffffff";
+}
+
+function offAdvancedSearchButton(button){
+    button.style.backgroundColor = "transparent";
+}
+
+function overKey(button){
+    button.style.backgroundColor = "#ffffff";
+    button.style.border = "1px solid #1d2b5a";
+}
+
+function offKey(button){
+    button.style.backgroundColor = "transparent";
+    button.style.border = "1px solid #ededdc";
+}
+
+function overAuthorKey(button){
+    button.style.backgroundColor = "#ffffff";
+    button.style.border = "1px solid #1d2b5a";
+}
+
+function offAuthorKey(button){
+    button.style.backgroundColor = "transparent";
+    button.style.border = "1px solid #e7e7d0";
+}
+
+function swapImage(el,img){
+    el.src = img;
+}
+
+function swapBackgroundImage(el,img){
+    el.style.backgroundImage = 'url("'+ img +'")';
+}
+
+function overHomeNav(button){
+    button.style.backgroundColor = "#dbdbfa";
+}
+
+function offHomeNav(button){
+    button.style.backgroundColor = "#ffffff";
+}
+
+function overHideShow(button){
+    button.style.textDecoration = "underline";
+}
+
+function offHideShow(button){
+    button.style.textDecoration = "none";
+}
+
+//===============================================
+//button action handlers
+
+function open_note(inFile) {
+    var win = window.open(inFile,"econlib-note","width=400,height=300,scrollable=yes");
+}
+
+function openPopup(url){
+    //left=50,top=50,screenx=50,screeny=50,
+    var newWin=window.open(url, 'popup','width=600,height=540,scrollbars=yes,resizable=yes,toolbar=no,status=no,location=no');
+    newWin.focus();
+}
+
+function hideHighlights(button, body_id){
+    var show="<div class=\"show\" onmouseover=\"overHideShow(this);\" onmouseout=\"offHideShow(this);\" onclick=\"showHighlights(this,'"+ body_id +"')\">SHOW HIGHLIGHTS</div>";
+    var parent = button.parentNode;
+    parent.innerHTML = show;
+
+    var tbody = document.getElementById(body_id);
+    tbody.style.display = "none";
+}
+
+function showHighlights(button, body_id){
+    var hide="<div class=\"hide\" onmouseover=\"overHideShow(this);\" onmouseout=\"offHideShow(this);\" onclick=\"hideHighlights(this,'"+ body_id +"')\">HIDE HIGHLIGHTS</div>";
+    var parent = button.parentNode;
+    parent.innerHTML = hide;
+    
+    var tbody = document.getElementById(body_id);
+    tbody.style.display = "";    
+}
+
+function hideReadings(button, body_id){
+    var show="<div class=\"show\" onmouseover=\"overHideShow(this);\" onmouseout=\"offHideShow(this);\" onclick=\"showReadings(this,'"+ body_id +"')\">SHOW READINGS</div>";
+    var parent = button.parentNode;
+    parent.innerHTML = show;
+
+    var tbody = document.getElementById(body_id);
+    tbody.style.display = "none";
+}
+
+function showReadings(button, body_id){
+    var hide="<div class=\"hide\" onmouseover=\"overHideShow(this);\" onmouseout=\"offHideShow(this);\" onclick=\"hideReadings(this,'"+ body_id +"')\">HIDE READINGS</div>";
+    var parent = button.parentNode;
+    parent.innerHTML = hide;
+    
+    var tbody = document.getElementById(body_id);
+    tbody.style.display = "";    
+}
+
+
+
+var featured_items = null;
+
+function overFeatured(id){
+    hideFeatured();
+    var el = document.getElementById(id);
+    el.style.display = "";
+    featured_items = el;
+}
+
+function hideFeatured(){
+    if(featured_items != null){
+        featured_items.style.display = "none";
+        featured_items = null;
+    }
+}
+
+function mailpage()
+{
+mail_str = "mailto:?subject=Check out this Econlib page";
+mail_str += "&body=I thought you might be interested in " + document.title;
+mail_str += ". You can view it at " + location.href; 
+location.href = mail_str;
+}
+
+//===============================================
+//search term highlighter
+
+//
+// This is the function that actually highlights a text string by
+// adding HTML tags before and after all occurrences of the search
+// term. You can pass your own tags if you'd like, or if the
+// highlightStartTag or highlightEndTag parameters are omitted or
+// are empty strings then the default <font> tags will be used.
+//
+function doHighlight(bodyText, searchTerm, highlightStartTag, highlightEndTag) 
+{
+  // the highlightStartTag and highlightEndTag parameters are optional
+  if ((!highlightStartTag) || (!highlightEndTag)) {
+    highlightStartTag = "<font style='background-color:#FAF596;'>";
+    highlightEndTag = "</font>";
+  }
+  
+  // find all occurrences of the search term in the given text,
+  // and add some "highlight" tags to them (we're not using a
+  // regular expression search, because we want to filter out
+  // matches that occur within HTML tags and script blocks, so
+  // we have to do a little extra validation)
+  var newText = "";
+  var i = -1;
+  var lcSearchTerm = searchTerm.toLowerCase();
+  var lcBodyText = bodyText.toLowerCase();
+    
+  while (bodyText.length > 0) {
+    i = lcBodyText.indexOf(lcSearchTerm, i+1);
+    if (i < 0) {
+      newText += bodyText;
+      bodyText = "";
+    } else {
+      // skip anything inside an HTML tag
+      if (bodyText.lastIndexOf(">", i) >= bodyText.lastIndexOf("<", i)) {
+        // skip anything inside a <script> block
+        if (lcBodyText.lastIndexOf("/script>", i) >= lcBodyText.lastIndexOf("<script", i)) {
+          newText += bodyText.substring(0, i) + highlightStartTag + bodyText.substr(i, searchTerm.length) + highlightEndTag;
+          bodyText = bodyText.substr(i + searchTerm.length);
+          lcBodyText = bodyText.toLowerCase();
+          i = -1;
+        }
+      }
+    }
+  }
+  
+  return newText;
+}
+
+//
+// This is sort of a wrapper function to the doHighlight function.
+// It takes the searchText that you pass, optionally splits it into
+// separate words, and transforms the text on the current web page.
+// Only the "searchText" parameter is required; all other parameters
+// are optional and can be omitted.
+//
+function highlightSearchTerms(searchText, treatAsPhrase, warnOnFailure, highlightStartTag, highlightEndTag)
+{
+  // if the treatAsPhrase parameter is true, then we should search for 
+  // the entire phrase that was entered; otherwise, we will split the
+  // search string so that each word is searched for and highlighted
+  // individually
+  if (treatAsPhrase) {
+    searchArray = [searchText];
+  } else {
+    searchArray = searchText.split(" ");
+  }
+  
+  if (!document.body || typeof(document.body.innerHTML) == "undefined") {
+    if (warnOnFailure) {
+      alert("Sorry, for some reason the text of this page is unavailable. Searching will not work.");
+    }
+    return false;
+  }
+  
+  var bodyText = document.body.innerHTML;
+  for (var i = 0; i < searchArray.length; i++) {
+    bodyText = doHighlight(bodyText, searchArray[i], highlightStartTag, highlightEndTag);
+  }
+  
+  document.body.innerHTML = bodyText;
+  return true;
+}
+
+//
+// This function takes a referer/referrer string and parses it
+// to determine if it contains any search terms. If it does, the
+// search terms are passed to the highlightSearchTerms function
+// so they can be highlighted on the current page.
+//
+
+function highlightEconlibSearchTerms(referrer)
+{
+  // This function has will work with any incoming query but
+  // not with incoming q or p as from google, yahoo, or msn
+  // Terms will be automatically highlighted on a page.
+  // Call the function in the onload event of the <body> tag, 
+  // like this:
+  //   <body onload='highlightEconlibSearchTerms(document.referrer);'>
+  
+  //var referrer = document.referrer;
+
+  if (!referrer) {
+    return false;
+  }
+
+  var queryPrefix = "query=";
+  var startPos = referrer.toLowerCase().indexOf(queryPrefix);
+  if ((startPos < 0) || (startPos + queryPrefix.length == referrer.length)) {
+    return false;
+  }
+
+  //JFC Addition - Display Clear highlights if you get to here
+  var btnClearHigh = document.getElementById("btnClearHigh");
+  if (btnClearHigh) {
+      btnClearHigh.style.display = "";
+  }
+
+  var endPos = referrer.indexOf("&", startPos);
+  if (endPos < 0) {
+    endPos = referrer.length;
+  }
+  
+  var queryString = referrer.substring(startPos + queryPrefix.length, endPos);
+  // fix the space characters
+  queryString = queryString.replace(/%20/gi, " ");
+  queryString = queryString.replace(/\*/gi, "");
+  queryString = queryString.replace(/\+-/gi, "");
+  queryString = queryString.replace(/\+/gi, " ");
+  // remove the quotes (if you're really creative, you could search for the
+  // terms within the quotes as phrases, and everything else as single terms)
+  // NEW remove asterisk wildcards
+  // NEW remove hyphens that served as NOT, i.e., following space plus sign
+  queryString = queryString.replace(/%22/gi, "");
+  queryString = queryString.replace(/\"/gi, "");
+  
+  return highlightSearchTerms(queryString, false);
+}
+
+
+// clear highlights, works in ie and firefox
+
+function rld() {
+document.location=window.location.pathname;
+}
+

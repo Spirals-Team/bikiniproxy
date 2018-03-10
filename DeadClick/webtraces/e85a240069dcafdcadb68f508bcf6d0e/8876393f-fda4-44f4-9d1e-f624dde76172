@@ -1,0 +1,34 @@
+/* ******************** ------------------------- CUSTOM JS FILE ------------------------- ******************** */
+
+if (typeof $j == 'undefined') {
+	$j = $;
+}
+/* --- Needed because FR, DE loads custom.js twice --- */
+if (typeof(firstrun) == "undefined") {
+	var firstrun = true;
+}
+
+$j(document).ready(function() {
+
+	var production_servers = ["www.ralphlauren.com", "www.ralphlauren.co.uk", "www.ralphlauren.fr", "www.ralphlauren.de", "m.ralphlauren.com", "m.ralphlauren.co.uk", "m.ralphlauren.fr", "m.ralphlauren.de"];
+	var isProduction = (production_servers.indexOf(location.host) > -1);
+	if (isProduction == false) {
+
+	}
+
+	/* --- EU ONLY --- */
+	// console.info("custom js loaded");
+	if (firstrun) {
+		$j("#footer li.first").on('click', function() {
+			$j('#rl-container').toggleClass('footerCollapsed');
+		});
+		$j("#footer .footNavTitle").on('click', function() {
+			$j('#rl-container').toggleClass('footerCollapsed');
+		});
+		setTimeout(function() {
+			$j("#footer .column.alpha li.first").trigger("click");
+		}, 1250);
+
+		firstrun = false;
+	}
+});

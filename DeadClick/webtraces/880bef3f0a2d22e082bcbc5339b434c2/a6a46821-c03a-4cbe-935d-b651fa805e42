@@ -1,0 +1,122 @@
+//Last Updated 09/28/17 by ML
+//Prev Updated 02/19/16 by JN
+sessionTimeOut = {
+    _timeSet: 60000*20,
+    _userstate:"active",
+    inactiveTime:"",
+    init:function() {
+        inactiveTime = setTimeout(sessionTimeOut.logoutUser,sessionTimeOut._timeSet);
+        document.onmousemove = sessionTimeOut.resetTimer;
+        document.onkeypress = sessionTimeOut.resetTimer;
+        document.onscroll = sessionTimeOut.resetTimer;
+        document.ontouch = sessionTimeOut.resetTimer;
+    },
+    logoutUser:function() {
+        if(sessionTimeOut._userstate=="active") {
+            sessionTimeOut._userstate="inactive";
+            $.ajax({
+                type:"GET",
+                url:"https://login."+getDomain('profreg')+"medscape.com/login/sso/setNetworkAttribute/inactive/true",
+                dataType:'jsonp',
+                success:function(data) {
+                    if(window.console){console.log('inactive');}
+                }
+            });
+        }
+    },
+    resetTimer:function(){
+        if(sessionTimeOut._userstate=="active") {
+            clearTimeout(sessionTimeOut.inactiveTime);
+            inactiveTime = setTimeout(sessionTimeOut.logoutUser,sessionTimeOut._timeSet);
+        }
+    }
+}
+var getDomain = function(profreg){
+    var _domain ="";
+    if (window.location.host.split('.').length == 4){
+        _domain = window.location.host.split('.')[1] + ".";
+    }
+    if (window.location.host.split('.').length == 5){
+        _domain = window.location.host.split('.')[1] + "."+ window.location.host.split('.')[2] + ".";
+    }
+    if(profreg=="profreg"||profreg=="login"){
+        _domain = _domain.replace('staging.','').replace('proddev.','');
+    }
+    return _domain;
+}
+sessionTimeOut.init();
+
+/* Legacy Tracker Marker Conversion to Omniture Link Scraper */
+var trackerMarkerOmni = function(){
+	$('a[href*="/px/tr"]').each(function() {
+		this.href = $.trim(this.href).replace(/^https?:/, '');
+	});
+	if (typeof $(document).on != 'undefined') {
+        $(document).on('click', 'a[href*="/px/tr"]', function(event) {
+            var tm = "";
+            var clkurl = "";
+            if (this.href.match(/(svr|tracker)/) != null) {
+                tm = 'trackerm:' + this.href.match(/\/px\/(trk\.svr|tracker)([^?]+)?/)[0];
+            }
+            if (this.href.match(/\?exturl=.+$/) != null) {
+                clkurl = 'trackerm:' + this.href.match(/\?exturl=.+$/)[0].split("?")[1];
+            }
+            wmdTrackerMarker(tm,clkurl);
+        });
+    }
+}
+// add toast alert confirmation message
+var showToastAlert = function (){
+    if(typeof pushLogin!= 'undefined'){
+        var toastdiv;
+        switch(pushLoginLocale){
+            case "de_de":
+                toastdiv = "<div id='snackbar'>Als <b>"+pushLogin+"</b> angemeldet</div>";
+                break;
+            case "fr_fr":
+                toastdiv = "<div id='snackbar'>Connecté sous <b>"+pushLogin+"</b></div>";
+                break;
+            case "es_es":
+                toastdiv = "<div id='snackbar'>Registrado como <b>"+pushLogin+"</b></div>";
+                break;
+            case "pt_pt":
+                toastdiv = "<div id='snackbar'>Assinou como <b>"+pushLogin+"</b></div>";
+                break;
+            default:
+                toastdiv = "<div id='snackbar'>Signed in as <b>"+pushLogin+"</b></div>";
+                break;
+        }
+        $('body').append(toastdiv);
+        var timeinterval = "3000";
+        $('#snackbar').css({
+            'display': 'none',
+            'width': '100%',
+            'height': '31px',
+            'opacity': '0.78',
+            'background-color': 'rgba(0, 0, 0, 0.87)',   
+            'font-size': '13px',
+            'font-family': 'proxima_nova_rgregular',
+            'font-stretch': 'normal',
+            'line-height': '31px',
+            'letter-spacing': 'normal',
+            'color': '#ffffff',
+            'bottom': '0px',
+            'position': 'fixed',
+            'text-align':'center',
+            'z-index':'9999999'         
+        })
+        $('#snackbar').fadeIn(400).delay(timeinterval).fadeOut(400);
+    };
+}
+if (typeof $ != 'undefined') {
+    $(document).ready(function() {
+        trackerMarkerOmni();
+        showToastAlert();
+    });
+} else {
+    window.addEventListener("load", function() {
+        if (typeof $ != 'undefined') {
+            trackerMarkerOmni();
+        }
+    }, false);
+}

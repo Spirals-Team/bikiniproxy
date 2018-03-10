@@ -1,0 +1,107 @@
+
+function Marquee2Up(odemo,odemo1,odemo2){
+  var objdemo= document.getElementById(odemo);
+  var objdemo1= document.getElementById(odemo1);
+  var objdemo2= document.getElementById(odemo2);
+  var objdemooffsetTop=getoffsetTop(objdemo);
+  var objdemo1offsetTop=getoffsetTop(objdemo1);
+  var objdemo2offsetTop=getoffsetTop(objdemo2);
+   /*
+  http://www.cnblogs.com/leochu2008/archive/2009/08/16/1547453.html
+  http://blog.csdn.net/leftfist/article/details/2973877
+  
+  
+  if(getoffsetTop(objdemo2)-objdemo.scrollTop<=0){ //当滚动至demo1与demo2交界时
+      objdemo.scrollTop-=objdemo1.offsetHeight;  //demo跳到最顶端
+  }else{
+    objdemo.scrollTop++;
+  }
+  */
+  if(objdemo.scrollTop+objdemo.offsetHeight==objdemo1.offsetHeight+objdemo2.offsetHeight){ //当滚动至demo1与demo2交界时
+    objdemo.scrollTop-=objdemo1.offsetHeight;  //demo跳到最顶端
+  }else{
+    objdemo.scrollTop++;
+  }
+//  $("#sss").html("objdemo.scrollTop="+objdemo.scrollTop+",objdemo.offsetHeight="+objdemo.offsetHeight+",objdemo2.offsetTop="+getoffsetTop(objdemo2)+",objdemo1.scrollTop="+objdemo1.scrollTop+",objdemo1.top="+objdemo1.style.top+",objdemo2.top="+objdemo2.style.top);
+ /*
+  objdemo1.offsetTop=objdemo1.offsetTop-1;
+  objdemo2.offsetTop=objdemo2.offsetTop-1;
+  
+  if (objdemo2offsetTop<=objdemooffsetTop){//把demo1放到最后
+    objdemo1.offsetTop=objdemo12.offsetHeight+objdemo2.offsetTop;
+  }
+
+  if (objdemo1offsetTop<=objdemooffsetTop){//把demo1放到最后
+    objdemo2.offsetTop=objdemo11.offsetHeight+objdemo1.offsetTop;
+  }
+
+*/
+}
+function getoffsetTop(objLookingFor){
+  //计算指定对象到body的距离，不能有td元素
+  var posX = objLookingFor.offsetLeft;
+  var posY = objLookingFor.offsetTop;
+  var aBox = objLookingFor;//需要获得位置的对象
+  do {
+      aBox = aBox.offsetParent;
+      if (aBox == null) {
+          var test = "test";
+          var test = "test";
+          aBox = objLookingFor
+          aBox = aBox.offsetParent;
+          posY += aBox.offsetTop;
+          return posY;
+      }
+  posX += aBox.offsetLeft;
+  posY += aBox.offsetTop;
+  } while( aBox.tagName != "BODY" );  
+  return posY;
+}
+
+function BeginUproll(Name,Width,Height,Htmlstr,Showcon,speed){
+  var hhh="";
+  hhh = hhh +"<div id='slider"+ Name +"' style='height:"+ Height +"px;width:"+ Width +"px;overflow:hidden;'>";
+ 
+
+  hhh = hhh +"<div id='slider"+ Name +"_1'>"+ Htmlstr +"</div>";
+  hhh = hhh +"<div id='slider"+ Name +"_2'>"+ Htmlstr +"</div>";
+  
+  hhh = hhh +"</div>";  
+  //hhh="<textarea>"+hhh+"</textarea>";
+  
+  document.getElementById(Showcon).innerHTML=hhh;
+ 
+  //speed=30;
+
+    
+  var demo,demo1,demo2,demo2tr;
+  demo=document.getElementById("slider"+Name);
+  demo1=document.getElementById("slider"+Name + "_1");
+  demo2=document.getElementById("slider"+Name + "_2");
+  demo2tr=document.getElementById("slider"+Name+ "_2_tr");
+  //document.getElementById("sss1").innerHTML="demo.scrollTop="+demo.scrollTop+",demo1.offsetTop="+demo1.offsetTop+",demo2.scrollTop="+demo2.scrollTop+",demo1.offsetHeight="+demo1.offsetHeight+",demo2.offsetHeight="+demo2.offsetHeight;
+//alert(getoffsetTop(demo1));
+//alert(getoffsetTop(demo2));
+  // alert("demo1.offsetHeight="+demo1.offsetHeight+",demo.offsetHeight="+demo.offsetHeight);
+  
+  //--------Comment By TON.------------
+  // it cause error in chrome
+
+  //console.log("demo1 outerheight:" + $(demo1).outerHeight());
+  //console.log("demo outerheight:" + $(demo).outerHeight());
+  if ($(demo1).outerHeight() * 2 <=$(demo).outerHeight()){
+  //    alert("a");      
+    var tmp = demo2.parentNode;
+    tmp.removeChild(demo2);
+    return;
+  }
+  
+  //-----------End Ton-------------------------
+  
+  //demo.scrollLeft=demo.scrollWidth;//这句不能少
+
+  //return;
+  var MyMar=setInterval("Marquee2Up('slider"+Name+"','slider"+ Name +"_1','slider"+ Name +"_2')",speed);
+  demo.onmouseover=function() {clearInterval(MyMar);}
+  demo.onmouseout=function()  {MyMar=setInterval("Marquee2Up('slider"+Name+"','slider"+ Name +"_1','slider"+ Name +"_2')",speed);}
+} 

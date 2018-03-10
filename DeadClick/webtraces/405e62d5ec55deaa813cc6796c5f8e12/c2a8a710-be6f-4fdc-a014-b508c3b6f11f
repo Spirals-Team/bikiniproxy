@@ -1,0 +1,85 @@
+/*
+* analytics.js Google Analytics Plugin
+* Requires JQuery
+*/
+
+(function($) {
+
+$.extend(mejs.MepDefaults, {
+	googleAnalyticsTitle: '',
+	googleAnalyticsCategory: 'Videos',
+	googleAnalyticsEventPlay: 'Play',
+	googleAnalyticsEventPause: 'Pause',
+	googleAnalyticsEventEnded: 'Ended',
+	googleAnalyticsEventSeeked: 'Seeked',
+	googleAnalyticsEventTime: 'Time'
+});
+
+
+$.extend(MediaElementPlayer.prototype, {
+	builduniversalgoogleanalytics: function(player, controls, layers, media) {
+
+		containerTitle = $(player.container).parent().attr("title")
+		player.options.googleAnalyticsTitle = (containerTitle == undefined) ? player.media.currentSrc : containerTitle;
+
+		media.addEventListener('play', function() {
+			if (typeof ga != 'undefined') {
+				ga('send', 'event',
+					player.options.googleAnalyticsCategory, 
+					player.options.googleAnalyticsEventPlay, 
+					player.options.googleAnalyticsTitle,
+					player.media.currentTime
+				);
+			}
+		}, false);
+		
+		media.addEventListener('pause', function() {
+			if (typeof ga != 'undefined') {
+				ga('send', 'event',
+					player.options.googleAnalyticsCategory, 
+					player.options.googleAnalyticsEventPause, 
+					player.options.googleAnalyticsTitle,
+					player.media.currentTime
+				);
+			}
+		}, false);	
+		
+		media.addEventListener('seeked', function() {
+			if (typeof ga != 'undefined') {
+				ga('send', 'event',
+					player.options.googleAnalyticsCategory, 
+					player.options.googleAnalyticsEventSeeked, 
+					player.options.googleAnalyticsTitle,
+					player.media.currentTime
+				);
+			}
+		}, false);
+		
+		media.addEventListener('ended', function() {
+			if (typeof ga != 'undefined') {
+				ga('send', 'event',
+					player.options.googleAnalyticsCategory, 
+					player.options.googleAnalyticsEventEnded, 
+					player.options.googleAnalyticsTitle,
+					player.media.currentTime
+				);
+			}
+		}, false);
+		
+/*
+		media.addEventListener('timeupdate', function() {
+			if (typeof ga != 'undefined') {
+				ga('send', 'event',
+					player.options.googleAnalyticsCategory, 
+					player.options.googleAnalyticsEventEnded, 
+					player.options.googleAnalyticsTime,
+				  (player.options.googleAnalyticsTitle === '') ? player.media.currentSrc : player.options.googleAnalyticsTitle,
+					player.media.currentTime
+				);
+			}
+		}, true);
+*/
+	}
+});
+	
+})(mejs.$);

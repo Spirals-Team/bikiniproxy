@@ -1,0 +1,283 @@
+/*********************************************************
+
+Needed: complete "footer after wrapper" fix - when 
+		attempting to move footer below wrapper (due to 
+		unknown code error located in includes) the ad
+		code behaves unfavorably.
+
+*********************************************************/
+
+
+
+$(function() {
+	var section = parseUrl(0);//parseUrl(0);
+
+	// TABLE SPACING FIX
+	$("div#copy form > table:first").attr({ cellspacing: "0"}).css({marginTop:"0px"}).addClass("contentTable");
+	$("table.contentTable tr:eq(0) > td:eq(1)").addClass("centerTD");
+	if($("table.contentTable tr:eq(0) > td").length > 2) $("table.contentTable tr:eq(0) > td:last").addClass("rightTD");
+
+	// check for section nav
+	if( $("td.leftMenu>div").length ) {
+		// menu found
+		$("td.leftMenu").attr("width","160");
+		$("td.centerTD").css("paddingLeft","25px");
+	} else {
+		// no menu
+		$("td.leftMenu").remove();
+		$("td.contentTD").css({paddingLeft:"0px"});
+	}
+	
+	// check for sidebar content
+	if( $("td.rightTD>div").length) {
+		$("td.rightTD").attr("width","300");
+		$("td.centerTD").css({paddingRight:"25px"});
+	} else {
+		// no content
+		$("td.rightTD").remove();
+		$("td.centerTD").css({paddingRight:"0px"});
+	}
+	
+	// hide left and right td
+	if(getParameterByName("option") == "print")
+	{
+		$("td.rightTD, td#Sidebar").hide();
+	}
+	
+	$(".tabBlock, .headerContainer").tabs({ selected: 0 });
+
+	// Activates slider 
+	if( $("#featureStoriesSlider").length )
+	{
+		$("#featureStoriesSlider ul").show();
+		$("#featureStoriesSlider").append('<div id="featureStoriesSliderNav"><div class="leftButton" id="previous">&lt;</div><div id="featureStoriesPager"></div><div class="rightButton" id="next">&gt;</div></div>');
+		$("#featureStoriesSlider").slider({
+			speed: 1200,
+			slideBy: 1,
+			pagerId: "featureStoriesPager",
+			autoPlay: true
+		});
+	
+		//add iPad / iPhone finger gesture support
+		if($('#featureStoriesSlider').swipe){
+			$('#featureStoriesSlider').swipe({swipeLeft:handleSwipeLeft,swipeRight:handleSwipeRight});
+		}
+	}
+	
+	
+	if( $("#sectionFeatureSlider").length )
+	{
+	
+		$("#sectionFeatureSlider ul").show();
+		$("#sectionFeatureSlider").append('<div id="sectionFeatureSliderNav"><div class="leftButton" id="previous">&lt;</div><div id="sectionFeaturePager"></div><div class="rightButton" id="next">&gt;</div></div>');
+		$("#sectionFeatureSlider").slider({
+			speed: 1200,
+			slideBy: 1,
+			pagerId: "sectionFeaturePager",
+			autoPlay: true
+		});
+		
+		//add iPad / iPhone finger gesture support
+		if($('#sectionFeatureSlider').swipe){
+			$('#sectionFeatureSlider').swipe({swipeLeft:handleSwipeLeft,swipeRight:handleSwipeRight});
+		}
+	}
+	
+	// Appends content from hidden divs into each corresponding
+	// global nav menu item
+	/*
+	$('#nav li.menuItemBlock').hover(function() {
+		var currentID = $(this).attr('id');													// Gets the ID string of the current menu item and assigns to variable
+		$('a',this).addClass('current');
+		$('#donateNow a').removeClass('current');
+		$('.subNavBlock.' + currentID).prependTo(this).show();
+	}, function() {
+		var currentID = $(this).attr('id');
+		$('a',this).removeClass('current');
+		$('.subNavBlock.' + currentID).hide();
+	});
+	*/
+	
+	// add play icon to video images
+	$(".tout.video.xs img").each(function(index) { var p = $(this).position(); $(this).before('<div class="playIconSm" style="left:'+p.left+'px"></div>');});
+	$(".tout.video.sm img").each(function(index) { var p = $(this).position(); $(this).before('<div class="playIconMd" style="left:'+p.left+'px"></div>');});
+	$(".tout.video.md img").each(function(index) { var p = $(this).position(); $(this).before('<div class="playIconLg" style="left:'+p.left+'px"></div>');});
+	$(".tout.buy.st img").each(function(index) { var p = $(this).position(); $(this).before('<div class="buyIconST" style="left:'+p.left+'px"></div>');});
+	$(".tout.buy.cd img").each(function(index) { var p = $(this).position(); $(this).before('<div class="buyIconCD" style="left:'+p.left+'px"></div>');});
+
+	// set main menu and submenu selected items
+	if(parseUrl(0)) $("li#"+parseUrl(0).toLowerCase()+" a").addClass("selected");
+	if(parseUrl(1)) $("#sectionNav a."+parseUrl(1).toLowerCase()).addClass("selected");
+	
+	// rounded corners for ie
+	if($.browser.msie && $.browser.version > 6.9)
+	{
+		$(".headerContainer .header").prepend('<div class="topright"></div><div class="topleft"></div>');
+		$(".greyBlock").css("position","relative").prepend('<div class="topright"></div><div class="topleft"></div><div class="bottomright"></div><div class="bottomleft"></div>');	
+	}
+	
+	// display section email update items
+	$("ul#emailUpdatesList li."+section).show();
+	$("ul#emailUpdatesList li").each(function(index){
+		if($(this).attr("class") == "") $(this).show();	
+		
+		// add tooltip function
+		$(this).mouseover( function(){
+			$("ul#emailUpdatesList li:eq("+index+") .tooltip").show();
+		});
+		$(this).mouseout( function(){
+			$("ul#emailUpdatesList li:eq("+index+") .tooltip").hide();
+		});
+     });	
+	
+	$("#txtSearch").keypress(function(e) {
+		if ((e.which && e.which == 13) || (e.keyCode && e.keyCode == 13)) {
+			$("#btnGo").click();
+			return false;
+		} else {
+			return true;
+		}
+	});
+	
+	// IE6 Fixes
+	$("#copy, .pane").append("<div class='clear'></div>");
+	
+	
+	/* Fix for making sure Footer Div is after Wrapper Div 
+		$("#footer").after($("#ad_lb_bottom"));
+		$("#footer").after($("#copyright"));
+	*/
+	if($("#wrapper #footer").length)
+	{
+		//$("#wrapper").after($("#footer"));
+	}
+	
+
+});
+function parseUrl(idx){
+	var loc=(window.location)?window.location.toString():document.location.toString();
+	loc=loc.replace(/http:\/\/[a-zA-Z0-9\.]*\//,"");
+	var segments=loc.split("/");
+	return (segments[idx])?segments[idx]:"";
+}
+function getParameterByName( name )
+{
+  name = name.replace(/[\[]/,"\\\[").replace(/[\]]/,"\\\]");
+  var regexS = "[\\?&]"+name+"=([^&#]*)";
+  var regex = new RegExp( regexS );
+  var results = regex.exec( window.location.href );
+  if( results == null )
+    return "";
+  else
+    return results[1];
+}
+function yahooSearch() {
+
+    var searchText = $("#txtSearch").val();
+    var url = "http://my.cbn.com/sitesearch/?q=" + searchText;
+    window.location = url;
+}
+function googleSearch()
+{
+	var searchText = $("#txtSearch").val();
+	var url = "http://search.cbn.com/search?q=" + searchText + "&btnG=Go&entqr=3&sort=date%3AD%3AL%3Ad1&output=xml_no_dtd&client=cbn_default&ud=1&oe=UTF-8&ie=UTF-8&proxystylesheet=cbn_default";
+	window.location = url;
+}
+
+
+function handleSwipeLeft(){
+	$(this).slider.next();
+}
+function handleSwipeRight(){
+	$(this).slider.previous();
+}
+
+
+
+
+/*
+
+	// Governs placement of the liquid gradient background
+	// using stretched image absolutely positioned behind content
+	$('.blockContent, #aBlockRight, .tabsBlock').each(function () {
+		if (typeof document.body.style.maxHeight === 'undefined') {							// If the browser is IE6, this removes the gradient image
+			$(this).remove('img.bg');
+		} else if ($(this).parent().parent().attr('id') === 'footer') {						// If the content block is in the footer, the footer gradient image is used
+			$(this).prepend('<img class="bg" src="images/footerBlockBG.jpg" alt="" />');
+		} else {																			// In all other cases, insert the default gradient image
+			$(this).prepend('<img class="bg" src="images/blockBG.jpg" alt="" />');
+		}
+	});
+	
+	
+	
+	
+	// Form behaviors
+	
+	// Creates text field watermarks using Watermark plug-in
+	$('input[type=text], textarea').simpleWaterMark('watermark');	
+	
+	// Defines class for all checkboxes
+	$('input:checkbox').addClass('checkbox');
+	
+	// Tooltips for e-mail updates form in accordions
+	$('fieldset li').each(function () {
+		if (typeof document.body.style.maxHeight === 'undefined') {
+			$(this).hover(ie6TooltipShow, ie6TooltipHide);
+		} else {
+			$(this).hover(tooltipShow, tooltipHide);
+		}
+	});
+	
+});
+
+
+function openChat() {
+		url = "http://chat.cbn.com/spirituallife/chatPopup.htm";
+		wChatWindow = window.open(url, "ChatWindow","status,height=260,width=700,scrollbars=yes,toolbar=no,status=no");
+		// if the current window still has focus, shift focus to the sendtofriend window
+		if (window.focus && wChatWindow) {wChatWindow.focus()}
+		if (!wChatWindow) {
+			// the popup Chat window has been blocked
+			alert("It appears that your popup blocker has prevented the Chat Window from opening. Please disable your popup blocker for the CBN website or try holding down the CONTROL key and click on the Chat Live link again.");
+		} 
+}
+
+function popRadio(location){
+	if(!location)location="CBNRadio"
+	if(location=="SuperBook") {
+		url = "/superbook/pages/superbook_radio.aspx?" + location;
+	} else {	
+		url = "/radio/radio.asp?"+location;
+	}
+    wChatWindow = window.open(url, 'mywindow','location=0,toolbar=0,menubar=0,resizable=1,dependent=0,status=0,width=685,height=400,left=25,top=25');
+    // if the current window still has focus, shift focus to the radio window
+    if (window.focus && wChatWindow) {wChatWindow.focus()}
+    if (!wChatWindow) {
+        // the popup window has been blocked
+        // we could alert a message here e.g. 
+        alert("It appears that your popup blocker has prevented the Radio Window from opening. Please disable your popup blocker for the CBN website or try holding down the CONTROL key and click on the link again.");
+        // or we can open the contents within this current page
+        // window.location.href= url;
+	}
+}
+
+
+
+function ie6TooltipShow () {
+	$('.tooltip',this).show();
+}
+
+function ie6TooltipHide () {
+	$('.tooltip',this).hide();
+}
+
+function tooltipShow () {
+	$('.tooltip',this).fadeIn(50);
+}
+
+function tooltipHide () {
+	$('.tooltip',this).fadeOut(50);
+}
+
+*/

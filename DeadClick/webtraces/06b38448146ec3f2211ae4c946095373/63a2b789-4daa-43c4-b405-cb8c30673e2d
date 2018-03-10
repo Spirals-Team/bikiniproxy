@@ -1,0 +1,129 @@
+function show_path(element_id){
+	path = document.getElementById(element_id);
+	path.style.display = "inline";
+}
+function hide_path(element_id){
+	path = document.getElementById(element_id);
+	path.style.display = "none";
+}
+
+
+function select_all(obj){
+	var text_val=eval(obj);
+	text_val.focus();
+	text_val.select();
+} 
+
+function findPos(obj_name) {
+	obj = document.getElementById(obj_name)
+	myOffsetWidth = obj.offsetWidth/2;
+	myOffsetHeight = obj.offsetHeight/2;
+	var curleft = curtop = 0;
+	if (obj.offsetParent) {
+		do {
+			curleft += obj.offsetLeft;
+			curtop += obj.offsetTop;
+		} while (obj = obj.offsetParent);				
+		curleft += myOffsetWidth;
+		curtop += myOffsetHeight;
+		
+		return [curleft,curtop];
+	}
+}
+
+function drawAssociateLine(word_id, associate_id){
+	word_pos = findPos(word_id);
+	assoc_pos = findPos(associate_id);
+	var jg_doc = new jsGraphics('canvas'); 
+
+	jg_doc.setColor("#AAAAAA"); 
+	jg_doc.setStroke(2);
+  jg_doc.drawLine(word_pos[0], word_pos[1], assoc_pos[0], assoc_pos[1]); 
+	jg_doc.paint(); 
+	
+}
+
+// Copyright 2001 Idocs.com      
+// Distribute this script freely, but keep this notice in place
+
+// backlink object initializer
+function backlink() {
+	this.text = '&laquo; Back';
+	this.type = 'link';
+	this.write = backlink_write;
+	this.form = true;
+}
+
+
+// write method
+function backlink_write() {
+	if (! window.history) return;
+	if (window.history.length == 0)return;
+
+	this.type = this.type.toLowerCase();
+	if (this.type == 'button') {
+		if (this.form)
+			document.write('<FORM>');
+		document.write('<INPUT TYPE=BUTTON onClick="history.back(-1)" VALUE="', this.text, '"');
+		if (this.otheratts) document.write(' ', this.otheratts);
+		document.write('>');
+		if (this.form)document.write('<\/FORM>');
+	} else {
+		document.write('<A HREF="javascript:history.back(-1)"');
+		if (this.otheratts)
+			document.write(' ', this.otheratts);
+		document.write('>');
+		if (this.type == 'image' || this.type == 'img') {
+			document.write('<img SRC="', this.src, '" ALT="', this.text, '"');
+			if (this.width) document.write(' WIDTH=', this.width);
+			if (this.height) document.write(' HEIGHT=', this.height);
+			if (this.otherimgatts) document.write(' ', this.otherimgatts);
+			document.write(' BORDER=0 />');
+		}
+		else
+			document.write(this.text);
+		document.write('<\/A>');
+	}
+}
+
+
+/*****DOM Loaded stuff ***********/
+
+// for Internet Explorer (using conditional comments)
+/*@cc_on @*/
+/*@if (@_win32)
+document.write("<script id=__ie_onload defer src=javascript:void(0)><\/script>");
+var script = document.getElementById("__ie_onload");
+script.onreadystatechange = function() {
+  if (this.readyState == "complete") {
+    init(); // call the onload handler
+  }
+};
+/*@end @*/
+
+
+//Safari
+if (/WebKit/i.test(navigator.userAgent)) { // sniff
+  var _timer = setInterval(function() {
+    if (/loaded|complete/.test(document.readyState)) {
+      clearInterval(_timer);
+      init(); // call the onload handler
+    }
+  }, 10);
+}
+
+// for Mozilla browsers
+
+if (document.addEventListener) {
+  document.addEventListener("DOMContentLoaded", init, false);
+}
+
+function init() {
+  // quit if this function has already been called
+  if (arguments.callee.done) return;
+
+  // flag this function so we don't do the same thing twice
+  arguments.callee.done = true;
+
+  myTest();
+};

@@ -1,0 +1,176 @@
+$(document).ready(function () {
+    checkLiveChatDates();
+
+    $('.start').on("click", function (e) {
+        e.preventDefault();
+        if ($(this).parent().find('i').hasClass('chtActive')) {
+            liveagent.setChatWindowHeight(600);
+            liveagent.startChat($('#live').val());
+        }
+        else {
+            var topval = $(this).position().top;
+            var leftval = $(this).position().left;
+            $('.custom-box').insertAfter($(this).parent()).show();
+            if ($(this).parent().parent().hasClass('lcBlock')) {
+                topval = parseInt(topval) * 18;
+            }
+            if ($(this).parent().hasClass('footer_chat')) {
+                $('.custom-box').removeAttr('style');
+                $('.custom-box').css("bottom", (topval / 3) - 5);
+            }
+            else if ($(this).parent().parent().hasClass('footer_rightpanel')) {
+                $('.custom-box').removeAttr('style');
+                $('.custom-box').css("bottom", (topval + 8));
+                leftval = 0;
+            }
+            else
+                $('.custom-box').css("top", topval);
+
+            if ($(this).parent().parent().hasClass("right_content_align"))
+                leftval = "20px";
+
+            $('.custom-box').css("left", leftval);
+        }
+    });
+    if ($(".header_chat").find('i').hasClass('chtActive')) {
+        //$('.footerTooltip').addClass('chat_box');
+        $('.custom-box .custom-tool-active').css('right', '60px');
+        $('.custom-box .custom-tool-active').css('width', '188px');
+    }
+    //if ($(".header_chat").parent().hasClass('search_live')) {
+    //    $('.custom-box .custom-tool-arrow').css('left', '-180px');
+    //}
+
+});
+
+function checkLiveChatDates() {
+
+    var status = $('#businessDayFlag').val();
+    changeLiveChatStatus(status);
+}
+function changeLiveChatStatus(chatStatus) {
+
+    if (chatStatus == "true") {
+        $(".live_chat").find('i').removeClass("chtDisable").removeClass("chtInactive");
+        $(".live_chat").find('i').addClass("chtActive");
+        //$('.custom-tool-arrow').css('display', 'block');
+        $('.custom-tool-active').css('display','block');
+        $('.custom-tool-inactive').css('display','none');
+        if($('body').hasClass('liveChat'))
+        {
+            $('.kcp_header .footer_rightpanel').remove();
+            $('.kcp_header .main_live,.kcp_header .footer_live,.kcp_header .chat_search_page,.kcp_header .search_live,.kcp_header .footer_chat').remove();
+            $('.search_livechat .header_rightpanel,.search_livechat .footer_live,.search_livechat .chat_search_page,.search_livechat .search_live,.search_livechat .footer_chat,.search_livechat .footer_rightpanel,.search_livechat .custom-box').remove();
+
+            $(".footer_bg .header_rightpanel,.footer_bg .main_live,.footer_bg .footer_rightpanel,.footer_bg .chat_search_page,.footer_bg .search_live,.footer_bg .custom-box").remove();
+            $('.pervasive').remove();
+
+            $('.kcp_header .contentwrapper .custom-box .topArr').css('display', 'block');
+            $('.maincontent .search_livechat .contentwrapper .main_live').css('display','block');
+            $('.maincontent .search_livechat .contentwrapper .main_live').css('height', 'inherit');
+            $('.kcp_header .header_live_chat').css('display', 'block');
+            //Fix for KCPNADP-881 start
+            $('.footer_socialicons .footer_chat').css('display','inline-block');
+            //Fix for KCPNADP-881 end
+            $('.footer_socialicons .footer_live,.footer_socialicons .custom-box').remove();
+        }
+        else
+        {
+            $('.kcp_header .footer_rightpanel,.kcp_header .main_live,.kcp_header .footer_live,.kcp_header .chat_search_page,.kcp_header .footer_chat').remove();
+            $('.footer_bg .footer_chat').remove();
+            $('.search_livechat').remove();
+            $(".footer_bg .header_rightpanel,.footer_bg .main_live,.footer_bg .footer_rightpanel,.footer_bg .chat_search_page,.footer_bg .search_live,.footer_bg .footer_live,.footer_bg .custom-box").remove();
+            $('.pervasive .header_rightpanel,.pervasive .main_live,.pervasive .footer_live,.pervasive .chat_search_page,.pervasive .custom-box,.pervasive .search_live,.pervasive .footer_chat').remove();
+            $('.maincontent_wrapper .header_rightpanel,.maincontent_wrapper .main_live,.maincontent_wrapper .footer_live,.maincontent_wrapper .search_live,.maincontent_wrapper .footer_chat,.maincontent_wrapper .footer_rightpanel,.maincontent_wrapper .custom-box').remove();
+
+            $('.pervasive .footer_rightpanel').css('display', 'block');
+            $('.kcp_header .contentwrapper .custom-box .topArr').css('display', 'block');
+            $('.maincontent .search_livechat .contentwrapper .main_live').css('display', 'none');
+
+            $('.footer_socialicons .footer_live').remove();
+            if ($('body').hasClass('about-live') || $('body').hasClass('contact-live'))
+            {
+                $('.kcp_header .header_rightpanel').css('display', 'block');
+                $('.kcp_header .search_live').remove();
+                $(".maincontent .contentwrapper .chat_search_page").css('display', 'block');
+            }            
+            else if ((window.location.toString().indexOf("/search") != -1) || (window.location.toString().indexOf("/search#q") != -1)) {
+                $('.kcp_header .header_live_chat').remove();
+                $('.kcp_header .search_live').css('display', 'block');
+                $('.coveo-facet-column .header_live_chat,.coveo-facet-column .main_live,.coveo-facet-column .footer_live,.coveo-facet-column .footer_chat,.coveo-facet-column .footer_rightpanel,.coveo-facet-column .search_live,.coveo-facet-column .custom-box').remove();
+                $('.coveo-facet-column .chat_search_page').css('display', 'block');
+            }
+            else {
+                $('.kcp_header .search_live').remove();
+                $('.kcp_header .header_rightpanel').css('display', 'block');
+            }
+        }
+        $('.start').off("click");
+    }
+    else {
+
+        $(".live_chat").find('i').removeClass("chtDisable").removeClass("chtActive");
+        $(".live_chat").find('i').addClass("chtInactive");
+        $('.custom-tool-active').css('display','none');
+        $('.custom-tool-inactive').css('display','block');
+        if ($('body').hasClass('liveChat')) {
+            $('.kcp_header .footer_rightpanel').remove();
+            $('.kcp_header .main_live,.kcp_header .footer_live,.kcp_header .chat_search_page,.kcp_header .search_live,.kcp_header .footer_chat').remove();
+            $('.search_livechat .header_rightpanel,.search_livechat .footer_live,.search_livechat .chat_search_page,.search_livechat .search_live,.search_livechat .footer_chat,.search_livechat .footer_rightpanel,.search_livechat .custom-box').remove();
+            $(".footer_bg .header_rightpanel,.footer_bg .main_live,.footer_bg .footer_rightpanel,.footer_bg .chat_search_page,.footer_bg .search_live,.footer_bg .custom-box").remove();
+            $('.pervasive').remove();
+
+            $('.kcp_header .contentwrapper .custom-box .topArr').css('display', 'block');
+            $('.maincontent .search_livechat .contentwrapper .main_live').css('display', 'block');
+            $('.maincontent .search_livechat .contentwrapper .main_live').css('height', 'inherit');
+
+            $('.kcp_header .header_live_chat').css('display', 'block');
+            //Fix for KCPNADP-881 start     
+            $('.footer_socialicons .footer_chat').css('display', 'inline-block');
+            //Fix for KCPNADP-881 end
+            $('.footer_socialicons .footer_live,.footer_socialicons .custom-box').remove();
+        }
+        else {
+            $('.kcp_header .footer_rightpanel,.kcp_header .main_live,.kcp_header .footer_live,.kcp_header .chat_search_page,.kcp_header .footer_chat').remove();
+            $('.footer_bg .footer_chat').remove();
+            $('.search_livechat').remove();
+
+            $(".footer_bg .header_rightpanel,.footer_bg .main_live,.footer_bg .footer_rightpanel,.footer_bg .chat_search_page,.footer_bg .search_live,.footer_bg .footer_live,.footer_bg .custom-box").remove();
+            $('.pervasive .header_rightpanel,.pervasive .main_live,.pervasive .footer_live,.pervasive .chat_search_page,.pervasive .custom-box,.pervasive .search_live,.pervasive .footer_chat').remove();
+            $('.maincontent_wrapper .header_rightpanel,.maincontent_wrapper .main_live,.maincontent_wrapper .footer_live,.maincontent_wrapper .search_live,.maincontent_wrapper .footer_chat,.maincontent_wrapper .footer_rightpanel,.maincontent_wrapper .custom-box').remove();
+
+            $('.pervasive .footer_rightpanel').css('display', 'block');
+            $('.kcp_header .contentwrapper .custom-box .topArr').css('display', 'block');
+            $('.maincontent .search_livechat .contentwrapper .main_live').css('display', 'none');
+
+            $('.footer_socialicons .footer_live').remove();
+            if ($('body').hasClass('about-live') || $('body').hasClass('contact-live')) {
+                $(".maincontent .contentwrapper .chat_search_page").css('display', 'block');
+                $('.kcp_header .header_rightpanel').css('display', 'block');
+                $('.kcp_header .search_live').remove();
+                $(window).resize(function () {
+                    if (window.outerWidth < 767) {
+                        $('.chat_search_page').hide();
+                    }
+                    else {
+                        $('.chat_search_page').css('display', 'block');
+                    }
+                });
+            }
+            else if ((window.location.toString().indexOf("/search")!= -1) || (window.location.toString().indexOf("/search#q")!= -1)) {
+                $('.kcp_header .header_live_chat').remove();
+                $('.kcp_header .search_live').css('display', 'block');
+                $('.coveo-facet-column .header_live_chat,.coveo-facet-column .main_live,.coveo-facet-column .footer_live,.coveo-facet-column .footer_chat,.coveo-facet-column .footer_rightpanel,.coveo-facet-column .search_live,.coveo-facet-column .custom-box').remove();
+
+                $('.coveo-facet-column .chat_search_page').css('display', 'block');
+            }
+            else {
+                $('.kcp_header .header_rightpanel').css('display', 'block');
+                $('.kcp_header .search_live').remove();
+            }
+        }
+        $('.tooltip').remove();
+        $(".start").off("click");
+        $('.custom-tool-arrow').css('display', '');
+    }
+}

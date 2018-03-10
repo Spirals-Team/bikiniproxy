@@ -1,0 +1,158 @@
+(function ($) {
+// Store our function as a property of Drupal.behaviors.
+Drupal.behaviors.menuanimate = {
+	attach: function (context, settings) {
+    
+    // 
+    // Menu - jQuery
+    // 
+
+    // Target first level items on mouse over
+    $("ul#superfish-1 li.sf-depth-1.menuparent").mouseover(
+    		function() {
+    			// Drop down second level menu on mouse over
+    			$(".menu-dropdown").css({"height":"90px","transition":"ease 0.5s"});
+    			// Show child items
+    			$("ul#superfish-1 li.sf-depth-2").show();
+    			// But don't show grandchildren
+    			// $("ul#superfish-1 li.sf-depth-3").css({"display":"none"});
+			});
+    
+    // Drop down second level menu back up on mouse out
+    $("ul#superfish-1 li.sf-depth-1").mouseout(
+    		function() {
+    			$(".menu-dropdown").css({"height":"0","transition-delay":"1.1s"});
+    		});
+
+    // On second level
+    $("ul#superfish-1 li.sf-depth-2 a").each(function() {
+		if ($(this).hasClass("active")) {
+			// Show drop down
+			$(".menu-dropdown").css({"height":"90px"});
+			// Keep drop down after mouse leaves
+			$("#superfish-1 li").mouseout(
+	    		function() {
+					$(".menu-dropdown").css({"height":"90px"});
+			});
+    	}
+    });
+
+    $('.menu-block-3 li').each(function() {
+        if ($(this).hasClass("active")) {
+            // Show drop down
+            $(".menu-dropdown").css({"height":"90px"});
+            // Keep drop down after mouse leaves
+            $("#superfish-1 li").mouseout(
+                function() {
+                    $(".menu-dropdown").css({"height":"90px"});
+            });   
+        }
+    });
+
+    // Hide third level menu when no children exist
+    // Surprised this isn't able to be configured in the settings
+    // $(".sf-depth-2").each(function() {
+    //     if ($(this).hasClass("active-trail", "active")) {
+    //         if ($(this).not(".sf-no-children")) {
+    //         $(".third-level-menu").css({"visibility":"visible"});
+    //         }
+    //     }
+    // });
+
+    // Bold active trail for third-level menu parents
+    $('li.third-level-menu').is(function() {
+        if ($(this).hasClass('active')) {
+            $('li.sf-depth-1.menuparent.sf-parent-children-2').css({"font-weight":"600"});
+        }
+    });
+
+    $('.third-level-menu li.leaf').is(function() {
+        if ($(this).hasClass('active-trail')) {
+            $('li.sf-depth-1.menuparent.sf-parent-children-2').css({"font-weight":"600"});
+        }
+    });
+
+
+    // Hide third level menu on non-mobile
+    // $("ul#superfish-1 li.sf-depth-3").hide();
+    // $("ul#superfish-1-accordion li.sf-depth-3").show();
+
+    //
+    // End menu
+    //
+
+    //
+    // Search dropdown
+    //
+
+   //  // On click, show dropdown and show input
+    $("#block-search-form").click(
+    	function() {
+			$("#search-block-form").fadeIn( 200 );
+			$("#edit-search-block-form--2").focus();
+            $("#block-search-form").css({"background-image":"none"});
+			// $("#edit-actions").css({"display":"none"});
+			// $("#edit-submit").css({"display":"none"});
+    	});
+
+    // On off focus, hide input
+	$("#edit-search-block-form--2").focusout(
+		function() {
+			$("#search-block-form").fadeOut();
+            $("#block-search-form").css({"background-image":"url('/sites/all/themes/lively/css/images/search.svg')"});
+		});
+
+
+    // 
+    // Add class to call <p> tag parents of iframe
+    // Helps with resizing and making mobile friendly
+    // 
+
+    $("iframe").parents("p").addClass("iframe-wrap");
+
+
+
+
+    // CTA page: scroll from button to form
+    $(".field-name-field-sign-up-btn .field-item").on('click', function() {
+        $('html, body').animate({scrollTop: $("#webform-top").offset().top-200}, 1200);
+    });
+
+    // News item on load scroll past banner image
+    $(window).load(function() {
+        if ($('.not-front .node-type-blog-post')) {
+            $('.node-type-blog-post .node-title').attr('id', 'node-title-id');
+            var tagTarget = $('#node-title-id');
+            $('html, body').animate({scrollTop: tagTarget.offset().top-200}, 1200);
+        } else {
+            console.log('error');
+        }
+    });
+
+	// End functions
+
+	}  
+};
+}(jQuery));
+
+(function() {
+
+    // New iframe code
+    var queryString = window.location.search.substring(1);
+
+    window.addEventListener("load", function() {
+        var sourceError = "<div id=\"link-error\"><h3>It looks like you did not use your personalised link – contact us at <a href=\"mailto:accreditation@livingwage.org.uk\">Accreditation@livingwage.org.uk</a> to get your personalised accreditation form link.</h3></div>";
+        var formPageType = document.getElementsByClassName('node-type-accreditation-form');
+        var elem = document.getElementById("formIframeId");
+
+        if (queryString.length !== 0 && elem != null) {
+            var url = document.getElementsByClassName('field-name-field-base-url')["0"].textContent;
+            var formNumber = document.getElementsByClassName('field-name-field-form-number')["0"].textContent;
+            var source = "<p class=\"iframe-wrap\"><iframe src=\"" + url + formNumber + "?" + queryString + "\" height=\"800\" width=\"600\" frameborder=\"0\" id=\"iframeId\" ></iframe><script src=\"//tfaforms.com/js/iframe_resize_helper.js\"></script></p>";
+            elem.innerHTML = source;
+        } else if (queryString.length === 0 && elem != null) {
+            elem.innerHTML = sourceError;
+        }
+    });
+
+}());

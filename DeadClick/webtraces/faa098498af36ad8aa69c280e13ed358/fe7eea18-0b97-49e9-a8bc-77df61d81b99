@@ -1,0 +1,2163 @@
+// Copyright (c) 2014 comScore, Inc.
+var ns_ = ns_ || {};
+ns_.StreamSense = ns_.StreamSense || function() {
+    function l(t, n) {
+        var r = t || "",
+            s = "undefined",
+            o = a.comScore || a.sitestat || function(t) {
+                var n = "comScore=",
+                    r = f.cookie,
+                    o = "",
+                    u = "indexOf",
+                    l = "substring",
+                    c = "length",
+                    h = e.browserAcceptsLargeURLs() ? v.URL_LENGTH_LIMIT : v.RESTRICTED_URL_LENGTH_LIMIT,
+                    p, d = "&ns_",
+                    m = "&",
+                    g, y, b, w, E = a.encodeURIComponent || escape;
+                if (r[u](n) + 1)
+                    for (b = 0, y = r.split(";"), w = y[c]; b < w; b++) g = y[b][u](n), g + 1 && (o = m + unescape(y[b][l](g + n[c])));
+                t += d + "_t=" + +(new Date) + d + "c=" + (f.characterSet || f.defaultCharset || "") + o, t.length > h && t.indexOf(m) > 0 && (p = t.substr(0, h - 8).lastIndexOf(m), t = (t.substring(0, p) + d + "cut=" + E(t.substring(p + 1))).substr(0, h)), i.httpGet(t), typeof ns_p === s && (ns_p = {
+                    src: t
+                }), ns_p.lastMeasurement = t
+            };
+        if (typeof n !== s) {
+            var u = [],
+                l = a.encodeURIComponent || escape;
+            for (var c in n) n.hasOwnProperty(c) && u.push(l(c) + "=" + l(n[c]));
+            /[\?\&]$/.test(r) || (r += "&"), r += u.join("&")
+        }
+        return o(r)
+    }
+
+    function c(t, n) {
+        var r, i = a.encodeURIComponent || escape,
+            s = [],
+            o = v.LABELS_ORDER,
+            u = t.split("?"),
+            l = u[0],
+            c = u[1],
+            h = c.split("&");
+        for (var p = 0, d = h.length; p < d; p++) {
+            var m = h[p].split("="),
+                g = unescape(m[0]),
+                y = unescape(m[1]);
+            g && (n[g] = y)
+        }
+        var b = {};
+        for (var p = 0, d = o.length; p < d; p++) {
+            var w = o[p];
+            if (n.hasOwnProperty(w)) {
+                var E = n[w];
+                typeof E != "undefined" && E != null && (b[w] = !0, s.push(i(w) + "=" + i(n[w])))
+            }
+        }
+        for (var w in n) {
+            if (b[w]) continue;
+            if (n.hasOwnProperty(w)) {
+                var E = n[w];
+                typeof E != "undefined" && E != null && s.push(i(w) + "=" + i(n[w]))
+            }
+        }
+        r = l + "?" + s.join("&"), r = r + (r.indexOf("&c8=") < 0 ? "&c8=" + i(f.title) : "") + (r.indexOf("&c7=") < 0 ? "&c7=" + i(f.URL) : "") + (r.indexOf("&c9=") < 0 ? "&c9=" + i(f.referrer) : "");
+        var S = e.browserAcceptsLargeURLs() ? v.URL_LENGTH_LIMIT : v.RESTRICTED_URL_LENGTH_LIMIT;
+        if (r.length > S && r.indexOf("&") > 0) {
+            var x = r.substr(0, S - 8).lastIndexOf("&");
+            r = (r.substring(0, x) + "&ns_cut=" + i(r.substring(x + 1))).substr(0, S)
+        }
+        return r
+    }
+    var e = function() {
+            var e = {
+                uid: function() {
+                    var e = 1;
+                    return function() {
+                        return +(new Date) + "_" + e++
+                    }
+                }(),
+                filter: function(e, t) {
+                    var n = {};
+                    for (var r in t) t.hasOwnProperty(r) && e(t[r]) && (n[r] = t[r]);
+                    return n
+                },
+                extend: function(e) {
+                    var t = arguments.length,
+                        n;
+                    e = e || {};
+                    for (var r = 1; r < t; r++) {
+                        n = arguments[r];
+                        if (!n) continue;
+                        for (var i in n) n.hasOwnProperty(i) && (e[i] = n[i])
+                    }
+                    return e
+                },
+                getString: function(e, t) {
+                    var n = String(e);
+                    return e == null ? t || "na" : n
+                },
+                getLong: function(e, t) {
+                    var n = Number(e);
+                    return e == null || isNaN(n) ? t || 0 : n
+                },
+                getInteger: function(e, t) {
+                    var n = Number(e);
+                    return e == null || isNaN(n) ? t || 0 : n
+                },
+                getBoolean: function(e, t) {
+                    var n = String(e).toLowerCase() == "true";
+                    return e == null ? t || !1 : n
+                },
+                isNotEmpty: function(e) {
+                    return typeof e != "undefined" && e != null && typeof e.length != "undefined" && e.length > 0
+                },
+                indexOf: function(t, n) {
+                    var r = -1;
+                    return e.forEach(n, function(e, n) {
+                        e == t && (r = n)
+                    }), r
+                },
+                forEach: function(e, t, n) {
+                    try {
+                        if (typeof t == "function") {
+                            n = typeof n != "undefined" ? n : null;
+                            if (typeof e["length"] != "number" || typeof e[0] == "undefined") {
+                                var r = typeof e.__proto__ != "undefined";
+                                for (var i in e)(!r || r && typeof e.__proto__[i] == "undefined") && typeof e[i] != "function" && t.call(n, e[i], i)
+                            } else
+                                for (var i = 0, s = e.length; i < s; i++) t.call(n, e[i], i)
+                        }
+                    } catch (o) {}
+                },
+                regionMatches: function(e, t, n, r, i) {
+                    if (t < 0 || r < 0 || t + i > e.length || r + i > n.length) return !1;
+                    while (--i >= 0) {
+                        var s = e.charAt(t++),
+                            o = n.charAt(r++);
+                        if (s != o) return !1
+                    }
+                    return !0
+                },
+                size: function(e) {
+                    var t = 0,
+                        n;
+                    for (var n in e) e.hasOwnProperty(n) && t++;
+                    return t
+                },
+                log: function(e, t) {
+                    if (typeof t != "undefined" && t) {
+                        var n = new Date,
+                            r = n.getHours() + ":" + n.getMinutes() + ":" + n.getSeconds();
+                        console.log(r, e)
+                    }
+                },
+                isTrue: function(e) {
+                    return typeof e == "undefined" ? !1 : typeof e == "string" ? (e = e.toLowerCase(), e === "true" || e === "1" || e === "on") : e ? !0 : !1
+                },
+                toString: function(t) {
+                    if (typeof t == "undefined") return "undefined";
+                    if (typeof t == "string") return t;
+                    if (Object.prototype.toString.call(t) === "[object Array]") return t.join(",");
+                    if (e.size(t) > 0) {
+                        var n = "";
+                        for (var r in t) t.hasOwnProperty(r) && (n += r + ":" + t[r] + ";");
+                        return n
+                    }
+                    return t.toString()
+                },
+                exists: function(e) {
+                    return typeof e != "undefined" && e != null
+                },
+                firstGreaterThan0: function() {
+                    for (var e = 0, t = arguments.length; e < t; e++) {
+                        var n = arguments[e];
+                        if (n > 0) return n
+                    }
+                    return 0
+                },
+                cloneObject: function(e) {
+                    if (null == e || "object" != typeof e) return e;
+                    var t = function() {
+                        function e() {}
+
+                        function t(t) {
+                            return typeof t == "object" ? (e.prototype = t, new e) : t
+                        }
+
+                        function r(e) {
+                            for (var t in e) this[t] = e[t]
+                        }
+
+                        function i() {
+                            this.copiedObjects = [];
+                            var e = this;
+                            this.recursiveDeepCopy = function(t) {
+                                return e.deepCopy(t)
+                            }, this.depth = 0
+                        }
+
+                        function s(e, t) {
+                            var n = new i;
+                            return t && (n.maxDepth = t), n.deepCopy(e)
+                        }
+
+                        function o(e) {
+                            return window.Node ? e instanceof Node : e === document ? !0 : typeof e.nodeType == "number" && e.attributes && e.childNodes && e.cloneNode
+                        }
+                        var n = [];
+                        return r.prototype = {
+                            constructor: r,
+                            canCopy: function(e) {
+                                return !1
+                            },
+                            create: function(e) {},
+                            populate: function(e, t, n) {}
+                        }, i.prototype = {
+                            constructor: i,
+                            maxDepth: 256,
+                            cacheResult: function(e, t) {
+                                this.copiedObjects.push([e, t])
+                            },
+                            getCachedResult: function(e) {
+                                var t = this.copiedObjects,
+                                    n = t.length;
+                                for (var r = 0; r < n; r++)
+                                    if (t[r][0] === e) return t[r][1];
+                                return undefined
+                            },
+                            deepCopy: function(e) {
+                                if (e === null) return null;
+                                if (typeof e != "object") return e;
+                                var t = this.getCachedResult(e);
+                                if (t) return t;
+                                for (var r = 0; r < n.length; r++) {
+                                    var i = n[r];
+                                    if (i.canCopy(e)) return this.applyDeepCopier(i, e)
+                                }
+                                throw new Error("Unable to clone the following object " + e)
+                            },
+                            applyDeepCopier: function(e, t) {
+                                var n = e.create(t);
+                                this.cacheResult(t, n), this.depth++;
+                                if (this.depth > this.maxDepth) throw new Error("Maximum recursion depth exceeded.");
+                                return e.populate(this.recursiveDeepCopy, t, n), this.depth--, n
+                            }
+                        }, s.DeepCopier = r, s.deepCopiers = n, s.register = function(e) {
+                            e instanceof r || (e = new r(e)), n.unshift(e)
+                        }, s.register({
+                            canCopy: function(e) {
+                                return !0
+                            },
+                            create: function(e) {
+                                return e instanceof e.constructor ? t(e.constructor.prototype) : {}
+                            },
+                            populate: function(e, t, n) {
+                                for (var r in t) t.hasOwnProperty(r) && (n[r] = e(t[r]));
+                                return n
+                            }
+                        }), s.register({
+                            canCopy: function(e) {
+                                return e instanceof Array
+                            },
+                            create: function(e) {
+                                return new e.constructor
+                            },
+                            populate: function(e, t, n) {
+                                for (var r = 0; r < t.length; r++) n.push(e(t[r]));
+                                return n
+                            }
+                        }), s.register({
+                            canCopy: function(e) {
+                                return e instanceof Date
+                            },
+                            create: function(e) {
+                                return new Date(e)
+                            }
+                        }), s.register({
+                            canCopy: function(e) {
+                                return o(e)
+                            },
+                            create: function(e) {
+                                return e === document ? document : e.cloneNode(!1)
+                            },
+                            populate: function(e, t, n) {
+                                if (t === document) return document;
+                                if (t.childNodes && t.childNodes.length)
+                                    for (var r = 0; r < t.childNodes.length; r++) {
+                                        var i = e(t.childNodes[r]);
+                                        n.appendChild(i)
+                                    }
+                            }
+                        }), {
+                            deepCopy: s
+                        }
+                    }();
+                    return t.deepCopy(e)
+                },
+                safeGet: function(t, n) {
+                    return n = e.exists(n) ? n : "", e.exists(t) ? t : n
+                },
+                getBrowserName: function() {
+                    if (typeof navigator == "undefined" || !navigator.hasOwnProperty("userAgent") || !navigator.hasOwnProperty("appName")) return "";
+                    var e = navigator.userAgent,
+                        t = navigator.appName,
+                        n, r;
+                    return (r = e.indexOf("Opera")) != -1 || (r = e.indexOf("OPR/")) != -1 ? t = "Opera" : (r = e.indexOf("Android")) != -1 ? t = "Android" : (r = e.indexOf("Chrome")) != -1 ? t = "Chrome" : (r = e.indexOf("Safari")) != -1 ? t = "Safari" : (r = e.indexOf("Firefox")) != -1 ? t = "Firefox" : (r = e.indexOf("IEMobile")) != -1 ? t = "Internet Explorer Mobile" : t == "Microsoft Internet Explorer" || t == "Netscape" ? t = "Internet Explorer" : (n = e.lastIndexOf(" ") + 1) < (r = e.lastIndexOf("/")) && (t = e.substring(n, r), t.toLowerCase() == t.toUpperCase() && (t = navigator.appName)), t
+                },
+                getBrowserFullVersion: function() {
+                    if (typeof navigator == "undefined" || !navigator.hasOwnProperty("userAgent") || !navigator.hasOwnProperty("appName") || !navigator.hasOwnProperty("appVersion")) return "";
+                    var e = navigator.userAgent,
+                        t = navigator.appName,
+                        n = "" + parseFloat(navigator.appVersion),
+                        r, i, s, o, u;
+                    return (s = e.indexOf("Opera")) != -1 ? (n = e.substring(s + 6), (s = e.indexOf("Version")) != -1 && (n = e.substring(s + 8))) : (s = e.indexOf("OPR/")) != -1 ? n = e.substring(s + 4) : (s = e.indexOf("Android")) != -1 ? n = e.substring(s + 11) : (s = e.indexOf("Chrome")) != -1 ? n = e.substring(s + 7) : (s = e.indexOf("Safari")) != -1 ? (n = e.substring(s + 7), (s = e.indexOf("Version")) != -1 && (n = e.substring(s + 8))) : (s = e.indexOf("Firefox")) != -1 ? n = e.substring(s + 8) : t == "Microsoft Internet Explorer" ? (u = new RegExp("MSIE ([0-9]{1,}[.0-9]{0,})"), u.exec(e) != null && (n = parseFloat(RegExp.$1))) : t == "Netscape" ? (u = new RegExp("Trident/.*rv:([0-9]{1,}[.0-9]{0,})"), u.exec(e) != null && (n = parseFloat(RegExp.$1))) : (i = e.lastIndexOf(" ") + 1) < (s = e.lastIndexOf("/")) && (n = e.substring(s + 1)), n = n.toString(), (o = n.indexOf(";")) != -1 && (n = n.substring(0, o)), (o = n.indexOf(" ")) != -1 && (n = n.substring(0, o)), (o = n.indexOf(")")) != -1 && (n = n.substring(0, o)), r = parseInt("" + n, 10), isNaN(r) && (n = "" + parseFloat(navigator.appVersion)), n
+                },
+                browserAcceptsLargeURLs: function() {
+                    return typeof window != "undefined" ? window.ActiveXObject === null || !0 : !0
+                }
+            };
+            return e
+        }(),
+        t = function(e, t) {
+            t && setTimeout(t, 0)
+        },
+        n = function(e, t, n) {
+            n && setTimeout(n, 0)
+        },
+        r = function(e, t) {
+            var n = new Image;
+            if(typeof CNBC_Platform_Video_Gallery === 'function' && typeof CNBC_Platform_Video_Gallery.videoObj === 'object' && CNBC_Platform_Video_Gallery.videoObj.isCurrentVideoPremium()) {
+                e = e.replace(/c4=cnbc.com%20vod/gi, playerConfig.globalConfig.premium.comScore.persistentlabels.split(',')[0]);
+                e = e.replace(/c4=cnbc.com%20pro/gi, playerConfig.globalConfig.premium.comScore.persistentlabels.split(',')[0]);
+            }
+            else if(playerConfig.config && playerConfig.config.comScore && playerConfig.config.comScore.persistentlabels) {
+                e = e.replace(/c4=cnbc.com%20vod/gi, playerConfig.config.comScore.persistentlabels.split(',')[0]);
+                e = e.replace(/c4=cnbc.com%20pro/gi, playerConfig.config.comScore.persistentlabels.split(',')[0]);
+            }
+            n.onload = function() {
+                t && t(200), n = null
+            }, n.onerror = function() {
+                t && t(), n = null
+            }, n.src = e
+        },
+        i = function() {
+            var e = {
+                PLATFORM: "generic",
+                httpGet: r,
+                httpPost: n,
+                Storage: s,
+                IO: o,
+                getCrossPublisherId: function() {
+                    return null
+                },
+                getAppName: function() {
+                    return Constants.UNKNOWN_VALUE
+                },
+                getAppVersion: function(e) {
+                    return Constants.UNKNOWN_VALUE
+                },
+                getVisitorId: function() {
+                    return this.getDeviceName() + +(new Date) + ~~(Math.random() * 1e3)
+                },
+                getVisitorIdSuffix: function() {
+                    return "72"
+                },
+                getDeviceName: function() {
+                    return ""
+                },
+                getPlatformVersion: function() {
+                    return ""
+                },
+                getPlatformName: function() {
+                    return "js"
+                },
+                getRuntimeName: function() {
+                    return ""
+                },
+                getRuntimeVersion: function() {
+                    return ""
+                },
+                getResolution: function() {
+                    return ""
+                },
+                getLanguage: function() {
+                    return ""
+                },
+                getPackageName: function() {
+                    return ""
+                },
+                isConnectionAvailable: function() {
+                    return !0
+                },
+                isCompatible: function() {
+                    return !0
+                },
+                autoSelect: function() {},
+                setPlatformAPI: function() {},
+                isCrossPublisherIdChanged: function() {
+                    return !1
+                },
+                setTimeout: function(e, t, n) {
+                    return setTimeout(e, t, n)
+                },
+                clearTimeout: function(e) {
+                    return clearTimeout(e)
+                }
+            };
+            return e
+        }(),
+        s = function() {
+            var t = "cs_",
+                n = function() {
+                    var n = this,
+                        r = typeof localStorage != "undefined" ? localStorage : {};
+                    e.extend(this, {
+                        get: function(e) {
+                            return r[t + e]
+                        },
+                        set: function(e, n) {
+                            r[t + e] = n
+                        },
+                        has: function(e) {
+                            return t + e in r
+                        },
+                        remove: function(e) {
+                            delete r[t + e]
+                        },
+                        clear: function() {
+                            for (var e in r) r.hasOwnProperty(e) && delete r[e]
+                        }
+                    })
+                };
+            return n
+        }(),
+        o = function() {
+            return {
+                dir: function(e) {
+                    return null
+                },
+                append: function(e, t, n) {},
+                write: function(e, t, n) {},
+                deleteFile: function(e, t) {
+                    return !1
+                },
+                read: function(e, t) {
+                    return null
+                }
+            }
+        }(),
+        u = typeof window != "undefined" && typeof document != "undefined",
+        a, f;
+    u ? (a = window, f = document) : (a = {}, f = {
+        location: {
+            href: ""
+        },
+        title: "",
+        URL: "",
+        referrer: "",
+        cookie: ""
+    });
+    var e = e || {};
+    e.filterMap = function(t, n) {
+        for (var r in t) e.indexOf(r, n) == -1 && delete t[r]
+    }, e.getKeys = function(e, t) {
+        var n, r = [];
+        for (n in e)(!t || t.test(n)) && e.hasOwnProperty(n) && (r[r.length] = n);
+        return r
+    };
+    var h = function() {
+            var e = ["play", "pause", "end", "buffer", "keep-alive", "hb", "custom", "ad_play", "ad_pause", "ad_end", "ad_click"];
+            return {
+                PLAY: 0,
+                PAUSE: 1,
+                END: 2,
+                BUFFER: 3,
+                KEEP_ALIVE: 4,
+                HEART_BEAT: 5,
+                CUSTOM: 6,
+                AD_PLAY: 7,
+                AD_PAUSE: 8,
+                AD_END: 9,
+                AD_CLICK: 10,
+                toString: function(t) {
+                    return e[t]
+                }
+            }
+        }(),
+        p = function() {
+            var e = [h.END, h.PLAY, h.PAUSE, h.BUFFER];
+            return {
+                IDLE: 0,
+                PLAYING: 1,
+                PAUSED: 2,
+                BUFFERING: 3,
+                toEventType: function(t) {
+                    return e[t]
+                }
+            }
+        }(),
+        d = {
+            ADPLAY: h.AD_PLAY,
+            ADPAUSE: h.AD_PAUSE,
+            ADEND: h.AD_END,
+            ADCLICK: h.AD_CLICK
+        },
+        v = {
+            STREAMSENSE_VERSION: "4.1503.18",
+            DEFAULT_PLAYERNAME: "streamsense",
+            DEFAULT_HEARTBEAT_INTERVAL: [{
+                playingtime: 6e4,
+                interval: 1e4
+            }, {
+                playingtime: null,
+                interval: 6e4
+            }],
+            DEFAULT_KEEP_ALIVE_INTERVAL: 12e5,
+            DEFAULT_PAUSED_ON_BUFFERING_INTERVAL: 500,
+            C1_VALUE: "19",
+            C10_VALUE: "js",
+            NS_AP_C12M_VALUE: "1",
+            NS_NC_VALUE: "1",
+            PAGE_NAME_LABEL: "name",
+            RESTRICTED_URL_LENGTH_LIMIT: 2048,
+            URL_LENGTH_LIMIT: 4096,
+            LABELS_ORDER: ["c1", "c2", "ca2", "cb2", "cc2", "cd2", "ns_site", "ca_ns_site", "cb_ns_site", "cc_ns_site", "cd_ns_site", "ns_vsite", "ca_ns_vsite", "cb_ns_vsite", "cc_ns_vsite", "cd_ns_vsite", "ns_ap_an", "ca_ns_ap_an", "cb_ns_ap_an", "cc_ns_ap_an", "cd_ns_ap_an", "ns_ap_pn", "ns_ap_pv", "c12", "ca12", "cb12", "cc12", "cd12", "ns_ak", "ns_ap_hw", "name", "ns_ap_ni", "ns_ap_ec", "ns_ap_ev", "ns_ap_device", "ns_ap_id", "ns_ap_csf", "ns_ap_bi", "ns_ap_pfm", "ns_ap_pfv", "ns_ap_ver", "ca_ns_ap_ver", "cb_ns_ap_ver", "cc_ns_ap_ver", "cd_ns_ap_ver", "ns_ap_sv", "ns_ap_cv", "ns_type", "ca_ns_type", "cb_ns_type", "cc_ns_type", "cd_ns_type", "ns_radio", "ns_nc", "ns_ap_ui", "ca_ns_ap_ui", "cb_ns_ap_ui", "cc_ns_ap_ui", "cd_ns_ap_ui", "ns_ap_gs", "ns_st_sv", "ns_st_pv", "ns_st_it", "ns_st_id", "ns_st_ec", "ns_st_sp", "ns_st_sq", "ns_st_cn", "ns_st_ev", "ns_st_po", "ns_st_cl", "ns_st_el", "ns_st_pb", "ns_st_hc", "ns_st_mp", "ca_ns_st_mp", "cb_ns_st_mp", "cc_ns_st_mp", "cd_ns_st_mp", "ns_st_mv", "ca_ns_st_mv", "cb_ns_st_mv", "cc_ns_st_mv", "cd_ns_st_mv", "ns_st_pn", "ns_st_tp", "ns_st_pt", "ns_st_pa", "ns_st_ad", "ns_st_li", "ns_st_ci", "ns_ap_jb", "ns_ap_res", "ns_ap_sd", "ns_ap_po", "ns_ap_ot", "ns_ap_c12m", "cs_c12u", "ns_ap_install", "ns_ap_updated", "ns_ap_lastrun", "ns_ap_cs", "ns_ap_runs", "ns_ap_usage", "ns_ap_fg", "ns_ap_ft", "ns_ap_dft", "ns_ap_bt", "ns_ap_dbt", "ns_ap_dit", "ns_ap_as", "ns_ap_das", "ns_ap_it", "ns_ap_uc", "ns_ap_aus", "ns_ap_daus", "ns_ap_us", "ns_ap_dus", "ns_ap_ut", "ns_ap_oc", "ns_ap_uxc", "ns_ap_uxs", "ns_ap_lang", "ns_ap_ar", "ns_ap_miss", "ns_ts", "ns_st_ca", "ns_st_cp", "ns_st_er", "ca_ns_st_er", "cb_ns_st_er", "cc_ns_st_er", "cd_ns_st_er", "ns_st_pe", "ns_st_ui", "ca_ns_st_ui", "cb_ns_st_ui", "cc_ns_st_ui", "cd_ns_st_ui", "ns_st_bc", "ns_st_bt", "ns_st_bp", "ns_st_pc", "ns_st_pp", "ns_st_br", "ns_st_ub", "ns_st_vo", "ns_st_ws", "ns_st_pl", "ns_st_pr", "ns_st_ep", "ns_st_ty", "ns_st_ct", "ns_st_cs", "ns_st_ge", "ns_st_st", "ns_st_dt", "ns_st_de", "ns_st_pu", "ns_st_cu", "ns_st_fee", "ns_ap_i1", "ns_ap_i2", "ns_ap_i3", "ns_ap_i4", "ns_ap_i5", "ns_ap_i6", "ns_ap_referrer", "ns_clid", "ns_campaign", "ns_source", "ns_mchannel", "ns_linkname", "ns_fee", "gclid", "utm_campaign", "utm_source", "utm_medium", "utm_term", "utm_content", "c3", "ca3", "cb3", "cc3", "cd3", "c4", "ca4", "cb4", "cc4", "cd4", "c5", "ca5", "cb5", "cc5", "cd5", "c6", "ca6", "cb6", "cc6", "cd6", "c10", "c11", "c13", "c14", "c15", "c16", "c7", "c8", "c9", "ns_ap_er"]
+        },
+        m = function() {
+            var t = function() {
+                function l(e, t) {
+                    var n = t[e];
+                    n != null && (f[e] = n)
+                }
+                var t = this,
+                    n = 0,
+                    r = 0,
+                    i = 0,
+                    s = 0,
+                    o = 0,
+                    u = 0,
+                    a, f;
+                e.extend(this, {
+                    reset: function(n) {
+                        n != null && n.length > 0 ? e.filterMap(f, n) : f = {}, f.hasOwnProperty("ns_st_cl") || (f.ns_st_cl = "0"), f.hasOwnProperty("ns_st_pn") || (f.ns_st_pn = "1"), f.hasOwnProperty("ns_st_tp") || (f.ns_st_tp = "1"), t.setPauses(0), t.setStarts(0), t.setBufferingTime(0), t.setBufferingTimestamp(-1), t.setPlaybackTime(0), t.setPlaybackTimestamp(-1)
+                    },
+                    setLabels: function(n, r) {
+                        n != null && e.extend(f, n), t.setRegisters(f, r)
+                    },
+                    getLabels: function() {
+                        return f
+                    },
+                    setLabel: function(e, n) {
+                        var r = {};
+                        r[e] = n, t.setLabels(r, null)
+                    },
+                    getLabel: function(e) {
+                        return f[e]
+                    },
+                    getClipId: function() {
+                        return (typeof a == "undefined" || a == null) && t.setClipId("1"), a
+                    },
+                    setClipId: function(e) {
+                        a = e
+                    },
+                    setRegisters: function(e, s) {
+                        var u = e.ns_st_cn;
+                        u != null && (t.setClipId(u), delete e.ns_st_cn), u = e.ns_st_bt, u != null && (i = Number(u), delete e.ns_st_bt), l("ns_st_cl", e), l("ns_st_pn", e), l("ns_st_tp", e), l("ns_st_ub", e), l("ns_st_br", e);
+                        if (s == p.PLAYING || s == null) u = e.ns_st_sq, u != null && (r = Number(u), delete e.ns_st_sq);
+                        s != p.BUFFERING && (u = e.ns_st_pt, u != null && (o = Number(u), delete e.ns_st_pt));
+                        if (s == p.PAUSED || s == p.IDLE || s == null) u = e.ns_st_pc, u != null && (n = Number(u), delete e.ns_st_pc)
+                    },
+                    createLabels: function(i, s) {
+                        var o = s || {};
+                        o.ns_st_cn = t.getClipId(), o.ns_st_bt = String(t.getBufferingTime());
+                        if (i == h.PLAY || i == null) o.ns_st_sq = String(r);
+                        if (i == h.PAUSE || i == h.END || i == h.KEEP_ALIVE || i == h.HEART_BEAT || i == null) o.ns_st_pt = String(t.getPlaybackTime()), o.ns_st_pc = String(n);
+                        return e.extend(o, t.getLabels()), o
+                    },
+                    incrementPauses: function() {
+                        n++
+                    },
+                    incrementStarts: function() {
+                        r++
+                    },
+                    getBufferingTime: function() {
+                        var e = i;
+                        return s >= 0 && (e += +(new Date) - s), e
+                    },
+                    setBufferingTime: function(e) {
+                        i = e
+                    },
+                    getPlaybackTime: function() {
+                        var e = o;
+                        return u >= 0 && (e += +(new Date) - u), e
+                    },
+                    setPlaybackTime: function(e) {
+                        o = e
+                    },
+                    getPlaybackTimestamp: function() {
+                        return u
+                    },
+                    setPlaybackTimestamp: function(e) {
+                        u = e
+                    },
+                    getBufferingTimestamp: function() {
+                        return s
+                    },
+                    setBufferingTimestamp: function(e) {
+                        s = e
+                    },
+                    getPauses: function() {
+                        return n
+                    },
+                    setPauses: function(e) {
+                        n = e
+                    },
+                    getStarts: function() {
+                        return r
+                    },
+                    setStarts: function(e) {
+                        r = e
+                    }
+                }), f = {}, t.reset()
+            };
+            return t
+        }(),
+        g = function() {
+            var t = function() {
+                var t = this,
+                    n = null,
+                    r, i = 0,
+                    s = 0,
+                    o = 0,
+                    u = 0,
+                    a = 0,
+                    f, l = 0,
+                    c = !1;
+                e.extend(this, {
+                    reset: function(n) {
+                        n != null && n.length > 0 ? e.filterMap(f, n) : f = {}, t.setPlaylistId(+(new Date) + "_" + l), t.setBufferingTime(0), t.setPlaybackTime(0), t.setPauses(0), t.setStarts(0), t.setRebufferCount(0), c = !1
+                    },
+                    setLabels: function(n, r) {
+                        n != null && e.extend(f, n), t.setRegisters(f, r)
+                    },
+                    getLabels: function() {
+                        return f
+                    },
+                    setLabel: function(e, n) {
+                        var r = {};
+                        r[e] = n, t.setLabels(r, null)
+                    },
+                    getLabel: function(e) {
+                        return f[e]
+                    },
+                    getClip: function() {
+                        return n
+                    },
+                    getPlaylistId: function() {
+                        return r
+                    },
+                    setPlaylistId: function(e) {
+                        r = e
+                    },
+                    setRegisters: function(e, t) {
+                        var n = e.ns_st_sp;
+                        n != null && (i = Number(n), delete e.ns_st_sp), n = e.ns_st_bc, n != null && (o = Number(n), delete e.ns_st_bc), n = e.ns_st_bp, n != null && (u = Number(n), delete e.ns_st_bp), n = e.ns_st_id, n != null && (r = n, delete e.ns_st_id), t != p.BUFFERING && (n = e.ns_st_pa, n != null && (a = Number(n), delete e.ns_st_pa));
+                        if (t == p.PAUSED || t == p.IDLE || t == null) n = e.ns_st_pp, n != null && (s = Number(n), delete e.ns_st_pp)
+                    },
+                    createLabels: function(n, u) {
+                        var a = u || {};
+                        a.ns_st_bp = String(t.getBufferingTime()), a.ns_st_sp = String(i), a.ns_st_id = String(r), o > 0 && (a.ns_st_bc = String(o));
+                        if (n == h.PAUSE || n == h.END || n == h.KEEP_ALIVE || n == h.HEART_BEAT || n == null) a.ns_st_pa = String(t.getPlaybackTime()), a.ns_st_pp = String(s);
+                        if (n == h.PLAY || n == null) t.didFirstPlayOccurred() || (a.ns_st_pb = "1", t.setFirstPlayOccurred(!0));
+                        return e.extend(a, t.getLabels()), a
+                    },
+                    incrementStarts: function() {
+                        i++
+                    },
+                    incrementPauses: function() {
+                        s++, n.incrementPauses()
+                    },
+                    setPlaylistCounter: function(e) {
+                        l = e
+                    },
+                    incrementPlaylistCounter: function() {
+                        l++
+                    },
+                    addPlaybackTime: function(e) {
+                        if (n.getPlaybackTimestamp() >= 0) {
+                            var r = e - n.getPlaybackTimestamp();
+                            n.setPlaybackTimestamp(-1), n.setPlaybackTime(n.getPlaybackTime() + r), t.setPlaybackTime(t.getPlaybackTime() + r)
+                        }
+                    },
+                    addBufferingTime: function(e) {
+                        if (n.getBufferingTimestamp() >= 0) {
+                            var r = e - n.getBufferingTimestamp();
+                            n.setBufferingTimestamp(-1), n.setBufferingTime(n.getBufferingTime() + r), t.setBufferingTime(t.getBufferingTime() + r)
+                        }
+                    },
+                    getBufferingTime: function() {
+                        var e = u;
+                        return n.getBufferingTimestamp() >= 0 && (e += +(new Date) - n.getBufferingTimestamp()), e
+                    },
+                    setBufferingTime: function(e) {
+                        u = e
+                    },
+                    getPlaybackTime: function() {
+                        var e = a;
+                        return n.getPlaybackTimestamp() >= 0 && (e += +(new Date) - n.getPlaybackTimestamp()), e
+                    },
+                    setPlaybackTime: function(e) {
+                        a = e
+                    },
+                    getStarts: function() {
+                        return i
+                    },
+                    setStarts: function(e) {
+                        i = e
+                    },
+                    getPauses: function() {
+                        return s
+                    },
+                    setPauses: function(e) {
+                        s = e
+                    },
+                    getRebufferCount: function() {
+                        return o
+                    },
+                    incrementRebufferCount: function() {
+                        o++
+                    },
+                    setRebufferCount: function(e) {
+                        o = e
+                    },
+                    didFirstPlayOccurred: function() {
+                        return c
+                    },
+                    setFirstPlayOccurred: function(e) {
+                        c = e
+                    }
+                }), n = new m, f = {}, t.reset()
+            };
+            return t
+        }(),
+        y = function() {
+            var t = function(t, n) {
+                function q(e) {
+                    var t = 0;
+                    if (k != null)
+                        for (var n = 0; n < k.length; n++) {
+                            var r = k[n],
+                                i = r.playingtime;
+                            if (!i || e < i) {
+                                t = r.interval;
+                                break
+                            }
+                        }
+                    return t
+                }
+
+                function R() {
+                    X();
+                    var e = q(w.getClip().getPlaybackTime());
+                    if (e > 0) {
+                        var t = O > 0 ? O : e;
+                        C = setTimeout(W, t)
+                    }
+                    O = 0
+                }
+
+                function U() {
+                    X();
+                    var e = q(w.getClip().getPlaybackTime());
+                    O = e - w.getClip().getPlaybackTime() % e, C != null && X()
+                }
+
+                function z() {
+                    O = 0, _ = 0, M = 0
+                }
+
+                function W() {
+                    M++;
+                    var e = mt(h.HEART_BEAT, null);
+                    rt(e), O = 0, R()
+                }
+
+                function X() {
+                    C != null && (clearTimeout(C), C = null)
+                }
+
+                function V() {
+                    J(), N = setTimeout($, L)
+                }
+
+                function $() {
+                    var e = mt(h.KEEP_ALIVE, null);
+                    rt(e), b++, V()
+                }
+
+                function J() {
+                    N != null && (clearTimeout(N), N = null)
+                }
+
+                function K() {
+                    G(), r.isPauseOnBufferingEnabled() && at(p.PAUSED) && (x = setTimeout(Q, A))
+                }
+
+                function Q() {
+                    if (P == p.PLAYING) {
+                        w.incrementRebufferCount(), w.incrementPauses();
+                        var e = mt(h.PAUSE, null);
+                        rt(e), b++, P = p.PAUSED
+                    }
+                }
+
+                function G() {
+                    x != null && (clearTimeout(x), x = null)
+                }
+
+                function Y(e) {
+                    return e == p.PLAYING || e == p.PAUSED
+                }
+
+                function Z() {
+                    d && (clearTimeout(d), d = null)
+                }
+
+                function et(e) {
+                    return e == h.PLAY ? p.PLAYING : e == h.PAUSE ? p.PAUSED : e == h.BUFFER ? p.BUFFERING : e == h.END ? p.IDLE : null
+                }
+
+                function tt(t, n, r) {
+                    Z();
+                    if (r) d = setTimeout(function(e, t) {
+                        return function() {
+                            tt(e, t)
+                        }
+                    }(t, n), r);
+                    else if (ct(t)) {
+                        var i = pt(),
+                            s = a,
+                            o = lt(n),
+                            u = s >= 0 ? o - s : 0;
+                        ot(pt(), n), ut(t, n), dt(pt()), ht(t);
+                        for (var f = 0, l = F.length; f < l; f++) F[f](i, t, n, u);
+                        nt(n), w.setRegisters(n, t), w.getClip().setRegisters(n, t);
+                        var c = mt(p.toEventType(t), n);
+                        e.extend(c, n), at(y) && (rt(c), P = y, b++)
+                    }
+                }
+
+                function nt(e) {
+                    var t = e.ns_st_mp;
+                    t != null && (H = t, delete e.ns_st_mp), t = e.ns_st_mv, t != null && (B = t, delete e.ns_st_mv), t = e.ns_st_ec, t != null && (b = Number(t), delete e.ns_st_ec)
+                }
+
+                function rt(e, t) {
+                    t === undefined && (t = !0), t && st(e);
+                    var n = r.getPixelURL();
+                    if (E) {
+                        if (!it()) {
+                            var s = I.am,
+                                o = I.et,
+                                u = s.newApplicationMeasurement(E, o.HIDDEN, e, n);
+                            E.getQueue().offer(u)
+                        }
+                    } else n && i.httpGet(c(n, e))
+                }
+
+                function it() {
+                    var e = E.getAppContext(),
+                        t = E.getSalt(),
+                        n = E.getPixelURL();
+                    return e == null || t == null || t.length == 0 || n == null || n.length == 0
+                }
+
+                function st(t) {
+                    j = mt(null), e.extend(j, t)
+                }
+
+                function ot(t, n) {
+                    var r = lt(n);
+                    if (t == p.PLAYING) w.addPlaybackTime(r), U(), J();
+                    else if (t == p.BUFFERING) w.addBufferingTime(r), G();
+                    else if (t == p.IDLE) {
+                        var i = e.getKeys(w.getClip().getLabels());
+                        w.getClip().reset(i)
+                    }
+                }
+
+                function ut(e, t) {
+                    var n = lt(t),
+                        r = ft(t);
+                    f = r, e == p.PLAYING ? (R(), V(), w.getClip().setPlaybackTimestamp(n), at(e) && (w.getClip().incrementStarts(), w.getStarts() < 1 && w.setStarts(1))) : e == p.PAUSED ? at(e) && w.incrementPauses() : e == p.BUFFERING ? (w.getClip().setBufferingTimestamp(n), T && K()) : e == p.IDLE && z()
+                }
+
+                function at(e) {
+                    return e != p.PAUSED && e != p.IDLE || P != p.IDLE && P != null ? e != p.BUFFERING && P != e : !1
+                }
+
+                function ft(t) {
+                    var n = -1;
+                    return t.hasOwnProperty("ns_st_po") && (n = e.getInteger(t.ns_st_po)), n
+                }
+
+                function lt(e) {
+                    var t = -1;
+                    return e.hasOwnProperty("ns_ts") && (t = Number(e.ns_ts)), t
+                }
+
+                function ct(e) {
+                    return e != null && pt() != e
+                }
+
+                function ht(e) {
+                    y = e, a = +(new Date)
+                }
+
+                function pt() {
+                    return y
+                }
+
+                function dt(e) {
+                    m = e
+                }
+
+                function vt() {
+                    return m
+                }
+
+                function mt() {
+                    var t, n;
+                    arguments.length == 1 ? (t = p.toEventType(y), n = arguments[0]) : (t = arguments[0], n = arguments[1]);
+                    var i = {};
+                    if (typeof document != "undefined") {
+                        var s = document;
+                        i.c7 = s.URL, i.c8 = s.title, i.c9 = s.referrer
+                    }
+                    return n != null && e.extend(i, n), i.hasOwnProperty("ns_ts") || (i.ns_ts = String(+(new Date))), t != null && !i.hasOwnProperty("ns_st_ev") && (i.ns_st_ev = h.toString(t)), r.isPersistentLabelsShared() && E && e.extend(i, E.getLabels()), e.extend(i, r.getLabels()), gt(t, i), w.createLabels(t, i), w.getClip().createLabels(t, i), i.hasOwnProperty("ns_st_mp") || (i.ns_st_mp = H), i.hasOwnProperty("ns_st_mv") || (i.ns_st_mv = B), i.hasOwnProperty("ns_st_ub") || (i.ns_st_ub = "0"), i.hasOwnProperty("ns_st_br") || (i.ns_st_br = "0"), i.hasOwnProperty("ns_st_pn") || (i.ns_st_pn = "1"), i.hasOwnProperty("ns_st_tp") || (i.ns_st_tp = "1"), i.hasOwnProperty("ns_st_it") || (i.ns_st_it = "c"), i.ns_st_sv = v.STREAMSENSE_VERSION, i.ns_type = "hidden", i
+                }
+
+                function gt(t, n) {
+                    var r = n || {};
+                    r.ns_st_ec = String(b);
+                    if (!r.hasOwnProperty("ns_st_po")) {
+                        var i = f,
+                            s = lt(r);
+                        if (t == h.PLAY || t == h.KEEP_ALIVE || t == h.HEART_BEAT || t == null && y == p.PLAYING) i += s - w.getClip().getPlaybackTimestamp();
+                        r.ns_st_po = e.getInteger(i)
+                    }
+                    return t == h.HEART_BEAT && (r.ns_st_hc = String(M)), r
+                }
+
+                function yt(e) {
+                    var t = lt(e);
+                    t < 0 && (e.ns_ts = String(+(new Date)))
+                }
+
+                function bt(e, t, n) {
+                    t = t || {}, t.ns_st_ad = 1, e >= h.AD_PLAY && e <= h.AD_CLICK && r.notify(e, t, n)
+                }
+
+                function wt(e, t) {
+                    r.notify(h.CUSTOM, e, t)
+                }
+                var r = this,
+                    s = 500,
+                    o, u = null,
+                    a = 0,
+                    f = 0,
+                    d, m, y, b = 0,
+                    w = null,
+                    E, S = !0,
+                    x, T = !0,
+                    N, C, k = v.DEFAULT_HEARTBEAT_INTERVAL,
+                    L = v.DEFAULT_KEEP_ALIVE_INTERVAL,
+                    A = v.DEFAULT_PAUSED_ON_BUFFERING_INTERVAL,
+                    O = 0,
+                    M = 0,
+                    _ = 0,
+                    D = !1,
+                    P, H, B, j, F, I = {};
+                i.autoSelect(), e.extend(this, {
+                    reset: function(t) {
+                        w.reset(t), w.setPlaylistCounter(0), w.setPlaylistId(+(new Date) + "_1"), w.getClip().reset(t), t != null && !t.isEmpty() ? e.filterMap(o, t) : o = {}, b = 1, M = 0, U(), z(), J(), G(), Z(), y = p.IDLE, m = null, a = -1, P = null, H = v.DEFAULT_PLAYERNAME, B = v.STREAMSENSE_VERSION, j = null
+                    },
+                    setPauseOnBufferingInterval: function(e) {
+                        A = e
+                    },
+                    getPauseOnBufferingInterval: function() {
+                        return A
+                    },
+                    setKeepAliveInterval: function(e) {
+                        L = e
+                    },
+                    getKeepAliveInterval: function() {
+                        return L
+                    },
+                    setHeartbeatIntervals: function(e) {
+                        k = e
+                    },
+                    notify: function() {
+                        var t, n, i, o;
+                        n = arguments[0], arguments.length == 3 ? (i = arguments[1], o = arguments[2]) : (i = {}, o = arguments[1]), t = et(n);
+                        var u = e.extend({}, i);
+                        yt(u), u.hasOwnProperty("ns_st_po") || (u.ns_st_po = e.getInteger(o).toString());
+                        if (n == h.PLAY || n == h.PAUSE || n == h.BUFFER || n == h.END) r.isPausePlaySwitchDelayEnabled() && Y(y) && Y(t) && (y != p.PLAYING || t != p.PAUSED || !!d) ? tt(t, u, s) : tt(t, u);
+                        else {
+                            var a = mt(n, u);
+                            e.extend(a, u), rt(a, !1), b++
+                        }
+                    },
+                    getLabels: function() {
+                        return o
+                    },
+                    getState: function() {
+                        return y
+                    },
+                    setLabels: function(e) {
+                        for (var t in e) e.hasOwnProperty(t) && r.setLabel(t, e[t])
+                    },
+                    getLabel: function(e) {
+                        return o[e]
+                    },
+                    setLabel: function(e, t) {
+                        t == null ? delete o[e] : o[e] = t
+                    },
+                    setPixelURL: function(e) {
+                        if (e == null || e.length == 0) return null;
+                        var t = decodeURIComponent || unescape,
+                            n = e.indexOf("?");
+                        if (n >= 0) {
+                            if (n < e.length - 1) {
+                                var i = e.substring(n + 1).split("&");
+                                for (var s = 0, o = i.length; s < o; s++) {
+                                    var a = i[s],
+                                        f = a.split("=");
+                                    f.length == 2 ? r.setLabel(f[0], t(f[1])) : f.length == 1 && r.setLabel(v.PAGE_NAME_LABEL, t(f[0]))
+                                }
+                                e = e.substring(0, n + 1)
+                            }
+                        } else e += "?";
+                        return u = e, u
+                    },
+                    getPixelURL: function() {
+                        return u ? u : typeof ns_p != "undefined" && typeof ns_p.src == "string" ? u = ns_p.src.replace(/&amp;/, "&").replace(/&ns__t=\d+/, "") : typeof ns_pixelUrl == "string" ? u = ns_pixelUrl.replace(/&amp;/, "&").replace(/&ns__t=\d+/, "") : null
+                    },
+                    isPersistentLabelsShared: function() {
+                        return S
+                    },
+                    setPersistentLabelsShared: function(e) {
+                        S = e
+                    },
+                    isPauseOnBufferingEnabled: function() {
+                        return T
+                    },
+                    setPauseOnBufferingEnabled: function(e) {
+                        T = e
+                    },
+                    isPausePlaySwitchDelayEnabled: function() {
+                        return D
+                    },
+                    setPausePlaySwitchDelayEnabled: function(e) {
+                        D = e
+                    },
+                    setPausePlaySwitchDelay: function(e) {
+                        e && e > 0 && (s = e)
+                    },
+                    getPausePlaySwitchDelay: function() {
+                        return s
+                    },
+                    setClip: function(e, t) {
+                        var n = !1;
+                        return y == p.IDLE && (w.getClip().reset(), w.getClip().setLabels(e, null), t && w.incrementStarts(), n = !0), n
+                    },
+                    setPlaylist: function(e) {
+                        var t = !1;
+                        return y == p.IDLE && (w.incrementPlaylistCounter(), w.reset(), w.getClip().reset(), w.setLabels(e, null), t = !0), t
+                    },
+                    importState: function(t) {
+                        reset();
+                        var n = e.extend({}, t);
+                        w.setRegisters(n, null), w.getClip().setRegisters(n, null), nt(n), b++
+                    },
+                    exportState: function() {
+                        return j
+                    },
+                    getVersion: function() {
+                        return v.STREAMSENSE_VERSION
+                    },
+                    addListener: function(e) {
+                        F.push(e)
+                    },
+                    removeListener: function(t) {
+                        F.splice(e.indexOf(t, F), 1)
+                    },
+                    getClip: function() {
+                        return w.getClip()
+                    },
+                    getPlaylist: function() {
+                        return w
+                    }
+                }), e.extend(this, {
+                    adNotify: bt,
+                    customNotify: wt,
+                    viewNotify: function(e, t) {
+                        e = e || r.getPixelURL(), e && l(e, t)
+                    }
+                }), ns_.comScore && (I = ns_.comScore.exports, E = I.c()), o = {}, b = 1, y = p.IDLE, w = new g, x = null, T = !0, C = null, M = 0, z(), N = null, d = null, D = !1, P = null, f = 0, F = [], r.reset(), t && r.setLabels(t), n && r.setPixelURL(n)
+            };
+            return function(t) {
+                function s(e, t) {
+                    return n[i] || u(e, t)
+                }
+
+                function o() {
+                    i = -1;
+                    for (var e = 0; e <= r; e++)
+                        if (n.hasOwnProperty(e)) {
+                            i = e;
+                            break
+                        }
+                    return ns_.StreamSense.activeIndex = i, i
+                }
+
+                function u(e, t) {
+                    return e = e || null, t = t || null, e && typeof e == "object" && (t = e, e = null), n[++r] = new ns_.StreamSense(t, e), o(), n[r]
+                }
+
+                function a() {
+                    var e = !1,
+                        t = i;
+                    if (typeof arguments[0] == "number" && isFinite(arguments[0])) t = arguments[0];
+                    else if (arguments[0] instanceof ns_.StreamSense)
+                        for (var r in n)
+                            if (n[r] === arguments[0]) {
+                                t = r;
+                                break
+                            }
+                    return n.hasOwnProperty(t) && (e = n[t], delete n[t], e.reset(), o()), e
+                }
+
+                function f(e) {
+                    return e = e || {}, s().setPlaylist(e), s().getPlaylist()
+                }
+
+                function l(e, t, n) {
+                    return e = e || {}, typeof t == "number" && (e.ns_st_cn = t), s().setClip(e, n), s().getClip()
+                }
+
+                function c(e, t, n) {
+                    return typeof e == "undefined" ? !1 : (n = n || null, t = t || {}, s().notify(e, t, n))
+                }
+
+                function h(e) {
+                    typeof e != "undefined" && s().setLabels(e)
+                }
+
+                function p() {
+                    return s().getLabels()
+                }
+
+                function d(e) {
+                    typeof e != "undefined" && s().getPlaylist().setLabels(e)
+                }
+
+                function v() {
+                    return s().getPlaylist().getLabels()
+                }
+
+                function m(e) {
+                    typeof e != "undefined" && s().getClip().setLabels(e)
+                }
+
+                function g() {
+                    return s().getClip().getLabels()
+                }
+
+                function y(e) {
+                    return s().reset(e || {})
+                }
+
+                function b(e) {
+                    return s().getPlaylist().reset(e || {})
+                }
+
+                function w(e) {
+                    return s().getClip().reset(e || {})
+                }
+
+                function E(e) {
+                    return e = e || {}, s().viewNotify(null, e)
+                }
+
+                function S(e, t) {
+                    return arguments.length > 2 && (e = arguments[1], t = arguments[2]), e = e || {}, typeof t == "number" && (e.ns_st_po = t), s().customNotify(e, t)
+                }
+
+                function x() {
+                    return s().exportState()
+                }
+
+                function T(e) {
+                    s().importState(e)
+                }
+                var n = {},
+                    r = -1,
+                    i = -1;
+                e.extend(t, {
+                    activeIndex: i,
+                    newInstance: u,
+                    "new": u,
+                    destroyInstance: a,
+                    destroy: a,
+                    newPlaylist: f,
+                    newClip: l,
+                    notify: c,
+                    setLabels: h,
+                    getLabels: p,
+                    setPlaylistLabels: d,
+                    getPlaylistLabels: v,
+                    setClipLabels: m,
+                    getClipLabels: g,
+                    resetInstance: y,
+                    resetPlaylist: b,
+                    resetClip: w,
+                    viewEvent: E,
+                    customEvent: S,
+                    exportState: x,
+                    importState: T
+                })
+            }(t), t
+        }();
+    y.AdEvents = d, y.PlayerEvents = h;
+    var b = function() {
+        var t = function(t, n, r, i, s) {
+            function z() {
+                g = new ns_.StreamSense({
+                    ns_st_mp: n,
+                    ns_st_pv: r,
+                    ns_st_mv: i
+                }), e.extend(o, g), e.extend(o, {
+                    notify: dt,
+                    setPlaylist: mt,
+                    setClip: vt,
+                    setLabel: gt,
+                    setLabels: yt,
+                    setClipLabel: bt,
+                    setPlaylistLabel: wt,
+                    onGetLabels: pt,
+                    labelMapping: x,
+                    release: W,
+                    log: kt,
+                    handleSettings: xt,
+                    getGenericPluginVersion: X,
+                    setBitRate: ht,
+                    setVolume: ct,
+                    setDuration: lt,
+                    setVideoSize: ft,
+                    setIsFullScreen: at,
+                    setDetectSeek: ut,
+                    setDetectPause: ot,
+                    setDetectPlay: st,
+                    setDetectEnd: it,
+                    setSmartStateDetection: rt,
+                    setPauseDetectionErrorMargin: G,
+                    setEndDetectionErrorMargin: Y,
+                    setSeekDetectionMinQuotient: Z,
+                    setPulseSamplingInterval: et,
+                    setMaximumNumberOfEntriesInHistory: tt,
+                    setMinimumNumberOfTimeUpdateEventsBeforeDetectingSeek: nt
+                }), t && xt(t), s.init && s.init.call(o, null), A && V()
+            }
+
+            function W() {
+                s.release && s.release.call(o), g.reset(), g = null, y = [], b = undefined, w = -1, E = a, S = -1
+            }
+
+            function X() {
+                return u
+            }
+
+            function V() {
+                $(), _ = setInterval(J, v)
+            }
+
+            function $() {
+                typeof _ != "undefined" && (clearInterval(_), _ = undefined)
+            }
+
+            function J() {
+                if (!A) {
+                    $();
+                    return
+                }
+                if (B) {
+                    B = !1;
+                    return
+                }
+                var e = s.position && s.position.call(o, null) || 0,
+                    t = g.getState(),
+                    n = !1;
+                if (D.length === 0 || e !== D[D.length - 1]) {
+                    D[D.length] = Math.abs(e), P[P.length] = Date.now();
+                    if (D.length > 1 && D[D.length - 1] < D[D.length - 2]) {
+                        var r = D[D.length - 1],
+                            i = P[P.length - 1];
+                        D = [], D.length = 0, P = [], P.length = 0, D[0] = r, P[0] = i, N && (n = !0)
+                    } else if (D.length < d) return;
+                    D.length > m && (D = D.slice(1, m + 1), P = P.slice(1, m + 1)), N && !n && (n = K())
+                } else P[P.length - 1] = Date.now();
+                switch (g.getState()) {
+                    case p.BUFFERING:
+                    case p.IDLE:
+                    case p.PAUSED:
+                        if (k && e > O && !n && !Q(e)) {
+                            if (s.preMeasurement && !s.preMeasurement.call(o, g.getState(), ns_.StreamSense.PlayerEvents.PLAY, M)) break;
+                            M && !H ? o.notify(ns_.StreamSense.PlayerEvents.PLAY, {
+                                ns_st_ui: "seek"
+                            }, e) : o.notify(ns_.StreamSense.PlayerEvents.PLAY, null, D[0]), M = !1, H = !1;
+                            break
+                        }
+                        N && n && (M = !0);
+                        break;
+                    case p.PLAYING:
+                        if (N && n) {
+                            if (s.preMeasurement && !s.preMeasurement.call(o, g.getState(), ns_.StreamSense.PlayerEvents.PAUSE)) break;
+                            o.notify(ns_.StreamSense.PlayerEvents.PAUSE, null, O), M = !0
+                        } else if (L && Q(e)) {
+                            if (s.preMeasurement && !s.preMeasurement.call(o, g.getState(), ns_.StreamSense.PlayerEvents.END)) break;
+                            g.getClip().getLabel("ns_st_cl") && g.getClip().getLabel("ns_st_cl") > 0 ? o.notify(ns_.StreamSense.PlayerEvents.END, null, g.getClip().getLabel("ns_st_cl")) : o.notify(ns_.StreamSense.PlayerEvents.END), M = !1
+                        } else if (C && Math.abs(e - O) <= f) {
+                            if (s.preMeasurement && !s.preMeasurement.call(o, g.getState(), ns_.StreamSense.PlayerEvents.PAUSE)) break;
+                            o.notify(ns_.StreamSense.PlayerEvents.PAUSE, null, O)
+                        }
+                }
+                t !== g.getState() && (s.postMeasurement && s.postMeasurement.call(o, g.getState()), g.getState() === p.PAUSED && (D = [], D.length = 0, P = [], P.length = 0)), O = e
+            }
+
+            function K() {
+                if (D[D.length - 1] < D[D.length - 2]) return !0;
+                var e = v,
+                    t = 0;
+                for (var n = 0; n < D.length; n++) t = (parseFloat(t) + c[D.length - 2][n] * D[n]).toFixed(5);
+                return t = parseFloat(t), t / e > h
+            }
+
+            function Q(e) {
+                return g.getClip().getLabel("ns_st_cl") > 0 && (e > g.getClip().getLabel("ns_st_cl") || Math.abs(e - g.getClip().getLabel("ns_st_cl")) < l)
+            }
+
+            function G(e) {
+                e && (f = e)
+            }
+
+            function Y(e) {
+                e && (l = e)
+            }
+
+            function Z(e) {
+                e && e > 1 && (h = e)
+            }
+
+            function et(e) {
+                e && e > 0 && (v = e)
+            }
+
+            function tt(e) {
+                e && e <= 13 && e >= 2 && (m = e)
+            }
+
+            function nt(e) {
+                e && e >= 2 && e <= 13 && (d = e)
+            }
+
+            function rt(e) {
+                A = e || !1, A ? V() : $()
+            }
+
+            function it(e) {
+                L = e || !1
+            }
+
+            function st(e) {
+                k = e || !1
+            }
+
+            function ot(e) {
+                C = e || !1
+            }
+
+            function ut(e) {
+                N = e || !1
+            }
+
+            function at(e) {
+                g.setLabel("ns_st_ws", e ? "full" : "norm")
+            }
+
+            function ft(e) {
+                g.getClip().setLabel("ns_st_cs", e ? e : 0)
+            }
+
+            function lt(e) {
+                g.getClip().setLabel("ns_st_cl", e && e >= 0 ? e : 0)
+            }
+
+            function ct(e) {
+                g.setLabel("ns_st_vo", e && e >= 0 && e <= 100 ? e : 100)
+            }
+
+            function ht(e) {
+                g.setLabel("ns_st_br", e ? e : 0)
+            }
+
+            function pt(e) {
+                typeof e == "function" && y.push(e)
+            }
+
+            function dt(e, t, n) {
+                if (R || U) return;
+                t = t || {};
+                for (var r = 0, i = y.length; r < i; r++) y[r](e, t);
+                var u = 0;
+                typeof n != "undefined" && n != null ? u = n : u = s.position.apply(o, arguments), e === ns_.StreamSense.PlayerEvents.END && A ? (D = [], D.length = 0, P = [], P.length = 0, M = !1, H = !0, B = !0) : e === ns_.StreamSense.PlayerEvents.PLAY && (j = !0), g.notify(e, t, u)
+            }
+
+            function vt(t, n, r, i) {
+                j && t && t.ns_st_ci !== g.getClip().getLabel("ns_st_ci") && (o.notify(ns_.StreamSense.PlayerEvents.END), j = !1);
+                var s = r || [];
+                Nt(e.cloneObject(s), t), Ct(e.cloneObject(s), t);
+                var u;
+                for (var a in t) t.hasOwnProperty(a) && (u = a.match(/^data-(.+)/)) && (t[u[1]] = t[a], delete t[a]);
+                return i && i == 1 ? e.extend(t, I) : (I = {}, e.extend(I, t)), t && t.hasOwnProperty("ns_st_skip") && t.ns_st_skip ? R = !0 : R = !1, g.setClip(t, n)
+            }
+
+            function mt(t, n) {
+                return n && n == 1 ? e.extend(t, F) : (F = {}, e.extend(F, t)), t && t.hasOwnProperty("ns_st_skip") && t.ns_st_skip ? U = !0 : U = !1, g.setPlaylist(t)
+            }
+
+            function gt(e, t, n) {
+                var r = {};
+                return r[e] = t, yt(r, n)
+            }
+
+            function yt(t, n) {
+                return n && n == 1 ? e.extend(t, q) : e.extend(q, t), g.setLabels(t)
+            }
+
+            function bt(e, t, n) {
+                n && n == 1 ? !I.hasOwnProperty(e) && !q.hasOwnProperty(e) && o.getClip().setLabel(e, t) : (I[e] = t, o.getClip().setLabel(e, t))
+            }
+
+            function wt(e, t, n) {
+                n && n == 1 ? !F.hasOwnProperty(e) && !q.hasOwnProperty(e) && o.getPlaylist().setLabel(e, t) : (F[e] = t, o.getPlaylist().setLabel(e, t))
+            }
+
+            function Et(e) {
+                if (!e) return;
+                var t = /([^=, ]+)\s*=(\s*("([^"]+?)"|[a-z0-9\._-]+)\s*\+?)+\s*/gi,
+                    n = e.match(t);
+                for (var r in n)
+                    if (n.hasOwnProperty(r)) {
+                        var i = n[r].split("=", 2);
+                        if (i.length == 2) {
+                            var s = i[0].replace(/(^\s+|\s+$)/g, "");
+                            s != "" && (x[s] = i[1])
+                        }
+                    }
+            }
+
+            function St(e) {
+                if (!e) return;
+                var t = e.split(",");
+                for (var n in t)
+                    if (t.hasOwnProperty(n)) {
+                        var r = t[n].split("=", 2);
+                        if (r.length == 2) {
+                            var i = r[0].replace(/(^\s+|\s+$)/g, "");
+                            i != "" && (g.setLabel(i, r[1]), q[i] = r[1])
+                        }
+                    }
+            }
+
+            function xt(t) {
+                var n = g.getPixelURL();
+                if (t.logurl) n = t.logurl;
+                else if (t.c2) {
+                    var r = t.secure ? "https://sb" : "http" + (document.location.href.charAt(4) == "s" ? "s://sb" : "://b");
+                    n = r + ".scorecardresearch.com/p?c1=2", g.setLabel("c2", t.c2)
+                }
+                n && g.setPixelURL(n);
+                if (e.isTrue(t.pageview)) {
+                    var i = {};
+                    if (typeof document != "undefined") {
+                        var s = document;
+                        i.c7 = s.URL, i.c8 = s.title, i.c9 = s.referrer
+                    }
+                    g.setLabels(i)
+                }
+                t.renditions, T = e.isTrue(t.debug), t.labelmapping && Et(t.labelmapping), t.persistentlabels && St(t.persistentlabels), t.pausePlaySwitchDelayEnabled === "1" || t.pausePlaySwitchDelayEnabled === !0 ? g.setPausePlaySwitchDelayEnabled(!0) : g.setPausePlaySwitchDelayEnabled(!1);
+                var o;
+                (o = t.include) && typeof o == "string" && (o === a ? b = a : o.length > 0 && (b = o.split(","))), b !== a && (o = t.include_prefixes) && (o === a ? b = a : (b || (b = []), w = b.length, b.push.apply(b, o.split(","))));
+                if (typeof b == "undefined") E = a;
+                else {
+                    var u;
+                    (u = t.exclude) && typeof u == "string" && (u === a ? E = a : u.length > 0 && (E = u.split(","))), E !== a && (u = t.exclude_prefixes) && (u === a ? E = a : (E || (E = []), S = E.length, E.push.apply(E, u.split(","))))
+                }
+            }
+
+            function Tt(e) {
+                var t = {},
+                    n, r, i, s;
+                if (E === a) return {};
+                if (b && b !== a) {
+                    for (n = 0, r = b.length; n < r; n++) {
+                        var o = b[n];
+                        s = w >= 0 && n >= w;
+                        for (i in e) e.hasOwnProperty(i) && (t[i] || (t[i] = s ? i.indexOf(o) === 0 : i == o))
+                    }
+                    for (i in t) t.hasOwnProperty(i) && t[i] === !1 && delete e[i];
+                    t = {}
+                }
+                if (E)
+                    for (n = 0, r = E.length; n < r; n++) {
+                        var u = E[n];
+                        s = S >= 0 && n >= S;
+                        for (i in e) e.hasOwnProperty(i) && (s ? i.indexOf(u) === 0 : i == u) && (t[i] = !0);
+                        for (i in t) t.hasOwnProperty(i) && e.hasOwnProperty(i) && delete e[i];
+                        t = {}
+                    }
+                return e
+            }
+
+            function Nt(t, n) {
+                var r = E === a;
+                if (t.length > 0 && t[0].map != "undefined") {
+                    var i = t[0].map;
+                    r || e.extend(n, Tt(e.cloneObject(i)));
+                    for (var s in i)
+                        if (i.hasOwnProperty(s)) {
+                            var o = /^([Cc][A-Da-d]_)?ns_st_.+/,
+                                u = /^[Cc][A-Da-d]?([1-9]|1[0-9]|20)$/,
+                                f, l, c;
+                            if (f = s.match(/^data-(.+)/)) {
+                                l = f[1].match(o) != null, c = f[1].match(u) != null;
+                                if (l || c) n[f[1]] = i[s]
+                            } else {
+                                l = s.match(o) != null, c = s.match(u) != null;
+                                if (l || c) n[s] = i[s]
+                            }
+                        }
+                }
+            }
+
+            function Ct(t, n) {
+                var r = o.labelMapping;
+                for (var i in r)
+                    if (r.hasOwnProperty(i)) {
+                        var s = "",
+                            u = /^"([^"]+)"$/i,
+                            a = /"([^"]+?)"|[a-z0-9\._-]+\s*/gi,
+                            f = r[i].match(a);
+                        for (var l = 0; l < f.length; l++) {
+                            var c = f[l].replace(/(?:^\s+|\s+$)/g, "");
+                            if (u.test(c)) {
+                                var h = u.exec(c);
+                                s += h[1]
+                            } else try {
+                                var p = "",
+                                    d = c.lastIndexOf(".");
+                                d >= 1 && d < c.length - 1 && (p = c.substring(0, d), c = c.substring(d + 1, c.length));
+                                for (var v = 0; v < t.length; v++) {
+                                    var m = t[v];
+                                    if (p == m.prefix) {
+                                        m.map[c] && (s += e.toString(m.map[c]));
+                                        break
+                                    }
+                                }
+                            } catch (g) {
+                                kt("Exception occurred while processing mapped labels")
+                            }
+                            n[i] = s
+                        }
+                    }
+            }
+
+            function kt() {
+                if (T) {
+                    var e = new Date,
+                        t = e.getDate(),
+                        n = e.getMonth() + 1,
+                        r = e.getHours(),
+                        i = e.getMinutes(),
+                        s = e.getSeconds(),
+                        o = e.getFullYear() + "-" + (n < 10 ? "0" + n : n) + "-" + (t < 10 ? "0" + t : t) + " " + (r < 10 ? "0" + r : r) + ":" + (i < 10 ? "0" + i : i) + ":" + (s < 10 ? "0" + s : s) + "." + e.getMilliseconds(),
+                        u = ["comScore", o],
+                        a = Array.prototype.slice.call(arguments);
+                    console && console.log(u.concat(a).toString())
+                }
+            }
+            var o = this,
+                u = "2.1.3",
+                a = "_all_",
+                f = 10,
+                l = 500,
+                c = [
+                    [-1, 1],
+                    [-0.5, 0, .5],
+                    [-0.3, -0.1, .1, .3],
+                    [-0.2, -0.1, 0, .1, .2],
+                    [-0.14286, -0.08571, -0.02857, .02857, .08571, .14286],
+                    [-0.10714, -0.07143, -0.03571, 0, .03571, .07143, .10714],
+                    [-0.08333, -0.05952, -0.03571, -0.0119, .0119, .03571, .05952, .08333],
+                    [-0.06667, -0.05, -0.03333, -0.01667, 0, .01667, .03333, .05, .06667],
+                    [-0.05455, -0.04242, -0.0303, -0.01818, -0.00606, .00606, .01818, .0303, .04242, .05455],
+                    [-0.04545, -0.03636, -0.02727, -0.01818, -0.00909, 0, .00909, .01818, .02727, .03636, .04545],
+                    [-0.03846, -0.03147, -0.02448, -0.01748, -0.01049, -0.0035, .0035, .01049, .01748, .02448, .03147, .03846],
+                    [-0.03297, -0.02747, -0.02198, -0.01648, -0.01099, -0.00549, 0, .00549, .01099, .01648, .02198, .02747, .03297]
+                ],
+                h = 1.25,
+                d = 2,
+                v = 300,
+                m = 6,
+                g = {},
+                y = [],
+                b, w = -1,
+                E, S = -1,
+                x = {},
+                T = !1,
+                N = !1,
+                C = !1,
+                k = !1,
+                L = !1,
+                A = !1,
+                O = s.position && s.position.call(o, null) || 0,
+                M = !1,
+                _, D = [],
+                P = [],
+                H = !1,
+                B = !1,
+                j = !1,
+                F = {},
+                I = {},
+                q = {},
+                R = !1,
+                U = !1;
+            z(), e.isTrue(t.pageview) && g.viewNotify(null, g.getLabels())
+        };
+        return t.extractParams = function(e, t, n) {
+            var r = t.length,
+                i, s, o = {},
+                u = e.indexOf(t),
+                a;
+            typeof n == "undefined" && (n = "&");
+            if (u >= 0) {
+                a = e.substr(u + r).split(n);
+                for (i = 0, s = a.length; i < s; i++) {
+                    var f = a[i].split("=");
+                    f.length === 2 && (o[f[0]] = decodeURIComponent(f[1]))
+                }
+            }
+            return o
+        }, t
+    }();
+    return y.ThePlatform = function(t, n, r, i) {
+        function wt() {
+            o.log("init"), o.log("player->", t), o.log("settings->", r), o.log("persistentLabels->", i);
+            var s = ["c1", "c2", "ca2", "cb2", "cc2", "cd2", "ns_site", "ca_ns_site", "cb_ns_site", "cc_ns_site", "cd_ns_site", "ns_vsite", "ca_ns_vsite", "cb_ns_vsite", "cc_ns_vsite", "cd_ns_vsite", "ns_ap_an", "ca_ns_ap_an", "cb_ns_ap_an", "cc_ns_ap_an", "cd_ns_ap_an", "ns_ap_pn", "ns_ap_pv", "c12", "ca12", "cb12", "cc12", "cd12", "ns_ak", "ns_ns_ap_hw", "name", "ns_ap_ni", "ns_ap_ec", "ns_ap_ev", "ns_ap_device", "ns_ap_id", "ns_ap_csf", "ns_ap_bi", "ns_ap_pfm", "ns_ap_pfv", "ns_ap_ver", "ca_ns_ap_ver", "cb_ns_ap_ver", "cc_ns_ap_ver", "cd_ns_ap_ver", "ns_ap_sv", "ns_ap_cv", "ns_type", "ca_ns_type", "cb_ns_type", "cc_ns_type", "cd_ns_type", "ns_radio", "ns_nc", "ns_ap_ui", "ca_ns_ap_ui", "cb_ns_ap_ui", "cc_ns_ap_ui", "cd_ns_ap_ui", "ns_ap_gs", "ns_st_sv", "ns_st_pv", "ns_st_it", "ns_st_id", "ns_st_ec", "ns_st_sp", "ns_st_sq", "ns_st_cn", "ns_st_ev", "ns_st_po", "ns_st_cl", "ns_st_el", "ns_st_pb", "ns_st_hc", "ns_st_mp", "ca_ns_st_mp", "cb_ns_st_mp", "cc_ns_st_mp", "cd_ns_st_mp", "ns_st_mv", "ca_ns_st_mv", "cb_ns_st_mv", "cc_ns_st_mv", "cd_ns_st_mv", "ns_st_pn", "ns_st_tp", "ns_st_pt", "ns_st_pa", "ns_st_ad", "ns_st_li", "ns_st_ci", "tp_cid", "tp_aid", "tp_st_cat", "tp_st_mp", "tp_st_error", "ns_ap_jb", "ns_ap_res", "ns_ap_c12m", "ns_ap_install", "ns_ap_updated", "ns_ap_lastrun", "ns_ap_cs", "ns_ap_runs", "ns_ap_usage", "ns_ap_fg", "ns_ap_ft", "ns_ap_dft", "ns_ap_bt", "ns_ap_dbt", "ns_ap_dit", "ns_ap_as", "ns_ap_das", "ns_ap_it", "ns_ap_uc", "ns_ap_aus", "ns_ap_daus", "ns_ap_us", "ns_ap_dus", "ns_ap_ut", "ns_ap_oc", "ns_ap_uxc", "ns_ap_uxs", "ns_ap_lang", "ns_ap_ar", "ns_ap_miss", "ns_ts", "ns_st_ca", "ns_st_cp", "ns_st_er", "ca_ns_st_er", "cb_ns_st_er", "cc_ns_st_er", "cd_ns_st_er", "ns_st_pe", "ns_st_ui", "ca_ns_st_ui", "cb_ns_st_ui", "cc_ns_st_ui", "cd_ns_st_ui", "ns_st_bc", "ns_st_bt", "ns_st_bp", "ns_st_pc", "ns_st_pp", "ns_st_br", "ns_st_ub", "ns_st_vo", "ns_st_ws", "ns_st_pl", "ns_st_pr", "ns_st_ep", "ns_st_ty", "ns_st_ct", "ns_st_cs", "ns_st_ge", "ns_st_st", "ns_st_dt", "ns_st_de", "ns_st_pu", "ns_st_cu", "ns_st_fee", "ns_ap_i1", "ns_ap_i2", "ns_ap_i3", "ns_ap_i4", "ns_ap_i5", "ns_ap_i6", "c3", "ca3", "cb3", "cc3", "cd3", "c4", "ca4", "cb4", "cc4", "cd4", "c5", "ca5", "cb5", "cc5", "cd5", "c6", "ca6", "cb6", "cc6", "cd6", "c10", "c11", "c13", "c14", "c15", "c16", "c7", "c8", "c9"];
+            ns_.comScore ? ns_.comScore.setMeasurementLabelOrder(s) : v.LABELS_ORDER = s;
+            for (var u in bt)
+                if (bt.hasOwnProperty(u)) {
+                    var a = function(e) {
+                        return function(t) {
+                            E = e, bt[e](t)
+                        }
+                    }(u);
+                    n.addEventListener(u, a)
+                }
+            C = e.isTrue(r.trackFeedAsPlaylist) || e.isTrue(r.trackfeedasplaylist), k = e.isTrue(r.collectGuidAsAssetid) || e.isTrue(r.collectguidasassetid), Y = e.isTrue(r.sendLoad) || e.isTrue(r.sendload), Z = e.isTrue(r.sendErrors) || e.isTrue(r.senderrors), tt = r.timingLabel || r.timinglabel, nt = r.starttimelabel || r.starttimelabel, it = r.errorLabel || r.errorlabel, o.setLabels(F), Wt(), o.setPausePlaySwitchDelayEnabled(!0), o.setLabel("ns_ap_pn", "js"), o.setLabel("ns_ap_pfm", "html"), t && t.parentUrl && o.setLabel("c7", t.parentUrl), t && t.parentReferrerUrl && o.setLabel("c9", t.parentReferrerUrl)
+        }
+
+        function Et(t) {
+            Y && !et && (t = t || {}, e.extend(t, {
+                ns_st_ev: "load"
+            }), o.notify(j.CUSTOM, t), et = !0)
+        }
+
+        function St() {
+            o.log("release")
+        }
+
+        function xt() {
+            var e = {};
+            return o.setLabel("ns_st_vo", R), o.setLabel("ns_st_ws", $ ? "full" : "norm"), e
+        }
+
+        function Tt() {
+            var e = {};
+            return e.ns_st_it = "s", e
+        }
+
+        function Nt(t, n) {
+            var r = {};
+            n ? P = e.firstGreaterThan0(t.length, n.duration, t.trueLength, t.mediaLength) : P = e.firstGreaterThan0(t.length, t.trueLength, t.mediaLength);
+            var i = U[t.clipIndex],
+                u = Dt(t);
+            return r.ns_st_cn = A, i.assetID || (i.assetID = o.getPlaylist().getPlaylistId() + "_" + A, U[t.clipIndex] = i), r.ns_st_ci = i.assetID, t.baseClip.isAd ? (r.ns_st_ad = _t(), r.ns_st_cl = P, r.ns_st_el = r.ns_st_cl, r.ns_st_tp = 1, r.ns_st_pn = 1) : (r.ns_st_tp = T.totalParts, r.ns_st_pn = i.partNumber, T.totalParts == 1 ? (r.ns_st_cl = S.release.duration || P || 0, r.ns_st_el = r.ns_st_cl) : (r.ns_st_el = T.duration, r.ns_st_cl = P), t.clipIndex == M ? O = s.POST_ROLL : O = s.MID_ROLL), n && n.isLive && (r.ns_st_li = 1), e.extend(r, T[u]), o.log("Adding clip labels:", T[Dt(t)]), !r.ns_st_ci && !t.baseClip.isAd && (r.ns_st_ci = t.baseClip.guid), Lt(t, n, r), r
+        }
+
+        function Ct(e, t, n, r) {
+            o.setClip(t, n, r, !0);
+            if (x && x.hasOwnProperty("baseClip") && x.baseClip.isAd) {
+                var i = o.getClip().getLabel("ns_st_ct");
+                i.indexOf("ac") == 0 ? o.getClip().setLabel("ns_st_ct", "aa" + i.substring(2)) : i.indexOf("vc") == 0 && o.getClip().setLabel("ns_st_ct", "va" + i.substring(2))
+            }
+        }
+
+        function kt() {
+            return [{
+                prefix: "",
+                map: x.baseClip.contentCustomData
+            }, {
+                prefix: "clip",
+                map: x
+            }, {
+                prefix: "content",
+                map: x && x.hasOwnProperty("baseClip") && x.baseClip.isAd ? dt ? dt.baseClip.contentCustomData : mt ? mt.baseClip.contentCustomData : x.baseClip.contentCustomData : x.baseClip.contentCustomData
+            }, {
+                prefix: "content.clip",
+                map: x && x.hasOwnProperty("baseClip") && x.baseClip.isAd ? dt ? dt : mt ? mt : x : x
+            }, {
+                prefix: "content.baseclip",
+                map: x && x.hasOwnProperty("baseClip") && x.baseClip.isAd ? dt ? dt.baseClip : mt ? mt.baseClip : x.baseClip : x.baseClip
+            }, {
+                prefix: "baseclip",
+                map: x.baseClip
+            }, {
+                prefix: "playlist",
+                map: S
+            }, {
+                prefix: "feed",
+                map: S
+            }, {
+                prefix: "release",
+                map: S.release
+            }]
+        }
+
+        function Lt(t, n, r) {
+            r.ns_st_pr = t.title, r.ns_st_ep = r.ns_st_pr, r.ns_st_cu = e.isNotEmpty(t.URL) ? t.URL : "", r.ns_st_ct = At(t, n), o.setLabel("ns_st_br", t.baseClip && t.baseClip.bitrate ? t.baseClip.bitrate : 0), r.ns_st_cs = t.baseClip.width && t.baseClip.height ? t.baseClip.width + "x" + t.baseClip.height : "0x0", r.ns_st_ty = Ot(t, n)
+        }
+
+        function At(e, t) {
+            var n = "vc00";
+            if (fn(e))
+                if (e.baseClip.isAd)
+                    if (t && t.isLive) n = "va21";
+                    else switch (_t()) {
+                        case "preroll":
+                        case "pre-roll":
+                            n = "va11";
+                            break;
+                        case "midroll":
+                        case "mid-roll":
+                            n = "va12";
+                            break;
+                        case "1":
+                        case "postroll":
+                        case "post-roll":
+                            n = "va13";
+                            break;
+                        default:
+                            n = "va00"
+                    } else t && t.isLive ? n = "vc13" : n = L > 1 ? "vc12" : "vc11";
+            else if (ln(e))
+                if (e.baseClip.isAd)
+                    if (t && t.isLive) n = "aa21";
+                    else switch (_t()) {
+                        case "preroll":
+                        case "pre-roll":
+                            n = "aa11";
+                            break;
+                        case "midroll":
+                        case "mid-roll":
+                            n = "aa12";
+                            break;
+                        case "1":
+                        case "postroll":
+                        case "post-roll":
+                            n = "aa13";
+                            break;
+                        default:
+                            n = "aa00"
+                    } else t && t.isLive ? n = "ac13" : n = L > 1 ? "ac12" : "ac11";
+            else if (e.baseClip.type) {
+                var r = e.baseClip.type.split("/");
+                r && r[0] == "video" ? e.baseClip.isAd ? n = "va00" : n = "vc00" : e.baseClip.isAd ? n = "aa00" : n = "ac00"
+            } else e.baseClip.isAd ? n = "va00" : n = "vc00";
+            return n
+        }
+
+        function Ot(e) {
+            var t = e.baseClip.type;
+            return fn(e) ? t = "video" : ln(e) && (t = "audio"), t ? t : "video"
+        }
+
+        function Mt() {
+            return D
+        }
+
+        function _t() {
+            var e = "pre-roll";
+            return O === s.MID_ROLL ? e = "mid-roll" : O === s.POST_ROLL && (e = "post-roll"), e
+        }
+
+        function Dt(e) {
+            var t = ":",
+                n = S.releasePID + t + e.clipIndex;
+            return e.baseClip.isAd && e.baseClip.hasOwnProperty("id") && (n += t + e.baseClip.id), n
+        }
+
+        function Pt() {
+            var e = +Date.now();
+            o.log("OnShowPlayOverlay"), ot = !0, ut == null && !st && (ut = !1, lt = e, at = lt - t.startTime, o.log("Player Load Duration = " + at))
+        }
+
+        function Ht() {
+            var e = +Date.now();
+            o.log("OnSetReleaseUrl"), st = !0, ut == null && !ot && (ut = !0, lt = e, at = lt - t.startTime, o.log("Player Load Duration = " + at))
+        }
+
+        function Bt() {
+            var e = +Date.now();
+            o.log("OnPlayButtonClicked"), ft = e
+        }
+
+        function jt(t) {
+
+            o.log("onReleaseStart");
+            var n = xt();
+            e.extend(n, {
+                ns_st_er: l
+            }), tn(n);
+            var r = !1;
+            S = e.cloneObject(t.data), o.log("onReleaseStart: playlist->", S), N || (G && (o.log("Resetting playlist"), o.setPlaylist(Tt())), C && (o.getPlaylist().setLabel("ns_st_pl", S.feed), r = !0), N = !0, z = [], A = 0, T = {}), O = s.PRE_ROLL, _ = 0, pt = [], dt = null, vt = 0, mt = null, Ft(S.clips, r), G = !0, o.log("segments=" + L + ", totalParts=" + T.totalParts)
+        }
+
+        function Ft(t, n) {
+            var r = 0;
+            L = 0, T.totalParts = 0;
+            var i;
+            for (var s = 0; s < t.length; s++) {
+                var u = e.cloneObject(t[s]);
+                u.hasOwnProperty("baseClip") && !u.baseClip.isAd && (L++, T.totalParts++, r += e.firstGreaterThan0(u.length, u.mediaLength, u.trueLength), !C && !n && u.hasOwnProperty("title") && o.getPlaylist().setLabel("ns_st_pl", u.title)), i = {
+                    clipIndex: u.hasOwnProperty("clipIndex") ? u.clipIndex : 0,
+                    isAd: !1,
+                    adType: "undefined",
+                    releasePid: u.hasOwnProperty("releasePid") ? u.releasePid : "undefined",
+                    assetID: null,
+                    id: "undefined",
+                    partNumber: T.totalParts
+                };
+                if (u.hasOwnProperty("baseClip")) {
+                    u.baseClip.hasOwnProperty("isAd") && (i.isAd = u.baseClip.isAd), u.baseClip.hasOwnProperty("adType") && (i.adType = u.baseClip.adType), u.baseClip.hasOwnProperty("id") && u.baseClip.id != null && !u.isAd && (i.id = u.baseClip.id), k ? u.baseClip.hasOwnProperty("guid") && u.baseClip.guid != null && (i.assetID = u.baseClip.guid) : u.baseClip.hasOwnProperty("contentID") && u.baseClip.contentID != null && (i.assetID = u.baseClip.contentID);
+                    if (!i.isAd) {
+                        var a = e.cloneObject(u);
+                        a.baseClip.categories = an(a), pt[pt.length] = a, dt || (dt = e.cloneObject(a))
+                    }
+                }
+                U[u.clipIndex] = i, i.isAd || (M = u.clipIndex), u.hasOwnProperty("baseClip") && !u.baseClip.isAd && (o.log("====================Found clip:===================="), o.log("clip.clipIndex: " + u.clipIndex), o.log("clip.title: " + u.title), o.log("clip.baseClip.releaseID: " + u.baseClip.releaseID), o.log("clip.baseClip.contentID: " + u.baseClip.contentID), o.log("==================================================="));
+                var f = Dt(u);
+                typeof T[f] == "undefined" && (A++, T[f] = {
+                    ns_st_cn: A
+                })
+            }
+            T.duration = r
+        }
+
+        function It() {
+            o.log("onReleaseEnd"), C || (N = !1, A = 0, X = 0, W = 1, z = {})
+        }
+
+        function qt(t) {
+            var n = +Date.now();
+            o.log("onMediaStart"), st = !1, ot = !1, ft > 0 ? (ct = n - ft, o.log("Media Load Duration = " + ct)) : lt > 0 && (ct = n - lt, o.log("Media Load Duration = " + ct)), ct > 0 && (ht = at + ct, o.log("Total Duration = " + ht));
+            var r = xt();
+            e.extend(r, {
+                ns_st_er: c
+            }), tn(r), x = e.cloneObject(t.data), x && x.hasOwnProperty("baseClip") && !x.baseClip.isAd && (o.log("====================Found clip:===================="), o.log("clip.clipIndex: " + x.clipIndex), o.log("clip.title: " + x.title), o.log("clip.baseClip.releaseID: " + x.baseClip.releaseID), o.log("clip.baseClip.contentID: " + x.baseClip.contentID), o.log("==================================================="), x.baseClip.categories = an(x), vt < pt.length && (mt = e.cloneObject(pt[vt++]), x.baseClip.categories = e.cloneObject(mt.baseClip.categories), vt < pt.length ? dt = e.cloneObject(pt[vt]) : dt = null)), B || (un(x), B = !0), Ct(x, Nt(x), !1, kt()), Et(), o.log("onMediaStart: clip->", x), q && (o.log("PAUSE: Detected seek from a different clip"), o.notify(j.END, xt(), Mt()), K = !1), Wt(), I = !0
+        }
+
+        function Rt(n) {
+            o.log("onMediaPlaying", n.data.currentTime);
+            var r = +(new Date),
+                i = e.cloneObject(n.data),
+                s = Mt();
+            if (!gt || gt != n.data.currentTime) gt = n.data.currentTime, yt = r;
+            if (typeof x != "undefined") {
+                zt(i.currentTime);
+                if (s != Mt() || r - yt <= y) {
+                    if (I) {
+                        Xt(!0), B || (o.log("Setting clip: timeObject->", i), Ct(x, Nt(x, i), !1, kt()), Et(), B = !0);
+                        var u = {};
+                        rt || (nt && nt.length > 0 && (u[nt] = t.startTime), tt && tt.length > 0 && ht > 0 && (u[tt] = ht), rt = !0), K ? (o.log("PLAY: Detected seek"), u.ns_st_ui = "seek", o.notify(j.PLAY, e.extend(xt(), u), Mt()), o.getState() === p.PLAYING && (K = !1)) : o.notify(j.PLAY, e.extend(xt(), u), Mt()), I = !1
+                    }
+                } else q && !K && Ut();
+                Vt()
+            } else o.log("Error: clip not set. Probably onMediaStart was not called")
+        }
+
+        function Ut() {
+            o.log("PAUSE: Detected pause but it should be playing");
+            var t = xt();
+            e.extend(t, {
+                ns_st_er: h
+            }), o.notify(j.PAUSE, t, Mt()), Xt(!1), I = !0
+        }
+
+        function zt(e) {
+            if (isNaN(e)) D = 0;
+            else {
+                if (e < 0) return;
+                D = Math.max(0, Math.floor(e))
+            }
+            H = +Date.now()
+        }
+
+        function Wt() {
+            D = 0, H = -1
+        }
+
+        function Xt(e) {
+            var t = e != q;
+            q = e, q ? (Vt(), I = t) : ($t(), I = !1)
+        }
+
+        function Vt() {
+            $t(), Q = setInterval(Jt, g)
+        }
+
+        function $t() {
+            typeof Q != "undefined" && (clearInterval(Q), Q = undefined)
+        }
+
+        function Jt() {
+            o.log("END: It should be playing but no activity was registered");
+            var t = xt();
+            e.extend(t, {
+                ns_st_er: d
+            }), o.notify(j.END, t, Mt()), Xt(!1), B = !1, x = undefined
+        }
+
+        function Kt(t) {
+            x = e.cloneObject(t.data), o.log("BUFFER: clip->", x), B || (un(x), Ct(x, Nt(x), !1, kt()), Et(), B = !0), o.notify(j.BUFFER, xt(), Mt())
+        }
+
+        function Qt(t) {
+            x = e.cloneObject(t.data.clip), Xt(!1), zt(x.currentMediaTime - x.startTime), o.log("PAUSE:" + D + " clip->", x), o.notify(j.PAUSE, xt(), Mt()), I = !0
+        }
+
+        function Gt(t) {
+            o.log("onMediaUnpause"), x = e.cloneObject(t.data.clip), Xt(!0);
+            var n = x.currentMediaTime - x.startTime;
+            o.log("onMediaPause:" + n + " clip->", x), n > 0 ? (zt(n), o.log("PLAY"), K ? (o.log("PLAY: Detected seek"), o.notify(j.PLAY, e.extend(xt(), {
+                ns_st_ui: "seek"
+            }), Mt()), o.getState() === p.PLAYING && (K = !1)) : o.notify(j.PLAY, xt(), Mt()), I = !1) : I = !0
+        }
+
+        function Yt(t) {
+            var n = e.cloneObject(t.data);
+            o.log("onMediaSeek: seekObject->", n);
+            if (q) {
+                var r = xt();
+                e.extend(r, {
+                    ns_st_ui: "seek"
+                }), o.log("PAUSE:" + n.start.currentTime), o.notify(j.PAUSE, r, n.start.currentTime), K = !0, I = !0
+            }
+        }
+
+        function Zt(t) {
+            x = e.cloneObject(t.data);
+            var n = +Date.now(),
+                r = x.endTime - x.startTime;
+            r <= 0 && (o.log("The position shouldn't be 0: Using latest position + time since last event"), r = D + (n - H), r > P && (r = P)), zt(r), o.log("onMediaEnd:" + D + " clip->", x), tn(xt()), Wt()
+        }
+
+        function en(t) {
+            o.log("onMediaPlay"), x = e.cloneObject(t.data.clip), Xt(!0);
+            var n = x.currentMediaTime - x.startTime;
+            o.log("onMediaPause:" + n + " clip->", x), n > 0 ? (zt(n), o.log("PLAY"), o.notify(j.PLAY, xt(), Mt()), I = !1) : I = !0
+        }
+
+        function tn(t) {
+            if (q) {
+                var n = t;
+                J > -1 && (J = -1, V = !0, e.extend(n, {
+                    ns_st_ui: "seek"
+                })), Xt(!1), o.log("END"), o.notify(j.END, n, Mt()), B = !1, x = undefined
+            }
+        }
+
+        function nn(e) {
+            R = Math.round(e.data), o.log("onSetVolume: " + R), o.setLabel("ns_st_vo", R)
+        }
+
+        function rn(t) {
+            $ = e.cloneObject(t.data), o.log("onShowFullScreen: " + $), $ ? o.setLabel("ns_st_ws", "full") : o.setLabel("ns_st_ws", "norm")
+        }
+
+        function sn(t) {
+            var n = e.cloneObject(t.data);
+            n.hasOwnProperty("baseClip") && !n.baseClip.isAd && (o.log("====================Found clip:===================="), o.log("clip.clipIndex: " + n.clipIndex), o.log("clip.title: " + n.title), o.log("clip.baseClip.releaseID: " + n.baseClip.releaseID), o.log("clip.baseClip.contentID: " + n.baseClip.contentID), o.log("==================================================="))
+        }
+
+        function on(t) {
+            o.log("onMediaError: " + t.data), Et({
+                tp_aid: "failure",
+                tp_st_cat: "failure",
+                ns_st_pl: e.exists(S) ? S.feed : "",
+                ns_st_cu: e.exists(x) ? x.URL : ""
+            });
+            if (!Z) return;
+            if (st) {
+                var n = {};
+                n.ns_st_ev = "error", n.ns_st_er = m, n.tp_aid = "failure", n.tp_st_cat = "failure", n.ns_st_pl = e.exists(S) ? S.feed : "", n.ns_st_cu = e.exists(x) ? x.URL : "", it && (n[it] = n.ns_st_er), o.notify(j.CUSTOM, e.extend(xt(), n))
+            } else o.notify(j.END, xt(), Mt())
+        }
+
+        function un(e) {
+            o.log("incrementCounters");
+            var t = U[e.clipIndex],
+                n = Dt(e);
+            z[n] == null && (z[n] = W, W += 1), A = z[n], t.isAd ? A = _ + 1 : X = t.partNumber, _++, o.log("lastPlayedClipIndex: " + _), o.log("mappedClipKey: " + n), o.log("currentClipNumber: " + A), o.log("currentPartNumber: " + X), o.log("highestAvailableClipNumber: " + W), t = null, n = null
+        }
+
+        function an(e) {
+            var t = "";
+            if (e.baseClip.categories && e.baseClip.categories.length > 0)
+                if (e.baseClip.categories.constructor === Array) {
+                    for (var n = 0; n < e.baseClip.categories.length; n++)
+                        if (e.baseClip.categories[n].hasOwnProperty("name")) {
+                            var r = e.baseClip.categories[n].name;
+                            r.indexOf(",") > -1 && (r = r.replace(",", w(","))), n === e.baseClip.categories.length - 1 ? t = t.concat(r) : t = t.concat(r + ",")
+                        }
+                } else t = e.baseClip.categories;
+            return t
+        }
+
+        function fn(e) {
+            var t = e.baseClip.type,
+                n = !1;
+            return t && (t.split("/")[0] == "video" || t == "audio/3gpp" || t == "audio/3gpp2" || t == "application/c2+octet-stream" || t == "application/f4m+xml" || t == "application/x-shockwave-flash" || t == "text/x-flx" || t == "application/ism+xml" || t == "application/x-mpegURL" || t == "application/dash+xml" || t == "application/ogg" || t == "application/rgb+xml" || t == "application/smil+xml" || t == "application/vast+xml") && (n = !0), n
+        }
+
+        function ln(e) {
+            var t = e.baseClip.type,
+                n = !1;
+            return t && (t == "audio/mp4" || t == "audio/mpeg" || t == "audio/scpls" || t == "audio/wav") && (n = !0), n
+        }
+        var s = function() {
+                var e = ["pre-roll", "mid-roll", "post-roll"];
+                return {
+                    PRE_ROLL: 0,
+                    MID_ROLL: 1,
+                    POST_ROLL: 2,
+                    toString: function(t) {
+                        return e[t]
+                    }
+                }
+            }(),
+            o = this,
+            u = "thePlatform",
+            a = "2.1.4",
+            f = t.gwtVersion.major + "." + t.gwtVersion.minor + "." + t.gwtVersion.revision,
+            l = "w01",
+            c = "w02",
+            h = "w03",
+            d = "w04",
+            m = "e01",
+            g = 1e3,
+            y = 1e3,
+            w = encodeURIComponent || escape,
+            E, S, x, T = {},
+            N = !1,
+            C = !1,
+            k = !1,
+            L = 0,
+            A = 0,
+            O = s.PRE_ROLL,
+            M = 0,
+            _ = 0,
+            D = 0,
+            P = 0,
+            H = -1,
+            B = !1,
+            j = ns_.StreamSense.PlayerEvents,
+            F = i || {},
+            I = !1,
+            q = !1,
+            R = 0,
+            U = [],
+            z = [],
+            W = 1,
+            X = 0,
+            V = !1,
+            $ = !1,
+            J, K = !1,
+            Q, G = !1,
+            Y = !1,
+            Z = !1,
+            et = !1,
+            tt, nt, rt = !1,
+            it, st = !1,
+            ot = !1,
+            ut = null,
+            at = 0,
+            ft = 0,
+            lt = 0,
+            ct = 0,
+            ht = 0,
+            pt = [],
+            dt = null,
+            vt = 0,
+            mt = null,
+            gt, yt, bt = {
+                OnSetReleaseUrl: Ht,
+                OnPlayButtonClicked: Bt,
+                OnShowPlayOverlay: Pt,
+                OnReleaseStart: jt,
+                OnMediaStart: qt,
+                OnMediaBuffer: Kt,
+                OnMediaPause: Qt,
+                OnMediaUnpause: Gt,
+                OnMediaEnd: Zt,
+                OnMediaPlay: en,
+                OnMediaSeek: Yt,
+                OnSetVolume: nn,
+                OnReleaseEnd: It,
+                OnMediaPlaying: Rt,
+                OnShowFullScreen: rn,
+                OnMediaError: on,
+                OnMediaLoadStart: sn
+            };
+        b.call(this, r, u, a, f || "undefined", {
+            init: wt,
+            release: St,
+            position: Mt
+        })
+    }, y.ThePlatform.start = function() {
+        function i(n) {
+            e.extend(t, n)
+        }
+        var t = {},
+            n = {},
+            r = b.extractParams;
+        e.extend(t, r(window.location.href, "?"));
+        var s = {
+            initialize: function(e) {
+                i(e.vars);
+                var r = new ns_.StreamSense.ThePlatform($pdk, e.controller, t, n)
+            }
+        };
+        tpController.plugInLoaded(s)
+    }, y
+}(), ns_.StreamSense.ThePlatform.start();

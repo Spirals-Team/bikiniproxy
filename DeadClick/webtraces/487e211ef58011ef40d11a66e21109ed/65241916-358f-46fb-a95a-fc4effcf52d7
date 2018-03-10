@@ -1,0 +1,77 @@
+$(document).ready(function () {
+    $("#btnSizeChart").on("click", function (e) {
+        e.preventDefault();
+        $("#sizeChart").dialog({
+            width: 1020,
+            buttons: {
+                'Close': function () {
+                    $(this).dialog("close");
+                }
+            }
+        });
+    });
+    
+    $("#goToSearch").on("click", function (e) {
+        //alert($("#goToSearch").length);
+        e.preventDefault();
+        $("#term").focus();
+    });
+    $("#products-container").on("click", ".btnProdDownload", function (e) {
+        e.preventDefault();
+        $("<div/>").load($(this).attr("href")).dialog({
+            width: 450,
+            buttons: {
+                'Close': function () {
+                    $(this).dialog("close");
+                }
+            }
+        });
+    });
+});
+$(function () {
+    setInterval(KeepSessionAlive, 480000);
+});
+
+function KeepSessionAlive() {
+    $.post("/Handlers/KeepSessionAlive.ashx", null, function () {
+        //console.log("<p>Session is alive and kicking!<p/>");
+    });
+}
+
+function echeck(str) {
+
+    var at = "@"
+    var dot = "."
+    var lat = str.indexOf(at)
+    var lstr = str.length
+    var ldot = str.indexOf(dot)
+    if (str.indexOf(at) == -1) {
+        return false
+    }
+
+    if (str.indexOf(at) == -1 || str.indexOf(at) == 0 || str.indexOf(at) == lstr) {
+        return false
+    }
+
+    if (str.indexOf(dot) == -1 || str.indexOf(dot) == 0 || str.indexOf(dot) == lstr) {
+        return false
+    }
+
+    if (str.indexOf(at, (lat + 1)) != -1) {
+        return false
+    }
+
+    if (str.substring(lat - 1, lat) == dot || str.substring(lat + 1, lat + 2) == dot) {
+        return false
+    }
+
+    if (str.indexOf(dot, (lat + 2)) == -1) {
+        return false
+    }
+
+    if (str.indexOf(" ") != -1) {
+        return false
+    }
+
+    return true
+}

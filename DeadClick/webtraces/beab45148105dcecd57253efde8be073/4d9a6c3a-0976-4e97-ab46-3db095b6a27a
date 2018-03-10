@@ -1,0 +1,285 @@
+// PDP & CART PAGE RECOMMENDATION DOM STRUCTURE
+function recommendations_zpfs(
+                   a_item_ids,            // Array of recommended item IDs
+                   zone,                  // Zone ID specified in the request (as entered on zone edit screen)
+                   symbolic,              // Target type:
+                                          //      _SP_  Specified Product ID(s)
+                                          //      _SC_  Specified Category ID
+                                          //      _RVP_ Last Viewed Product(s)
+                                          //      _RPP_ Last Purchased Product(s)
+                                          //      _LCP_ Last Carted Product(s)
+                                          //      _RVC_ Most Recently Viewed Category
+                                          //      _MPC_ Visitor's Most Popular Category
+                                          //      _MSP_ Most Significant Purchase
+                                          //      _SS_  Specified Search Term
+                                          //      _NR_  No Recommendations
+                   target_id,             // Target ID recommendations are based on
+                   category,              // Category of Target item
+                   rec_attributes,        // 2 dimensional array of attributes for each recommendation
+                   target_attributes,     // Array of attribute for the target
+                   target_header_txt,     // Header text (as entered on recommendation plan edit screen)
+                   ab_test_id,            // String containing AB Test Name, a semicolon, AB test ID for the test element requested - 'no ab test' if no AB Test
+                   a_cat_ids,             // Array of category IDs for each recommended item
+                                          //
+                                          // The final 2 parameters are not standard parameters passed into zone population function
+                   frompage,			  // This is the source page PDP/Cart/Category
+                   param, 				  // This will check if productsource if set
+                                          // They are added via the function calls at bottom of this file
+                   div_id,                //      div id - must match div id in dr_test.html
+                   b_display_target)      //      indicates whether target will be displayed
+
+{
+   var html = "";
+   if (symbolic !== '_NR_') {
+	  //target_header_txt = "You May Also Like";
+      // !!CLIENT DEPENDENT!! - use the correct attribute for description (array indices are zero based so first attribute is index 0)
+      var i_description = 0;
+      // !!CLIENT DEPENDENT!! - use the correct attribute for image (array indices are zero based so first attribute is index 0)
+      var i_image_url   = 0;
+      // !!CLIENT DEPENDENT!! - image prefix
+      var image_prefix  = '';
+      var i_href        = undefined;
+      var i_score       = undefined;
+      var i_price       = undefined;
+	  var n_recs      = a_item_ids.length;
+      var div_title   = '<div class="dr_recs_title">' + target_header_txt + '<\/div>';
+      var lines       = [];
+      var width       = 100 / n_recs;
+
+      if(frompage == 'cart' && param < 0)
+      	var product_resource = '?productsource=CZ1';
+      else if(frompage == 'prj')
+        	var product_resource = '?productsource=PRJZ1';
+      else
+      	var product_resource = '?productsource=PDPZ1';
+      // Below is the old data
+      //var product_resource = '?productsource=Recommendations';
+
+
+      // if true display the target (first) as well as the recommendations
+      if (b_display_target) {
+         rec_attributes.unshift(target_attributes);         // push target onto front of rec_attributes array
+         n_recs++;
+      }
+
+      // Recommendations
+      for (var ii=0; ii < n_recs; ii++) {
+    	  if(ii != 0 ){
+	         var rec_item_id       = b_display_target ? (ii == 1 ? target_id : a_item_ids[ii - 1]) : a_item_ids[ii];
+	         var selected_href     = rec_attributes[ii][6];                             // - not passed - href for image
+	         var image_description = rec_attributes[ii][0];                 // item description
+	         var image_url = rec_attributes[ii][5];    // image url
+			 var price = rec_attributes[ii][1] ? '$' + rec_attributes[ii][1] : '';
+	         var sale_price = rec_attributes[ii][3] ? '$' + rec_attributes[ii][3] : '';
+	         var alt_description   = image_description;
+	         if (!image_description) {
+	            alt_description   = 'No Image Available';
+	            image_description   = '&nbsp;';
+	         }
+	         var promo_message = rec_attributes[ii][11];
+
+	         lines.push('<li class="grid-tile swipe-slider"><div class="product-tile">');
+	         // Display image and it's description
+	         lines.push('<div class="product-image recommendation_image">');
+	         lines.push('<div class="carousel-img-layer"><\/div>');
+	         lines.push('<a title="' + alt_description + '" href="' + selected_href + product_resource + '"><img src="' + image_url + '" title="' + alt_description + '" alt= "' + alt_description + '" /><\/a><\/div>');
+	         lines.push('<div class="product-name"><h3><a class="name-link" title="' + alt_description + '" href="' + selected_href + product_resource + '">' + image_description + '<\/a><\/h3><\/div>');
+			 lines.push('<div class="product-pricing">');
+				 if (sale_price !== '$99999') {
+		             lines.push('<div class="product-discounted-price"><span title="Regular Price" class="product-standard-price">' + price + '<\/span>' + ' ' + '<span title="Sale Price" class="product-sales-price">' + sale_price + '<\/span><\/div>');
+		         } else {
+		             lines.push('<span title="Sale Price" class="product-sales-price">' + price +'<\/span>');
+		         }
+			lines.push('<\/div>');
+			lines.push('<div class="product-promo">');
+				if(promo_message !== 'NA'){
+					lines.push('<div class="promotional-message">' + promo_message + '<\/div>');
+				}
+
+			lines.push('<\/div>');
+			lines.push('<\/div><\/li>');
+
+    	  }
+	      // make a text string
+	      html = lines.join("\n");
+      }
+   }
+
+   var $recommendationContainer = $("#"+div_id);
+   // Append Recommendation Tiles
+
+   if ($recommendationContainer.length > 0) {
+	   $recommendationContainer.append(html);
+   }
+
+   var productTileLength = $recommendationContainer.find("li").length,
+   	   windowWidth = $(window).width();
+
+   if (productTileLength) {
+	   if (windowWidth > 1024) {
+			DesktopUI().HomePage.CarouselRefresh(windowWidth);
+		} else if (windowWidth >= 768 && windowWidth <= 1024) {
+			TabletUI().HomePage.DoHomePageSliderResponse(windowWidth);
+		} else if (windowWidth >= 320 && windowWidth <= 767) {
+			MobileUI().HomePage.DoHomePageSliderBackgroundRespons(windowWidth);
+		}
+		app.swipe.init();
+   }
+}
+
+
+
+
+
+// CLP PAGE RECOMMENDATION DOM STRUCTURE
+
+function CLPZ1_zpfs(a_item_ids, zone, symbolic, target_id, category, rec_attributes, target_attributes, target_header_txt, ab_test_id, a_cat_ids, param, div_id, b_display_target) {
+	var html = "";
+	if (symbolic !== '_NR_') {
+		//target_header_txt = "You May Also Like";
+		// !!CLIENT DEPENDENT!! - use the correct attribute for description (array indices are zero based so first attribute is index 0)
+		var i_description = 0;
+		// !!CLIENT DEPENDENT!! - use the correct attribute for image (array indices are zero based so first attribute is index 0)
+		var i_image_url   = 0;
+		// !!CLIENT DEPENDENT!! - image prefix
+		var image_prefix  = '';
+		var i_href        = undefined;
+		var i_score       = undefined;
+		var i_price       = undefined;
+		var n_recs      = a_item_ids.length;
+		var div_title   = '<div class="dr_recs_title">' + target_header_txt + '<\/div>';
+		var div_carousel_img = '<div class="carousel-img-layer"><\/div>';
+		var lines       = [];
+		var width       = 100 / n_recs;
+		if(param >= 0)
+			var product_resource = '?productsource=PDPZ1';
+		else
+			var product_resource = '?productsource=CATZ1';
+		//var product_resource = '?productsource=Recommendations';
+		// if true display the target (first) as well as the recommendations
+		if (b_display_target){
+			rec_attributes.unshift(target_attributes);         // push target onto front of rec_attributes array
+			n_recs++;
+		}
+
+		// Recommendations
+		for (var ii=0; ii < n_recs; ii++) {
+			if(ii != 0 ){
+				var rec_item_id       = b_display_target ? (ii == 1 ? target_id : a_item_ids[ii - 1]) : a_item_ids[ii];
+				var selected_href     = rec_attributes[ii][6];                             // - not passed - href for image
+				var image_description = rec_attributes[ii][0];                 // item description
+				var image_url = rec_attributes[ii][5];    // image url
+				var price = rec_attributes[ii][1] ? '$' + rec_attributes[ii][1] : '';
+				var sale_price = rec_attributes[ii][3] ? '$' + rec_attributes[ii][3] : '';
+				var alt_description   = image_description;
+				if (!image_description) {
+					alt_description   = 'No Image Available';
+					image_description   = '&nbsp;';
+				}
+
+				lines.push('<li class="grid-tile swipe-slider"><div class="product-tile" data-itemid="'+ rec_item_id +'">');
+
+				// Display image and it's description
+				lines.push('<div class="product-image recommendation_image">');
+				lines.push('<div class="carousel-img-layer"><\/div>');
+				lines.push('<a title="' + alt_description + '" href="' + selected_href + product_resource + '" class="thumb-link"><img src="' + image_url + '" title="' + alt_description + '" alt= "' + alt_description + '" style="z-index:1;"/><\/a><\/div>');
+				lines.push('<div class="product-name"><h3><a title="' + alt_description + '" href="' + selected_href + product_resource +'" class="name-link">' + image_description + '<\/a><\/h3><\/div>');
+				lines.push('<div class="product-pricing">');
+				if (sale_price !== '$99999') {
+					lines.push('<div class="product-discounted-price"><span title="Regular Price" class="product-standard-price">' + price + '<\/span>' + ' ' + '<span title="Sale Price" class="product-sales-price">' + sale_price + '<\/span><\/div>');
+				} else {
+					lines.push('<span title="Sale Price" class="product-sales-price">' + price + '<\/span>');
+				}
+				lines.push('<\/div>');
+				lines.push('<\/div><\/li>');
+			}
+			// make a text string
+			html = lines.join("\n");
+		}
+	}
+	 var $recommendationContainer = $("#jcarousel-recommendations");
+	 // Append Recommendation Tiles
+	 if ($recommendationContainer.length > 0) {
+		 $recommendationContainer.append(html);
+     }
+
+	 var productTileLength = $recommendationContainer.find("li").length,
+	 	 windowWidth = $(window).width();
+
+	 if (productTileLength) {
+		if (windowWidth > 1024) {
+			DesktopUI().HomePage.CarouselRefresh(windowWidth);
+		} else if (windowWidth >= 768 && windowWidth <= 1024) {
+			TabletUI().HomePage.DoHomePageSliderResponse(windowWidth);
+		} else if (windowWidth >= 320 && windowWidth <= 767) {
+			MobileUI().HomePage.DoHomePageSliderBackgroundRespons(windowWidth);
+		}
+		app.swipe.init();
+	}
+}
+
+
+// This function will check if the productsource parameter in URL is set
+// This function is added by GV
+function checkparam() {
+	var str = document.URL;
+    var n = str.search("productsource");
+    return n;
+}
+
+// !!CLIENT DEPENDENT!!
+// Add a function named ZoneID_zp (where ZoneID is the actual zone id) for all zones the test zone population function should be called for
+// Cart Recommendation
+function CZ1_zp (a,b,c,d,e,f,g,h,i,j)
+{
+	var param = checkparam();
+	recommendations_zpfs(a,b,c,d,e,f,g,h,i,j,'cart',param,'jcarousel-recommendations',true);
+}
+var global_a,global_b,global_c,global_d,global_e,global_f,global_g,global_h,global_i,global_j;
+
+// CLP Recommendation
+function CATZ1_zp (a,b,c,d,e,f,g,h,i,j)
+{
+
+	global_a=a;
+	global_b=b;
+	global_c=c;global_d=d;global_e=e;global_f=f;global_g=g;global_h=h;global_i=i;global_j=j;
+	var param = checkparam();
+	CLPZ1_zpfs(a,b,c,d,e,f,g,h,i,j,param,'jcarousel-recommendations',true);
+}
+// PDP Recommendation
+function PDPZ1_zp (a,b,c,d,e,f,g,h,i,j)
+{
+	global_a=a;
+	global_b=b;
+	global_c=c;global_d=d;global_e=e;global_f=f;global_g=g;global_h=h;global_i=i;global_j=j;
+	var param = checkparam();
+	recommendations_zpfs(a,b,c,d,e,f,g,h,i,j,'pdp',param,'jcarousel-recommendations',true);
+}
+
+
+
+function PRJZ1_zp (a,b,c,d,e,f,g,h,i,j)
+{
+	global_a=a;
+	global_b=b;
+	global_c=c;global_d=d;global_e=e;global_f=f;global_g=g;global_h=h;global_i=i;global_j=j;
+	var param = checkparam();
+	recommendations_zpfs(a,b,c,d,e,f,g,h,i,j,'prj',param,'jcarousel-recommendations',true);
+
+}
+
+function createPopupRecomendationsClp(){
+	var param = checkparam();
+	CLPZ1_zpfs(global_a,global_b,global_c,global_d,global_e,global_f,global_g,global_h,global_i,global_j,'pdp',param,'jcarousel-recommendations-modal',false);
+}
+
+function createPopupRecomendations(){
+	var param = checkparam();
+	recommendations_zpfs(global_a,global_b,global_c,global_d,global_e,global_f,global_g,global_h,global_i,global_j,'pdp',param,'jcarousel-recommendations-modal',false);
+}
+
+function createPopupProjectRecomendations(productId,categoryId){
+	var param = checkparam();
+	recommendations_zpfs(global_a,"PDPZ1",global_c,productId,categoryId,global_f,global_g,global_h,global_i,global_j,'prj',param,'jcarousel-recommendations-modal',false);
+}

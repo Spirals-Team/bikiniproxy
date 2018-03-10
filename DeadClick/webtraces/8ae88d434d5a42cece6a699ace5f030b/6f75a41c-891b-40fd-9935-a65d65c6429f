@@ -1,0 +1,23 @@
+_satellite.pushAsyncScript(function(event, target, $variables){
+  // try to add MID do booking.com links 2sec after DTM loads
+try {
+  var updateLinks = function() {
+    var bookingLinks = document.querySelectorAll('a[href*="booking.com"]');
+    for (var i = 0; i < bookingLinks.length; i++) {
+      var oldHref = bookingLinks[i].getAttribute('href');
+      if (!oldHref.match(/TMG-(\d*)-.*/)) {
+        bookingLinks[i].setAttribute('href', oldHref.replace('TMG-', 'TMG-' + s.visitor.getMarketingCloudVisitorID() + '-'));
+      }
+      // if calendar availabilty component is used update data-url attr that is used to generate booking.com link
+      if (bookingLinks[i].hasAttribute('data-url')) {
+        var oldDataUrl = bookingLinks[i].getAttribute('data-url');
+        if (!oldDataUrl.match(/TMG-(\d*)-.*/)) {
+          bookingLinks[i].setAttribute('data-url', oldDataUrl.replace('TMG-', 'TMG-' + s.visitor.getMarketingCloudVisitorID() + '-'));
+        }
+      }
+    }
+  };
+  setTimeout(updateLinks, 2000);
+} catch (e) {}
+
+});

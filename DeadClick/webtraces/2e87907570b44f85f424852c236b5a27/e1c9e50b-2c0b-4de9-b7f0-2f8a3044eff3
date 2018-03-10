@@ -1,0 +1,170 @@
+var disappeardelay = 500 ;
+var delais = 0;
+var ie5 = document.all
+var ns6 = document.getElementById&&!document.all
+var menu_on = '';
+
+
+
+
+function mettreMenuOn(menu_id) {
+    menu_on = menu_id;    
+    var menu_divs = document.getElementById('menu').getElementsByTagName("div");
+    for (var i=0; i<menu_divs.length; i++) {
+        if (menu_divs[i].id == "div_" + menu_id) {
+            document.getElementById(menu_divs[i].id).className = 'item_menu_on';
+        }
+    }
+}
+
+
+function mettreMenuOnHor(menu_id) {
+    menu_on = menu_id;    
+    var menu_divs = document.getElementById('menu_hor').getElementsByTagName("div");
+    for (var i=0; i<menu_divs.length; i++) {
+        if (menu_divs[i].id == "divhor_" + menu_id) {
+            document.getElementById(menu_divs[i].id).className = 'item_menu_hor_on';
+        }
+    }
+}
+
+
+
+
+function swap_div(id,o)
+{
+	document.getElementById(id).className='item_menu'+(o?'_on':'');
+}
+
+function swap_div2(id,o)
+{
+	document.getElementById('div2_'+id).className='item_sub_menu'+(o?'_on':'');
+}
+
+function swap_div3(id,o)
+{
+	document.getElementById('div3_'+id).className='item_sub_menu'+(o?'_on':'');
+}
+
+
+function swap_divhor(id,o)
+{
+	document.getElementById(id).className='item_menu_hor'+(o?'_on':'');
+}
+
+function swap_div5(id,o)
+{
+	document.getElementById('div5_'+id).className='item_sub_menu_hor'+(o?'_on':'');
+}
+
+function swap_div6(id,o)
+{
+	document.getElementById('div6_'+id).className='item_sub_menu_hor'+(o?'_on':'');
+}
+
+function trim(str)
+{
+   return str.replace(/^\s*|\s*$/g,"");
+}
+
+//  window width
+if (parseInt(navigator.appVersion)>3) {
+	//if (ns6) { winW = window.innerWidth-14;}
+	//if (ie5) { var winW = document.body.offsetWidth-18; }
+	var winW = 0;
+	if( typeof( window.innerWidth ) == 'number' ) {
+		//Non-IE
+		winW = window.innerWidth;
+	} else if( document.documentElement && ( document.documentElement.clientWidth || document.documentElement.clientHeight ) ) {
+		//IE 6+ in 'standards compliant mode'
+		winW = document.documentElement.clientWidth;
+	} else if( document.body && ( document.body.clientWidth || document.body.clientHeight ) ) {
+		//IE 4 compatible
+		winW = document.body.clientWidth;
+	}
+}
+
+function getposOffset(what, offsettype){
+	var totaloffset=(offsettype=="left")? what.offsetLeft : what.offsetTop;
+	var parentEl=what.offsetParent;
+	while (parentEl!=null){
+		totaloffset=(offsettype=="left")? totaloffset+parentEl.offsetLeft : totaloffset+parentEl.offsetTop;
+		parentEl=parentEl.offsetParent;
+	}
+	return totaloffset;
+}
+
+function clickreturnvalue(){
+	if ((ie5||ns6) && !1) return false
+	else return true
+}
+
+function dropdownmenu(obj, e, dropmenuID){
+	
+	if (window.event) event.cancelBubble=true
+	else if (e.stopPropagation) e.stopPropagation()
+	if (typeof dropmenuobj!="undefined") //hide previous menu
+		dropmenuobj.style.display="none"
+		clearhidemenu()
+	if (ie5||ns6){
+		//obj.onmouseout=delayhidemenu
+		dropmenuobj=document.getElementById("div_top_"+dropmenuID)
+		if (trim(dropmenuobj.innerHTML)=="") return;
+		dropmenuobj.onmouseover=clearhidemenu
+		dropmenuobj.style.display="block"
+		dropmenuobj.x=getposOffset(obj, "left")
+		dropmenuobj.y=getposOffset(obj, "top")
+		var yOffset=ie5?0:0
+		var xOffset=10;//obj.offsetWidth
+		dropmenuobj.style.left=dropmenuobj.x+xOffset+"px"
+		dropmenuobj.style.top=dropmenuobj.y+yOffset+"px"
+	}
+	return clickreturnvalue()
+}
+
+function dropdownmenuhor(obj, e, dropmenuID){
+	
+	if (window.event) event.cancelBubble=true
+	else if (e.stopPropagation) e.stopPropagation()
+	if (typeof dropmenuobj!="undefined") //hide previous menu
+		dropmenuobj.style.display="none"
+		clearhidemenu()
+	if (ie5||ns6){
+		//obj.onmouseout=delayhidemenu
+		dropmenuobj=document.getElementById("divhor_top_"+dropmenuID)
+		if (trim(dropmenuobj.innerHTML)=="") return;
+		dropmenuobj.onmouseover=clearhidemenu
+		dropmenuobj.style.display="block"
+		dropmenuobj.x=getposOffset(obj, "left")
+		dropmenuobj.y=getposOffset(obj, "top")
+		var yOffset=ie5?0:0
+		var xOffset=10;//obj.offsetWidth
+		dropmenuobj.style.left=dropmenuobj.x+xOffset+"px"
+		dropmenuobj.style.top=dropmenuobj.y+yOffset+"px"
+	}
+	return clickreturnvalue()
+}
+
+
+
+
+
+function delayhidemenu(){
+	delayhide=setTimeout("dropmenuobj.style.display='none'",disappeardelay)
+}
+
+function clearhidemenu(){
+	if (typeof delayhide!="undefined") clearTimeout(delayhide)
+}
+
+function hideall()
+{
+	delayhidesubmenu()
+	delayhidemenu()
+}
+
+function clearallhide()
+{
+	if (typeof delaysubhide!="undefined") clearTimeout(delaysubhide)
+	if (typeof delayhide!="undefined") clearTimeout(delayhide)
+}

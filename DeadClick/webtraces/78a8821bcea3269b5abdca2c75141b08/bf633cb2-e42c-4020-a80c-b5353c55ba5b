@@ -1,0 +1,44 @@
+_satellite.pushBlockingScript(function(event, target, $variables){
+  //**************************************************
+//     Sublime Friendly - RC START
+//**************************************************
+
+// "Make an offer" success modal visible
+var isMobile = false;				     			 															 
+
+var checkIfMobile = function(){ isMobile = document.documentElement.clientWidth <= 920; };						 
+
+var updateElPresence = function(){																     			 
+	checkIfMobile();																			     			
+	if(isMobile){																	     			 			 
+		$(document).on('touchstart', '.button-action.inline-overlay', function(e){
+			var containsMao = $(this).hasClass('mao-tracked');
+			if(!containsMao){
+				$(this).addClass('mao-tracked');
+				s.events = 'event88';
+        s.linkTrackVars= 'events,eVar32,prop32,eVar61';
+        s.eVar61 = s.prop32 = "Make an offer Hover"
+        s.tl(true,'o','Make an offer Hover');
+  //      console.log('event88 fires');
+			}
+		});
+	} else {
+		$(document).on('mouseenter', '.makeanoffer-overlay', function() {								     	 
+			var containsMao = $(this).hasClass('mao-tracked');
+			if(!containsMao){
+				$(this).addClass('mao-tracked');
+				s.events = 'event88';
+        s.linkTrackVars= 'events,eVar32,prop32,eVar61';
+        s.eVar61 = s.prop32 = "Make an offer Hover"
+        s.tl(true,'o','Make an offer Hover');
+     //   console.log('event88 fires');
+			}
+		})
+		.one('mouseleave', function() {
+		    return;  
+		});
+	}
+};
+window.addEventListener('resize', updateElPresence);											     			 // --- UPDATE whether the Make Offer Button will track clicks based on a visitor resizing his or her browser
+updateElPresence();	
+});

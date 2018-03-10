@@ -1,0 +1,94 @@
+//create modal parent div and message div
+function buildDiv() {
+	if (document.createElement) {
+	  var modalDiv = document.createElement("div");
+	  modalDiv.setAttribute ("id", "modalMessageOverlay");
+	  
+	  var modalContent = document.createElement("div");
+	  modalContent.setAttribute ("id", "messageBox");
+	  modalContent.className ="popup_block";
+	  
+	  //grab serviceAnnouncement div that is included in header via ssi
+	  var serviceAnnouncement = document.getElementById("serviceAnnouncement");
+	  modalContent.appendChild(serviceAnnouncement);
+	  
+	  modalDiv.appendChild(modalContent);	
+	  
+	  document.getElementsByTagName("body")[0].appendChild(modalDiv);
+	}
+};
+addLoadEvent(buildDiv);
+
+//set toggle hidden and visible
+function modalWindow() {
+	var el = document.getElementById("modalMessageOverlay");
+	el.style.visibility = (el.style.visibility == "visible") ? "hidden" : "visible";
+	var el2 = document.getElementById("serviceAnnouncement");
+	el2.style.visibility = (el2.style.visibility == "visible") ? "hidden" : "visible";
+	el2.style.display = (el2.style.display == "block") ? "none" : "block";
+	el2.style.height = "auto";
+};
+
+//bind onclick event to anchors with specific class
+function toggleModalWindow() {
+	var modalTriggers = document.getElementsByTagName("a");
+	for (var i=0; i< modalTriggers.length; i++) {
+		if (modalTriggers[i].className == "modalTrigger") {
+			modalTriggers[i].onclick = function() {
+				return modalWindow();
+			};		
+	 	}
+	}
+};
+addLoadEvent(toggleModalWindow);
+
+//determine height of browser window
+function getWindowHeight() {var windowHeight = 0;
+	if (typeof(window.innerHeight) == 'number') {
+		windowHeight = window.innerHeight;
+	}
+	else {
+		if (document.documentElement && document.documentElement.clientHeight) {
+			windowHeight = document.documentElement.clientHeight;
+		}
+		else {
+		
+			if (document.body && document.body.clientHeight) {
+				windowHeight = document.body.clientHeight;
+			}
+		}
+	}
+	return windowHeight;	
+};
+
+//set the distance from top of window on message div
+function setContent() {
+	if (!document.getElementById('messageBox')) {
+		return false;
+	}
+	else {
+		var windowHeight = getWindowHeight();
+		if (windowHeight > 0) {
+			var contentElement = document.getElementById('messageBox');
+			var contentHeight = contentElement.offsetHeight;
+			if (windowHeight - contentHeight > 0) {
+				contentElement.style.position = 'relative';
+				contentElement.style.top = ((windowHeight / 2) - (contentHeight / 2)) + 'px';
+			}
+			else {
+				contentElement.style.position = 'static';
+			}
+		}
+	}
+};
+
+//center message div on window.onload
+function initSetContent() {
+	setContent();
+};
+addLoadEvent(initSetContent);
+
+//keep message div centered on window resize
+window.onresize = function() {
+	setContent();
+};

@@ -1,0 +1,14 @@
+/*============================================================================
+  Social Icon Buttons v1.0
+  Author:
+    Carson Shold | @cshold
+    http://www.carsonshold.com
+  MIT License
+==============================================================================*/
+window.timberSocial = window.timberSocial || {};
+
+timberSocial.cacheSelectors=function(){timberSocial.cache={$shareButtons:$(".social-sharing")}},timberSocial.init=function(){timberSocial.cacheSelectors(),timberSocial.sliders()},timberSocial.socialSharing=function(){timberSocial.cacheSelectors();var a=timberSocial.cache.$shareButtons,b=a.find("a"),c=a.attr("data-permalink"),d=$(".share-facebook").find(".share-count"),e=$(".share-pinterest").find(".share-count"),f=$(".share-google").find(".share-count");d.length&&$.getJSON("https://graph.facebook.com/?id="+c+"&callback=?",function(a){a.shares?d.text(a.shares).addClass("is-loaded"):d.remove()}),e.length&&$.getJSON("https://api.pinterest.com/v1/urls/count.json?url="+c+"&callback=?",function(a){a.count>0?e.text(a.count).addClass("is-loaded"):e.remove()}),f.length&&f.addClass("is-loaded"),b.on("click",function(a){a.preventDefault();var b=$(this),c=b.attr("class").replace("-","_"),d=b.attr("href"),e=700,f=400;switch(c){case"share-fancy":e=480,f=720;break;case"share-google":e=500}window.open(d,c,"width="+e+", height="+f)})};
+
+
+  $(timberSocial.socialSharing);
+

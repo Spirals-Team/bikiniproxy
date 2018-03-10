@@ -1,0 +1,57 @@
+_satellite.pushAsyncScript(function(event, target, $variables){
+  //key value for preventing popup newsletter and ad
+(function () {
+    if (_satellite.readCookie('_TO_Auth') === undefined && _satellite.readCookie('mvtreturncookie') !== 'testovercookie') {
+        var meta = document.querySelector('meta[data-module="adverts"]');
+        var params;
+
+        if (meta) {
+            params = JSON.parse(meta.dataset.params);
+            params.taggings = Object.assign({}, params.taggings, {newsletter_popup: 'true'});
+
+            meta.setAttribute('data-params', JSON.stringify(params));
+        }
+    }
+})();
+
+
+
+
+(function() {
+//email uid
+    var uid = _satellite.getVar('uid url param');
+    
+    if (typeof uid != 'undefined' && uid.length > 0) {
+    
+        function createCookie(name, value, days) {
+            if (days) {
+                var date = new Date();
+                date.setTime(date.getTime() + days * 24 * 60 * 60 * 1000);
+                var expires = "; expires=" + date.toGMTString();
+            } else var expires = "";
+                document.cookie = name + "=" + value + expires + "; path=/";
+        }   
+        
+            createCookie('_TO_Emailuid', uid, 1);
+            
+    }
+
+//refid  
+if(_satellite.getQueryParamCaseInsensitive('refid')!=undefined) {
+  _satellite.setCookie('dtm_refid',_satellite.getQueryParamCaseInsensitive('refid'),3);
+}
+  
+
+//ab testing cookie
+  if(_satellite.readCookie('TOTestVariant')) {
+  if(typeof TOTestVariant != "undefined"){
+    TOTestVariant += "|"+_satellite.readCookie('TOTestVariant');
+  } else {
+    var TOTestVariant = _satellite.readCookie('TOTestVariant');
+    
+  }
+  
+}
+  
+})();
+});

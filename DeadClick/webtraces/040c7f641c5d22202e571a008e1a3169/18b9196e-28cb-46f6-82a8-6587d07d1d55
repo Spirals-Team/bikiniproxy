@@ -1,0 +1,267 @@
+
+/*
+* Timely BookButton plugin
+* Example usage:
+* var button = new timelyButton('doedayspa');
+*
+* Booking process can be kicked off manually by calling the start method on the button instance e.g.
+* button.start();
+*
+*/
+
+// Need this for legacy support of older versions of the BookingButton
+var timelyButton;
+
+(function () {
+    
+    "use strict";
+    var context = window;
+    
+    var mobile = {
+        Android: function () {
+            return navigator.userAgent.match(/Android/i) ? true : false;
+        },
+        BlackBerry: function () {
+            return navigator.userAgent.match(/BlackBerry/i) ? true : false;
+        },
+        iOS: function () {
+            return navigator.userAgent.match(/iPhone|iPod/i) ? true : false;
+        },
+        Windows: function () {
+            return navigator.userAgent.match(/IEMobile/i) ? true : false;
+        },
+        any: function () {
+            return (mobile.Android() || mobile.BlackBerry() || mobile.iOS() || mobile.Windows());
+        }
+    };
+
+
+    timelyButton = function (id, opts) {
+        
+        var options = opts || {};
+        var businessId = id;
+        var resellerCode = options.reseller || resellerCode || '';
+        var productId = options.product || productId || '';
+        var categoryId = options.category || categoryId || '';
+        var staffId = options.staff || staffId || '';
+        var locationId = options.location || locationId || '';
+        var giftVoucherId = options.giftVoucherId || giftVoucherId || '';
+        var isPurchaseButton = options.isPurchaseButton != null ? options.isPurchaseButton : false; // default not a purchase
+        var dontCreateButton = !!options.dontCreateButton;
+        window.timelyBookFrame = {};
+        var XD;
+        var style = options.style || 'light';
+        var buttonId = options.buttonId || false;
+        var bookButton;
+
+        var scriptSource = (function() {
+            var script = document.getElementById('timelyScript');
+            if (script.getAttribute.length !== undefined) {
+                return script.src;
+            }
+            return script.getAttribute('src', -1);
+        }());
+
+        var isOwnImage = !!options.imgSrc;
+        var imgButtonType = isPurchaseButton ? "purchase-buttons" : "book-buttons";
+        var imgSrc = options.imgSrc || getDomain() + '/images/' + imgButtonType + '/button_' + style + '@2x.png';
+        var hoverSrc = getDomain() + '/images/' + imgButtonType + '/button_' + style + '_hover@2x.png';
+        var activeSrc = getDomain() + '/images/' + imgButtonType + '/button_' + style + '_active@2x.png';
+        var locationUrl = (isPurchaseButton ? '/giftvoucher/details/' : '/booking/location/') + businessId;
+
+        function init() {
+            if (dontCreateButton) return true;
+            if (isOwnImage) {
+                bookButton = document.createElement('a');
+                bookButton.href = 'javascript:void(0)';
+                bookButton.onclick = eventHandler.prototype.Book;
+                bookButton.innerHTML = '<img src=\'' + imgSrc + '\' border=\'0\' />';
+            } else {
+                bookButton = document.createElement('a');
+                bookButton.style.backgroundImage = "url(" + imgSrc + ")";
+                bookButton.style.backgroundRepeat = "no-repeat";
+                bookButton.style.backgroundPosition = "0px 0px";
+                bookButton.style.backgroundSize = (isPurchaseButton ? "220px" : "162px") + " 40px";
+                bookButton.style.width = isPurchaseButton ? "220px" : "162px";
+                bookButton.style.height = "40px";
+                bookButton.style.display = "inline-block";
+                bookButton.href = 'javascript:void(0)';
+                bookButton.onclick = eventHandler.prototype.Book;
+                bookButton.innerHTML += '<img src="' + hoverSrc + '" style="display:none;" border=\'0\' />';
+                bookButton.innerHTML += '<img src="' + activeSrc + '" style="display:none;" border=\'0\' />';
+                bookButton.onmouseenter = function() { this.style.backgroundImage = "url(" + hoverSrc + ")"; };
+                bookButton.onmouseout = function () { this.style.backgroundImage = "url(" + imgSrc + ")"; };
+                bookButton.onmousedown = function () { this.style.backgroundImage = "url(" + activeSrc + ")"; };
+                bookButton.onmouseup = function () { this.style.backgroundImage = "url(" + hoverSrc + ")"; };
+            }
+            var insertionPoint = findInsertionPoint(buttonId);
+            insertAfter(bookButton, insertionPoint);
+        }
+
+        function findInsertionPoint(buttonId) {
+            var insertionPoint = false;
+            if (buttonId) {
+                insertionPoint = document.getElementById(buttonId);
+            } else {
+                if (("currentScript" in document)) {
+                    insertionPoint = document.currentScript;
+                } else {
+                    var scripts = document.getElementsByTagName('script');
+                    insertionPoint = scripts[scripts.length - 1];
+                }
+            }
+            return insertionPoint;
+        }
+
+        function getDomain() {
+            return ('https:' == document.location.protocol ? 'https://' : 'http://') + scriptSource.match( /:\/\/(.[^/]+)/ )[1];
+        }
+
+        function startBooking() {
+            var url = "";
+            if (resellerCode) {
+                url += '&reseller=' + resellerCode;
+            }
+            if (productId) {
+                url += '&productId=' + productId;
+            }
+            if (categoryId) {
+                url += '&categoryId=' + categoryId;
+            }
+            if (staffId) {
+                url += '&staffId=' + staffId;
+            }
+            if (locationId) {
+                url += '&locationId=' + locationId;
+            }
+            if (giftVoucherId) {
+                url += '&giftVoucherId=' + giftVoucherId;
+            }
+            
+            if (window.innerWidth < 768 || mobile.any()) {
+                url = getDomain() + locationUrl + "?mobile=true" + url;
+                window.location.href = url;
+                return;
+            }
+            window.timelyBookFrame = document.createElement('iframe');
+            window.timelyBookFrame.className = 'timely-book-frame';
+            window.timelyBookFrame.style.cssText = 'width: 100%; height: 100%; position: fixed; top: 0; left: 0; z-index: 99999999;';
+            window.timelyBookFrame.setAttribute('frameBorder', 0);
+            window.timelyBookFrame.setAttribute('allowTransparency', 'true');
+            url = getDomain() + (isPurchaseButton ? '/giftvoucher' : '/booking') + '/overlay/' + businessId + '?x' + url;
+            url += '#' + encodeURIComponent(document.location.href);
+            window.timelyBookFrame.src = url;
+            window.timelyBookFrame.style.display = 'none';
+            document.getElementsByTagName('body')[0].appendChild(window.timelyBookFrame);
+            var element = document.getElementById('timely-lightbox');
+            if (typeof(element) != 'undefined' && element != null) {
+                $('#timely-lightbox').fadeOut();
+            }
+        }
+
+        function insertAfter(f, n) {
+            var p = n.parentNode;
+            if (n.nextSibling) {
+                p.insertBefore(f, n.nextSibling);
+            } else {
+                p.appendChild(f);
+            }
+        }
+        
+        function eventHandler() {
+            // prototype instance
+        }
+
+        eventHandler.prototype.Book = function() {
+            startBooking();
+        };
+
+        // everything is wrapped in the XD function to reduce namespace collisions
+        XD = function () {
+            
+            var interval_id,
+                last_hash,
+                cache_bust = 1,
+                attached_callback,
+                window = context;
+
+            return {
+                postMessage: function (message, target_url, target) {
+                    if (!target_url) {
+                        return;
+                    }
+                    target = target || parent; // default to parent
+                    if (window['postMessage']) {
+                        // the browser supports window.postMessage, so call it with a targetOrigin
+                        // set appropriately, based on the target_url parameter.
+                        target['postMessage'](message, target_url.replace(/([^:]+:\/\/[^\/]+).*/, '$1'));
+                    } else if (target_url) {
+                        // the browser does not support window.postMessage, so use the window.location.hash fragment hack
+                        target.location = target_url.replace(/#.*$/, '') + '#' + (+new Date) + (cache_bust++) + '&' + message;
+                    }
+                },
+                receiveMessage: function (callback, source_origin) {
+                    // browser supports window.postMessage
+                    if (window['postMessage']) {
+                        // bind the callback to the actual event associated with window.postMessage
+                        if (callback) {
+                            attached_callback = function (e) {
+                                if ((typeof source_origin === 'string' && e.origin !== source_origin)
+                                    || (Object.prototype.toString.call(source_origin) === "[object Function]" && source_origin(e.origin) === !1)) {
+                                    return !1;
+                                }
+                                callback(e);
+                            };
+                        }
+                        if (window['addEventListener']) {
+                            window[callback ? 'addEventListener' : 'removeEventListener']('message', attached_callback, !1);
+                        } else {
+                            window[callback ? 'attachEvent' : 'detachEvent']('onmessage', attached_callback);
+                        }
+                    } else {
+                        // a polling loop is started & callback is called whenever the location.hash changes
+                        interval_id && clearInterval(interval_id);
+                        interval_id = null;
+                        if (callback) {
+                            interval_id = setInterval(function () {
+                                var hash = document.location.hash,
+                                    re = /^#?\d+&/;
+                                if (hash !== last_hash && re.test(hash)) {
+                                    last_hash = hash;
+                                    callback({ data: hash.replace(re, '') });
+                                }
+                            }, 100);
+                        }
+                    }
+                }
+            };
+        }();
+
+        // setup a callback to handle the dispatched MessageEvent. if window.postMessage is supported the passed
+        // event will have .data, .origin and .source properties. otherwise, it will only have the .data property.
+        XD.receiveMessage(function (message) {
+            
+            if (message.data == 'close') {
+                var element = document.getElementById('timely-lightbox');
+                if (typeof (element) != 'undefined' && element != null) {
+                    $('#timely-lightbox').show();
+                }
+                if (window.timelyBookFrame && window.timelyBookFrame.parentNode) window.timelyBookFrame.parentNode.removeChild(window.timelyBookFrame);
+            }
+            if (message.data == 'open' && window.timelyBookFrame) {
+                window.timelyBookFrame.style.display = 'block';
+            }
+        }, getDomain());
+
+        init();
+
+        // expose the BookButton API
+        return {
+            start: function() {
+                startBooking();
+            }
+        };
+    };
+    
+})();
+

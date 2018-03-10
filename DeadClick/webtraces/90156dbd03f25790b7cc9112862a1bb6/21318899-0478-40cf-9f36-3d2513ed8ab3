@@ -1,0 +1,589 @@
+$(document).ready(function(){
+	OeuvreParcoursFiche.init();
+	OeuvreFiche.init();
+	ExpoFiche.init();
+	CollectionFiche.init();
+	Home.init();
+	Copyright.init();
+	Calendar.init();
+	BackgroundProps.init();
+  
+    $("ul#ticker01").liScroll();
+  
+});
+
+/**
+ * Gestion de la page oeuvre
+ */
+var OeuvreFiche = {
+		
+		// -------------------- private props
+		
+		_currentPictureIndex: null,
+		_$pictures: null,
+		
+		// -------------------- public methods
+		
+		
+		init:function(){
+			OeuvreFiche._displayLightbox();
+			OeuvreFiche.manageSeeMore();
+			OeuvreFiche.toggleReferences();
+			OeuvreFiche._$pictures = $('.thumbnails ul li');
+			OeuvreFiche._bindEvents();
+			if ( (navigator.userAgent.toLowerCase().indexOf('msie 6') > -1) == false){
+				OeuvreFiche._zoomMyPicture();
+			}
+			OeuvreFiche._displayCredits();
+
+		},
+		
+		manageSeeMore:function(){
+			
+			var $targetButton = $('.more-button .see-more');
+			var $targetText = $('.more-content');
+			
+			$targetText.hide();
+			
+			$targetButton.click(function(){
+				$('.more-content').fadeIn();
+				$(this).hide();
+			});
+			
+		},
+		
+		toggleReferences:function(){
+			
+			var $targetText = $('.content-references');
+			var $targetButton = $('.see-references');
+			
+			
+			$targetButton.click(function(){
+				
+				if($(this).parent().find('.content-references').is(':visible')){
+					$(this).parent().find('.content-references').fadeOut(100);
+				}
+				else
+					$(this).parent().find('.content-references').fadeIn(100);
+			});
+		},
+		
+		displayPicture: function( aPictureIndex )
+		{			
+			OeuvreFiche._currentPictureIndex = aPictureIndex;
+			OeuvreFiche._updateDisplay();
+				
+		},
+		
+	// -------------------- private methods		
+		
+		_bindEvents: function()
+		{
+			OeuvreFiche._$pictures.find('a').click( OeuvreFiche._onLinkClick );			
+		},
+		
+		
+		_onLinkClick: function()
+		{
+			var $myLi = $(this).parent();
+			var myIndex = OeuvreFiche._$pictures.index( $myLi.get(0) );
+			OeuvreFiche.displayPicture( myIndex );
+			return false;			
+		},
+		
+		_updateDisplay: function()
+		{
+//			OeuvreFiche._zoomMyPicture();
+//			OeuvreFiche._displayCredits();
+//			OeuvreFiche._putCopyRight();
+			var $targetLi = OeuvreFiche._$pictures.eq( OeuvreFiche._currentPictureIndex );
+			
+			OeuvreFiche._$pictures.removeClass('selected');
+			$targetLi.addClass('selected');
+			
+			var targetPictureUrl = $targetLi.find('a').attr('href');
+			var targetPictureAlt = $targetLi.find('img').attr('alt');
+			var targetPictureTitle = $targetLi.find('img').attr('title');
+			var targetPictureHref = $targetLi.find('a').attr('id');
+			
+			$('.main-picture').find('img').attr('src', targetPictureUrl);
+			$('.main-picture').find('img').attr('alt', targetPictureAlt);
+			$('.main-picture').find('img').attr('title', targetPictureTitle);
+			$('.main-picture').find('a').attr('href', targetPictureHref);
+			
+			$('.jqZoomWindow').find('img').attr('src', targetPictureHref );
+			
+			$('.jqZoomWindow').remove();
+			OeuvreFiche._zoomMyPicture();
+
+//			return false;
+
+		},
+		
+		_zoomMyPicture: function()
+		{
+			/*$img = $(".zoom-picture").children("img.img-resize");*/
+			$(".img-resize").jqzoom({
+				zoomWidth: 530,
+				zoomHeight: 530,
+				showEffect:'fadein',
+				hideEffect:'hide',
+				fadeoutSpeed: '200',
+				fadeinSpeed: '200',
+				preloadImages :false,
+				title :true
+			});
+			
+//			$('.vignette_zoom img').click(function(){
+//				$('.vignette_zoom img').removeClass('current');
+//				$(this).addClass('current');
+//				alt_txt = $(this).attr('alt');
+//				image_hd = $(this).attr('src').replace('/imagecache/zoom_oeuvre_very_small', '');
+//				image_md = $(this).attr('src').replace('_very', '');
+//				$('.img_zoom .jqzoom img').attr('src', image_md);
+//				$('.img_zoom .jqzoom').attr('href', image_hd);
+//				$('.img_zoom .img_display').attr('src', image_hd);
+//				$('.img_zoom .jqzoom img').attr('title', alt_txt);
+//				$('.img_zoom .jqzoom').attr('alt', alt_txt);
+//			});
+
+		},
+	
+		
+		_displayLightbox: function()
+		{
+			 $('#agrandir a').lightBox();	
+		},
+		
+		
+		
+		_displayCredits : function() {
+			$('.credits').mouseover(function() {
+				  $(".content-credits").fadeIn("fast");
+				  return false;
+				});
+			$('.credits').mouseout(function() {
+				  $(".content-credits").fadeOut("fast");
+				  return false;
+				});
+			$('.credits').click(function() {
+				return false;
+			});
+		}
+};
+
+/**
+ * Gestion de la page exposition
+ */
+var ExpoFiche = {
+		
+		// -------------------- private props
+		
+		_currentPictureIndex: null,
+		_$pictures: null,
+		
+		// -------------------- public methods
+		
+		
+		init:function(){
+			
+			ExpoFiche._diaporama();
+			ExpoFiche._toggleTab();
+			
+		},
+		
+		_toggleTab: function()
+		{
+			var $thumbExhibit = $('.thumb li.selected');
+			var $thumbActivit = $('.thumb li.notSelected');
+			var $leftColThumbContent = $('.left-column-thumb-content');
+			
+			$thumbExhibit.click( function(){
+				if($leftColThumbContent.find('#exhibition_detail').is(':hidden'))
+				{
+					
+					$leftColThumbContent.find('#activities_detail').hide();
+					$leftColThumbContent.find('#exhibition_detail').show();
+					
+					$thumbActivit.removeClass('selected');
+					$thumbActivit.addClass('notSelected');
+					$thumbExhibit.removeClass('notSelected');
+					$thumbExhibit.addClass('selected');
+					
+				}
+				return false;
+				
+			});
+			
+			$thumbActivit.click( function(){
+			
+				if($leftColThumbContent.find('#activities_detail').is(':hidden'))
+				{
+					
+					$leftColThumbContent.find('#exhibition_detail').hide();
+					$leftColThumbContent.find('#activities_detail').show();
+					
+					$thumbActivit.removeClass('notSelected');
+					$thumbActivit.addClass('selected');
+					$thumbExhibit.removeClass('selected');
+					$thumbExhibit.addClass('notSelected');
+					
+				}
+				return false;
+				
+			});		
+		},
+		
+		_diaporama: function()
+		{
+			//.thumb-index .thumb-content .left-column-thumb-content #exhibition_detail 
+			$('.slider #imgDiapo').cycle({
+	            timeout: 0,
+	            cleartype:  true,
+	            cleartypeNoBg:  true,
+	            pager:  '.slider .paginator .pages',
+	            next:   '.slider a.next',
+	            prev:   '.slider a.prev'
+	        }); 
+			
+			$('a.next').click(function() {
+				console.log('click');
+			});
+			
+		}	
+};
+
+var CollectionFiche = {
+		
+	init:function(){
+		
+		CollectionFiche.setOeuvreLayer();
+		
+	},
+	
+	setOeuvreLayer:function() {
+		
+		$('body').prepend('<div id="oeuvreLayer"><div class="layerTop"></div><div class="layerContent"></div><div class="layerFoot"></div></div>');
+		
+		$('.layer .pieces ul li').mouseover(function() {
+		
+			var $me = $(this);
+			
+			// Get the position of the img
+			var position = $me.offset();
+			
+			var $artistsContainer = $me.find('span.layer-author');
+			var oeuvreArtists = ($artistsContainer.length==1) ? $artistsContainer.text() : '' ;
+			var oeuvreTitle = $me.find('span.layer-title').text();
+			var $subTitleContainer = $me.find('span.layer-subTitle');
+			var oeuvreSubtitle = ($subTitleContainer.length==1) ? $subTitleContainer.text() : '' ;
+
+			var oeuvreLayerHtml = '<div class="caption" style="margin-left:20px; width:155px;">';
+			oeuvreLayerHtml += '<span class="layer-title" style="display:block">' + oeuvreTitle + '</span>';
+			if( oeuvreArtists.length>0 )
+				oeuvreLayerHtml += '<span class="layer-author" style="display:block">' + oeuvreArtists + '</span>';
+			if( oeuvreSubtitle.length>0 )
+				oeuvreLayerHtml += '<span class="layer-subTitle" style="display:block">' + oeuvreSubtitle + '</span>';
+			oeuvreLayerHtml += '</div>';
+
+			$('#oeuvreLayer').show();
+
+			$('#oeuvreLayer').css( {'left': position.left+'px', top: position.top+'px'  } );
+			$('#oeuvreLayer .layerContent').html( oeuvreLayerHtml );
+			$('#oeuvreLayer').unbind('click').click( function() {
+				self.location = $me.find('a').attr('href');
+				return false;
+			});
+			$('#oeuvreLayer').css('cursor', 'pointer');
+		});
+		
+		$('#oeuvreLayer').mouseout(function( aEvent ) {
+			if( typeof(aEvent.relatedTarget)=='object' && aEvent.relatedTarget.classList=='caption' )
+				return;
+			$('#oeuvreLayer').hide();
+			$('img').css({'z-index':'0'});
+		});
+		
+		$('.pieces-departement .views-row').mouseover(function() {
+			
+			var $me = $(this);
+			
+			// Get the position of the img
+			var position = $me.offset();
+			
+//			console.log($me.offset());
+			
+			var $artistsContainer = $me.find('span.layer-author');
+			var oeuvreArtists = ($artistsContainer.length==1) ? $artistsContainer.text() : '' ;
+			var oeuvreTitle = $me.find('span.layer-title').text();
+			var $subTitleContainer = $me.find('span.layer-subTitle');
+			var oeuvreSubtitle = ($subTitleContainer.length==1) ? $subTitleContainer.text() : '' ;
+			
+			var oeuvreLayerHtml = '<div class="caption" style="margin-left:20px; width:155px;">';
+			oeuvreLayerHtml += '<span class="layer-title" style="display:block">' + oeuvreTitle + '</span>';
+			if( oeuvreArtists.length>0 )
+				oeuvreLayerHtml += '<span class="layer-author" style="display:block">' + oeuvreArtists + '</span>';
+			if( oeuvreSubtitle.length>0 )
+				oeuvreLayerHtml += '<span class="layer-subTitle" style="display:block">' + oeuvreSubtitle + '</span>';
+			oeuvreLayerHtml += '</div>';
+			
+			$('#oeuvreLayer').show();
+			
+			$('#oeuvreLayer').css( {'left': position.left+'px', 'top': position.top+'px'  } );
+			$('#oeuvreLayer .layerContent').html( oeuvreLayerHtml );
+			$('#oeuvreLayer').unbind('click').click( function() {
+				self.location = $me.find('a').attr('href');
+				return false;
+			});
+			$('#oeuvreLayer').css('cursor', 'pointer');
+		});
+		
+		$('#oeuvreLayer').mouseout(function( aEvent ) {
+			if( typeof(aEvent.relatedTarget)=='object' && aEvent.relatedTarget.classList=='caption' )
+				return;
+			$('#oeuvreLayer').hide();
+			$('img').css({'z-index':'0'});
+		});
+		
+	}
+};
+
+var OeuvreParcoursFiche = {
+		
+		init:function(){
+			
+//			alert('test');
+			
+			OeuvreParcoursFiche.setOeuvreLayer();
+			$('#carousel-parcours-catacombes').bxSlider({
+				
+				mode: 'horizontal',
+				displaySlideQty: 6,
+				infiniteLoop: true,
+				nextText: '',
+				prevText: ''
+			});
+			OeuvreParcoursFiche.bindEventsLayer();
+			OeuvreParcoursFiche.fixCarrouselBug();
+			
+		},
+		
+		setOeuvreLayer:function() {
+			
+			$('body').prepend('<div id="oeuvreParcoursLayer"><div class="layerTop"></div><div class="layerContent"></div><div class="layerFoot"></div></div>');
+		},
+		
+		bindEventsLayer:function() {
+			
+			$('#carousel_oeuvre_parcours .pieces ul li').mouseover(function() {
+				
+				var $me = $(this);
+				
+				// Get the position of the img
+				var position = $me.offset();
+				
+				var $artistsContainer = $me.find('span.layer-author');
+				var oeuvreArtists = ($artistsContainer.length==1) ? $artistsContainer.text() : '' ;
+				var oeuvreTitle = $me.find('span.layer-title').text();
+				var $subTitleContainer = $me.find('span.layer-subTitle');
+				var oeuvreSubtitle = ($subTitleContainer.length==1) ? $subTitleContainer.text() : '' ;
+
+				var oeuvreParcoursLayerHtml = '<div class="caption" style="margin-left:20px; width:155px;">';
+				oeuvreParcoursLayerHtml += '<span class="layer-title" style="display:block">' + oeuvreTitle + '</span>';
+				if( oeuvreArtists.length>0 )
+					oeuvreParcoursLayerHtml += '<span class="layer-author" style="display:block">' + oeuvreArtists + '</span>';
+				if( oeuvreSubtitle.length>0 )
+					oeuvreParcoursLayerHtml += '<span class="layer-subTitle" style="display:block">' + oeuvreSubtitle + '</span>';
+				oeuvreParcoursLayerHtml += '</div>';
+
+				$('#oeuvreParcoursLayer').show();
+
+				$('#oeuvreParcoursLayer').css( {'left': position.left+'px', top: position.top+'px'  } );
+				$('#oeuvreParcoursLayer .layerContent').html( oeuvreParcoursLayerHtml );
+				$('#oeuvreParcoursLayer').unbind('click').click( function() {
+					self.location = $me.find('a').attr('href');
+					return false;
+				});
+				$('#oeuvreParcoursLayer').css('cursor', 'pointer');
+			});
+			
+			$('#oeuvreParcoursLayer').mouseout(function( aEvent ) {
+//				if( typeof(aEvent.relatedTarget)=='object' && aEvent.relatedTarget.classList=='caption' )
+//					return;
+				$('#oeuvreParcoursLayer').hide();
+				$('img').css({'z-index':'0'});
+			});
+		},
+		
+		fixCarrouselBug:function() {
+			
+//			$('#carousel_oeuvre_parcours .bx-prev').click( OeuvreParcoursFiche.bindEventsLayer() );
+//			$('#carousel_oeuvre_parcours .bx-next').click( OeuvreParcoursFiche.bindEventsLayer() );
+			$('#carousel_oeuvre_parcours .bx-prev').click(function(){
+//				console.log('click');
+				OeuvreParcoursFiche.bindEventsLayer();
+			});
+			$('#carousel_oeuvre_parcours .bx-next').click(function(){
+//				console.log('click');
+				OeuvreParcoursFiche.bindEventsLayer();
+				
+			});
+			
+		}
+	};
+
+var Home = {
+		
+		init:function(){
+			
+			$('#carousel-home-catacombes').bxSlider({
+	    		
+	    		mode: 'horizontal',
+	    		displaySlideQty: 5,
+	    		infiniteLoop: true,
+	    		nextText: '',
+	    		prevText: ''
+	    	});
+			
+			Home.setOeuvreLayer();
+			Home.bindEventsLayer();
+			Home.fixCarrouselBug();
+			
+		},
+		
+		setOeuvreLayer:function() {
+			
+			$('body').prepend('<div id="oeuvreHomeLayer"><div class="layerTop"></div><div class="layerContent"></div><div class="layerFoot"></div></div>');
+			
+		},
+		
+		bindEventsLayer:function() {
+			$('.layerHome .pieces ul li').mouseover(function() {
+				
+				var $me = $(this);
+				
+				// Get the position of the img
+				var position = $me.offset();
+				
+				var $artistsContainer = $me.find('span.layer-author');
+				var oeuvreArtists = ($artistsContainer.length==1) ? $artistsContainer.text() : '' ;
+				var oeuvreTitle = $me.find('span.layer-title').text();
+				var $subTitleContainer = $me.find('span.layer-subTitle');
+				var oeuvreSubtitle = ($subTitleContainer.length==1) ? $subTitleContainer.text() : '' ;
+
+				var oeuvreHomeLayerHtml = '<div class="caption" style="margin-left:16px; width:135px;">';
+				oeuvreHomeLayerHtml += '<span class="layer-title" style="display:block">' + oeuvreTitle + '</span>';
+				if( oeuvreArtists.length>0 )
+					oeuvreHomeLayerHtml += '<span class="layer-author" style="display:block">' + oeuvreArtists + '</span>';
+				if( oeuvreSubtitle.length>0 )
+					oeuvreHomeLayerHtml += '<span class="layer-subTitle" style="display:block">' + oeuvreSubtitle + '</span>';
+				oeuvreHomeLayerHtml += '</div>';
+
+				if ( (navigator.userAgent.toLowerCase().indexOf('msie') > -1) == false) {
+					$('#oeuvreHomeLayer').fadeIn();
+				}
+				else {
+					$('#oeuvreHomeLayer').show();
+				}
+				
+				$('#oeuvreHomeLayer').css( {'left': position.left+'px', top: position.top+'px'  } );
+				$('#oeuvreHomeLayer .layerContent').html( oeuvreHomeLayerHtml );
+				$('#oeuvreHomeLayer').unbind('click').click( function() {
+					self.location = $me.find('a').attr('href');
+					return false;
+				});
+				$('#oeuvreHomeLayer').css('cursor', 'pointer');
+			});
+			
+			$('#oeuvreHomeLayer').mouseout(function( aEvent ) {
+				if( typeof(aEvent.relatedTarget)=='object' && aEvent.relatedTarget.classList=='caption' )
+					return;
+				if ( (navigator.userAgent.toLowerCase().indexOf('msie') > -1) == false) {
+					$('#oeuvreHomeLayer').fadeOut();
+				}
+				else {
+					$('#oeuvreHomeLayer').hide();
+				}
+				
+				$('img').css({'z-index':'0'});
+			});
+		},
+		
+		fixCarrouselBug:function() {
+			
+			$('.layerHome .bx-prev').click(function(){
+				Home.bindEventsLayer();
+			});
+			$('.layerHome .bx-next').click(function(){
+				Home.bindEventsLayer();
+			});
+			
+		}
+	};
+
+var Copyright = {
+	
+		
+		init:function() {
+			$('.slider #imgDiapo .slide').mouseover(function() {
+				$(this).find('.caption').show();
+			});
+			
+			$('.slider #imgDiapo .slide').mouseout(function() {
+				$(this).find('.caption').hide();
+			});
+			
+		}
+};
+
+var Calendar = {
+	
+		init:function(){
+			
+			$('#global').scrollTo( '250.208333333px', 200, {easing:'swing', axis:'x' } );
+			$('#global').mousedown(function (event) {
+				$(this)
+				.data('down', true)
+				.data('x', event.clientX)
+				.data('scrollLeft', this.scrollLeft);
+				
+				return false;
+			}).mouseup(function (event) {
+				$(this).data('down', false);
+			}).mousemove(function (event) {
+				if ($(this).data('down') == true) {
+					this.scrollLeft = $(this).data('scrollLeft') + $(this).data('x') - event.clientX;
+				}
+			}).mousewheel(function (event, delta) {
+				this.scrollLeft -= (delta * 30);
+			}).css({
+				'overflow' : 'hidden',
+				'cursor' : '-moz-grab'
+			});
+			
+			$(window).mouseout(function (event) {
+				if ($('#timeline').data('down')) {
+					try {
+						if (event.originalTarget.nodeName == 'BODY' || event.originalTarget.nodeName == 'HTML') {
+							$('#timeline').data('down', false);
+						}                
+					} catch (e) {}
+				}
+			});	
+			
+		}
+		
+};
+
+var BackgroundProps = {
+	
+		
+		init:function() {
+			
+			if( typeof(backgroundPicturePath) != 'undefined' ) {
+				
+				$('body').css('background', 'url("' + backgroundPicturePath + '") no-repeat scroll center 0 #000000');
+				
+			}
+		}
+};

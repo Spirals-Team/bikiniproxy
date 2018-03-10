@@ -1,0 +1,84 @@
+/*!
+ * hoverIntent v1.8.0 // 2014.06.29 // jQuery v1.9.1+
+ * http://cherne.net/brian/resources/jquery.hoverIntent.html
+ *
+ * You may use hoverIntent under the terms of the MIT license. Basically that
+ * means you are free to use hoverIntent as long as this header is left intact.
+ * Copyright 2007, 2014 Brian Cherne
+ */
+(function($){$.fn.hoverIntent=function(handlerIn,handlerOut,selector){var cfg={interval:200,sensitivity:10,timeout:300};if(typeof handlerIn==="object"){cfg=$.extend(cfg,handlerIn)}else{if($.isFunction(handlerOut)){cfg=$.extend(cfg,{over:handlerIn,out:handlerOut,selector:selector})}else{cfg=$.extend(cfg,{over:handlerIn,out:handlerIn,selector:handlerOut})}}var cX,cY,pX,pY;var track=function(ev){cX=ev.pageX;cY=ev.pageY};var compare=function(ev,ob){ob.hoverIntent_t=clearTimeout(ob.hoverIntent_t);if(Math.sqrt((pX-cX)*(pX-cX)+(pY-cY)*(pY-cY))<cfg.sensitivity){$(ob).off("mousemove.hoverIntent",track);ob.hoverIntent_s=true;return cfg.over.apply(ob,[ev])}else{pX=cX;pY=cY;ob.hoverIntent_t=setTimeout(function(){compare(ev,ob)},cfg.interval)}};var delay=function(ev,ob){ob.hoverIntent_t=clearTimeout(ob.hoverIntent_t);ob.hoverIntent_s=false;return cfg.out.apply(ob,[ev])};var handleHover=function(e){var ev=$.extend({},e);var ob=this;if(ob.hoverIntent_t){ob.hoverIntent_t=clearTimeout(ob.hoverIntent_t)}if(e.type==="mouseenter"){pX=ev.pageX;pY=ev.pageY;$(ob).on("mousemove.hoverIntent",track);if(!ob.hoverIntent_s){ob.hoverIntent_t=setTimeout(function(){compare(ev,ob)},cfg.interval)}}else{$(ob).off("mousemove.hoverIntent",track);if(ob.hoverIntent_s){ob.hoverIntent_t=setTimeout(function(){delay(ev,ob)},cfg.timeout)}}};return this.on({"mouseenter.hoverIntent":handleHover,"mouseleave.hoverIntent":handleHover},cfg.selector)}})(jQuery);
+
+/* script below by Teri Hoyer, edit the arrays for each menu to highlight root-level folders that do not match links in the main menu */
+
+jQuery(document).ready(function($) { 
+
+    var pathname = location.pathname;
+    var highlight;
+	var data = ['rocs', 'agdc', 'noaa', 'daac', 'forms', 'libre', 'api', 'icebridge', 'fgdc', 'glims'];
+	var news = ['arcticseaicenews', 'icelights', 'soac', 'greeland-today', 'the-drift'];
+	var about = ['gallery', 'monthlyhighlights', 'directory'];
+    //highlight home
+    if(pathname == "/") 
+        highlight = $('ul.nsidc-nav > li:first > a:first');
+	else if($.inArray(pathname.split('/')[1], data) > -1) highlight = $('ul.nsidc-nav li.main a#data-nav');
+	else if($.inArray(pathname.split('/')[1], news) > -1) highlight = $('ul.nsidc-nav li.main a#news-nav');
+	else if($.inArray(pathname.split('/')[1], about) > -1) highlight = $('ul.nsidc-nav li.main a#about-nav');
+    else {
+        var path = pathname.split('/')[1];
+        if (path)
+            highlight = $('ul.nsidc-nav li.main a[href$="' + path + '"]');
+    }
+    highlight.parent('li').removeClass('main').addClass('active-nav');
+
+		
+	$('ul.nsidc-nav li.active-nav').hoverIntent(function() {
+			var active = $(this);			
+			$(this).stop().animate({ backgroundColor: "#096fb4"}, 400);
+			$('.subnav', this)
+				.addClass('on-top')
+				.stop(true, true)
+				.slideDown(600, 'easeOutBack');
+		}, function() {
+			$(this).stop().animate({ backgroundColor: "#1a4c79"}, 100);
+			$('.subnav', this)
+				.removeClass("on-top")
+				.stop(true, true)
+				.slideUp(100);
+		});
+      
+	$("ul.nsidc-nav li.main").hoverIntent(function() {
+		$(this).stop().animate({ backgroundColor: "#096fb4"}, 400);
+		$('.subnav', this)
+		.addClass('on-top')
+		.stop(true, true)
+		.slideDown(600, 'easeOutBack');
+	}, function () {
+		$("ul.nsidc-nav li.main").stop().animate({ backgroundColor: "#002248"}, 100);
+		$('ul.nsidc-nav li.active-nav').css({'background-color': '#1a4c79'});
+		$('.subnav', this)
+		.removeClass("on-top")
+		.stop(true, true)
+		.slideUp(100);
+		
+	});
+
+    $("#search-nsidc").submit(function(event){
+			if($("#search_type option:selected").val() == 'data'){
+                 var searchstring = 'https://nsidc.org/data/search/#' + $('#keywords').serialize();
+			 } else {
+				 var searchstring = 'https://nsidc.org/search-results.html?q=' + $('#keywords').val();
+			 }
+			 event.preventDefault();
+			 top.location.assign(searchstring); // using top because header is in a frame on cires.colorado.edu
+                 });
+			$("#data-search").submit(function(){
+                 var querystring = 'https://nsidc.org/data/search/#' + $('#keywords2').serialize();
+				 top.location.assign(querystring);
+			return false;
+			});
+
+	$(function() {
+      //Calls the selectBoxIt method on your HTML select box.
+    	  $("#search_type").selectBoxIt();
+    });
+});

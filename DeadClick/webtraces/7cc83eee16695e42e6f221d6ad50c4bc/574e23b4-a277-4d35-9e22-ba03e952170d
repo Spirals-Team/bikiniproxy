@@ -1,0 +1,25 @@
+!function(a,b,c,d){a.fn.doubleTapToGo=function(d){return!!("ontouchstart"in b||navigator.msMaxTouchPoints||navigator.userAgent.toLowerCase().match(/windows phone os 7/i))&&("unbind"===d?this.each(function(){a(this).off(),a(c).off("click touchstart MSPointerDown",handleTouch)}):this.each(function(){function b(b){for(var c=!0,e=a(b.target).parents(),f=0;f<e.length;f++)e[f]==d[0]&&(c=!1);c&&(d=!1)}var d=!1;a(this).on("click",function(b){var c=a(this);c[0]!=d[0]&&(b.preventDefault(),d=c)}),a(c).on("click touchstart MSPointerDown",b)}),this)}}(jQuery,window,document);
+
+!function(a,b,c){"use strict";Drupal.behaviors.atrM={attach:function(d,e){function f(c){c.preventDefault(),c.stopPropagation(),a(b.body).toggleClass("rm-is-open"),"true"==a(this).attr("aria-expanded")?(a(this).attr("aria-expanded","false"),a("#rm-toggle__icon--use").attr("xlink:href","#rm-toggle__icon--open")):"false"==a(this).attr("aria-expanded")&&(a(this).attr("aria-expanded","true"),a("#rm-toggle__icon--use").attr("xlink:href","#rm-toggle__icon--close")),a(b).one("click",function(c){0===a(".rm-block").has(c.target).length&&(a(b.body).removeClass("rm-is-open"),a(m).attr("aria-expanded","false"),a("#rm-toggle__icon--use").attr("xlink:href","#rm-toggle__icon--open"))})}function g(b){b.preventDefault(),b.stopPropagation(),a(this).toggleClass("is-open--parent"),"true"==a(this).attr("aria-expanded")?a(this).attr("aria-expanded","false"):"false"==a(this).attr("aria-expanded")&&a(this).attr("aria-expanded","true"),a(this).parent().next(".is-child").toggleClass("is-open--child")}function h(b){var c=a("#rm-accordion-trigger").html();a(b).each(function(){0==a(this).next(".rm-accordion-trigger").length&&a(this).after(c);var b=a(this).parent().parent().attr("id");a(this).next().attr("aria-controls",b+"__child-menu"),a(this).parent().next(".is-child").attr("id",b+"__child-menu")})}if(a(".rm-block").removeClass("js-hide"),c.matchMedia("only screen").matches){var i=e.ajaxPageState.theme,j=e[i].at_responsivemenus,k=j.default,l=j.responsive,m=".rm-block .rm-toggle__link",n=j.acd.acd_default,o=j.acd.acd_responsive,p=j.acd.acd_both,q=j.acd.acd_load;a(m,d).on("click",f),enquire.register(j.bp,{setup:function(){a(b.body).addClass(k),a(".rm-block").parent(".l-r").addClass("rm-region").parent(".l-rw").addClass("rm-row"),"ms-dropmenu"==k&&a(".rm-block__content li:has(ul)").doubleTapToGo(),1==n&&1==q&&(a(".rm-block .menu-level-1").addClass("ms-accordion"),a.ready(h(".ms-accordion .is-parent__wrapper a")),a(".ms-accordion .rm-accordion-trigger",d).on("click",g))},match:function(){"ms-none"!==l&&l!==k&&(a(b.body).removeClass(k).addClass(l),1==q&&(1==o?0==p&&(a(".rm-block .menu-level-1").addClass("ms-accordion"),a.ready(h(".ms-accordion .is-parent__wrapper a")),a(".ms-accordion .rm-accordion-trigger",d).on("click",g)):(a(".ms-accordion .rm-accordion-trigger").remove(),a(".rm-block .menu-level-1").removeClass("ms-accordion"),a(".rm-block .menu").removeClass("is-open--child"))),"ms-dropmenu"==l?a(".rm-block__content li:has(ul)").doubleTapToGo():a(".rm-block__content li:has(ul)").doubleTapToGo("unbind"))},unmatch:function(){a(b.body).addClass(k),1==q&&(1==n?0==p&&(a(".rm-block .menu-level-1").addClass("ms-accordion"),a.ready(h(".ms-accordion .is-parent__wrapper a")),a(".ms-accordion .rm-accordion-trigger",d).on("click",g)):(a(".ms-accordion .rm-accordion-trigger").remove(),a(".rm-block .menu-level-1").removeClass("ms-accordion"),a(".rm-block .menu").removeClass("is-open--child"))),"ms-dropmenu"==k?a(".rm-block__content li:has(ul)").doubleTapToGo():a(".rm-block__content li:has(ul)").doubleTapToGo("unbind"),l!==k&&a(b.body).removeClass(l)}})}}}}(jQuery,document,window);
+
+!function(){Drupal.behaviors.atOrientationChangeReload={attach:function(){window.addEventListener("orientationchange",function(){document.body.style.display="none",window.location.reload()})}}}();
+
+/**
+ * @file
+ * Statistics functionality.
+ */
+
+(function ($, Drupal, drupalSettings) {
+
+  'use strict';
+
+  $(document).ready(function () {
+    $.ajax({
+      type: 'POST',
+      cache: false,
+      url: drupalSettings.statistics.url,
+      data: drupalSettings.statistics.data
+    });
+  });
+})(jQuery, Drupal, drupalSettings);
+;

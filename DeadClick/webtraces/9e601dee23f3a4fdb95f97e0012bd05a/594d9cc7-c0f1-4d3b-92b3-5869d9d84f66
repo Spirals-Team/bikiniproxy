@@ -1,0 +1,50 @@
+/*===============Blog Posts===============*/
+
+var maxPosts = 3;
+var showDate = true;
+var showThumbs = false;
+var blogUrl = 'http://www.consolelaw.com/blog/feed';
+
+
+google.load('feeds', '1');
+
+function initialize() {
+	var feed = new google.feeds.Feed(blogUrl);
+	feed.setNumEntries(maxPosts);
+	feed.setResultFormat(google.feeds.Feed.MIXED_FORMAT);
+
+	feed.load(function(result) {
+
+		if (!result.error) {
+			var container = $('#recent-posts');
+
+			for (var f = 0; f < result.feed.entries.length; f++) {
+				var entry = result.feed.entries[f];
+				var xml = $(entry.xmlNode);
+
+				var details = {};
+
+				content = '<li class = "group"><p>';
+				
+				//publish date
+				if (showDate == true) {
+					details.date = entry.publishedDate;
+					var pubDate = new Date(details.date);
+					var dateString = pubDate.toDateString();
+					content += '<span class="date">' + dateString + '</span><br/>';
+				}
+
+				//title
+				details.title = entry.title;
+				details.url = entry.link;
+				content += '<span class = "title">' + details.title + '</span><br/>';
+
+				content += '</p><a href="' + details.url + '" class="button blue-button alignright">Read More</a></li>';
+
+				$('#recent-posts').append(content);
+			}
+		}
+	});
+}
+
+google.setOnLoadCallback(initialize);

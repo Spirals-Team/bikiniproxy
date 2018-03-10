@@ -1,0 +1,2145 @@
+/*
+ * All java script logic for the single page checkout.
+ *
+ * The code relies on the jQuery JS library to
+ * be also loaded.
+ *
+ * The logic extends the JS namespace app.*
+ */
+
+/**
+ * @class app.newcheckout
+ */
+(function (app, $) {
+    var $cache = {},
+		isShipping = false,
+		shippingMethods = null,
+        controlKeys = ["8", "13", "46", "45", "36", "35", "38", "37", "40", "39"];
+
+
+
+    /**
+	 * @function
+	 * @description Initializes the cache of the checkout UI
+	 */
+
+    function initializeCache() {
+
+    	$cache.shippinginfo = $("#shipping-info"),
+    	$cache.paymentinfo  = $("#payment-info"),
+    	$cache.orderreview = $("#order-review"),
+    	$cache.shippingoptions = $(".ship-to"),
+    	$cache.shiptostorecontainer = $("#shiptostore"),
+    	$cache.shiptoaddresscontainer = $(".ship2address"),
+    	$cache.linkshippinginfo = $(".shipping-info-link"),
+    	$cache.linkpaymentinfo = $(".payment-info-link"),
+    	$cache.linkorderreview = $(".order-reivew-link"),
+    	$cache.shippingmethods = $("#shippingmethods"),
+    	$cache.shippingForm = $("#shippingForm"),
+    	$cache.contentInfoForm = $(".content-form-info"),
+    	$cache.savecontactInfo =  $(".contact-info-save"),
+    	$cache.storeInfo = $("#item-pickup"),
+    	$cache.addStorePickupPerson = $('.add-store-pickup-person'),
+    	$cache.storepickForm = $('.storepick-form-info-store'),
+    	$cache.saveStorePickupinfo = $('.storepickup-info-save'),
+    	$cache.submitshipping = $("#shipping-address-submit"),
+    	$cache.saveshipping = $(".shipping-address-save"),
+    	$cache.verifyaddress = $("#shipping-info-verify"),
+    	$cache.shiptostoreform = $("form.shiptostore"),
+    	$cache.shipTostoreNextStep = $("#shiptostore-address"),
+    	$cache.address1 = $cache.shippingForm.find("input[name$='_address1']");
+    	$cache.address2 = $cache.shippingForm.find("input[name$='_address2']");
+    	$cache.city = $cache.shippingForm.find("input[name$='_city']");
+    	$cache.postalCode = $cache.shippingForm.find("input[name$='_zip']");
+    	$cache.countryCode = $cache.shippingForm.find("select[id$='_country']");
+    	$cache.stateCode = $cache.shippingForm.find("select[id$='_state']");
+    	$cache.addresslist =  $cache.shippingForm.find("select[id$='_addressList']");
+    	$cache.shippingphone =  $cache.shippingForm.find("input[id$='_phone']");
+    	$cache.ship2storephone =  $cache.shiptostoreform.find("input[id$='_phone']");
+    	$cache.storepickupAddInfoForm = $(".storepick-form-info-store");
+    	$cache.saveStorepickupAddcontactInfo =  $(".storepickup-info-save");
+    }
+    /**
+	 * @function Initializes the page events depending on the checkout stage (shipping/billing)
+	 */
+    function initializeEvents() {
+        if ($("#StorePickupExpressCheckout").length>0) {
+ 			app.storepickupExpressCheckout.initializeDialog();
+ 		} 
+
+ 		$("#shippingForm .address2-mainlabel").on('click',function(e){
+ 			$("#shippingForm .address2-field-hide").show();
+    		$("#shippingForm .address2-mainlabel").hide();
+    	});
+
+ 		$("#billingForm .address2-mainlabel").on('click',function(e){
+ 			$("#billingForm .address2-field-hide").show();
+    		$("#billingForm .address2-mainlabel").hide();
+    	});
+
+ 		$($cache.shippingphone).formatter({
+			'pattern': '{{999}}-{{999}}-{{9999}}',
+		});
+
+		$($cache.ship2storephone).formatter({
+			'pattern': '{{999}}-{{999}}-{{9999}}',
+		});
+
+		// event to update shipping methods when state changes.
+		$cache.stateCode.on('change', function(){
+			updateShippingMethodList(true);
+		});
+
+		//app.where2getstoremodel.init();
+
+		//$cache.shippingForm.find("select").selectbox();
+
+    	var shippingOption = $(".shippingoptions").find("input[type=checkbox]:checked").val();
+    	if(shippingOption=="shipToStore"){
+    		$cache.shippingForm.find(":input:not([type=hidden],[type=radio],[type=checkbox]),select").val('');
+    	}else{
+    		$cache.shiptostoreform.find(":input:not([type=hidden],[type=radio],[type=checkbox]),select").val('')
+    	}
+
+    	if($("#shippingForm").length>0){
+    		$cache.shippingForm.validate().init();
+        	}
+
+    	if($("#shipping-email-form").length>0){
+        	$("#shipping-email-form").validate().init();
+        	$("#shipping-email-form").submit(function(e){
+        		$cache.saveshipping.trigger('click');
+        		return false;
+        	});
+    	}
+
+    	$cache.shippingoptions.on('click',function(e){
+			if ($(this).val()=="shipToNewAddress") {
+				$( "#ship-to-store").prop('checked', false);
+				$cache.shiptoaddresscontainer.removeClass('display-none');
+				$cache.shiptostorecontainer.addClass('display-none');
+				$cache.shippingmethods.removeClass('display-none');
+				var standardShipping = $cache.shippingmethods.find("#shipping-method-ANY_STD");
+				$('.shipping-methods').find('div').removeClass('active');
+
+				$(standardShipping).trigger('click');
+				//$(standardShipping).closest('div').addClass('active');
+				//selectShippingMethod('ANY_STD');
+				if( $cache.addresslist.length == 0){
+					var shiptostore_location = $cache.shippingForm.find('input#dwfrm_shiptostore_location').val();
+					$cache.shippingForm.find(":input:not([type=hidden],[type=radio],[type=checkbox]),select").val('');
+					$cache.shippingForm.find('input#dwfrm_shiptostore_location').val(shiptostore_location);
+					$cache.shippingForm.find("div[targetId$='_state'] ul li a[rel='']").click();
+				}
+
+				$("#where2getresponse").html('');
+				setCookie ("shiptohome", true, 9999);
+				console.log ('sth = true');
+			} else{
+				$( "#ship-address-below").prop('checked', false);
+				$cache.shiptoaddresscontainer.addClass('display-none');
+				$cache.shiptostorecontainer.removeClass('display-none');
+
+				$cache.shippingmethods.removeClass('display-none');
+				$(".ship-to-store-location-search").removeClass('hide');
+				$(".searchstores.change-store").addClass('hide');
+				$(".stores-address-details.selecte-store-detail ").addClass('hide');
+				$(".ship-to-header").attr("style","display:none;");
+				$(".ship-to-store-location-search").removeAttr("style");
+				
+				$cache.shiptostoreform.find(":input:not([type=hidden],[type=radio],[type=checkbox]),select").val('');
+				$cache.shiptostoreform.validate().init();
+				setCookie ("shiptohome", false, 9999);
+				console.log ('sth = false');
+			}
+			$(this).prop('checked', true);
+    	});
+    	if($cache.shippingmethods.find("[name$='_shippingMethodID']").length>0){
+    		$cache.shippingmethods.find("[name$='_shippingMethodID']").click(function () {
+             	$('.shipping-methods').find('div').removeClass('active');
+             	$(this).closest('div').addClass('active');
+                	selectShippingMethod($(this).val());
+                 });
+
+    	}
+
+    	$cache.linkshippinginfo.on('click',function(e){
+    		$cache.shippinginfo.show();
+    		$cache.paymentinfo.hide();
+    		$cache.orderreview.hide();
+    	});
+    	$cache.linkpaymentinfo.on('click',function(e){
+    		$cache.paymentinfo.show();
+    		$cache.shippinginfo.hide();
+    		$cache.orderreview.hide();
+    	});
+    	$cache.linkorderreview.on('click',function(e){
+    		$cache.orderreview.show();
+    		$cache.shippinginfo.hide();
+    		$cache.paymentinfo.hide();
+    	});
+
+    	 if ($(".shipping-gift-selection-checkbox",$cache.shippingForm).is(':checked')) {
+         		 $cache.shippingForm.find(".gift-message-text").show();
+         	}
+
+    	 if ($(".store-gift-selection-checkbox",$cache.shiptostoreform).is(':checked')) {
+         		 $cache.shiptostoreform.find(".gift-message-text").show();
+         	}
+
+
+    	 $cache.shippingForm.on("click", ".shipping-gift-selection-checkbox", function (e) {
+    		 if ($(this).is(':checked')) {
+         		 $cache.shippingForm.find(".gift-message-text").show();
+         	}
+    		 else{
+             $cache.shippingForm.find(".gift-message-text").hide();
+    		 }
+         });
+    	 $cache.shiptostoreform.on("click", ".store-gift-selection-checkbox", function (e) {
+    		 if ($(this).is(':checked')) {
+    			 $cache.shiptostoreform.find(".gift-message-text").show();
+         	}
+    		 else{
+    			 $cache.shiptostoreform.find(".gift-message-text").hide();
+    		 }
+         });
+    	 $("#dwfrm_shiptostore_location").on('keypress',function(e){
+    		 if(e.keyCode == 13)
+	  	 	 {
+    			 $cache.shiptostoreform.find("a.searchstores").trigger('click');
+    			 return false;
+	  	 	 }else{
+	  	 		 true;
+	  	 	 }
+
+    	 });
+    	    
+    	$cache.shiptostoreform.find("a.searchstores").on('click',function(e){
+    		e.preventDefault();
+    		$("#location-search").removeClass("error");
+    		$("#where2getresponse").html('');
+    		$("#shiptostore .select-store-error-form").html('');
+    		var searchQuery= $("#dwfrm_shiptostore_location").val();
+    		var radius = $("#dwfrm_shiptostore_maxdistance").val();
+    		var characterReg = /^\s*[a-zA-Z0-9,\s]+\s*$/;
+
+    		if(!(searchQuery).length > 0){
+    			$("#location-search").addClass("error");
+    			return false;
+    		}
+
+    		var url = $(this).attr('href');
+    		app.ajax.post({
+    			 url: url,
+    			 data:{"searchQuery":searchQuery,"radius":radius},
+    			 callback: function(response){
+    				//$("#where2getresponse").html(response);
+
+    				 app.where2getstoremodel.initializeDialog(response);
+    			 }
+
+    		});
+
+    	});
+
+    	$("#shipping-email-form").find("input[name$='_emailAddress']").on('change',function(){
+    		$cache.shippingForm.find("input[name$='_emailAddress']").val($(this).val());
+    		$("#dwfrm_shiptostore").find("input[name$='_emailAddress']").val($(this).val());
+	  	});
+
+    	if($(".firstname.registered").length > 0){
+    		$(".firstname.registered label span").text("Name");
+    	}
+
+    	if($cache.addresslist.length > 0 ){
+    		var selected = $cache.addresslist.children(':selected').first();
+    		var selectedAddress = $(selected).data('address');
+    		if (selectedAddress) {
+    			app.newcheckout.fillAddressFields(selectedAddress, $cache.shippingForm);
+    			$cache.shippingForm.validate().form();
+    			//$(".address-form .form-field-section").hide();
+
+    		}
+    	}
+
+     	$(".contact-edit").on('click',function(e){
+   		 e.preventDefault();
+   		 $(this).hide();
+   		 $(".checkout-title").removeClass('active');
+   		 $(this).closest('.checkout-title').addClass('active');
+   		 var url= app.util.appendParamToURL($(this).data('url'), "editshipping", "true");
+   		 app.progress.show($("#shipping-contact-info .shipping-info-form"));
+   		 		  app.ajax.load({
+					  url: url,
+					  callback: function(response){
+					   app.progress.hide();
+						  if(response == null){
+	                    		 window.alert(app.resources.SERVER_CONNECTION_ERROR);
+	    		            	 window.location.href=app.urls.home;
+	                    	}
+	                	 $("#shipping-contact-info").find(".shipping-info-form").html(response);
+	                	 $("#shipping-info,#item-pickup").hide();
+	                	 $("#shipping-contact-info").show();
+	                	 app.progress.show($("#shipping-contact-info .shipping-info-form"));
+	                	 $("#payment-info").html('');
+	                	 $("#order-review").html('');
+	                	 app.newcheckout.init();
+	                	 $(".formfield.registered input").addClass("editable"); // fix defect-204
+	                	 $(window).scrollTop($('#shipping-contact-info').offset().top);
+	                	 // on edit call shipping method list again to show shipping method selection based on user address.
+	                	 app.newcheckout.updateShippingMethodList();
+
+	                	},
+	                  fail:function(){
+	                	  	 app.progress.hide();
+			        	  	 window.alert(app.resources.SERVER_CONNECTION_ERROR);
+			            	 window.location.href=app.urls.home;
+	                    }
+				});
+
+     	});
+
+
+     	$(".storepickup-edit").on('click',function(e){
+	   		 e.preventDefault();
+	   		 $(this).hide();
+	   		 $(".checkout-title").removeClass('active');
+	   		 $(this).closest('.checkout-title').addClass('active');
+	   		 var url= app.util.appendParamToURL($(this).data('url'), "editshipping", "true");
+	   		 app.progress.show($("#item-pickup .shipping-info-response"));
+	   		 		  app.ajax.load({
+						  url: url,
+						  callback: function(response){
+						   app.progress.hide();
+							  if(response == null){
+		                    		 window.alert(app.resources.SERVER_CONNECTION_ERROR);
+		    		            	 window.location.href=app.urls.home;
+		                    	}
+		                	 $("#item-pickup").find(".shipping-info-response").html(response);
+		                	 $("#payment-info,#shipping-info,#shipping-contact-info").hide();
+		                	 $("#item-pickup").show();
+		                	 app.progress.show($("#item-pickup .shipping-info-response"));
+		                	 $("#payment-info").html('');
+		                	 $("#order-review").html('');
+		                	 app.newcheckout.init();
+		                	 $(window).scrollTop($('#item-pickup').offset().top);
+		                	 // on edit call shipping method list again to show shipping method selection based on user address.
+		                	 app.newcheckout.updateShippingMethodList();
+
+		                	},
+		                  fail:function(){
+		                	  	 app.progress.hide();
+				        	  	 window.alert(app.resources.SERVER_CONNECTION_ERROR);
+				            	 window.location.href=app.urls.home;
+		                    }
+					});
+
+	     	});
+
+
+    	$("a.editaddress").on('click',function(e){
+    		e.preventDefault();
+    		//$cache.shippingForm.find(":input:not([type=hidden],[type=radio],[type=checkbox]),select").val('');
+    		$(".address-form .form-field-section").show();
+    	});
+
+
+
+    	$cache.addresslist.on('change', function () {
+    		var selected = $(this).children(':selected').first();
+    		var selectedAddress = $(selected).data('address');
+    		if (!selectedAddress) {
+    			$cache.shippingForm.find(":input:not([type=hidden],[type=radio],[type=checkbox]),select").val('')
+    			$cache.shippingForm.find("div[targetId$='_state'] ul li a[rel='']").click()
+    			return;
+    		}
+    		if($(selected).hasClass("add-new-address")) {
+    			$cache.shippingForm.find(":input:not([type=hidden],[type=radio],[type=checkbox]),select").val('')
+    			$(selected).attr("selected","selected");
+    			$(".address-form .form-field-section").show();
+    			return;
+    		}
+
+    		app.newcheckout.fillAddressFields(selectedAddress, $cache.shippingForm);
+    		updateShippingMethodList();
+    		// re-validate the form
+    		$cache.shippingForm.validate().form();
+
+    	});
+    	$cache.verifyaddress.on('click',function(e){
+    		e.preventDefault();
+
+    		  var applyName = $(this).attr('name');
+
+    		  if($cache.shippingForm.find("input[name$='_emailAddress']").val() ==""){
+    			  $cache.shippingForm.find("input[name$='_emailAddress']").val($('#shipping-email-form').find("input[name$='_emailAddress']").val());
+    		  }
+
+    		if($cache.shippingForm.find("input[name$='_emailAddress']").length > 0 && !$cache.shippingForm.find("input[name$='_emailAddress']").valid()){
+    	    	 $(window).scrollTop($('#checkout-container').offset().top);
+    	    	 $("#shipping-email-form").validate().form();
+    	    	return false;
+    	    }
+
+    		if($cache.shippingForm.find("input[name$='_phone']").val() == '') {
+    			$('.editaddress').click();
+    			return false;
+    		}
+
+    		if ($cache.shippingForm.valid()){
+    			app.progress.show($cache.shippinginfo);
+    			var url = app.urls.addressvalidation; //$cache.shippingForm.attr('action');
+    			var data  = $cache.shippingForm.serialize();
+    			app.ajax.post({
+                    url: url,
+                    data: data + "&" + applyName + '=x',
+                    // replace with callback passed in by options
+                    callback: function(response){
+                       	var addrObj = {};
+                       	try
+                       	{
+                       		addrObj = $.parseJSON(response);
+                       	}
+                       	catch(err)
+                       	{
+
+                       	}
+                       	if(response == null){
+                    		 window.alert(app.resources.SERVER_CONNECTION_ERROR);
+    		            	 window.location.href=app.urls.home;
+                    	}
+                       	else if(typeof addrObj == 'object' && 'redirect' in addrObj) {
+                       		window.location.href = addrObj.redirect;
+                       	}
+                    	else if(addrObj.Status==='OK')
+                    	{
+                    		//app.progress.hide();
+                    		$cache.shippingForm.find("input[name$='_address1']").val(addrObj.Line1);
+                    		$cache.shippingForm.find("input[name$='_address2']").val(addrObj.Line2);
+                       	 	$cache.shippingForm.find("input[name$='_city']").val(addrObj.City);
+                       	 	$cache.shippingForm.find("select[id$='_state']").val(addrObj.State);
+                       	 	$cache.shippingForm.find("select[id$='_country']").val(addrObj.CountryCode);
+                       	 	$cache.shippingForm.find("input[name$='_zip']").val(addrObj.PostalCode);
+
+                    		$cache.saveshipping.trigger('click');
+                    	}
+                    	else
+                    	{
+	                    	$("#verifyaddressdialog").html(response);
+
+	                    	 var dlg = app.dialog.create({
+	                             target: $("#verifyaddressdialog"),
+	                             options: {
+	                                 width: 300,
+	                                 dialogClass: 'verify-address',
+	                                 open: function () {
+
+	                                    $("#shipto-address-original").on('click',function(e){
+	                                    	e.preventDefault();
+
+	                                    	var selectedAddress = $('input[name=dwfrm_verifyaddress_useThisAddress]:checked');
+	                                    	 $cache.shippingForm.find("input[name$='_address1']").val($(selectedAddress).data('address1'));
+	                                    	 $cache.shippingForm.find("input[name$='_address2']").val($(selectedAddress).data('address2'));
+	                                    	 $cache.shippingForm.find("input[name$='_city']").val($(selectedAddress).data('city'));
+	                                    	 $cache.shippingForm.find("select[id$='_state']").val($(selectedAddress).data('states'));
+	                                    	 $cache.shippingForm.find("select[id$='_country']").val($(selectedAddress).data('countrycode'));
+	                                    	 $cache.shippingForm.find("input[name$='_zip']").val($(selectedAddress).attr('data-zip'));
+	                                    	 $cache.shippingForm.find("input[name$='_giftMessage']").val($(selectedAddress).data('giftMessage'));
+	                                    	 $(dlg).dialog('destroy').remove();
+	                                    	 $cache.saveshipping.trigger('click');
+	                                    });
+	                                    $("#edit-address-original").on('click',function(e){
+	                                    	$(dlg).dialog("close");
+	                                    });
+	                                 }
+	                             }
+	                    	 });
+	                    	 app.progress.hide();
+	                    	 dlg.dialog("open");
+	                       }
+	                    },
+                       fail:function(){
+		        	  	 window.alert(app.resources.SERVER_CONNECTION_ERROR);
+		            	 window.location.href=app.urls.home;
+                       }
+    				});
+    		}else{
+    			return false;
+    		}
+    	});
+
+
+
+    	 $cache.shiptostoreform.find("button.find-store").on('click',function(e){
+    		e.preventDefault();
+    		$("#shiptostore .select-store-error-form").html('');
+    		var actionUrl = $cache.shiptostoreform.attr('action');
+    		var selectedStore = $(".stores-address-details.selecte-store-detail").find(".input-radio-custom");
+    		var selectedStoreHidden = $(".stores-address-details.selecte-store-detail.hide").find(".input-radio-custom");
+
+    		  if($cache.shiptostoreform.find("input[name$='_emailAddress']").val() =="" && undefined !== $('#shipping-email-form').find("input[name$='_emailAddress']").val()){
+    			  $cache.shiptostoreform.find("input[name$='_emailAddress']").val($('#shipping-email-form').find("input[name$='_emailAddress']").val());
+    		  }
+
+    	   if($cache.shiptostoreform.find("input[name$='_emailAddress']").length > 0 && $cache.shiptostoreform.find("input[name$='_emailAddress']").val() !="" && !$cache.shiptostoreform.find("input[name$='_emailAddress']").valid()){
+      	    	 $(window).scrollTop($('#checkout-container').offset().top);
+      	    	 $("#shipping-email-form").validate().form();
+      	    	return false;
+      	    }
+			if((!$(selectedStore).length > 0) || selectedStoreHidden.length > 0) {
+				if(($(".stores-address-details.selecte-store-detail").length>0) || selectedStoreHidden.length > 0) {
+					var selectstorehtml = "<div class='error-form'>"+app.resources.SELECTSTOREOPTION+"</div>";
+					$("#shiptostore .select-store-error-form").html(selectstorehtml);
+					$("#location-search").removeClass("error");
+					return false;
+				}
+    			var nostorefoundhtml = "<div class='stores-address-details no-store-found clearfix'><p class='no-results'>"+app.resources.NOSTOREFOUND+"</p></div>";
+    				$("#where2getresponse").html(nostorefoundhtml);
+
+    		 return false;
+    		}
+
+    		 $cache.shiptostoreform.find("input[name$='_address1']").val($(selectedStore).data('address1'));
+	       	 $cache.shiptostoreform.find("input[name$='_address2']").val($(selectedStore).data('address2'));
+	       	 $cache.shiptostoreform.find("input[name$='_city']").val($(selectedStore).data('city'));
+	       	 $cache.shiptostoreform.find("input[id$='_state']").val($(selectedStore).data('states'));
+	       	 $cache.shiptostoreform.find("input[id$='_country']").val($(selectedStore).data('country'));
+	       	 $cache.shiptostoreform.find("input[name$='_zip']").val($(selectedStore).attr('data-zip'));
+	    	 $cache.shiptostoreform.find("input[name$='_storeUID']").val($(selectedStore).data('storeid'));
+	       	 $cache.shiptostoreform.find("input[name$='_clientkey']").val($(selectedStore).data('clientkey'));
+	       	 $cache.shiptostoreform.find("input[name$='_storename']").val($(selectedStore).data('storename'));
+	       	 $cache.shiptostoreform.find("input[name$='_storeemail']").val($(selectedStore).data('storeEmail'));
+	       	$cache.shiptostoreform.find("input[name$='_distance']").val($(selectedStore).data('distance'));
+	       	$cache.shiptostoreform.find("input[name$='_distanceuom']").val($(selectedStore).data('distanceuom'));
+
+	       	 var applyName = $(this).attr('name');
+     		 var url = app.util.appendParamToURL(actionUrl, "format", "ajax");
+     	     var data  = $cache.shiptostoreform.serialize();
+
+ 			if ($cache.shiptostoreform.valid()){
+ 			app.progress.show($cache.shippinginfo);
+ 				app.ajax.post({
+ 					 url: url,
+ 	                 data: data + "&" + applyName + '=x',
+ 	                 callback: function(response){
+
+ 	                	if(response == null){
+ 	                		window.alert(app.resources.SERVER_CONNECTION_ERROR);
+ 	                		window.location.href=app.urls.home;
+	                	}
+
+	                	var addrObj = {};
+                      	try {
+                      		addrObj = $.parseJSON(response);
+                      	} catch(err) {
+
+                      	}
+
+                      	if(typeof addrObj == 'object' && 'redirect' in addrObj) {
+                      		window.location.href = addrObj.redirect;
+                      	} else {
+							 $("#checkout-container").html(response);
+							 $(window).scrollTop($('#checkout-container').offset().top);
+							 $("#payment-info").hide().delay(500).slideDown("slow",function(){
+								 $("#payment-info").show();
+								 app.newcheckout.init();
+							 	 app.progress.hide();
+							 });
+							 app.progress.show($cache.shippinginfo);
+							 updateSummary();
+                      	}
+
+ 	                 },
+ 				   fail:function(){
+ 					   app.progress.show($cache.shippinginfo);
+ 						 window.alert(app.resources.SERVER_CONNECTION_ERROR);
+ 		            	 window.location.href=app.urls.home;
+                   }
+ 				});
+    	  }else{
+    		  return false;
+    	  }
+    	 });
+    	 /*$cache.storeInfo.on("click",function(e){
+    		 e.preventDefault();
+    		 var target = $( e.target );
+    		 if(!target.is( "input#dwfrm_storepickuppersoninfo_addtionalcheckobox" )) {
+	    		 $(window).scrollTop($('#checkout-container').offset().top);
+	    		 $("#item-pickup").hide();
+	    		 $("#shipping-info").hide().delay(500).slideDown("slow",function(){
+	           		 $("#shipping-info").show();
+	        	  	 });
+	    		 setTimeout(function(){
+	           		 app.newcheckout.init();
+				     }, 1000);
+	           	 app.progress.hide();
+    		 }
+          });*/
+    	 $cache.addStorePickupPerson.off("change").on("change",function(e){
+    		if($(this).is(":checked")){
+    			$("#storepick-form-info-store").show();
+    			$cache.storepickForm.find("input.input-text, input.input-text-email").addClass("required");
+    			$cache.storepickForm.find("input.input-text, input.input-text-email").prev("label").find("span").not(".required-indicator").append("<span class='required-text'>(required)</span>");
+    		}
+    		else {
+    			$("#storepick-form-info-store").hide();
+    			$cache.storepickForm.find("input.input-text, input.input-text-email").removeClass("required");
+    			$cache.storepickForm.find("input.input-text, input.input-text-email").prev("label").find("span").not(".required-indicator").find(".required-text").remove();
+    		}
+    	 });
+
+    	 $cache.saveStorePickupinfo.off('click').on('click',function(e){
+      		e.preventDefault();
+  			if ($cache.storepickForm.valid()){
+  				/*var storeFirstName = $cache.storepickForm.find(".store-firstname").val(),
+  					storeLastName = $cache.storepickForm.find(".store-lastname").val(),
+  					storeEmail = $cache.storepickForm.find(".store-email").val();
+  				if(storeFirstName.length < 1 ) {
+  					$cache.storepickForm.find(".store-firstname").val($cache.contactFirstName);
+  				}
+  				if(storeLastName.length < 1 ) {
+  					$cache.storepickForm.find(".store-lastname").val($cache.contactLastName);
+  				}
+  				if(storeEmail.length < 1 ) {
+  					$cache.storepickForm.find(".store-email").val($cache.contactemail);
+  				}*/
+  				var applyName = $(this).attr('name');
+  	     		var url = $cache.storepickForm.attr('action');
+  	     		var data  = $cache.storepickForm.serialize();
+  				app.progress.show($cache.shippinginfo);
+  				app.ajax.post({
+  					 url: url,
+  	                 data: data + "&" + applyName + '=x',
+  	                 callback: function(response){
+  	                	 if(response == null){
+                      		 window.alert(app.resources.SERVER_CONNECTION_ERROR);
+      		            	 window.location.href=app.urls.home;
+  	                	 }
+
+  	                	var addrObj = {};
+                         	try {
+                         		addrObj = $.parseJSON(response);
+                         	} catch(err) {
+
+                         	}
+
+                         	if(typeof addrObj == 'object' && 'redirect' in addrObj && addrObj.redirect != null) {
+                         		window.location.href = addrObj.redirect;
+                         	} else {
+                         		 $("#checkout-container").html(response);
+                         		$(window).scrollTop($('#checkout-container').offset().top);
+
+                         		if($("#shipping-info").length > 0){
+                         			$("#item-pickup").hide();
+                         			$(window).scrollTop($('#checkout-container').offset().top);
+                         			$("#shipping-info").hide().delay(500).slideDown("slow",function(){
+                         				$("#shipping-info").show();
+                         			});
+                         		}else {
+                         			$("#item-pickup").hide();
+                         			$(window).scrollTop($('#checkout-container').offset().top);
+                         			$("#payment-info").hide().delay(500).slideDown("slow",function(){
+                         				$("#payment-info").show();
+                         			});
+
+                         		}
+                         		setTimeout(function(){
+                         			app.newcheckout.init();
+                         		}, 1000);
+                         		app.progress.hide();
+                         	}
+  	                 },
+  	                 fail:function(){
+  		        	  	 window.alert(app.resources.SERVER_CONNECTION_ERROR);
+  		            	 window.location.href=app.urls.home;
+                         }
+
+  				});
+
+  			}
+      	});
+    	 $cache.savecontactInfo.on('click',function(e){
+     		e.preventDefault();
+ 			if ($cache.contentInfoForm.valid()){
+ 				var applyName = $(this).attr('name');
+ 	     		var url = $cache.contentInfoForm.attr('action');
+ 	     		var data  = $cache.contentInfoForm.serialize();
+ 				app.progress.show($cache.shippinginfo);
+ 				/*$cache.contactFirstName = $cache.contentInfoForm.find(".contact-firstname").val();
+ 				$cache.contactLastName = $cache.contentInfoForm.find(".contact-lastname").val();
+ 				$cache.contactemail = $cache.contentInfoForm.find(".contact-email").val();
+ 				$cache.contactphone = $cache.contentInfoForm.find(".contact-phone-number").val();*/
+ 				app.ajax.post({
+ 					 url: url,
+ 	                 data: data,
+ 	                 callback: function(response){
+ 	                	 if(response == null){
+                     		 window.alert(app.resources.SERVER_CONNECTION_ERROR);
+     		            	 window.location.href=app.urls.home;
+ 	                	 }
+
+ 	                	var addrObj = {};
+                        	try {
+                        		addrObj = $.parseJSON(response);
+                        	} catch(err) {
+
+                        	}
+
+                        	if(typeof addrObj == 'object' && 'redirect' in addrObj && addrObj.redirect != null) {
+                        		window.location.href = addrObj.redirect;
+                        	} else {
+                        		 $("#checkout-container").html(response);
+                        		 $(window).scrollTop($('#checkout-container').offset().top);
+                        		 
+                        		 if($(".error-message #password-reset-signin").length > 0){
+	                       			 $("#shipping-contact-info").show();
+	                      		 } else if($("#item-pickup").length > 0){
+	                       			 $("#shipping-contact-info").hide();
+	                           		 $("#item-pickup").hide().delay(500).slideDown("slow",function(){
+	                           			 $("#item-pickup").show();
+	                           	  	 });
+	                       		 }else {
+	                       			 $("#shipping-contact-info").hide();
+	                       			 $("#shipping-info").hide().delay(500).slideDown("slow",function(){
+	                   	           		 $("#shipping-info").show();
+	                   	        	  	 });
+	                       		 }
+                           	 	setTimeout(function(){
+                           	 		app.newcheckout.init();
+                           	 	}, 1000);
+	                       	 	app.progress.hide();
+                        	}
+ 	                 },
+ 	                 fail:function(){
+ 		        	  	 window.alert(app.resources.SERVER_CONNECTION_ERROR);
+ 		            	 window.location.href=app.urls.home;
+                    }
+
+ 				});
+ 			}
+     	});
+    	$cache.saveshipping.on('click',function(e){
+    		e.preventDefault();
+    		var applyName = $(this).attr('name');
+    		var url = app.util.appendParamToURL($cache.shippingForm.attr('action'), "format", "ajax");
+    		var data  = $cache.shippingForm.serialize();
+
+		  if($cache.shippingForm.find("input[name$='_emailAddress']").val() ==""){
+			  $cache.shippingForm.find("input[name$='_emailAddress']").val($('#shipping-email-form').find("input[name$='_emailAddress']").val());
+		  }
+		  if($cache.shippingForm.find("input[name$='_emailAddress']").length > 0  && !$cache.shippingForm.find("input[name$='_emailAddress']").valid()){
+				$("#shipping-email-form").validate().form();
+				return false;
+			}
+			if ($cache.shippingForm.valid()){
+				app.progress.show($cache.shippinginfo);
+				app.ajax.post({
+					 url: url,
+	                 data: data + "&" + applyName + '=x',
+	                 callback: function(response){
+	                	 if(response == null){
+                    		 window.alert(app.resources.SERVER_CONNECTION_ERROR);
+    		            	 window.location.href=app.urls.home;
+	                	 }
+
+	                	var addrObj = {};
+                       	try {
+                       		addrObj = $.parseJSON(response);
+                       	} catch(err) {
+
+                       	}
+
+                       	if(typeof addrObj == 'object' && 'redirect' in addrObj) {
+                       		window.location.href = addrObj.redirect;
+                       	} else {
+                       		 $("#checkout-container").html(response);
+	   	                	 $(window).scrollTop($('#checkout-container').offset().top);
+	   	                	 	$("#payment-info").hide().delay(500).slideDown("slow",function(){
+	   	                	 		$("#payment-info").show();
+	   	             	  		});
+	   	                	 setTimeout(function(){
+	   	                		 app.newcheckout.init();
+	   	 				     }, 1000);
+	   	                	 app.progress.hide();
+                       	}
+	                 },
+	                 fail:function(){
+		        	  	 window.alert(app.resources.SERVER_CONNECTION_ERROR);
+		            	 window.location.href=app.urls.home;
+                       }
+
+				});
+			}
+    	});
+    	updateShippingMethodList();
+    }
+    /**
+	 * @function
+	 * @description selects a shipping method for the default shipment and updates the summary section on the right hand side
+	 * @param
+	 */
+    function selectShippingMethod(shippingMethodID) {
+        // nothing entered
+        if (!shippingMethodID) {
+            return;
+        }
+        // attempt to set shipping method
+        var url = app.util.appendParamsToUrl(app.urls.selectShippingMethodsList,
+											 {
+											     address1: $cache.address1.val(),
+											     address2: $cache.address2.val(),
+											     countryCode: $cache.countryCode.val(),
+											     stateCode: $cache.stateCode.val(),
+											     postalCode: $cache.postalCode.val(),
+											     city: $cache.city.val(),
+											     shippingMethodID: shippingMethodID
+											 },
+											 true);
+
+        app.ajax.getJson({
+            url: url,
+            callback: function (data) {
+                updateSummary();
+                if (!data || !data.shippingMethodID) {
+                    //  window.alert("Couldn't select shipping method.");
+                    return false;
+                }
+                // display promotion in UI and update the summary section,
+                // if some promotions were applied
+                $(".shippingpromotions").empty();
+                if (data.shippingPriceAdjustments && data.shippingPriceAdjustments.length > 0) {
+                    var i, len = data.shippingPriceAdjustments.length;
+                    for (i = 0; i < len; i++) {
+                        var spa = data.shippingPriceAdjustments[i];
+                    }
+                }
+            }
+        });
+    }
+
+    /**
+	 * @function
+	 * @description updates the order summary based on a possibly recalculated basket after a shipping promotion has been applied
+	 */
+    function updateSummary() {
+        var url = app.urls.summaryRefreshURL;
+        var checkoutStep = $("#orderminisummary").find("input#hiddenCheckoutStep").val();
+        url = app.util.appendParamToURL(url, 'checkoutStep', checkoutStep);
+        var summary = $("#orderminisummary");
+        // indicate progress
+        app.progress.show(summary);
+
+        // load the updated summary area
+        summary.load(url, function () {
+            // hide edit shipping method link
+            summary.fadeIn("fast");
+            summary.find('.checkout-mini-cart .minishipment .header a').hide();
+            summary.find('.order-totals-table .order-shipping .label a').hide();
+            app.tooltips.init();
+        });
+
+
+       $('.promotional-code-link').live('click',function(){
+           $(this).next('#promo-form').show().find("input.promo-coupon").focus();
+           $(this).hide();
+       });
+    }
+
+    /**
+	 * @function
+	 * @description Helper method which constructs a URL for an AJAX request using the
+	 * entered address information as URL request parameters.
+	 */
+    function getShippingMethodURL(url) {
+        var newUrl = app.util.appendParamsToUrl(url,
+												{
+												    address1: $cache.address1.val(),
+												    address2: $cache.address2.val(),
+												    countryCode: $cache.countryCode.val(),
+												    stateCode: $cache.stateCode.val(),
+												    postalCode: $cache.postalCode.val(),
+												    city: $cache.city.val()
+												},
+												 true);
+        return newUrl;
+    }
+
+
+    /**
+	 * @function
+	 * @description Make an AJAX request to the server to retrieve the list of applicable shipping methods
+	 * based on the merchandise in the cart and the currently entered shipping address
+	 * (the address may be only partially entered).  If the list of applicable shipping methods
+	 * has changed because new address information has been entered, then issue another AJAX
+	 * request which updates the currently selected shipping method (if needed) and also updates
+	 * the UI.
+	 */
+    function updateShippingMethodList(showDialog) {
+        var shippingMethodList = $(".shipping-method-list");
+        if (!shippingMethodList || shippingMethodList.length === 0) { return; }
+        var url = getShippingMethodURL(app.urls.shippingMethodsJSON),
+        	autoSelectMethod = false,
+        	autoSelectShippingMethodID = "",
+        	stateCode = $cache.stateCode.val();
+
+        app.ajax.getJson({
+            url: url,
+            callback: function (data) {
+                if (!data) {
+                    //  window.alert("Couldn't get list of applicable shipping methods.");
+                    return false;
+                }
+                if (shippingMethods && shippingMethods.toString() === data.toString()) {
+                    // No need to update the UI.  The list has not changed.
+                    return true;
+                }
+
+                // We need to update the UI.  The list has changed.
+                // Cache the array of returned shipping methods.
+                shippingMethods = data;
+
+                if(shippingMethods.length >= 2) {
+                	if(shippingMethods.indexOf('005') != -1) {
+                		// set vars to auto select shipping method if there is only 1 shipping method for given address
+                        autoSelectMethod = true;
+                        for(var i = 0; i < shippingMethods.length; i++) {
+                        	if(shippingMethods[i] == '005') continue;
+
+                        	autoSelectShippingMethodID = shippingMethods[i];
+                        	if(shippingMethods[i] == 'ANY_STD' || shippingMethods[i] == 'ANY_STD-HIAK') break;
+                        }
+                    }
+                } else {
+                	// set vars to auto select shipping method if there is only 1 shipping method for given address
+                    autoSelectMethod = shippingMethods.length == 1;
+                    autoSelectShippingMethodID = autoSelectMethod ? shippingMethods[0] : "";
+                }
+
+                var smlUrl = getShippingMethodURL(app.urls.shippingMethodsList);
+
+                // indicate progress
+                app.progress.show($cache.shippingMethodList);
+
+                // load the shipping method form
+                shippingMethodList.load(smlUrl, function () {
+                    shippingMethodList.fadeIn("fast");
+
+                    // rebind the radio buttons onclick function to a handler.
+                    shippingMethodList.find("[name$='_shippingMethodID']").click(function () {
+                    	$('.shipping-methods').find('div').removeClass('active');
+                    	$(this).closest('div').addClass('active');
+                    	selectShippingMethod($(this).val());
+                    });
+
+                    // auto select shipping method if there is on one shipping method.
+                    if(autoSelectMethod) {
+                    	$('#shipping-method-' + autoSelectShippingMethodID).trigger('click');
+                    }
+
+                    // update the summary
+                    updateSummary();
+                    app.progress.hide();
+                    app.tooltips.init();
+
+                    if(['AK', 'HI'].indexOf(stateCode) != -1 && showDialog) {
+                    	// show dialog for changed shipping method and charges
+
+	                   	 var dlg = app.dialog.create({
+	                            target: $("#shippingmethod-changed-dialog"),
+	                            options: {
+	                                width: 'auto',
+	                                height: 100,
+	                                open: function (e) {
+	                                	$(e.target).find(".dialog-close").on('click',function(e){
+	                                	   $(dlg).dialog("close");
+	                                   });
+	                                },
+	                                create: function( event, ui ) {
+                                       // Set maxWidth
+                                       $(this).css("maxWidth", "500px");
+                                   }
+	                            }
+	                   	 });
+	                   	 app.progress.hide();
+	                   	 dlg.dialog("open");
+                    }
+
+                });
+            }
+        });
+    }
+    function initializeDom() {
+    	app.validator.init();
+
+
+    	if($("#shippingForm").length > 0 || $("#item-pickup").length > 0 || $("#shipping-contact-info").length > 0){
+        	initializeCache();
+        	initializeEvents();
+        	app.newbilling.init();
+         	var w = Math.max(document.documentElement.clientWidth, window.innerWidth || 0);
+    	    if(w > 657){
+    	    	$(".pt-checkout #shippingForm .address-form ,.pt-checkout #shiptostore .form-section").find("input[type='number'],input[type='tel'],input[type='text'], input[type='email']").attr("placeholder", "");
+    	    	/*$(".pt-checkout #shiptostore .search-store-location").find("input[type='text']").attr("placeholder", "");*/
+    	    }
+        }
+
+    	else  if($("#billingForm").length  > 0 ){
+
+    		app.newbilling.init();
+       		var w = Math.max(document.documentElement.clientWidth, window.innerWidth || 0);
+       		if(w > 657){
+       			$(".pt-checkout #billingForm").find("input[type='number'],input[type='tel'], input[type='text']").attr("placeholder", "");
+       			$(".pt-checkout #billingForm .formfield.creditcard-cvv,.pt-checkout #billingForm .formfield.gift-cert-pin").find("input[type='password']").attr("placeholder", "");
+	    	}
+        }
+
+    	else{
+        	app.newbilling.initReview();
+        }
+    	 $(".live-chat").on("click", function (e) {
+             e.preventDefault();
+             app.chatModule.show();
+         });
+
+    	$(".remove-cuppon-checkout").live('click',function(e){
+    		e.preventDefault();
+    		var url=$(this).attr('href');
+    		url=app.util.appendParamToURL(url, "format", "ajax");
+    		 $.ajax({
+             	url:url
+                })
+             .done(function(response){
+             	if(response.success){
+             		app.newcheckout.updateSummary();
+             	}
+             });
+    	});
+
+
+        $(".promo-coupon").live("click",function(e){
+        	e.preventDefault();
+ 	    	$(".active-input-error").removeClass("active-input-error");
+ 			$(this).addClass("active-input");
+ 			$(this).next().addClass("acitve-button");
+ 		});
+
+ 		 if($(".sp-promo-cuppon-code .error").length > 0 || $(".cartcoupon").hasClass("not-applied")) {
+ 			$(".promo-coupon").addClass("active-input-error");
+ 		 }
+
+    	$("#add-coupon").live('click',function(e){
+    		e.preventDefault();
+    		var url = app.util.appendParamToURL($(this).closest('form').attr('action'), "format", "ajax");
+    		var couponCode = $("#dwfrm_cart_couponCode").val();
+    		if(couponCode==''){
+    			 $('.sp-promo-cuppon-code .error').html(app.resources.COUPON_CODE_MISSING);
+    			 $('.sp-promo-cuppon-code .error').removeClass('display-none');
+    			 return false;
+    		}else{
+    			$('.sp-promo-cuppon-code .error').html('');
+    			 $('.sp-promo-cuppon-code .error').addClass('display-none');
+    		}
+    		 jQuery.ajax({
+                 type: "POST",
+                 url: url,
+                 data: { couponCode:  couponCode}
+             }).success(function (response) {
+            	 if(response.success){
+            		 app.newcheckout.updateSummary();
+            		 $(".cartcoupon.applied").show();
+            	 }else{
+
+            		 $(".cartcoupon.not-applied").show();
+            		 $('.sp-promo-cuppon-code .coupon-not-valid').html(response.message);
+            		// $("#dwfrm_cart_couponCode").val('')
+
+            		 //$('.sp-promo-cuppon-code .error').removeClass('display-none');
+            	 }
+
+             });
+
+    	});
+    	app.newcheckout.updateSummary();
+    }
+
+    /******* app.checkout public object ********/
+    app.newcheckout = {
+        init: function () {
+        	initializeDom();
+        },
+    fillAddressFields: function (address, $form) {
+    		for (var field in address) {
+    			if (field === 'ID' || field === 'UUID' || field === 'key') {
+    				continue;
+    			}
+    			// if the key in address object ends with 'Code', remove that suffix
+    			// keys that ends with 'Code' are postalCode, stateCode and countryCode
+    			$form.find('[name$="' + field.replace('Code', '') + '"]').val(address[field]);
+
+    			if(field == 'postalCode'){
+    				if($form.find('[name$="postalCode"]').length > 0 ){
+    					$form.find('[name$="postalCode"]').val(address.postalCode);
+    				}else{
+    					$form.find('[name$="zip"]').val(address.postalCode);
+    				}
+    			}
+
+    			// update the state fields
+    			if (field === 'countryCode') {
+    				$form.find('[name$="country"]').trigger('change');
+    				// retrigger state selection after country has changed
+    				// this results in duplication of the state code, but is a necessary evil
+    				// for now because sometimes countryCode comes after stateCode
+    				//$form.find('[name$="state"]').val(address.stateCode);
+    			}
+    			if(field ==='stateCode'){
+    				$form.find('[name$="_state"]').val(address.stateCode);
+    				$form.find("div[targetId$='_state'] ul li a[rel='"+address.stateCode+"']").click()
+    			}
+    		}
+    	},
+      updateSummary : function(){
+    	  updateSummary();
+      },
+      updateShippingMethodList: function() {
+    	  // this is to make sure shipping method UI reloads forcefully.
+    	  shippingMethods = "";
+    	  updateShippingMethodList();
+      }
+
+    };
+    $(".live-chat").on("click", function (e) {
+		e.preventDefault();
+		app.chatModule.show();
+					            
+    });
+}(window.app = window.app || {}, jQuery));
+
+/**
+ * @class app.storepickupExpressCheckout
+ */
+(function (app, $) {
+    var $cache = {},
+		initialized = false;
+    /**
+	 * @private
+	 * @function
+	 * @description Initializes the events (preview, send, edit, cancel and close) on the send to friend form
+	 */
+    function initializeEvents() {
+        if (initialized) { return; }
+        $cache.dialog.on("click", ".storepickup-info-save", function (e) {
+            e.preventDefault();
+            $cache.form.validate();
+            if (!$cache.form.valid()) {
+                return false;
+            }
+            var data = $cache.form.serialize();
+            app.ajax.post({
+                url: $cache.form.attr("action"),
+                data: data,
+                //target: $cache.dialog,
+                 callback: function(response){
+	                	 if(response == null){
+                		 window.alert(app.resources.SERVER_CONNECTION_ERROR);
+		            	 window.location.href=app.urls.home;
+	                	 }
+
+	                	var resObj = {};
+                   	try {
+                   		resObj = $.parseJSON(response);
+                   	} catch(err) {
+
+                   	}
+
+                   	if(typeof resObj == 'object' && 'success' in resObj && resObj.success == true) {
+                   		//close popup
+                   		e.preventDefault();
+                   		$(".store-pickup-details .additional-section .store-name.names").replaceWith("<div class=\"store-name names\">"+$cache.form.find("input[name$='_firstname']").val()+' '+$cache.form.find("input[name$='_lastname']").val()+"</div>");
+                   		$(".store-pickup-details .additional-section .store-name.email").replaceWith("<div class=\"store-name email\">"+$cache.form.find("input[name$='_email']").val()+"</div>");
+                   		$(".store-pickup-details .additional-section .store-name.no-pickup-selected").replaceWith("<div class=\"store-name names\">"+$cache.form.find("input[name$='_firstname']").val()+' '+$cache.form.find("input[name$='_lastname']").val()+"</div>"+"<div class=\"store-name email\">"+$cache.form.find("input[name$='_email']").val()+"</div>");
+            		    $cache.dialog.dialog("close");
+                   	}
+	            }
+            });
+        })
+		.on("click", ".add-store-pickup-person", function (e) {
+		    if ($cache.addtionalcheckobox.is(':checked')) {
+		    	$cache.form.find(".addtionalsection").show();
+	     	}
+			 else{
+				 $cache.form.find(".addtionalsection").hide();
+			 }
+		})   
+		.on("click", ".add-store-pickup-notification", function (e) {
+			if ($cache.notificationcheckbox.is(':checked')) {
+		    	$cache.form.find(".notificationsection").show();
+	     	}
+			 else{
+				 $cache.form.find(".notificationsection").hide();
+			 }
+		})        
+		.on("click", ".cancel-button, .close-button", function (e) {
+		    e.preventDefault();
+		    $cache.dialog.dialog("close");
+		});
+        initialized = true;
+    }
+
+    /*************** app.storepickupExpressCheckout public object ***************/
+    app.storepickupExpressCheckout = {
+        init: function () {
+            $cache = {
+                form: $("#storepick-additionalinfoform"),
+                dialog: $("#storepick-addinfo-dialog"),
+            	notificationcheckbox : $("#storepick-additionalinfoform").find("input[name$='_notificationcheckbox']"),
+        		addtionalcheckobox : $("#storepick-additionalinfoform").find("input[name$='_addtionalcheckobox']")
+            };
+            initializeEvents();
+        },
+
+        /**
+		 * @function
+		 * @description
+		 */
+        initializeDialog: function () {
+            //$(eventDelegate).on("click", eventTarget, function (e) {
+                //e.preventDefault();
+                var dlg = app.dialog.create({
+                    target: $("#storepick-addinfo-dialog"), options: {
+                        width: 800,
+                        height: 'auto',
+                        //title: this.title,
+                        open: function () {
+                        	app.storepickupExpressCheckout.init();
+                            app.validator.init();
+                        }
+                    }
+                });
+
+                var url = app.urls.optioninfomodal;
+                app.ajax.load({
+                    url: app.util.ajaxUrl(url),
+                    target: dlg,
+                    callback: function () {
+                        dlg.dialog("open");	 // open after load to ensure dialog is centered
+                    }
+                });
+           // });
+        }
+    };
+
+}(window.app = window.app || {}, jQuery));
+
+/**
+ * @class app.ajax
+ */
+(function (app, $) {
+
+    var currentRequests = [];
+    // request cache
+
+    /**
+     * @function
+     * @description ajax request to load html response in a given container
+     * @param {String} url URI for the request
+     * @param {Object} data Name/Value pair data request
+     * @param {Function} callback  Callback function to be called
+     * @param {Object} target Selector or element that will receive content
+     */
+    app.ajax["post"] = function (options){
+
+
+
+            options.url = app.util.toAbsoluteUrl(options.url);
+            // return if no url exists or url matches a current request
+            if (!options.url || currentRequests[options.url]) {
+                return;
+            }
+
+            currentRequests[options.url] = true;
+
+            // make the server call
+            $.ajax({
+                dataType: "html",
+                type: "POST",
+                url: app.util.appendParamToURL(options.url, "format", "ajax"),
+                data: options.data
+            })
+            .done(function (response) {
+                // success
+                if (options.target) {
+                    $(options.target).empty().html(response);
+                }
+                if (options.callback) {
+                    options.callback(response);
+                }
+
+            })
+            .fail(function (xhr, textStatus) {
+                // failed
+                if (textStatus === "parsererror") {
+                    window.alert(app.resources.BAD_RESPONSE);
+                }
+                options.callback(null, textStatus);
+            })
+            .always(function () {
+                app.progress.hide();
+                // remove current request from hash
+                if (currentRequests[options.url]) {
+                    delete currentRequests[options.url];
+                }
+            });
+
+    };
+}(window.app = window.app || {}, jQuery));
+
+/**
+ * @class app.billing
+ */
+(function (app, $) {
+    var $cache = {},
+		isShipping = false,
+		shippingMethods = null,
+        controlKeys = ["8", "13", "46", "45", "36", "35", "38", "37", "40", "39"];
+
+    function initializeCache(){
+    	$cache.billingform = $("#billingForm");
+        $cache.paymentMethodId = $cache.billingform.find("input[name$='_selectedPaymentMethodID']");
+        $cache.ccContainer = $("#PaymentMethod_CREDIT_CARD");
+        $cache.ccList = $("#creditCardList");
+        $cache.ccOwner = $cache.ccContainer.find("input[name$='creditCard_owner']");
+        $cache.ccType = $cache.ccContainer.find("select[name$='_type']");
+        $cache.ccNum = $cache.ccContainer.find("input[name$='_number']");
+        $cache.ccMonth = $cache.ccContainer.find("[name$='_month']");
+        $cache.ccYear = $cache.ccContainer.find("[name$='_year']");
+        $cache.ccCcv = $cache.ccContainer.find("input[name$='_cvn']");
+        $cache.selectPaymentMethod = $('.payment-method-options');
+        $cache.editShippingLink = $(".shipping-edit");
+        $cache.editBillingLink = $(".billing-edit");
+        $cache.sameasshipping = $cache.billingform.find(".same-as-billing input");
+        $cache.submitbilling = $cache.billingform.find("#submitbilling");
+        $cache.gcCheckBalance = $("#gc-checkbalance");
+        $cache.applygiftcert = $("#applygiftcert");
+        $cache.addresslist =  $cache.billingform.find("select[id$='_addressList']");
+        $cache.paypalpayment = $cache.billingform.find("#continue-checkout-paypal");
+        $cache.billingphone=$cache.billingform.find("input[name$='_phone']");
+        $cache.guestuserregister = $(".guest-user-register");
+
+    }
+
+    function updatePaymentMethod(paymentMethodID) {
+    	var $paymentMethods = $('.payment-method');
+
+    	$paymentMethods.removeClass('payment-method-expanded');
+
+    	var $selectedPaymentMethod = $paymentMethods.filter('[data-method="' + paymentMethodID + '"]');
+    	if ($selectedPaymentMethod.length === 0) {
+    		$selectedPaymentMethod = $('[data-method="Custom"]');
+    	}
+    	$selectedPaymentMethod.addClass('payment-method-expanded');
+
+    	// ensure checkbox of payment method is checked
+    	$('input[name$="_selectedPaymentMethodID"]').removeAttr('checked');
+    	$('input[value=' + paymentMethodID + ']').prop('checked', 'checked');
+
+    	if(paymentMethodID == "CREDIT_CARD"){
+
+    		if($(".same-as-billing-address").find("input[name$='_useShippingAddress']").is(":checked")){
+    			$(".same-as-billing-address").show();
+    			$("#address-form").hide();
+    		}else{
+    			$(".same-as-billing-address").show();
+    			$("#address-form").show();
+    		}
+    		$cache.billingform.find("input,select").removeClass("ignore");
+    		$cache.submitbilling.removeAttr("disabled");
+    	}
+
+    	if(paymentMethodID == "GIFT_CERTIFICATE"){
+    		 $(".billing #billingForm #address-form").hide();
+     		 $(".same-as-billing-address").hide();
+     		$cache.billingform.find("input,select").addClass("ignore");
+     		if($(".gift-inputs").is(":visible")){
+     			//$cache.submitbilling.attr("disabled", "disabled");
+     		}
+
+    	}
+    	if(paymentMethodID == "PayPal"){
+    		var $ccForm =$paymentMethods.filter('[data-method="CREDIT_CARD"]');
+    		$ccForm.find("input,select").val('');
+    		var $gcForm =$paymentMethods.filter('[data-method="GIFT_CERTIFICATE"]');
+    		 $(".billing #billingForm #address-form").hide();
+    		$gcForm.find("input").val('');
+    		$cache.billingform.find("input,select").addClass("ignore");
+    		$(".same-as-billing-address").hide();
+    		$("#address-form").hide();
+    		$(".paypal-section").removeClass("display-none");
+    		$cache.submitbilling.removeAttr("disabled");
+    	}
+
+    	//formPrepare.validateForm();
+    }
+
+    /**
+	 * @function
+	 * @description Fills the Credit Card form with the passed data-parameter and clears the former cvn input
+	 * @param {Object} data The Credit Card data (holder, type, masked number, expiration month/year)
+	 */
+    function setCCFields(data) {
+    	cardTypeSelection=true;
+        $cache.ccOwner.val(data.holder);
+        $cache.ccNum.val(data.maskedNumber);
+        $cache.ccMonth.val(data.expirationMonth);
+        $(".card-expiration-date ul[targetid='dwfrm_billing_paymentMethods_creditCard_month'] li a[rel='" + data.expirationMonth + "']").click();
+        $cache.ccYear.val(data.expirationYear);
+        $(".card-expiration-date ul[targetid='dwfrm_billing_paymentMethods_creditCard_year'] li a[rel='" + data.expirationYear + "']").click();
+        $cache.ccCcv.val("");
+        $cache.ccType.val(data.type);
+        $("div[targetId='" + $cache.ccType.attr("id") + "'] ul li a[rel='" + data.type + "']").click();
+
+      	 $(".creditcard-number span.error,.creditcard-number span.error-message").remove();
+		$(".card-expiration-date span.error,.card-expiration-date span.error-message").remove();
+		$(".creditcard-owner span.error,.creditcard-owner span.error-message").remove();
+
+
+        // remove error messages
+        $cache.ccContainer.find(".errormessage")
+						  .toggleClass("errormessage")
+						  .filter("span").remove();
+
+        $cache.ccContainer.find(".errorlabel").toggleClass("errorlabel");
+    }
+
+    /**
+	 * @function
+	 * @description Updates the credit card form with the attributes of a given card
+	 * @param {String} cardID the credit card ID of a given card
+	 */
+    function populateCreditCardForm(cardID) {
+        // load card details
+        var url = app.util.appendParamToURL(app.urls.billingSelectCC, "creditCardUUID", cardID);
+        app.ajax.getJson({
+            url: url,
+            callback: function (data) {
+                if (!data) {
+                    window.alert(app.resources.CC_LOAD_ERROR);
+                    return false;
+                }
+                $cache.ccList.data(cardID, data);
+                setCCFields(data);
+            }
+        });
+    }
+
+    function detectCardType(number) {
+        var re = {
+            electron: /^(4026|417500|4405|4508|4844|4913|4917)\d+$/,
+            maestro: /^(5018|5020|5038|5612|5893|6304|6759|6761|6762|6763|0604|6390)\d+$/,
+            dankort: /^(5019)\d+$/,
+            interpayment: /^(636)\d+$/,
+            unionpay: /^(62|88)\d+$/,
+            visa: /^4[0-9]{12}(?:[0-9]{3})?$/,
+            mastercard: /^5[1-5][0-9]{14}$/,
+            amex: /^3[47][0-9]{13}$/,
+            diners: /^3(?:0[0-5]|[68][0-9])[0-9]{11}$/,
+            discover: /^6(?:011|5[0-9]{2})[0-9]{12}$/,
+            jcb: /^(?:2131|1800|35\d{3})\d{11}$/
+        };
+        if (re.electron.test(number)) {
+            return 'Electron';
+        } else if (re.maestro.test(number)) {
+            return 'Maestro';
+        }  else if (re.visa.test(number)) {
+            return 'Visa';
+        } else if (re.mastercard.test(number)) {
+            return 'MasterCard';
+        } else if (re.amex.test(number)) {
+            return 'Amex';
+        } else if (re.diners.test(number)) {
+            return 'Diners';
+        } else if (re.discover.test(number)) {
+            return 'Discover';
+        } else if (re.jcb.test(number)) {
+            return 'JCB';
+        } else {
+            return undefined;
+        }
+    }
+
+    function initializeEvents(){
+	  	var address = {};
+
+	  	address.firstName = $('div.same-as-billing-address').data('firstname');
+	  	address.lastName = $('div.same-as-billing-address').data('lastname');
+	  	address.address1 = $('div.same-as-billing-address').data('address1');
+	  	address.address2 = $('div.same-as-billing-address').data('address2');
+	  	address.city = $('div.same-as-billing-address').data('city');
+	  	address.state = $('div.same-as-billing-address').data('states');
+	  	address.zip = $('div.same-as-billing-address').attr('data-zip');
+	  	address.phone = $('div.same-as-billing-address').data('phone');
+
+	  	if($("div.remember-me label").find(".rememberme-details").length==0) {
+			$("div.remember-me label").append("<div class=\"rememberme-details tooltip\"><a target=\"_blank\" class=\"rememberme-details\" href=\""+app.urls.carememberme+"\">Details</a><div class=\"tooltip-content\" data-layout=\"small\">"+app.resources.REMEMBER_ME+"</div></div>");
+	  	  }
+
+	  	$cache.billingform.bind('keypress',function(e){
+	  		 if(e.keyCode == 13)
+	  	 	 {
+	  	      return false;
+	  	 	 }
+	  	});
+	  	//$cache.billingform.find("select").selectbox();
+
+	    $cache.ccList.on("change", function () {
+            var cardUUID = $(this).val();
+            if (!cardUUID) { return; }
+            var ccdata = $cache.ccList.data(cardUUID);
+            if (ccdata && ccdata.holder) {
+                setCCFields(ccdata);
+                return;
+            }
+            populateCreditCardForm(cardUUID);
+        });
+
+
+	  	if($cache.billingform.length>0){
+	  		$cache.billingform.validate().init();
+	  	}
+
+	  	if($cache.guestuserregister.length>0){
+	  		DesktopUI().ShowHidePassword.Init();
+	  		$(".guest-user-register-container .custom-checkbox input.disabled").siblings('.box').addClass('disabled');
+	  		$('.guest-user-register-container .right input.input-text-pw').on('focus', function(){
+	  			$('.guest-user-register-container .custom-checkbox input.disabled').siblings('.box').removeClass('disabled');
+	  			$('.guest-user-register-container .custom-checkbox input.disabled').removeClass('disabled');
+	  		});
+	  	}
+
+	  	 $cache.ccNum.on('change',function(e){
+	  		 var cardNo = $(this).val();
+	  	     var CreditCardType = "unknown";
+              cardNo = cardNo.replace(" ", "");
+              var isNotNumber = isNaN(cardNo);
+              var containsDot = true;
+              if (cardNo.indexOf('.') === -1) {
+                  containsDot = false;
+              }
+              if ((cardNo.length < 14) || isNotNumber || containsDot) { //Check card number length.
+                  return;
+              }
+            var cardType =  detectCardType(cardNo);
+             if(cardType!= undefined){
+            	 $cache.ccType.val(cardType);
+             }
+      	 });
+
+
+
+
+
+
+
+	  	 $cache.editShippingLink.on('click',function(e){
+    		 e.preventDefault();
+    		 $(this).hide();
+    		 $(".checkout-title").removeClass('active');
+    		 $(this).closest('.checkout-title').addClass('active');
+    		 var url= app.util.appendParamToURL($(this).data('url'), "editshipping", "true");
+    		 app.progress.show($("#shipping-info"));
+    		 		  app.ajax.load({
+					  url: url,
+					  callback: function(response){
+					   app.progress.hide();
+						  if(response == null){
+	                    		 window.alert(app.resources.SERVER_CONNECTION_ERROR);
+	    		            	 window.location.href=app.urls.home;
+	                    	}
+						 $("#shipping-info").find(".shipping-info-form").html(response);
+	                	 $(".shipping-info-response").hide();
+	                	 app.progress.show($cache.shippinginfo);
+	                	 $("#shipping-info").show();
+	                	 $("#payment-info").html('');
+	                	 $("#order-review").html('');
+	                	 app.newcheckout.init();
+                		 $("body").find("a.editaddress").trigger("click");
+                		 $(window).scrollTop($('#shipping-info').offset().top);
+	                	 // on edit call shipping method list again to show shipping method selection based on user address.
+	                	 app.newcheckout.updateShippingMethodList();
+
+	                	},
+	                  fail:function(){
+	                	  	 app.progress.hide();
+			        	  	 window.alert(app.resources.SERVER_CONNECTION_ERROR);
+			            	 window.location.href=app.urls.home;
+	                    }
+				});
+
+    	 });
+
+	  	$($cache.billingphone).formatter({
+			'pattern': '{{999}}-{{999}}-{{9999}}',
+		});
+    	 $cache.editBillingLink.on('click',function(e){
+    		 e.preventDefault();
+    		 $(this).hide();
+    		 $(".checkout-title").removeClass('active');
+    		 $(this).closest('.checkout-title').addClass('active');
+    		 var url= app.util.appendParamToURL($(this).data('url'), "editbilling", "true");
+    		 app.progress.show($("#payment-info"));
+    		 app.ajax.load({
+				 url: url,
+				  callback: function(response){
+					  app.progress.hide();
+					  if(response == null){
+						 window.alert(app.resources.SERVER_CONNECTION_ERROR);
+ 		            	 window.location.href=app.urls.home;
+					  }
+					 $("#payment-info").find(".billing-info-form").html(response);
+                	 $(".billing-info-response").hide();
+                	 $("#order-review").html('');
+                	 app.newcheckout.init();
+                	 $("#payment-info").show();
+                	 $(window).scrollTop($('#payment-info').offset().top);
+                 },
+                 fail:function(){
+                	 app.progress.hide();
+                	 window.alert(app.resources.SERVER_CONNECTION_ERROR);
+                	 window.location.href=app.urls.home;
+                 }
+			});
+    	 });
+
+
+
+	  	$cache.addresslist.on('change', function () {
+    		var selected = $(this).children(':selected').first();
+    		var selectedAddress = $(selected).data('address');
+    		if (!selectedAddress) { return; }
+    		app.newcheckout.fillAddressFields(selectedAddress, $cache.billingform);
+    		//$cache.billingform.validate().form();
+
+    	});
+         $cache.applygiftcert.on("click", function (e) {
+             e.preventDefault();
+             var self = jQuery(this);
+             var code = $cache.billingform.find("input[name$='_giftCertCode']").val();
+             var pin = $cache.billingform.find("input[name$='_giftCertPin']").val();
+             var url = app.util.appendParamsToUrl(app.urls.giftcardadd, { "giftCertificateID": code, "pin": pin, "format": "ajax" });
+             if (code != '' && pin != '' && pin != null && code != null) {
+                 //window.location.href = url;
+                 app.progress.show($("#payment-info"));
+                 app.ajax.load({
+                     url: url,
+                     callback: function (data) {
+                    	 app.progress.hide();
+                         $('.gift-card-redemption-msg').html(data);
+                         $('.check-balance').html('');
+
+                         var giftCardTotalAmount = $('input[name=giftCardTotalAmount]').val();
+                             giftCardTotalAmount=parseFloat(giftCardTotalAmount).toFixed(2);
+                         var orderTotal = $('input[name=orderTotal]').val();
+                             orderTotal=parseFloat(orderTotal).toFixed(2);
+                         var amountToRedeem = giftCardTotalAmount - orderTotal;
+							amountToRedeem = parseFloat(amountToRedeem).toFixed(2);
+						 var giftCardCount = $(".gift-card-detail").length;   
+                         if (amountToRedeem == 0) {
+                             $(".gift-inputs").addClass('display-none');
+
+                             var giftCertUsed = $("<div>").addClass("gift-cert-used").appendTo($(".payment-methods"));
+                             giftCertUsed.html('<p>' + app.resources.GIFT_CARD_METHOD + '</p>' + '<p>' + app.resources.GIFT_CARD_METHOD_REMOVE + '</p>');
+                             $(".apply-credit-card-section").addClass('display-none');
+                             $(".apply-gift-card-section ").removeClass('display-none');
+                         };
+						 if (giftCardCount == 1) {
+								 $(".gift-card-buttons-one").addClass('display-none');
+								 $(".gift-card-buttons-two").removeClass('display-none');
+						 } else {
+								 $(".gift-card-buttons-one").removeClass('display-none');
+								 $(".gift-card-buttons-two").addClass('display-none');
+						 }
+                         $cache.billingform.find("input[name$='_giftCertCode']").val('');
+                        $cache.billingform.find("input[name$='_giftCertPin']").val('');
+
+
+                         var giftsuccess = $('input[name=gcNumber]').val();
+                         var redeemsuccess = $('input[name=success]').val();
+
+						 if(giftsuccess < 2){
+    	                 	 $(".apply-credit-card-section").css('display','block');
+    	                 	 $(".apply-gift-card-section").css('display','block');
+    	                 }
+    	            	 else{
+    	                	  $(".apply-credit-card-section").css('display','block');
+    	        	          $(".apply-gift-card-section").css('display','none');
+    	                 }
+
+                         if(window.localStorage){
+ 	                        localStorage.setItem("giftSuccessCount",giftsuccess);
+ 	                        localStorage.setItem("amountToRedeem",amountToRedeem);
+                         }
+                         if (redeemsuccess == 'true') {
+                             if (window.localStorage && (localStorage.getItem("giftSuccessCount")==2 || (localStorage.getItem("giftSuccessCount") == 1 && amountToRedeem == 0))) {
+                                 self.hide();
+                                 $('#gc-checkbalance').hide();
+                                 $('.addonemore').html('');
+                                 if(amountToRedeem!=0)
+                                 	{
+                                 	 var val=$('#remainAmthid').val();
+                                 	 val=parseFloat(val).toFixed(2);
+                                 	$("#remainingBal").html(app.resources.REMAINING_BALANCE_TO_PAY + ' ' + app.resources.GIFT_CERT_CURRENCY + val);
+                                 	$(".all-credit-cards li.paypal-checkout").addClass("display-none");
+                                 	}else{
+                                 		$('.payment-method').filter('[data-method="GIFT_CERTIFICATE"]').addClass("gift-results-container");
+                                 		$("#remainingBal").html('');
+                                 		 $("#is-CREDIT_CARD").attr('disabled', 'disabled');
+                                 		 $("#is-PayPal").attr('disabled', 'disabled');
+                                 		$cache.submitbilling.removeAttr("disabled");
+                                 	}
+
+                             }
+                             else {
+                                 if ($('.addonemore').length == 0) {
+                                     var giftuseonemore = $("<div>").addClass("addonemore").prependTo($(".gift-cert-expanded"));
+                                     giftuseonemore.html(app.resources.GIFT_CARD_ADD_MORE);
+                                 }
+                                 var val=$('#remainAmthid').val();
+                                 val=parseFloat(val).toFixed(2);
+                                 $("#remainingBal").html(app.resources.REMAINING_BALANCE_TO_PAY + ' ' + app.resources.GIFT_CERT_CURRENCY + val);
+                                 $(".apply-credit-card-section").removeClass('display-none');
+                                 $("#is-PayPal").attr('disabled', 'disabled');
+                             }
+                         }
+
+
+                         app.newcheckout.updateSummary();
+                     },
+                     fail:function(){
+	                	 window.alert(app.resources.SERVER_CONNECTION_ERROR);
+	                	 window.location.href=app.urls.home;
+	                 }
+                 });
+             } else {
+                 $cache.balance = $cache.balance || $cache.billingform.find("div.balance");
+                 var error = $cache.balance.find("span.error");
+                 if (error.length === 0) {
+                     error = $("<span>").addClass("error").appendTo($cache.balance);
+                 }
+                 $(error).html("");
+                 $(error).html(app.resources.GIFT_CERT_MISSING);
+             }
+         });
+
+	 $('#applygiftcerttoo').on ('click', function () {
+		$('.gift-inputs').css ('display', 'block');
+		$(".gift-card-buttons-two").addClass('display-none');
+		$(".gift-card-buttons-one").removeClass('display-none');
+		$(".gift-card-buttons-one a").css ('display', 'block');
+	 });
+
+         /* Remove gift card */
+         $(".GCremove").live("click", function (e) {
+             e.preventDefault();
+             var elem = jQuery(this);
+             var url = elem.data('url');
+              app.deleteGiftcert.init(url, elem);
+         });
+
+         $("#applyccwithgift").on('click',function(e){
+        	 $("#is-CREDIT_CARD").prop("checked", true);
+        	 $('.payment-method-options').find('.payment-tabs').removeClass('active');
+        	 var $selectedPaymentMethod = $cache.selectPaymentMethod.find(':checked');
+             $selectedPaymentMethod.closest("div").addClass('active');
+             var selectedPaymentMethod = $selectedPaymentMethod.val();
+             updatePaymentMethod((selectedPaymentMethod) ? selectedPaymentMethod : 'CREDIT_CARD');
+         });
+
+    	 $cache.gcCheckBalance.on("click", function (e) {
+             e.preventDefault();
+             $cache.gcCode = $cache.gcCode || $cache.billingform.find("input[name$='_giftCertCode']");
+             $cache.pin = $cache.pi || $cache.billingform.find("input[name$='_giftCertPin']");
+             $cache.balance = $cache.balance || $cache.billingform.find("div.balance");
+             $cache.checkbalance = $cache.checkbalance || $cache.billingform.find(".check-balance");
+             if ($cache.gcCode.length === 0 || $cache.gcCode.val().length === 0 || $cache.pin.length === 0 || $cache.pin.val().length === 0) {
+                 var error = $("div.balance").find("span.error");
+                 if (error.length === 0) {
+                     error = $("<span>").addClass("error").appendTo($("div.balance"));
+                 }
+                 $(error).html("");
+                 $(error).html(app.resources.GIFT_CERT_MISSING);
+                 return;
+             }
+
+             var url = app.util.appendParamsToUrl(app.urls.giftCardCheckBalance, { "giftCertificateID": $cache.gcCode.val(), "pin": $cache.pin.val(), format: "ajax" });
+             $.post(url, function (data) {
+                 if (!data || !data.giftCertificate) {
+                     $cache.checkbalance.html(app.resources.GIFT_CERT_CURRENCY + data + " " + app.resources.GIFT_CERT_BALANCE);
+                     $('#gc-checkbalance').hide();
+                     $('.gift-card-redemption-msg .balance span.error').hide();
+                 }
+             },"json").error(function () {
+                 var error = $("div.balance").find("span.error");
+                 if (error.length === 0) {
+                     error = $("<span>").addClass("error").appendTo($("div.balance"));
+                 }
+                 $("span.error").html("");
+                 $("span.error").html(app.resources.GIFT_CERT_INVALID);
+                 return;
+             });
+         });
+    	 $cache.sameasshipping.on('click',function(e){
+    		 if (!$(this).is(':checked')) {
+        		 $(".billing #billingForm #address-form").show();
+        		 $(".billing #billingForm #address-form").find("input,select").val('');
+    		 }else{
+        		 $(".billing #billingForm #address-form").hide();
+        		 app.newcheckout.fillAddressFields(address,$cache.billingform);
+    		 }
+    	 });
+
+    	 if($cache.sameasshipping.is(":checked")){
+    		 app.newcheckout.fillAddressFields(address,$cache.billingform)
+    		 $(".billing #billingForm #address-form").hide();
+    	 }else{
+    		 $(".billing #billingForm #address-form").show();
+    		 //$(".billing #billingForm #address-form").find("input,select").val('');
+    	 }
+
+    	 $cache.submitbilling.on("click",function(e){
+    		 e.preventDefault();
+    		 var $selectedPaymentMethod = $cache.billingform.find("input[name$='_selectedPaymentMethodID']:checked");
+    		 if($selectedPaymentMethod.val()=='PayPal'){
+    			 $cache.billingform.attr('action',app.urls.paypalpayment)
+    			 $cache.billingform.submit();
+    			 return;
+    		 }
+
+    		 if($selectedPaymentMethod.val()=='GIFT_CERTIFICATE'){
+    			 $cache.ccContainer.find("input,select").removeClass("required");
+    		 }
+
+    		 if($cache.sameasshipping.is(':checked')) {
+    		    address.firstName = $('div.same-as-billing-address').data('firstname');
+    		  	address.lastName = $('div.same-as-billing-address').data('lastname');
+    		  	address.address1 = $('div.same-as-billing-address').data('address1');
+    		  	address.address2 = $('div.same-as-billing-address').data('address2');
+    		  	address.city = $('div.same-as-billing-address').data('city');
+    		  	address.state = $('div.same-as-billing-address').data('states');
+    		  	address.zip = $('div.same-as-billing-address').attr('data-zip');
+    		  	address.phone = $('div.same-as-billing-address').data('phone');
+
+    		  	app.newcheckout.fillAddressFields(address,$cache.billingform);
+    		 }
+
+
+    		 var url = app.util.appendParamToURL($cache.billingform.attr('action'), "format", "ajax");
+    		 var data = $cache.billingform.serialize();
+    		 var applyName = $(this).attr('name');
+    			if ($cache.billingform.valid()){
+    				app.progress.show($("#payment-info"));
+    				app.ajax.post({
+    					 url: url,
+    	                 data: data + "&" + applyName + '=x',
+    	                 callback: function(response){
+
+    	                	 if(response == null){
+                        		 window.alert(app.resources.SERVER_CONNECTION_ERROR);
+        		            	 window.location.href=app.urls.home;
+    	                	 }
+
+    	                	var responseObj = {};
+	                       	try {
+	                       		responseObj = $.parseJSON(response);
+	                       	}
+	                       	catch(err){}
+
+	                       	if('redirect' in responseObj) {
+	                       		 window.location.href = responseObj.redirect;
+	                       	} else {
+	                       		 $("#checkout-container").html(response);
+
+	    	                	 $(window).scrollTop($('#payment-info').offset().top);
+	    	                	  	$("#order-review").hide().delay(500).slideDown("slow",function(){
+	    	                        $("#order-review").show();
+	    	                	  });
+	    	             	 	 app.newcheckout.init();
+	    	                	 app.progress.hide();
+	                       	}
+    	                 },
+    	                 fail:function(){
+    	                	 window.alert(app.resources.SERVER_CONNECTION_ERROR);
+    	                	 window.location.href=app.urls.home;
+    	                 }
+    				});
+    			}
+    	 });
+
+    	 $cache.paypalpayment.on("click",function(e){
+    		  e.preventDefault();
+    		  $cache.billingform.attr('action',app.urls.paypalpayment)
+    		  $cache.billingform.addClass("ignore");
+    		  $cache.billingform.submit();
+    		  return true;
+    	 });
+
+
+    	    	//$cache.selectPaymentMethod.find('div.payment-tabs').addClass('active');
+    	 var selectedPaymentMethodType = $("#selected-payment-method-type").val();
+        var $selectedPaymentMethod = $cache.selectPaymentMethod.find(':checked');
+
+        $selectedPaymentMethod.closest("div").addClass('active');
+
+        var selectedPaymentMethod = $selectedPaymentMethod.val();
+        updatePaymentMethod((selectedPaymentMethod) ? selectedPaymentMethod : 'CREDIT_CARD');
+    	 $cache.selectPaymentMethod.on('click', 'input[type="radio"]', function () {
+    		 $('.payment-method-options').find('.payment-tabs').removeClass('active');
+    		 $(this).closest('div').addClass('active');
+    		 updatePaymentMethod($(this).val());
+    	});
+    }
+    /******* app.newbilling public object ********/
+    app.newbilling = {
+        init: function () {
+        	initializeCache();
+        	initializeEvents();
+
+        },
+
+        initReview: function () {
+        	$(window).scrollTop($('#payment-info').offset().top);
+    	  	$("#order-review").hide().delay(500).slideDown("slow",function(){
+    	  		$("#order-review").show();
+    	  	});
+
+    	  	$('#order-review .order-shipment-table .cart-row:gt(3)').hide();
+			var storeAddressListCount = $('#order-review .order-shipment-table .cart-row').length;
+			if (storeAddressListCount > 4) {
+			    $('.view-more-items-show').show();
+			} else {
+			    $('.view-more-items-show').hide();
+			}
+			$('.view-more-items-show').unbind("click").on("click", function(e){
+				e.preventDefault();
+				$(this).toggleClass("expanded");
+			    $('#order-review .order-shipment-table .cart-row:gt(3)').slideToggle();
+			});
+
+    	  	var w = Math.max(document.documentElement.clientWidth, window.innerWidth || 0);
+    	    if(w < 657){
+    	    	$('#order-review .order-shipment-table .left-section').hide();
+    	    	$('.view-cart-item-mobile').unbind("click").on("click", function(e){
+    				e.preventDefault();
+    				$(this).toggleClass("expanded");
+    			    $('#order-review .order-shipment-table .left-section').slideToggle();
+    			});
+
+    	    }
+
+        	app.newbilling.init();
+        }
+    };
+}(window.app = window.app || {}, jQuery));
+
+
+(function (app, $) {
+    app.deleteGiftcert = {
+        init: function (url, elem) {
+            app.ajax.load({
+                url: url,
+                callback: function (responses) {
+                	 $('.payment-method').filter('[data-method="GIFT_CERTIFICATE"]').removeClass('gift-results-container');
+                	$('.payment-method').filter('[data-method="GIFT_CERTIFICATE"]').find('.gift-results .removegift-result').html(responses);
+                    app.newbilling.init();
+                    $('a#applygiftcert').show();
+                    $(".apply-gift-card-section ").removeClass('display-none');
+                    $('#gc-checkbalance').show();
+                    $('.check-balance').html('');
+                    $('.addonemore').html('');
+                    var giftSuccessCount = 0;
+                    if(window.localStorage){
+	                    giftSuccessCount = localStorage.getItem("giftSuccessCount");
+	                    giftSuccessCount = giftSuccessCount-1;
+	                    localStorage.setItem("giftSuccessCount",giftSuccessCount);
+                    }
+
+                    var orderAmtRemaining = $('input[name=OrderAmtRemaining]').val();
+                    if (orderAmtRemaining != '' && orderAmtRemaining != null) {
+                        //$(".gift-card-redemption-msg").html('');
+                        elem.closest('.success.giftcert-pi').html('');
+                        $(".gift-inputs").removeClass('display-none');
+                        if(giftSuccessCount==0){
+                            $("#remainingBal").html('');
+
+                            $("#is-CREDIT_CARD").removeAttr("disabled");
+                            $("#is-PayPal").removeAttr("disabled");
+                            $(".apply-credit-card-section").addClass('display-none');
+                        }else{
+                        	 var val=$('#removeOrderTotal').val();
+                        	 val=parseFloat(val).toFixed(2);
+                        	 $("#remainingBal").html(app.resources.REMAINING_BALANCE_TO_PAY + ' ' + app.resources.GIFT_CERT_CURRENCY + val);
+                        	   $("#is-CREDIT_CARD").removeAttr("disabled");
+                        	   $("#is-PayPal").attr('disabled', 'disabled');
+                        	   $(".apply-credit-card-section").removeClass('display-none');
+                        }
+                    }
+                    $(".gift-cert-expanded .gift-cert-code input, .gift-cert-expanded .gift-cert-pin input").val("");
+                   // $('input[name=dwfrm_billing_paymentMethods_selectedPaymentMethodID]').val('CREDIT_CARD');
+                    app.newcheckout.updateSummary();
+                }
+            });
+        }
+    }
+
+}(window.app = window.app || {}, jQuery));
+
+/**
+ * @class app.where2getstoremodel
+ */
+(function (app, $) {
+    var $cache = {},
+		initialized = false;
+    /**
+	 * @private
+	 * @function
+	 * @description Initializes the events (setUserZip and storehouresexpand) on the send to friend form
+	 */
+    function initializeEvents() {
+        $cache.dialog.on("click", "button#set-user-zip", function (e) {
+             	e.preventDefault();
+             	var shiptostoredlg = $(this).parents(".where2getdata-store-dialog");
+               var zipcode = shiptostoredlg.find("#userZip").val();
+       		var characterReg = /^\s*[a-zA-Z0-9,\s]+\s*$/;
+               if(!(shiptostoredlg.find("#userZip").val().trim()).length > 0 || !characterReg.test(shiptostoredlg.find("#userZip").val())){
+            	   shiptostoredlg.find(".zip-code-section div.error-message").remove();
+             	  //shiptostoredlg.find(".where2getdata").html($(response));
+   				  shiptostoredlg.find(".store-pickup-top-content .zip-code-section").append('<div class="error-message">' + app.resources.INVALID_ZIP + '</div>');
+   				  shiptostoredlg.find(".store-list").remove();
+   				  shiptostoredlg.find(".store-list-scroll").remove();
+ 					shiptostoredlg.find(".store-header.store-count").remove();
+ 					shiptostoredlg.find("button.viewmore").remove();
+   				  return;
+               }
+       		app.ajax.post({
+       			 url: app.urls.fetchStores,
+       			 data:{"searchQuery":shiptostoredlg.find("#userZip").val(),"radius":shiptostoredlg.find(".store-radius").val()},
+       			 callback: function(response){
+       				 if(($(response).find(".no-store-error-message").length > 0) || (($(response).find(".store-list-scroll").length==0) && ($(response).find(".store-list").length==0))) {
+       					shiptostoredlg.find(".where2getdata").html($(response));
+       					shiptostoredlg.find(".zip-code-section div.error-message").remove();
+       					shiptostoredlg.find(".store-header.store-count").remove();
+       					shiptostoredlg.find("button.viewmore").remove();
+       					shiptostoredlg.find(".store-pickup-top-content .zip-code-section").append('<div class="error-message">' + app.resources.INVALID_ZIP + '</div>');
+       					shiptostoredlg.find(".store-list-scroll").remove();
+       				 } else {
+       					shiptostoredlg.find(".zip-code-section div.error-message").remove();
+           				shiptostoredlg.find("div.store-list").html('');
+           				shiptostoredlg.find("button.viewmore").remove();
+           				shiptostoredlg.find(".store-header.store-count").replaceWith($(response).find(".store-header.store-count"));
+//shiptostoredlg.append($(response).find(".store-list").addClass('store-list-scroll'));
+						shiptostoredlg.find (".store-modal-content").html ($(response));
+                       	//app.where2getstoremodel.init();
+                    	$(".ui-icon-closethick").text('');
+
+                    	 if(shiptostoredlg.find(".ps-one-third").length > 3){
+                    		 shiptostoredlg.find(".address-list").addClass("store-list-scroll");
+                         }
+
+                    	var w = Math.max(document.documentElement.clientWidth, window.innerWidth || 0);
+         	    	     if(w < 657){
+         	    	    	$('#where2getresponse').css('border-bottom','2px solid #CCCCCC');
+             	    	  }
+       				 }
+
+       			 }
+       		});
+        })
+        .on("click", "button.select-store-button", function (e) {
+   		 e.preventDefault();
+
+			$(".stores-address-details.selecte-store-detail").html($(this).parents(".ps-one-third").find(".store-address-box").html());
+			$(".stores-address-details.selecte-store-detail").removeClass("hide");
+			$(".stores-address-details.selecte-store-detail").addClass("active");
+			$(".stores-address-details.selecte-store-detail").append($(this).parents(".ps-one-third").find(".input-radio-custom"))
+			$(this).show();
+			app.dialog.close();
+			$(".store-pickup-modal").remove();
+			$(".change-store").removeClass("hide");
+			//$(".change-store").show();
+			$(".ship-to-store-location-search").hide();
+			$(".ship-to-header").show();
+			var sid = $(this).prop ('value');
+			setCookie ("COSelectedStore", sid, 360);
+        })
+		.on("click", ".store-hours-label", function (e) {
+     		e.preventDefault();
+			if($(this).next().hasClass("hide")){
+				$(this).next().removeClass("hide");
+				$(this).text(app.resources.STOREHOURSMINUS);
+			}
+			else {
+				$(this).next().addClass("hide");
+				$(this).text(app.resources.STOREHOURSPLUS);
+			}
+		})
+		.on("click", ".viewmore", function (e) {
+			var shiptostoredlg = $(this).parents(".where2getdata-store-dialog");
+			shiptostoredlg.find(".hide-stores").each(function( index ) {
+				if(index <= 15){
+	    			$(this).removeClass("hide-stores");
+				}
+    		});
+    		if(shiptostoredlg.find(".hide-stores").length == 0) {
+    			 shiptostoredlg.find(".viewmore").hide();
+	    	}
+		});
+    }
+
+    /*************** app.where2getstoremodel public object ***************/
+    app.where2getstoremodel = {
+        init: function () {
+		    $cache = {
+                form: $("form.shiptostore"),
+                dialog: $(".where2getdata-store-dialog")
+            };
+            initializeEvents();
+        },
+
+        /**
+		 * @function
+		 * @description
+		 */
+        initializeDialog: function (response) {
+        	//var target1 = $('<div/>').append(response).find('#where2getdata').html();
+                var dlg = app.dialog.create({
+                         target: $('<div/>').append(response).find('#where2getdata').html(),
+                         options: {
+                        		position : [ "center", "center" ],
+								width : "700",
+								height : 'auto',
+								modal: true,
+								dialogClass: "store-pickup-modal where2getdata-store-dialog",
+								resizable : true,
+								draggable : false,
+								autoOpen : true,
+	                            open: function () {
+	                            	app.where2getstoremodel.init();
+	                            	$(".ui-icon-closethick").text('');
+
+	                            	 if($(".store-modal-content").find(".ps-one-third").length > 3){
+	                            		 $(".store-modal-content").find(".address-list").addClass("store-list-scroll");
+	                                 }
+
+	                            	var w = Math.max(document.documentElement.clientWidth, window.innerWidth || 0);
+	                 	    	     if(w < 657){
+	                 	    	    	$('#where2getresponse').css('border-bottom','2px solid #CCCCCC');
+		                 	    	  }
+	                 	    	    //$(".store-modal-content").find("button.select-store-button").on('click',function(e){});
+	                             }
+                         }
+                	 
+                });
+        }
+    };
+
+}(window.app = window.app || {}, jQuery));

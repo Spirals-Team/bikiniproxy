@@ -1,0 +1,1 @@
+jQuery.noConflict(),jQuery(function(a){a(document).ready(function(){a('a[href="#disabled_link"]').addClass("no-link"),a('a[href="#disabled_link"]').removeAttr("href")})});

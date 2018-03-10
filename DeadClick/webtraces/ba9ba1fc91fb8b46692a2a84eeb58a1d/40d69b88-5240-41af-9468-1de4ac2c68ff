@@ -1,0 +1,167 @@
+if (!jQuery.browser) {
+    var userAgent = navigator.userAgent.toLowerCase();
+    jQuery.browser = {};
+    jQuery.browser.msie = /msie/.test(userAgent);
+    jQuery.browser.mozilla = /mozilla/.test(userAgent) && !/webkit/.test(userAgent);
+    jQuery.browser.webkit = /webkit/.test(userAgent);
+    jQuery.browser.opera = /opera/.test(userAgent);
+}
+
+
+
+var vimeo_player_ready = function(){
+    
+    var player = $('#video');
+
+    WEINTO.events('listen', 'vimeo/play', function(){
+        var delay = function(){
+            player.tubeplayer("play");
+            clearTimeout(timer);
+        };
+        var timer = setTimeout(delay, 800);
+    });
+    WEINTO.events('listen', 'vimeo/stop', function(){
+        
+        player.tubeplayer("seek", 0);
+        player.tubeplayer("stop");
+    });
+
+};
+
+// NAV MAIN /////////////////////////////////////////////////////////////////
+(function($){  
+    $.fn.subwayNav = function(options) {
+
+		var defauts =  {
+			'destination' : '#dropdown-nav'
+		};
+
+		var options = $.extend(defauts, options);
+
+        this.each(function(){  
+        	var that = $(this);
+        	var _dropdowns = that.find('div.dropdown');
+
+        	_dropdowns.detach().appendTo(options.destination);
+
+            _dropdowns = that.find('a.dropdown');
+
+            var closeDropdowns = function(){
+                $(options.destination+' div.dropdown').stop().slideUp(0);
+                _dropdowns.removeClass('active');
+            };
+
+        	_dropdowns.each(function(){
+        		var t = $(this);
+        		var dpName = t.data('dropdown');
+        		var item = $(options.destination).find('div.dropdown-'+dpName);
+                var itemToClose = true;
+                var timer = null;
+
+                var closeItem = function(){
+                    clearTimeout(timer);
+                    if(itemToClose){
+                        item.slideUp(150);
+                        t.removeClass('active');
+                    }
+                };
+
+                var openItem = function(){
+                    item.slideDown(300);
+                    t.addClass('active');
+                };
+
+                var timerClose = function(){
+                    timer = setTimeout(closeItem, 300);
+                };
+
+      			t.on('mouseover', function(e){
+                    itemToClose = false;
+                    closeDropdowns();
+                    openItem();
+      			}).on('mouseleave', function(){
+                    itemToClose = true;
+                    timerClose();
+      			});
+
+                item.on('mouseover', function(e){
+                    itemToClose = false;
+                }).on('mouseleave', function(){
+                    itemToClose = true;
+                    timerClose();
+                });
+        	});
+
+        });
+
+        return this;
+
+    };  
+})(jQuery);  
+
+// MANGERBOUGER /////////////////////////////////////////////////////////////////
+(function($){  
+    $.fn.mangerbouger = function(options) {
+
+        var defauts =  {};
+
+        var options = $.extend(defauts, options);
+
+        this.each(function(){  
+            var t = $(this);
+            var isMoving = false;
+            var items = t.find('li');
+            var nbSteps = items.length;
+            var current = 0;
+            var timer = false;
+
+            var onTime = function(){
+                clearTimeout(timer);
+                if(!arguments[0]){
+                    if(current+1 === nbSteps){
+                        gotoPos(0);
+                    } else {
+                        gotoPos(current+1);
+                    }
+                }
+                timer = setTimeout(onTime, 4000);
+            };
+
+            var gotoPos = function(position){
+                if(isMoving){ return; }
+                isMoving = true;
+                items.each(function(){
+                    var t = $(this);
+                    if(t.hasClass('active')){
+                        t.animate({opacity:0}, 500, function(){
+                            $(this).css('display','none').removeClass('active');
+                        });
+                    }
+                });
+                items.eq(position).css('display','block').animate({opacity:1}, 300, function(){
+                    $(this).addClass('active');
+                    isMoving = false;
+                });
+                current = position;
+            };
+
+            gotoPos(0);
+
+            timer = setTimeout(onTime, 4000);
+
+        });
+
+        return this;
+
+    };  
+})(jQuery);
+
+
+
+$('document').ready(function(){
+	$('.scrollTo').scrollTo(300); 
+    $('header.main nav.main').subwayNav(); 
+	$('#mangerbouger').mangerbouger(); 
+});
+
+

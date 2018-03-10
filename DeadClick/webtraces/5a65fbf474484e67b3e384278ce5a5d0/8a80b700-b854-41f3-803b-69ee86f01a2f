@@ -1,0 +1,121 @@
+$(document).ready(function () {
+    // MOBILE NAVIGATION BEGIN
+    if ($(this).width() < 768) {
+        document.getElementById("viewport").setAttribute("content", "width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0");
+    }
+    $('ul#snap-group a.arrow').on('click', function (event) {
+        event.preventDefault();
+        if ($(this).next('ul').is(':visible')) {
+            $(this).parent().siblings().removeClass('open');
+            $(this).parent().removeClass('open');
+            $(this).next().slideUp(250);
+            $(this).next().find('ul').slideUp(250, function () {
+                $(this).next().slideUp(250);
+            });
+        } else {
+            $(this).parent().siblings().removeClass('open');
+            $(this).parent().siblings().find('ul').slideUp(250);
+            $(this).next().slideDown(250);
+            $(this).next().find('li').removeClass('open');
+            $(this).parent().addClass('open');
+        }
+    });
+    if (window.addEventListener) {
+        var snapper = new Snap({
+            element: document.getElementById('content'),
+            disable: 'right',
+            transitionSpeed: 0.3,
+            easing: 'ease-out',
+            maxPosition: 266,
+            minPosition: -266,
+            tapToClose: true,
+            touchToDrag: false,
+            slideIntent: 30
+        });
+        var navToggleButton = document.getElementById("toggleMobileNav");
+        var searchToggleButton = document.getElementById("toggleMobileSearch");
+        if (navToggleButton) {
+            navToggleButton.addEventListener('click', function () {
+                document.activeElement.blur();
+                if (snapper.state().state == 'left') {
+                    snapper.close();
+                } else {
+                    snapper.open('left');
+                }
+            });
+        }
+        if (searchToggleButton) {
+            searchToggleButton.addEventListener('click', function () {
+                document.activeElement.blur();
+                if (snapper.state().state == 'left') {
+                    snapper.close();
+                } else {
+                    snapper.open('left');
+                    $('.form-search input#mobile-q').focus(); //optional
+                }
+            });
+        }
+    }
+
+    // MOBILE SEARCH
+    $('#mobile-q').keydown(function (e) {
+        if (e.which == 13) {
+            e.preventDefault();
+            if ($.trim(this.value || '') > '')
+                document.location.href = document.location.protocol + '//' + document.location.host + (aspect_search_page_url || '/search/') + '?q=' + encodeURIComponent(this.value);
+        }
+    });
+    $('#q-submit').click(function (e) {
+        e.preventDefault();
+        var query = $.trim($('#mobile-q').val() || '') || $.trim($('#qs').val() || '');
+        if (query > '')
+            document.location.href = document.location.protocol + '//' + document.location.host + (aspect_search_page_url || '/search/') + '?q=' + encodeURIComponent(query);
+    });
+
+    // MOBILE NAVIGATION END
+
+    // SEARCH BOX BEGIN
+    var searchOverlay = $('#asp-header-search');
+    var searchInput = $('input#q');
+    var searchToggle = $('.asp-icon-nav-search-toggle');
+    var searchQuery = searchInput.val();
+    searchToggle.click(function (e) {
+        searchOverlay.css({ display: 'block' });
+        searchInput.focus();
+        e.preventDefault();
+    });
+    searchInput.bind('focus', function () {
+        if (searchInput.val() === searchQuery) {
+            searchInput.val('');
+        }
+        searchOverlay.css({ display: 'block' });
+    }).bind('blur', function () {
+        searchOverlay.css({ display: 'none' });
+    }).keyup(function () {
+        if (searchQuery === '') {
+            searchOverlay.css({ display: 'block' });
+        } else {
+            searchOverlay.css({ display: 'none' });
+        }
+    });
+
+    searchInput.keydown(function (e) {
+        if (e.which == 13) {
+            e.preventDefault();
+            if ($.trim(this.value || '') > '')
+                document.location.href = document.location.protocol + '//' + document.location.host + (aspect_search_page_url || '/search/') + '?q=' + encodeURIComponent(this.value);
+        }
+    });
+
+    searchOverlay.find('.asp-header-search-btn').click(function (e) {
+        e.preventDefault();
+    });
+
+    // SEARCH BOX END
+
+    // BOOTSTRAP CAROUSEL AUTOSTART
+    $(function () {
+        $('.carousel.autostart').carousel();
+    });
+    // BOOTSTRAP CAROUSEL AUTOSTART END
+});

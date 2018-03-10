@@ -1,0 +1,14 @@
+_satellite.pushAsyncScript(function(event, target, $variables){
+  //if the links were not ready before, replace them on DOM ready
+document.addEventListener("DOMContentLoaded", function(event) {
+  try {
+    var bookingLinks = document.querySelectorAll('a[href*="booking.com"]');
+    for (var i = 0; i < bookingLinks.length; i++) {
+      var oldHref = bookingLinks[i].getAttribute('href');
+      if (!oldHref.match(/TMG-(\d*)-.*/)) {
+        bookingLinks[i].setAttribute('href', oldHref.replace('TMG-', 'TMG-' + s.visitor.getMarketingCloudVisitorID() + '-'));
+      }
+    }
+  } catch (e) {}
+});
+});

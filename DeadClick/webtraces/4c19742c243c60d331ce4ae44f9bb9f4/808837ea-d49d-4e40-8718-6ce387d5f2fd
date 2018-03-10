@@ -1,0 +1,43 @@
+
+define(['angular/core/services'],
+    function(){
+
+		var adminInfoApp = angular.module('graphdb.framework.stats', ['toastr']);
+
+		adminInfoApp.config(['$routeProvider', '$locationProvider', '$menuItemsProvider', function($routeProvider, $locationProvider, $menuItemsProvider) {
+			$routeProvider.when('/sysinfo', {
+				templateUrl : 'v/8.4.0-TR02/pages/info.html',
+				controller : 'AdminInfoCtrl',
+				title: 'System information',
+                helpInfo: 'The System information view shows the configuration values of the JVM '
+                            + 'running the GraphDB Workbench.'
+			}).when('/webapi', {
+				templateUrl : 'v/8.4.0-TR02/pages/webapi.html',
+				title: 'REST API documentation',
+				helpInfo: 'The REST API view documents the available public RESTful endpoints and '
+				        + 'provides an interactive interface to execute the requests.'
+			});
+
+			$menuItemsProvider.addItem({label : 'Setup', href: '#', order : 7, role : 'ROLE_USER', icon: "icon-settings"});
+            $menuItemsProvider.addItem({label : 'Help', href: '#', order : 8, icon: "icon-help"});
+			$menuItemsProvider.addItem({label : 'System information', href: 'sysinfo', order : 50, parent : 'Help', role: 'ROLE_ADMIN'});
+			$menuItemsProvider.addItem({label : 'REST API', href: 'webapi', order : 1, parent : 'Help'});
+            $menuItemsProvider.addItem({label : 'Documentation', href: 'http://graphdb.ontotext.com/documentation/enterprise/', order : 2, parent : 'Help', icon: "icon-external"});
+            $menuItemsProvider.addItem({label : 'Developer Hub', href: 'http://graphdb.ontotext.com/devhub/', order : 3, parent : 'Help', icon: "icon-external"});
+            $menuItemsProvider.addItem({label : 'Support', href: 'http://graphdb.ontotext.com/support/', order : 4, parent : 'Help', icon: "icon-external"});
+		}]);
+
+		adminInfoApp.controller('AdminInfoCtrl', ['$scope', '$http', 'toastr', function($scope, $http, toastr) {
+		    $http.get("rest/info/data")
+		        .success(function(data, status, headers, config) {
+		            $scope.info = data;
+		        })
+		        .error(function(data, status, headers, config) {
+		            msg = getError(data);
+		        	toastr.error(msg, 'Error');
+		        });
+
+		}]);
+
+		return adminInfoApp;
+});

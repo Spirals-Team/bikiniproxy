@@ -1,0 +1,153 @@
+/////////////////////////////////////////////////////////////////////////////
+// Function : NavNode (constructor)
+// Comments :
+/////////////////////////////////////////////////////////////////////////////
+function NavNode(id, label, href, parent)
+{
+	this.m_parent = null;
+	this.m_level = 0;
+
+	if (parent)
+	{
+		this.m_parent = parent;
+		this.m_level = parent.m_level+1;
+	}
+
+	this.m_id = id;
+
+	// assume that m_label will most often be used directly as HTML
+	this.m_rawlabel = label;
+
+	label = label.replace(/&/g, '&amp;');
+	label = label.replace(/</g, '&lt;');
+	label = label.replace(/>/g, '&gt;');
+	label = label.replace(/"/g, '&quot;');
+
+	this.m_label = label;
+
+	this.m_href = href;
+	this.m_subNodes = new Array();
+
+	var argValues = NavNode.arguments;
+	var argCount = NavNode.arguments.length;
+
+	for (i = 4 ; i < argCount ; i++)
+	{
+		var eqPos = argValues[i].indexOf("==");
+		var attrName = argValues[i].substring(0,eqPos);
+		var attrValue = argValues[i].substring(eqPos+2);
+
+		eval("this.cp_" + attrName + " = '" + attrValue + "';");
+	}
+
+	NavNode.prototype.addNode = addNode;
+	NavNode.prototype.isSelected = isSelected;
+}
+
+/////////////////////////////////////////////////////////////////////////////
+// Function : addNode
+// Comments :
+/////////////////////////////////////////////////////////////////////////////
+function addNode(id, label, href)
+{
+	var newIndex = this.m_subNodes.length;
+	var newNode = new NavNode(id, label, href, this);
+
+	var argValues = addNode.arguments;
+	var argCount = addNode.arguments.length;
+
+	for (i = 3 ; i < argCount ; i++)
+	{
+		var eqPos = argValues[i].indexOf("==");
+		var attrName = argValues[i].substring(0,eqPos);
+		var attrValue = argValues[i].substring(eqPos+2);
+
+		eval("newNode.cp_" + attrName + " = '" + attrValue + "';");
+	}
+
+	this.m_subNodes[newIndex] = newNode;
+	return newNode;
+}
+
+/////////////////////////////////////////////////////////////////////////////
+// Function : isSelected
+// Comments :
+/////////////////////////////////////////////////////////////////////////////
+function isSelected()
+{
+    var pos = window.location.href.lastIndexOf("/");
+    var docname = window.location.href.substring(pos+1, window.location.href.length);
+
+    pos = this.m_href.lastIndexOf("/");
+    var myname = this.m_href.substring(pos+1, this.m_href.length);
+
+    if (docname == myname)
+		return true;
+	else
+		return false;
+}
+
+/////////////////////////////////////////////////////////////////////////////
+// Function : customSectionPropertyExists
+// Comments :
+/////////////////////////////////////////////////////////////////////////////
+function customSectionPropertyExists(csp)
+{
+	return (typeof csp != _U && csp != null);
+}
+
+/////////////////////////////////////////////////////////////////////////////
+// Function : getCustomSectionProperty
+// Comments :
+/////////////////////////////////////////////////////////////////////////////
+function getCustomSectionProperty(csp)
+{
+	if (customSectionPropertyExists(csp))
+	{
+		return csp;
+	}
+	else
+	{
+		return "";
+	}
+}
+
+/////////////////////////////////////////////////////////////////////////////
+
+var g_navNode_Root = new NavNode('3354','ILO-Kathmandu',ssUrlPrefix + 'index.htm',null,'BreadcrumbPrefixNode==asia\x3a2642','GlobalSectionHighlight==147','NavigationRootLevel==1','SectionLabel_en==ILO in Nepal','SiteLabel_en==ILO in Nepal','secondaryUrlVariableField==pl_replaceable_content');
+g_navNode_0=g_navNode_Root.addNode('3355','About us',ssUrlPrefix + 'aboutus/index.htm','SectionLabel_en==About us','secondaryUrlVariableField==pl_replaceable_content');
+g_navNode_2=g_navNode_Root.addNode('3357','Areas of work',ssUrlPrefix + 'areasofwork/index.htm','SectionLabel_en==Areas of work','secondaryUrlVariableField==pl_replaceable_content');
+g_navNode_2_0=g_navNode_2.addNode('5270','Child labour',ssUrlPrefix + 'areasofwork/child-labour/index.htm','SectionLabelShort_en==Child labour','SectionLabel_en==Child labour in Nepal','secondaryUrlVariableField==pl_replaceable_content');
+g_navNode_2_0_0=g_navNode_2_0.addNode('5291','facet',ssUrlPrefix + 'areasofwork/child-labour/facet/index.htm','Hide==TRUE','SectionLabelShort_en==Resources','SectionLabel_en==Child Labour resources','secondaryUrlVariableField==pl_replaceable_content');
+g_navNode_2_1=g_navNode_2.addNode('5271','Employment promotion',ssUrlPrefix + 'areasofwork/employment-promotion/index.htm','SectionLabelShort_en==Employment promotion','SectionLabel_en==Employment promotion in Nepal','secondaryUrlVariableField==pl_replaceable_content');
+g_navNode_2_1_0=g_navNode_2_1.addNode('5290','facet',ssUrlPrefix + 'areasofwork/employment-promotion/facet/index.htm','Hide==TRUE','SectionLabelShort_en==Resources','SectionLabel_en==Employment promotion resources','secondaryUrlVariableField==pl_replaceable_content');
+g_navNode_2_2=g_navNode_2.addNode('5272','Equality and discrimination',ssUrlPrefix + 'areasofwork/equality-and-discrimination/index.htm','SectionLabelShort_en==Equality and discrimination','SectionLabel_en==Equality and discrimination in Nepal','secondaryUrlVariableField==pl_replaceable_content');
+g_navNode_2_2_0=g_navNode_2_2.addNode('5289','facet',ssUrlPrefix + 'areasofwork/equality-and-discrimination/facet/index.htm','Hide==TRUE','SectionLabelShort_en==Resources','SectionLabel_en==Equality and discrimination resources','secondaryUrlVariableField==pl_replaceable_content');
+g_navNode_2_3=g_navNode_2.addNode('5273','Labour market governance and working conditions',ssUrlPrefix + 'areasofwork/labour-market-governance-and-working-conditions/index.htm','SectionLabelShort_en==Labour market governance and working conditions','SectionLabel_en==Labour market governance and working conditions in Nepal','secondaryUrlVariableField==pl_replaceable_content');
+g_navNode_2_3_0=g_navNode_2_3.addNode('5288','facet',ssUrlPrefix + 'areasofwork/labour-market-governance-and-working-conditions/facet/index.htm','Hide==TRUE','SectionLabelShort_en==Resources','SectionLabel_en==Labour market governance and working conditions resources','secondaryUrlVariableField==pl_replaceable_content');
+g_navNode_2_4=g_navNode_2.addNode('5274','Labour migration',ssUrlPrefix + 'areasofwork/labour-migration/index.htm','SectionLabelShort_en==Labour migration','SectionLabel_en==Labour migration in Nepal','secondaryUrlVariableField==pl_replaceable_content');
+g_navNode_2_4_0=g_navNode_2_4.addNode('5287','facet',ssUrlPrefix + 'areasofwork/labour-migration/facet/index.htm','Hide==TRUE','SectionLabelShort_en==Resources','SectionLabel_en==Labour migration resources','secondaryUrlVariableField==pl_replaceable_content');
+g_navNode_2_5=g_navNode_2.addNode('5275','Informal economy',ssUrlPrefix + 'areasofwork/informal-economy/index.htm','SectionLabelShort_en==Informal economy','SectionLabel_en==Informal economy in Nepal','secondaryUrlVariableField==pl_replaceable_content');
+g_navNode_2_5_0=g_navNode_2_5.addNode('5286','facet',ssUrlPrefix + 'areasofwork/informal-economy/facet/index.htm','Hide==TRUE','SectionLabelShort_en==Resources','SectionLabel_en==Informal economy resources','secondaryUrlVariableField==pl_replaceable_content');
+g_navNode_2_6=g_navNode_2.addNode('5276','International Labour Standards',ssUrlPrefix + 'areasofwork/international-labour-standards/index.htm','SectionLabelShort_en==International labour standards','SectionLabel_en==International labour standards in Nepal','secondaryUrlVariableField==pl_replaceable_content');
+g_navNode_2_6_0=g_navNode_2_6.addNode('5285','facet',ssUrlPrefix + 'areasofwork/international-labour-standards/facet/index.htm','Hide==TRUE','SectionLabelShort_en==Resources','SectionLabel_en==International labour standards resources','secondaryUrlVariableField==pl_replaceable_content');
+g_navNode_2_7=g_navNode_2.addNode('5277','Safety and health at work',ssUrlPrefix + 'areasofwork/safety-and-health-at-work/index.htm','SectionLabelShort_en==Safety and health at work','SectionLabel_en==Safety and health at work in Nepal','secondaryUrlVariableField==pl_replaceable_content');
+g_navNode_2_7_0=g_navNode_2_7.addNode('5284','facet',ssUrlPrefix + 'areasofwork/safety-and-health-at-work/facet/index.htm','Hide==TRUE','SectionLabelShort_en==Resources','SectionLabel_en==Safety and health at work resources','secondaryUrlVariableField==pl_replaceable_content');
+g_navNode_2_8=g_navNode_2.addNode('5278','Skills and employability',ssUrlPrefix + 'areasofwork/skills-and-employability/index.htm','SectionLabelShort_en==Skills and employability','SectionLabel_en==Skills and employability in Nepal','secondaryUrlVariableField==pl_replaceable_content');
+g_navNode_2_8_0=g_navNode_2_8.addNode('5283','facet',ssUrlPrefix + 'areasofwork/skills-and-employability/facet/index.htm','Hide==TRUE','SectionLabelShort_en==Resources','SectionLabel_en==Skills and employability resources','secondaryUrlVariableField==pl_replaceable_content');
+g_navNode_2_9=g_navNode_2.addNode('5279','Social security',ssUrlPrefix + 'areasofwork/social-security/index.htm','SectionLabelShort_en==Social security','SectionLabel_en==Social security in Nepal','secondaryUrlVariableField==pl_replaceable_content');
+g_navNode_2_9_0=g_navNode_2_9.addNode('5282','facet',ssUrlPrefix + 'areasofwork/social-security/facet/index.htm','Hide==TRUE','SectionLabelShort_en==Resources','SectionLabel_en==Social security resources','secondaryUrlVariableField==pl_replaceable_content');
+g_navNode_2_10=g_navNode_2.addNode('5280','Workers and Employers organizations',ssUrlPrefix + 'areasofwork/workers-and-employers-organizations/index.htm','SectionLabelShort_en==Workers and Employers Organizations','SectionLabel_en==Workers and Employers Organizations in Nepal','secondaryUrlVariableField==pl_replaceable_content');
+g_navNode_2_10_0=g_navNode_2_10.addNode('5281','facet',ssUrlPrefix + 'areasofwork/workers-and-employers-organizations/facet/index.htm','Hide==TRUE','SectionLabelShort_en==Resources','SectionLabel_en==Workers and Employers Organizations resources','secondaryUrlVariableField==pl_replaceable_content');
+g_navNode_3=g_navNode_Root.addNode('3358','Decent work in Nepal',ssUrlPrefix + 'country/index.htm','SectionLabel_en==Decent work in Nepal','secondaryUrlVariableField==pl_replaceable_content');
+g_navNode_4=g_navNode_Root.addNode('3359','What we do',ssUrlPrefix + 'whatwedo/index.htm','SectionLabel_en==What we do','secondaryUrlVariableField==pl_replaceable_content');
+g_navNode_4_0=g_navNode_4.addNode('3360','Projects',ssUrlPrefix + 'whatwedo/projects/index.htm','NoIndexPage==TRUE','SectionLabel_en==Projects','secondaryUrlVariableField==pl_replaceable_content');
+g_navNode_4_1=g_navNode_4.addNode('3361','Events and meetings',ssUrlPrefix + 'whatwedo/eventsandmeetings/index.htm','NoIndexPage==TRUE','SectionLabel_en==Events and meetings','secondaryUrlVariableField==pl_replaceable_content');
+g_navNode_4_2=g_navNode_4.addNode('3362','Publications',ssUrlPrefix + 'whatwedo/publications/index.htm','NoIndexPage==TRUE','SectionLabel_en==Publications','secondaryUrlVariableField==pl_replaceable_content');
+g_navNode_5=g_navNode_Root.addNode('3364','Information resources',ssUrlPrefix + 'info/index.htm','SectionLabel_en==Information resources','secondaryUrlVariableField==pl_replaceable_content');
+g_navNode_5_0=g_navNode_5.addNode('3365','Public information',ssUrlPrefix + 'info/public/index.htm','SectionLabel_en==Public information','secondaryUrlVariableField==pl_replaceable_content');
+g_navNode_5_0_0=g_navNode_5_0.addNode('3368','News and articles',ssUrlPrefix + 'info/public/news/index.htm','NoIndexPage==TRUE','SectionLabel_en==News and articles','secondaryUrlVariableField==pl_replaceable_content');
+g_navNode_5_0_1=g_navNode_5_0.addNode('3366','Press releases',ssUrlPrefix + 'info/public/pr/index.htm','NoIndexPage==TRUE','SectionLabel_en==Press releases','secondaryUrlVariableField==pl_replaceable_content');
+g_navNode_5_0_3=g_navNode_5_0.addNode('3369','Speeches',ssUrlPrefix + 'info/public/sp/index.htm','NoIndexPage==TRUE','SectionLabel_en==Speeches','secondaryUrlVariableField==pl_replaceable_content');
+g_navNode_5_1=g_navNode_5.addNode('3372','Library documentation center',ssUrlPrefix + 'info/library/index.htm','SectionLabel_en==Library / documentation center','secondaryUrlVariableField==pl_replaceable_content');
+g_navNode_5_5=g_navNode_5.addNode('3376','Links',ssUrlPrefix + 'info/partners/index.htm','SectionLabelShort_en==Partners','SectionLabel_en==ILO partners in Nepal','secondaryUrlVariableField==pl_replaceable_content');

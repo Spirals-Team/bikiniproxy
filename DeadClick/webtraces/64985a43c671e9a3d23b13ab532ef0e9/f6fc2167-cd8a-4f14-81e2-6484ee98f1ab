@@ -1,0 +1,15 @@
+function updateQueryStringParameter(uri,key,value){var re=new RegExp("([?&])"+key+"=.*?(&|$)","i");var separator=uri.indexOf('?')!==-1?"&":"?";if(uri.match(re)){return uri.replace(re,'$1'+key+"="+value+'$2');}
+else{return uri+separator+key+"="+value;}}
+function getParameterByName(name){name=name.replace(/[\[]/,"\\\[").replace(/[\]]/,"\\\]");var regexS="[\\?&]"+name+"=([^&#]*)";var regex=new RegExp(regexS);var results=regex.exec(window.location.href);if(results==null)
+return"";else
+return decodeURIComponent(results[1].replace(/\+/g," "));}
+function getCookie(name){if(document.cookie.length==0)
+return null;var regSepCookie=new RegExp('(; )','g');var cookies=document.cookie.split(regSepCookie);for(var i=0;i<cookies.length;i++){var regInfo=new RegExp('=','g');var infos=cookies[i].split(regInfo);if(infos[0]==name){return unescape(infos[1]);}}
+return null;}
+$(document).ready(function(){$(".countrySelect").click(function(e){e.preventDefault();$(".flagSelect").slideToggle("slow");});if(typeof typePage!='undefined'){page=typePage;}else{page="Global";}
+var datas="action="+page;if(typeof categorieId!='undefined'){datas+="&categorieId="+categorieId;}
+if(typeof articleId!='undefined'){datas+="&articleId="+articleId;if(typeof isFlash!='undefined'){datas+="&isFlash="+isFlash;}}
+var mobileQuery=getParameterByName("r");datas+="&r="+mobileQuery;if(tabFlash.length>0){datas+="&listeIds="+tabFlash.concat();}
+datas+="&ref="+document.referrer;var prefixe=$("#prefixe").text();if(prefixe=='/fr/fr')
+prefixe='';$.post(prefixe+"/ControlsCall.html",datas,function(reponse){if(reponse.message=="reload"){location.reload();}else if(reponse.message=="redirect"&&reponse.status!=""){window.location.href=reponse.status;}else{$.each(reponse.blocs,function(element){if(reponse.blocs[element]!=null){if(reponse.blocs[element].id.indexOf('liArticle-')>-1){$("#"+reponse.blocs[element].id).replaceWith(reponse.blocs[element].contenu);}else{if($("#"+reponse.blocs[element].id).length>-1){$("#"+reponse.blocs[element].id).html(reponse.blocs[element].contenu);if(reponse.blocs[element].id=="lienNewsletter"){$(".fancyNews").fancybox({'titleShow':false});$(".fancyNews").trigger('click');}}}}});if(page=="FicheArticle"){$(".fancysansclose").fancybox({'showCloseButton':false,'titleShow':false});}}},'json').fail(function(xhr){if(xhr.getAllResponseHeaders()&&getParameterByName("refControl")!="1"&&reloadAjaxCall){var url=window.location.href;var urldest=updateQueryStringParameter(url,"refControl","1");window.location.href=urldest;}});$("#okClient").bind('click',function(ev){ev.preventDefault();var datas=$("#headerIdentClient").serialize()+"&action=Loggin";$.post(prefixe+"/ControlsCall.html",datas,function(response){$(".message").hide();if(response.status=="ko"){$("#lblIdentifiant").prepend(response.message);}
+$.each(response.blocs,function(element){$("#"+response.blocs[element].id).html(response.blocs[element].contenu);});},'json');});});

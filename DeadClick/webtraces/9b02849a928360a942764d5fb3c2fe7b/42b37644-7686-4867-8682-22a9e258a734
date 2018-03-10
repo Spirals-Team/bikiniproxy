@@ -1,0 +1,78 @@
+(function($) {
+
+$.jpopup = {};
+$.fn.jpopup = function(settings)
+{
+	settings = $.extend({}, $.fn.jpopup.defaults, settings);
+
+	return this.eq(0).each(
+		function()
+		{
+			var $this = $jQuery(this);
+			var content = $this.html();
+			var shadow = '';
+			var shadow_html = '<div id="jshadow"></div>';
+			var popup_html = ([
+				'<div id="jpopup"><div class="jpopuptop"><div class="jpopupcontent">',
+				'</div></div>',
+				'<a href="#close" class="close">' + settings.closeText + '</a>',
+				'</div>'
+			]).join('');
+			
+			// remove if already showed
+			$jQuery('#jpopup,#jshadow').remove(); 
+			
+			// if shadow enabled > show shadow
+			if(settings.shadow){
+				$jQuery(document.body).append(shadow_html);
+				$jQuery('#jshadow').css({
+					display: 'block',
+					opacity: settings.opacity,
+					background:	settings.background,
+					zIndex: (settings.zIndex-1)
+				});
+			}
+			
+			// add popup to DOM
+			$jQuery(document.body).append(popup_html);
+			$jQuery('#jpopup').show();
+			
+			$jQuery('#jpopup').css({
+				zIndex: settings.zIndex,
+				top: $jQuery(window).scrollTop() + ($jQuery(window).height() - $jQuery('#jpopup').height())/4 + settings.heightFix,
+				left: ($jQuery(window).width() - $jQuery('#jpopup').width())/2
+			});
+			
+			$jQuery('#jpopup div.jpopupcontent').html( content );
+			// show close button
+			if(settings.close){
+				$jQuery('#jpopup a.close').show();
+			}
+
+			// add close event
+			$jQuery('#jpopup a.close,#jshadow').click(function(e){
+				e.preventDefault();
+				$jQuery('#jpopup,#jshadow').remove();
+				return false;
+			});
+			
+			// run onShow
+			if( typeof(settings.onShow) == 'function' ){
+				settings.onShow();
+			}
+		}
+	)
+};
+
+$jQuery.fn.jpopup.defaults = {
+	close: true,
+	closeText: 'close',
+	shadow : false,
+	opacity: 0.5,
+	background: '#000',
+	zIndex: 1000,
+	heightFix: 0,
+	onShow: null
+};
+
+})(jQuery);

@@ -1,0 +1,158 @@
+'use strict';
+
+function adTools() {
+    return {
+        htmlElement: document.getElementsByTagName('html')[0],
+        headElement: document.head || document.getElementsByTagName('head')[0],
+        bodyElement: document.getElementsByTagName('body')[0],
+        sectionElement: document.getElementsByTagName('section')[0],
+        init: function init() {
+            var _this = this;
+
+            try {
+                if (!this.checkForAd('A728')) {
+                    this.collapseLeaderboard();
+                } else {
+                    if (!this.htmlElement.classList.contains('cropped')) {
+                        this.fillLeaderboard();
+                    }
+                }
+                window.addEventListener('resize', function (event) {
+                    event.preventDefault();
+                    if (_this.bodyElement.classList.contains('bg-ad-on')) {
+                        if (window.matchMedia('(min-width: 760px)').matches) {
+                            _this.htmlElement.classList.add('cropped', 'flat');
+                        } else {
+                            _this.htmlElement.classList.remove('cropped', 'flat');
+                        }
+                    }
+                });
+            } catch (err) {
+                console.warn(err.message);
+            }
+        },
+        checkForAd: function checkForAd(pos) {
+            try {
+                return document.getElementById(pos).childNodes.length > 0;
+            } catch (err) {
+                return false;
+            }
+        },
+        collapseLeaderboard: function collapseLeaderboard() {
+            this.htmlElement.classList.remove('header-spacing', 'spacing');
+            this.htmlElement.classList.add('header-noAd');
+        },
+        fillLeaderboard: function fillLeaderboard() {
+            this.htmlElement.classList.add('header-spacing', 'spacing');
+            this.htmlElement.classList.remove('header-noAd');
+        },
+        buildCrown: function buildCrown(container, color, depth) {
+            var _this2 = this;
+
+            var scrollDist = window.innerHeight * depth;
+            var element = document.getElementById(container);
+            var filler = document.getElementById('RM');
+            if (this.checkForAd(container)) {
+                this.collapseLeaderboard();
+                this.sectionElement.classList.add('crownOn');
+                element.classList.add('crown');
+                element.style.backgroundColor = color;
+                var headerHeight = document.getElementsByTagName('header')[0].offsetHeight;
+                var z = headerHeight - 55;
+                window.addEventListener('scroll', function (event) {
+                    event.preventDefault();
+                    var y = window.pageYOffset;
+                    if (y < scrollDist) {
+                        filler.classList.remove('set');
+                        element.classList.remove('hold');
+                    }
+                    if (y > z) {
+                        element.classList.add('hold');
+                        filler.classList.add('set');
+                        _this2.sectionElement.classList.remove('crownOn');
+                    }
+                    if (y > scrollDist) {
+                        if (window.innerWidth < 768) {
+                            _this2.sectionElement.style.marginTop = '10px';
+                        } else {
+                            _this2.sectionElement.style.paddingTop = 'inherit';
+                        }
+                        element.classList.remove('crown');
+                        element.style.backgroundColor = 'transparent';
+                        return;
+                    }
+                });
+            }
+        },
+        createPlaceholder: function createPlaceholder() {
+            var array = document.getElementsByClassName('ad_deferrable');
+            try {
+                for (var i = 0; i < array.length; i++) {
+                    var str = array[i].className;
+                    var arr = str.split(' ');
+                    var element = document.createElement('div');
+                    var text = document.createTextNode(array[i].getAttribute('id'));
+                    element.appendChild(text);
+                    element.style.width = array[i].dataset.width + 'px';
+                    element.style.height = array[i].dataset.height + 'px';
+                    if (arr[1] === 'hidden-xs') {
+                        element.style.backgroundColor = '#8E4585';
+                    } else {
+                        element.style.backgroundColor = '#6b8e23';
+                    }
+                    element.style.textAlign = 'center';
+                    element.style.lineHeight = array[i].dataset.height + 'px';
+                    array[i].appendChild(element);
+                }
+            } catch (err) {
+                console.warn(err.message);
+            }
+        },
+        buildWallpaper: function buildWallpaper(image, link, background, attachment, pixel1, pixel2) {
+            var _this3 = this;
+
+            var width = (window.innerWidth - 1312) / 2,
+                height = window.innerHeight,
+                linkTargets = ['wrapperLinkTop', 'wrapperLinkLeft', 'wrapperLinkRight'];
+
+            for (var i = 0; i < linkTargets.length; i++) {
+                var a = document.createElement('a');
+                if (link) {
+                    a.setAttribute('href', link);
+                    a.setAttribute('target', '_blank');
+                }
+                a.setAttribute('id', linkTargets[i]);
+                if (i === 0) {
+                    a.setAttribute('style', 'position: absolute; right: 0; top: 0; width: 100%; height: auto; cursor: pointer; z-index: 5000');
+                } else if (i === 1) {
+                    a.setAttribute('style', 'position: fixed; left: 0; top: 0; width: ' + width + 'px; height: ' + height + 'px; cursor: pointer; z-index: 1000');
+                } else if (i === 2) {
+                    a.setAttribute('style', 'position: fixed; right: 0; top: 0; width: ' + width + 'px; height: ' + height + 'px; cursor: pointer; z-index: 1000');
+                }
+                this.bodyElement.appendChild(a);
+            }
+            var buildTracker = function buildTracker(px) {
+                var d = document.createElement('d'),
+                    f = document.createElement('f');
+                d.setAttribute('style', 'position: absolute; top: 0; right: 0; width: 1px; height:1px; visibility:hidden; border:none;');
+                f.setAttribute('style', 'width: 1px; height:1px;');
+                f.setAttribute('src', px);
+                d.appendChild(f);
+                _this3.headElement.appendChild(d);
+            };
+            if (pixel1) {
+                buildTracker(pixel1);
+            }
+            if (pixel2) {
+                buildTracker(pixel2);
+            }
+            this.htmlElement.classList.remove('header-ad', 'header-A728', 'header-spacing', 'spacing');
+            this.htmlElement.classList.add('cropped', 'flat');
+            this.bodyElement.setAttribute('style', 'background-position: top center; background-repeat: no-repeat; background-attachment: ' + attachment + '; background-image: url(' + image + '); background-color: ' + background + ';');
+        }
+    };
+}
+document.addEventListener('DOMContentLoaded', function () {
+    window.AdTools = adTools();
+    AdTools.init();
+}, false);

@@ -1,0 +1,455 @@
+(function($){		// jQuery Shorthand Wrapper
+
+
+/* -------------------------------------------------------------- Menu Switcher */
+
+(function(w){
+	var sw = document.body.clientWidth,
+		sh = document.body.clientHeight,
+		breakpoint = 990,
+		speed = 800,
+		mobile = true;
+		
+	$(document).ready(function() {
+		mobileNav();
+	//	desktopNav();
+	});
+		
+	$(w).resize(function(){ //Update dimensions on resize
+		sw = document.body.clientWidth;
+		sh = document.body.clientHeight;
+	});
+	
+	//Check if Mobile
+	function checkMobile() {
+		mobile = (sw > breakpoint) ? false : true;
+		
+		if (!mobile) { // Desktop
+			
+			desktopNav();	
+		
+		} else { // Mobile
+			
+			mobileNav();	
+		}
+	}
+	
+
+/* ------------------------------- Mobile toggle navigation for small screens */
+
+function mobileNav() {
+	/*
+var $anchorLinks = $('#nav-anchors').find('a');
+	var $anchorLinks = $('#nav_anchors').find('a');
+	$anchorLinks.click(function(e){
+		e.preventDefault();
+		var $this = $(this),
+			thisHref = $this.attr('href');
+		$('.reveal').hide();
+		if($this.hasClass('active')) {
+			$this.removeClass('active');
+			$(thisHref).hide();
+		} else {
+			$anchorLinks.removeClass('active');
+			$this.addClass('active');
+			$(thisHref).show();
+		}
+	});
+*/
+}
+
+/* ------------------------------- Desktop Flyout Menu Script */
+/*
+function desktopNav() {
+	
+    var config = {    
+         sensitivity: 10, // number = sensitivity threshold (must be 1 or higher)    
+         interval: 200,  // number = milliseconds for onMouseOver polling interval    
+         over: doOpen,   // function = onMouseOver callback (REQUIRED)    
+         timeout: 100,   // number = milliseconds delay before onMouseOut    
+         out: doClose    // function = onMouseOut callback (REQUIRED)    
+    };
+    
+    var config2 = {    
+         sensitivity: 1, // number = sensitivity threshold (must be 1 or higher)    
+         interval: 1,  // number = milliseconds for onMouseOver polling interval    
+         over: doOpen_fly,   // function = onMouseOver callback (REQUIRED)    
+         timeout: 100,   // number = milliseconds delay before onMouseOut    
+         out: doClose_fly    // function = onMouseOut callback (REQUIRED)    
+    };
+    
+    function doOpen() {
+        $('#menu-item-8471 a').addClass("hover");
+        $('.flyout_menu').css('display', 'block');
+ }
+ 
+    function doClose() {
+        $('#menu-item-8471  a').removeClass("hover");
+    }
+
+    $("#menu-item-8471  a").hoverIntent(config);
+    
+    function doOpen_fly() {
+        $('.flyout_menu').css('display', 'block');
+ }
+ 
+    function doClose_fly() {
+        $('.flyout_menu').css('display', 'none');
+    }
+    
+
+    $(".flyout_menu").hoverIntent(config2);
+    
+}
+*/
+
+
+})(this);
+
+
+$(document).ready(function() {
+
+	/* ------------------------------- Smooth Scrolling */
+
+	$('#top_jump').bind('click', function(e) {
+	e.preventDefault(); //prevent the "normal" behaviour which would be a "hard" jump
+	
+	var target = $(this).attr("href"); //Get the target
+	
+	// perform animated scrolling by getting top-position of target-element and set it as scroll target
+	$('html, body').stop().animate({ scrollTop: $(target).offset().top }, 1000, function() {
+	     location.hash = target;  //attach the hash (#jumptarget) to the pageurl
+	});
+	
+	return false;
+	});
+
+	$("input.gsc").focus(function() {
+		//alert(this.value.length);
+		if(this.value.length == 0 ) {
+			$(this).css('background-image', 'none');
+		}
+	}).blur(function(){
+		if(this.value.length == 0 ) {
+			$(this).css('background-image', 'url(/wp-content/themes/jt_theme/library/img/google_custom_search_watermark.gif)');
+		}		
+	});
+	
+	
+	var gscval = $('input.gsc').attr('value').length;
+	//alert(gscval);
+	if(gscval > 0){
+		
+		$("input.gsc").css('background-image', 'none');		
+	}	
+	
+	// event search check box
+/*	
+	$(".feature").click(function() {
+		var search_val = this.value;
+		var search_str = $(location).attr('href') + "&features[]=" + search_val;
+		if(search_val.length > 0 ) {
+			window.location = search_str;
+		}
+	});
+	
+	// event search check box (already checked)
+	$(".feature_remove").click(function() {
+		var search_val = "&features[]=" + this.value;
+		var search_str = $(location).attr('href');
+		search_str = search_str.replace(search_val, "");
+		if(search_val.length > 0 ) {
+			window.location = search_str;
+		}
+	});
+	
+	// event sorting
+	$("#sorting").change(function() {
+		var orders = ['&orderby=event_start_date','&orderby=event_end_date','&orderby=event_name'];
+		var orderby = this.value;
+		var search_str = $(location).attr('href');
+		for (var i = 0; i < orders.length; i++) {
+			search_str = search_str.replace(orders[i], "");
+		}
+		var search_str = search_str + "&orderby=" + orderby;
+		if(orderby.length > 0 ) {
+			window.location = search_str;
+		}
+	});
+	
+
+	
+	/* ------------------------------- Clearing of search box */
+	
+	$(".entry input[type=text]").focus(function() {
+		if( this.value == this.defaultValue ) {
+			this.value = "";
+		}
+	}).blur(function() {
+		if( !this.value.length ) {
+			this.value = this.defaultValue;
+		}
+	});
+
+        /* --------- advanced search reveal 
+
+        $("a.advanced_search_toggle").click(function(e) {
+                e.preventDefault();
+                $(".simple_search_field").hide(0,
+                        $(".advanced_search_field").fadeIn(400)
+                );
+        });
+                 */
+        $("a.advanced_search_toggle").toggle(
+        function(e) {
+				// remove disabled attribute from fields that were hidden
+				$("form > input").not(':visible').attr("disabled", false);
+				$("form > span > select").not(':visible').attr("disabled", false);
+				$(".em-date-input").attr("disabled", false);
+
+                $(".simple_search_field").hide(0,
+                        $(".advanced_search_field").fadeIn(400)
+                );
+                $("a.advanced_search_toggle").text('Simple Search');
+                $("#advanced").val(1);
+				// make sure newly hidden elements are set to disabled                
+				$("form > input").not(':visible').not(':hidden').attr("disabled", true);
+				$("form > span >select").not(':visible').attr("disabled", true);                
+                e.preventDefault();
+        },
+        function(e) {
+				// remove disabled attribute from fields that were hidden			
+				$("form > input").not(':visible').attr("disabled", false);
+				$("form > span > select").not(':visible').attr("disabled", false);
+                $(".advanced_search_field").hide(0,
+                        $(".simple_search_field").fadeIn(400)
+                );
+                $("a.advanced_search_toggle").text('Advanced Search');
+                $("#advanced").val(0);
+				// make sure newly hidden elements are set to disabled                
+				$("form > input").not(':visible').not(':hidden').attr("disabled", true);
+				$("form > span > select").not(':visible').attr("disabled", true);
+				$(".em-date-input").attr("disabled", true);
+                e.preventDefault();
+        });
+	
+        $("select.simple_search_field").change(function(){
+		var valsimple = $( this ).val();
+		if(valsimple == 9999999){
+			$("a.advanced_search_toggle").click();
+		}
+	});	
+	
+
+        /* --------- advanced search reveal  ---*/
+
+        /* --------- vicinity search  ---*/
+        $('#em-events-vicinity-search').click(function(event){
+                event.preventDefault();
+                if (navigator.geolocation) {
+                    navigator.geolocation.getCurrentPosition(function(position) {
+                        var latitude = position.coords.latitude;
+                        var longitude = position.coords.longitude;
+                        $("#latitude").val(latitude);
+                        $("#longitude").val(longitude);
+                        //alert("lat is:" +latitude+ " lng is:"+longitude);
+                        $('#vicinity-search').submit();
+                    }, function(error) {
+                        switch (error.code) {
+                          case 1:
+                            err_message = "Sorry, can't determine your position. You need to enable location services on your device or grant permissions to this web site.";
+                            break;
+                          case 2:
+                            err_message = "Sorry, can't determine your position. Geo-location doesn't seem to be working properly on your device.";
+                            break;
+                          case 3:
+                            err_message = "Sorry, can't determine your position due to a network time-out. Reload the page to try again.";
+                            break;
+                          default:
+                            err_message = "Sorry, can't determine your position and we're not sure why.";
+                            break;
+                        }
+                        alert(err_message);         
+                    },{timeout:50000});
+                }else{
+                    alert('No geolocation support');
+                }               
+                
+           });
+	
+/* ------------- Less/More Toggle for Film names starts --------------- */
+
+/*
+$('#filmName').change(function(){
+	$('#filmName > option.more').show();
+});
+*/
+
+/* ------------- Less/More Toggle for Film names ends --------------- */
+	
+	
+	/* -------------------------------  iscroll */
+
+	/*
+var myScroll;
+	function loaded() {
+		myScroll = new iScroll('scrollable');
+	}
+	
+	document.addEventListener('touchmove', function (e) { e.preventDefault(); }, false);
+	
+	document.addEventListener('DOMContentLoaded', loaded, false);
+*/
+
+	/* -------------------------------  Fixed position navi header on mobile 
+		http://jonrohan.me/guide/css/creating-triangles-in-css/
+	*/
+	
+	/*
+$(window).scroll(function(){
+		var scrolltop = $(window).scrollTop();
+		if(scrolltop>=70) {
+		$(".post-header").addClass("post-header-fixed");
+		if($(window).height()>$(".aside").height()+115)
+		$(".aside").addClass("aside-fixed");
+		$(".article").addClass("article-fixed");
+		} else {
+		$(".post-header-fixed").removeClass("post-header-fixed");
+		$(".aside-fixed").removeClass("aside-fixed");
+		$(".article-fixed").removeClass("article-fixed");
+		}
+	});
+*/
+	
+
+	/*
+$(window).scroll(function(){
+		var scrolltop = $(window).scrollTop();
+		if(scrolltop>=70) {
+		$("#nav_anchor_container").addClass("fixed");
+		} else {
+		$("fixed").removeClass("fixed");
+		}
+	});
+*/
+		
+/* Fittext.js for module headlines */
+
+/*
+if ($(window).width() < 330) {
+	$(".section_title h2").fitText(1.2, { minFontSize: '16px', maxFontSize: '26px' }); 
+	$(".section_title.small h2").fitText(1.2, { minFontSize: '12px', maxFontSize: '12px' });          
+}
+*/
+
+/* Masonry JS */
+
+/*
+var $container = $('.module');
+// initialize
+$container.masonry({
+  columnWidth: 50%,
+  itemSelector: '.story'
+});
+*/
+
+/*
+$( function()
+{
+    var columns    = 2,
+        setColumns = function() { columns = $( window ).width() > 620 ? 2 : $( window ).width() > 300 ? 2 : 1; };
+
+    setColumns();
+    $( window ).resize( setColumns );
+
+    $( '.module' ).masonry(
+    {
+        itemSelector: '.story',
+        columnWidth:  function( containerWidth ) { return containerWidth / columns; }
+    });
+});
+*/
+
+/*
+var container = document.querySelector('.module');
+var msnry = new Masonry( container, {
+  itemSelector: '.story',
+  columnWidth: container.querySelector('.story')
+});
+*/
+
+/* Toogle for mobile menu on Events & Places */
+
+$(window).load(function(){	
+	if ($(window).width() <= 750){	
+	
+/*
+		var $div = $('#toggle_div');
+		var height = $div.height();
+		$div.hide().css({ height : 0 });
+		
+		$('a#toggle').click(function () {
+		    if ($div.is(':visible')) {
+		        $div.animate({ }, { duration: 100, complete: function () {
+		            $div.hide();
+		        } });
+		    } else {
+		        $div.show().animate({ height : height }, { duration: 100 });
+		    }
+		    return false;
+		});		
+*/
+
+		$('a#toggle').on('click',function(e){
+	
+	      $('#toggle_div').toggle();
+		  e.preventDefault();
+	   });
+		
+	}	
+});
+
+
+/* Search field toggle */
+
+$("a.search_toggle").click(function(e) {
+	$("div.nav_search").toggle();
+	//alert("hello");
+	e.preventDefault();
+   // return false;
+});
+
+}); /* End document.ready */
+
+
+
+
+/* iPhone orientation fix */
+
+(function (document) {
+  window.VS = window.VS || {};
+
+  // Fix for iPhone viewport scale bug
+  VS.viewportmeta = document.querySelector && document.querySelector('meta[name="viewport"]');
+  VS.ua = navigator.userAgent;
+
+  VS.scaleFix = function () {
+    if (VS.viewportmeta && /iPhone|iPad/.test(VS.ua) && !/Opera Mini/.test(VS.ua)) {
+      VS.viewportmeta.content = "width=device-width, minimum-scale=1.0, maximum-scale=1.0";
+      document.addEventListener("gesturestart", VS.gestureStart, false);
+    }
+  };
+  VS.gestureStart = function () {
+    VS.viewportmeta.content = "width=device-width, minimum-scale=0.25, maximum-scale=1.6";
+  };
+
+})(document);
+
+VS.scaleFix();
+VS.hideUrlBar();
+
+
+})(jQuery);			// end jQuery Wrapper
+
+/* disable IEPP - the site is not printing well in IE, and this helps */
+window.iepp = { disablePP: true };

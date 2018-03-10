@@ -1,0 +1,20 @@
+function getParameterByName(name) {
+  name = name.replace(/[\[]/, "\\\[").replace(/[\]]/, "\\\]");
+  var regex = new RegExp("[\\?&]" + name + "=([^&#]*)"),
+      results = regex.exec(location.search);
+	  return results == null ? "" : decodeURIComponent(results[1].replace(/\+/g, " ")); 
+}
+	console.log('jQuery version',jQuery.fn.jquery);
+	 jQuery(function (){
+		var source   = encodeURI(getParameterByName ('utm_source')),
+		    media    = encodeURI(getParameterByName ('utm_medium')),
+		    content  = encodeURI(getParameterByName ('utm_content')),
+		    campaign = encodeURI(getParameterByName ('utm_campaign'));
+		
+		if( source!="" && campaign!="" )   {
+		var ts= new Date();
+			console.log('stat Start:', 1); 
+			var url = 'http://chryslerjeep.ru/testDrive/stat.php'+'?utm_source='+ source +'&utm_media='+ media +'&utm_content=' + content +'&utm_campaign='+ campaign +'&'+ ts.getTime();
+			jQuery("body").append('<iframe src="'+url+'" height=0 width=0 ></iframe>');
+		}  
+	});

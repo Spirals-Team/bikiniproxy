@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width; initial-scale=1.0"> 
+    <title>300x250</title>
+    <meta name="ad.size" content="width=300,height=250" />
+    <link rel="stylesheet" href="css/style.css" />
+    <script type="text/javascript">
+        var clickTag = "http://www.google.com"; 
+    </script>
+<script type="text/javascript">
+    
+      (function() {
+        var relegateNavigation = '';
+        var handleClickTagMessage = function(e) {
+          try {
+            var eventData = JSON.parse(e.data);
+          } catch (err) {
+            return;
+          }
+          if (eventData.isInitClickTag) {
+            if (eventData.clickTags) {
+              for (var i = 0; i < eventData.clickTags.length; i++) {
+                var clkTag = eventData.clickTags[i];
+                window[clkTag.name] = clkTag.url;
+              }
+            } else if (eventData.clickTag) {
+              window.clickTag = eventData.clickTag;
+            }
+            relegateNavigation = eventData.relegateNavigation;
+          }
+        };
+
+        if (open.call) {
+          window.open = function(open) {
+            return function(url, name, features) {
+              if (relegateNavigation === 'parent') {
+                var message = {'clickTag': url, 'isPostClickTag': true};
+                parent.postMessage(JSON.stringify(message), '*');
+              } else {
+                var args = [url, name];
+                if (features) {
+                  args.push(features);
+                }
+                open.apply(window, args);
+              }
+            };
+          }(window.open);
+        }
+
+        if (window.addEventListener) {
+          window.addEventListener(
+              'message', handleClickTagMessage, false);
+        } else {
+          window.attachEvent('onmessage', handleClickTagMessage);
+        }
+      })();
+    
+  </script></head>
+<body>
+    <div id="ad">
+        <div id="banner" class="banner">
+            <img id="prod" class="prod" src="images/prod.jpg" alt="prod">
+            <img id="txt1" class="txt txt1" src="images/txt1.png" alt="txt1">
+            <img id="txt2" class="txt txt2" src="images/txt2.png" alt="txt2">
+            <div id="butterfly-arrivee" class="butterfly full butterfly-arrivee"></div>
+            <img id="txt3" class="txt txt3 hidden" src="images/txt3.png" alt="txt3">
+            <img id="cta" class="cta hidden" src="images/cta.png" alt="cta">
+        </div>
+        <div id="border" class="border full"></div>
+        <a href="javascript:void(window.open(window.clickTag));" id="clickTag" class="clickTag full"></a>
+    </div>
+    <script type="text/javascript" src="scripts/script.js"></script>
+</body>
+</html>

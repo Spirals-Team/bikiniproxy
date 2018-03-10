@@ -1,0 +1,72 @@
+var velibs = [
+	{titre: 'catacombes archéologique du parvis Notre-Dame', coord1: '48.853749', coord2: '2.348505'}
+];
+
+var map_v;
+
+function initialize_v() {
+	var latlng = new google.maps.LatLng(48.8341465, 2.3320327);
+	var myOptions = {
+		zoom: 14,
+		center: latlng,
+		disableDefaultUI: true,
+		mapTypeId: google.maps.MapTypeId.ROADMAP,
+		streetViewControl: true,
+		navigationControl: true,
+		navigationControlOptions: {
+		  style: google.maps.NavigationControlStyle.SMALL
+		}	
+	};
+	map_v = new google.maps.Map(document.getElementById("gmap"), myOptions);
+	
+	
+	var myLatLngM = new google.maps.LatLng(48.8341465, 2.3320327);
+	var museeMarker = new google.maps.Marker({
+	  position: myLatLngM,
+	  map: map_v,
+	  title : 'catacombes archéologique du parvis Notre-Dame'
+	});
+	
+//	setMarkersV(map_v, velibs);
+}
+
+function setMarkersV(map_v, velibs){
+	var image = new google.maps.MarkerImage('http://www.velib.paris.fr/design/paris/images/contenu/picto-normal.png',
+	new google.maps.Size(12, 20),
+	new google.maps.Point(0,0),
+	new google.maps.Point(10, 15));
+	var shadow = new google.maps.MarkerImage('http://www.velib.paris.fr/design/paris/images/contenu/picto-shadow.png',
+	new google.maps.Size(22, 20),
+	new google.maps.Point(0,0),
+	new google.maps.Point(10, 15));
+	
+	
+	for (var i = 0; i < velibs.length; i++){
+		var velib = velibs[i];
+		var myLatLng = new google.maps.LatLng(velib['coord1'], velib['coord2']);
+		var marker = new google.maps.Marker({
+			position: myLatLng,
+			map: map_v,
+			shadow: shadow,
+			icon: image,
+			//shape: shape,
+			title: velib['titre']
+			//zIndex: beach[3]
+		});
+		getinfo_v(map_v,marker,velib['titre']);
+	}
+}
+
+
+function getinfo_v(map_v,marker,message){
+	var infowindow = new google.maps.InfoWindow({ 
+		content: message,
+		maxWidth: 'auto'
+	});
+	google.maps.event.addListener(marker, 'click', function() {
+		infowindow.open(map_v,marker);
+	});
+}
+
+
+

@@ -1,0 +1,87 @@
+$(document).ready(function(){
+	
+var metlife_width = screen.width;
+
+if(metlife_width<600){
+	var tip_arrow = false;
+	var tip_pos = "bottom";
+	var tip_offsetY = "-10px";
+	var tip_offsetX = "-60px";
+	var desktop = false;
+} else {
+	tip_arrow = true;
+	tip_pos = "bottom";
+	tip_offsetY = "0px";
+	tip_offsetX = "0px";
+	desktop = true;
+}
+	
+$('#sponsor-generated .whats-this').tooltipster({
+	content: $('<span style="display:block;font-size:11px;">This content was paid for by an advertiser and created by The Wall Street Journal advertising department. The Wall Street Journal news organization was not involved in the creation of this content.<img src="http://dev2.djcontentlab.com/adimg/ge_disruption_close_button_tip.png" width="15" height="15" style="position:absolute;right:5px;top:5px"></span>'), 
+	arrow: tip_arrow,
+	maxWidth: 320,
+	position: tip_pos,
+	offsetY: tip_offsetY,
+	offsetX: tip_offsetX,
+	theme: "tooltipster-default"
+});
+
+// WSJ.CS v1
+// 3/11/2015
+
+var json, settings;
+	init();
+
+function init() {
+
+	json = "//dev2.djcontentlab.com/ajax-feeds/proxy/wsj_proxy.php?url=http://dev2.djcontentlab.com/wsjfeeder/api/get_category_posts/?slug=74872-metlife-foundation&count=-1";
+
+	var fetchJson = function(){
+		$.getJSON(json,function(data){
+			writeArticle(data);
+		});
+	};
+
+	var writeArticle = function(data){
+
+		var postsLength = data.count;
+		for (var i = 0; i < postsLength; i++){
+			// sets title and content variables
+			var title = data.posts[i].custom_fields.title;
+			var content = data.posts[i].custom_fields.content;
+			var permalink = data.posts[i].custom_fields.permalink;
+			// appends title and content to page
+			var html = '<div class="item"><div class="title"><a href="'+permalink+'" target="_blank">'+title+'</a></div><div class="content">'+content+'</div><hr /></div>'
+			$("#item-container").append(html);
+		}
+
+	//Settings
+	settings = {
+			verticalDragMinHeight: 30,
+			verticalDragMaxHeight: 50,
+			horizontalDragMinWidth: 40,
+			horizontalDragMaxWidth: 30,
+			contentWidth: 0,
+			maintainPosition: false
+	};
+	
+	if($("html").hasClass("jspane")){
+	
+	var pane = $("#item-container");
+	pane.jScrollPane(settings);
+	var api = pane.data('jsp');
+	api.getContentPane().html();
+	api.reinitialise();
+	}
+};
+
+	fetchJson(0);
+
+} //End Init
+
+		
+});
+
+$(window).load(function(){
+	$("#stories-container").css({"visibility":"visible"});;
+});

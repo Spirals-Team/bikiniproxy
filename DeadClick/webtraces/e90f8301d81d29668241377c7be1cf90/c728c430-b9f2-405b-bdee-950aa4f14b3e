@@ -1,0 +1,123 @@
+
+
+function createCookie(name,value,days) {
+    if (days) {
+        var date = new Date();
+        date.setTime(date.getTime()+(days*24*60*60*1000));
+        var expires = "; expires="+date.toGMTString();
+    }
+    else var expires = "";
+    document.cookie = name+"="+value+expires+"; path=/";
+}
+
+function readCookie(name) {
+    var nameEQ = name + "=";
+    var ca = document.cookie.split(';');
+    for(var i=0;i < ca.length;i++) {
+        var c = ca[i];
+        while (c.charAt(0)==' ') c = c.substring(1,c.length);
+        if (c.indexOf(nameEQ) == 0) return c.substring(nameEQ.length,c.length);
+    }
+    return null;
+}
+
+function eraseCookie(name) {
+    createCookie(name,"",-1);
+}
+
+(function ($) {
+
+  Drupal.behaviors.ViewsLoadMore = {
+    attach: function (context, settings) {
+      var default_opts = {
+          offset: '100%'
+        };
+
+      if (settings && settings.viewsLoadMore && settings.views && settings.views.ajaxViews) {
+        $.each(settings.viewsLoadMore, function(i, setting) {
+          var view = '.view-id-' + setting.view_name + '.view-display-id-' + setting.view_display_id + ' .pager-next a',
+            opts = {};
+
+            // Display six adds
+           //alert('OBR.extern.researchWidget()');
+           // OBR.extern.researchWidget(); 
+
+          // alert(view);
+
+          $.extend(opts, default_opts, settings.viewsLoadMore[i].opts);
+
+          $(view).waypoint('destroy');
+          $(view).waypoint(function(event, direction) {
+            $(view).click();
+          }, opts);
+          // var currentNid = Drupal.settings.custommodule.currentNid;		
+		 // $('.inf_class').once().waypoint(function() { 
+		 //To incrised google anylitacs 
+			  $('.inf_class').waypoint(function() {		
+	//console.log($(this).data('analyticsid'));
+	window.history.replaceState('stateObj', "page 2", $(this).data('analyticsid'));
+	
+
+ 
+	//Google Analytics START
+	/*(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+    (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+    m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+    })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+  ga('create', 'UA-57602445-1', 'auto');*/
+  		
+  		 
+  		AdblockersCheck();
+
+
+		ga('send', {
+	  'hitType': 'pageview',
+	  'page': $(this).data('analyticsid')
+	});
+	
+        });
+        });
+      }
+    }
+  };
+})(jQuery);
+
+
+jQuery(document).ready(function($) {
+$('.view-display-id-leadarticleshomepage').waypoint(function(direction) {  
+   var x = readCookie('mediapopup');
+    if (x==null) {
+   document.getElementById('popup').style.display = 'block'; 
+}
+jQuery(".close-toggle").click(function(){ 
+createCookie('mediapopup','popup',14);    
+jQuery("body").toggleClass("modal-closed"); 
+jQuery('.close-toggle').hide(); 
+});
+var x = readCookie('mediapopup');
+if(x!=null){
+     jQuery("body").toggleClass("modal-closed");
+} 
+});
+});
+
+
+function AdblockersCheck(){
+  var test = document.createElement('div');
+  test.innerHTML = '&nbsp;';
+  test.className = 'adsbox';
+  document.body.appendChild(test);
+  window.setTimeout(function() {
+    if (test.offsetHeight === 0) {
+    	
+      ga('set', 'dimension1', 'Ads Blocked');
+      ga('send', 'event', 'AdSense', 'Ads blocked', { "nonInteraction": 1 });
+    }else{
+
+      ga('set', 'dimension1', 'Ads Displaying');
+      ga('send', 'event', 'AdSense', 'Ads not blocked', { "nonInteraction": 1 });
+    }
+    test.remove();
+  }, 100);
+}
+;

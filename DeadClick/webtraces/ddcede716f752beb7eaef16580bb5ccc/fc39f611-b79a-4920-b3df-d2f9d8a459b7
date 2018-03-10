@@ -1,0 +1,197 @@
+/***********************
+	Classes FrameIngenie
+*************************/
+	function FrameIngenie(params2, idFrame2) {
+		// debugger;
+	    this.adresse = 'http://reservation.angersloiretourisme.com';
+	    this.width =  '100%';
+	    this.height =  '1000px';
+				this.params2 = params2.replace(/\&amp;/g, '&');
+		this.noIndex = true;
+		if (idFrame2 != undefined) {
+			this.idFrame2 = idFrame2;
+		} else {
+			this.idFrame2 = 'frameIngenie';
+		}
+	}
+	
+	FrameIngenie.prototype = {
+	
+		_this : "",
+	
+		init: function() {
+			_this = this;
+			
+			// On v�rifie que flash est install�
+			//_this.testFlash(_this);
+			_this.testSupported(_this);
+			/**/
+			// Dans le doute (pas support�) on met une iframe classique
+			if (!_this.supported) {
+				// On regarde si on a des info dur la hauteur de la frame dans l'url transmis
+				if (_this.getQueryVariable(objFrame.params2, 'mini') != false) {
+					_this.height = '340px';
+					if (_this.getQueryVariable(objFrame.params2, 'minHeight') != false) {
+						_this.height = _this.getQueryVariable(objFrame.params2, 'minHeight')+'px';
+					}
+				}
+				
+				var tmpIframeIngenie = document.createElement('iframe');
+				
+				tmpIframeIngenie.style.height = _this.height;
+				tmpIframeIngenie.style.width = _this.width;
+				tmpIframeIngenie.border = '0';
+				tmpIframeIngenie.frameBorder = '0'; // Pour IE 7
+				tmpIframeIngenie.style.border = 'none';
+				
+				tmpIframeIngenie.allowTransparency = true;
+				
+				var tmp_adresse = _this.adresse+'/index.php?xdm_not_support=1&'+objFrame.params2;
+				if (this.noIndex) {
+					tmp_adresse = 'http://reservation.angersloiretourisme.com/'+objFrame.params2+'?xdm_not_support=1';
+					if (objFrame.params2.indexOf('?') >= 0) {
+						tmp_adresse = 'http://reservation.angersloiretourisme.com/'+objFrame.params2+'&xdm_not_support=1';
+					}
+					
+				}
+				
+				tmpIframeIngenie.src = tmp_adresse;
+				
+				document.getElementById(_this.idFrame2).appendChild(tmpIframeIngenie);
+			} else {
+				setTimeout('_this.timeout(_this)', 300);
+			}
+		},
+		
+		timeout: function(objFrame) {
+			var index = 'index.php?';
+			if (objFrame.noIndex) {
+				index = '';
+			}
+			if(typeof console != 'undefined'){
+			    console.log(objFrame.idFrame2);
+			}
+			var toRedirect = encodeURIComponent(index+objFrame.params2);
+			
+			// YD le 02/12/13 Suppression du 2nd param�tre qui plantait sous chrome
+			/*props: {style: {width: objFrame.width, height: objFrame.height} },*/
+			new easyXDM.Socket({
+				remote: objFrame.adresse+"/provider.html?url="+toRedirect,
+				container: document.getElementById(objFrame.idFrame2),
+				props: {style: {width: objFrame.width} },
+				onMessage: function(message, origin){
+					this.container.getElementsByTagName("iframe")[0].allowTransparency = true;
+					// YD le 02/12 pour IE8 on augmente de 10 px sinon on a des scrollbars
+					if (document.all && document.querySelector && !document.addEventListener) {
+					    this.container.getElementsByTagName("iframe")[0].style.height = (parseInt(message)+10) + "px";
+					}else{
+					    this.container.getElementsByTagName("iframe")[0].style.height = message + "px";
+					}
+					/**/
+					if (message.indexOf('##') >= 0) {
+						// Remont�e d'autre chose
+						var dataPosted = message.replace('##', '');
+						var tabActions = dataPosted.split('|');
+						for (var i = 0; tabActions[i]; i++) {
+							try {
+								eval('var actionPosted = '+tabActions[i]);
+								if (actionPosted && actionPosted.action) {
+									if (actionPosted.action == 'scrollTo') {
+										// On doit r�cup�rer la position de l'iframe pour l'ajouter
+										var iframeHtml = this.container.getElementsByTagName("iframe")[0];
+										var positionTo = jQuery(iframeHtml).offset().top;
+										positionTo = parseInt(actionPosted.params.top)+parseInt(positionTo);
+										jQuery('html,body').animate({scrollTop: positionTo});
+									}
+								}
+							} catch (e) {
+								// Probl�me data
+								//debugger;
+							}
+						}
+					}/**/
+				}
+			});
+		
+		},
+		
+		call: function(scriptCode) {
+			eval(scriptCode);
+		},
+		
+		testSupported: function (objFrame) {
+			objFrame.supported = true;
+			
+			// Faire tests de compatibilit�
+			if (document.all && !document.querySelector) {
+				// IE <= 7 => Pas support�
+				objFrame.supported = false;
+			}
+			
+			if (document.all && document.querySelector && !document.addEventListener) {
+				// IE 8 => Mal support�
+				objFrame.supported = false;
+			}
+		},
+		
+		testFlash: function (objFrame) {
+			var flashinstalled = 0;
+			var flashversion = 0;
+			if (navigator.plugins && navigator.plugins.length)
+			{
+				x = navigator.plugins["Shockwave Flash"];
+				if (x)
+				{
+					flashinstalled = 2;
+					if (x.description)
+					{
+						y = x.description;
+						flashversion = y.charAt(y.indexOf('.')-1);
+					}
+				}
+				else
+					flashinstalled = 1;
+				if (navigator.plugins["Shockwave Flash 2.0"])
+				{
+					flashinstalled = 2;
+					flashversion = 2;
+				}
+			}
+			else if (navigator.mimeTypes && navigator.mimeTypes.length)
+			{
+				x = navigator.mimeTypes['application/x-shockwave-flash'];
+				if (x && x.enabledPlugin)
+					flashinstalled = 2;
+				else
+					flashinstalled = 1;
+			}
+			else
+			{
+				for(var i=7; i>0; i--){
+					flashVersion = 0;
+					try{
+						var flash = new ActiveXObject("ShockwaveFlash.ShockwaveFlash." + i);
+						flashversion = i;
+						flashinstalled = 2;
+						return;
+					}
+					catch(e){
+					}
+				}
+			}
+			objFrame.flashinstalled = flashinstalled;
+			objFrame.flashversion = flashversion;
+		},
+		
+		getQueryVariable: function (query, variable) {
+			var vars = query.split("&");
+			for (var i = 0; i < vars.length; i++) {
+				var pair = vars[i].split("=");
+				if (pair[0] == variable) {
+					return unescape(pair[1]);
+				}
+			}
+			return false;
+		}
+	}
+	

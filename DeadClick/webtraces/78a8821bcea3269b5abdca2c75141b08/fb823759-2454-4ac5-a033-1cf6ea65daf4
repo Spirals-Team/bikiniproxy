@@ -1,0 +1,32 @@
+_satellite.pushBlockingScript(function(event, target, $variables){
+  (function checkReady_Object(c) {
+    var count = c;
+    var waitingLimit = 10; //How many times to run function 
+    var recursionFrequency = 100; //How often to call the function  	
+    if ((typeof window.s === "object") && (typeof window.s.eVar14 === "string")) { 
+		try{			
+			window._pa = window._pa || {}; 
+			if(typeof window.s.eVar14 === "string"){
+				_pa.orderId = window.s.eVar14; //Get clientID
+			}
+			fireMarinTag();
+			}catch(err){
+				console.log("DTM:error:", err);  
+			}
+    } else { //Prevent infinite loop if elements not found
+        if (count >= waitingLimit) {  
+					fireMarinTag();
+        } else { 
+            count++;
+            window.setTimeout(function () {
+                checkReady_Object(count);
+            }, recursionFrequency);
+        }
+    }
+})(1);
+function fireMarinTag(){
+	var pa = document.createElement('script'); pa.type = 'text/javascript'; pa.async = true;
+	pa.src = ('https:' == document.location.protocol ? 'https:' : 'http:') + "//tag.marinsm.com/serve/55f2ce205d2c3712c0000183.js";
+	var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(pa, s); 
+}  
+});

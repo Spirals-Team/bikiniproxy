@@ -1,0 +1,82 @@
+function showmb(misurl,islogin,datahead)
+{
+    var murl = misurl.trim(); 
+     var iLen = String(murl).length;
+     var mDFName = String(murl).substring(1, 15);
+     var mCFName = String(murl).substring(iLen, iLen - 11);
+     divwinname = "tblstatmsg";
+     //Storing theulr to open on every click
+      var ssurl = document.getElementById('url2redirect');
+      ssurl.value=murl;
+     
+     islogin=islogin.trim();
+     if (islogin == "")
+     {
+        islogin = "F";
+     }
+        if (islogin == "T" && mDFName == "DataTable.aspx")
+        {
+            //alert('login T and datat');
+            var leftposition = (window.screen.width / 2) - ((800 / 2) + 10);
+            var topposition = (window.screen.height / 2) - ((600 / 2) + 50);
+            var popup = window.open(murl, '_blank', 'height=600, width=800,left=' + leftposition + ', top=' + topposition + ', ScreenX=' + leftposition + ', ScreenY=' + topposition + ', status=no, menubar=no, scrollbars=yes, toolbar=no, location=no, directories=no');
+            if (popup == null)
+            {
+                alert("our site currently requires popup blockers be disabled");
+            } 
+           return false;
+        }
+        else if (islogin == "F" && mDFName == "DataTable.aspx")
+        {
+	        document.getElementById('ssdt').innerHTML=datahead;
+	        var ocdiv = document.getElementById(divwinname);
+	        ocdiv.style.display = 'block';
+	        return false;
+         }
+
+}
+
+function hidemb()
+{
+    var tblmsg = document.getElementById('tblstatmsg');
+    tblmsg.style.display = 'none';
+}
+
+//For login and logtout button
+function setmdd(misl)
+{
+    document.getElementById('islin').value=misl;
+    return true;
+}
+
+
+function showmndiv(divname,murl)
+{
+    var murl = murl.trim();
+    var iLen = String(murl).length;
+    var mDURL = String(murl).substring(iLen, iLen - 3);
+    if (mDURL == "cms") {
+        var popup = window.open(murl, '_blank', 'height=600, width=800, status=no, menubar=no, scrollbars=yes, toolbar=no, location=no, directories=no');
+    }
+//    else if (mDURL == "tml") {
+//        var popup = window.open(murl, '_blank', 'height=600, width=800, status=no, menubar=no, scrollbars=yes, toolbar=no, location=no, directories=no');
+//    }
+//    else if (mDURL == "spx") {
+//        var popup = window.open(murl, '_blank', 'height=600, width=800, status=no, menubar=no, scrollbars=yes, toolbar=no, location=no, directories=no');
+//    }
+    else {
+        var ocdiv = document.getElementById(divname);
+        ocdiv.style.display = 'block';
+        var oifrm = document.getElementById('frmdmorenews');
+        oifrm.src = murl;
+    }
+}
+        
+function hidemndiv(divname)
+{
+    var ocdiv = document.getElementById(divname);
+    ocdiv.style.display = 'none';
+}
+
+             
+

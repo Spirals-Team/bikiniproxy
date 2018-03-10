@@ -1,0 +1,499 @@
+jQuery(function () {
+    newNav.init();
+});
+
+
+var istouchDevice = istouchDevice || (function () {
+    // include device user agent identifier strings
+    // to return false in those cases
+    var exceptions = [
+    // ex: 'iPad'
+    ];
+    // if touchstart event available
+    if ('ontouchstart' in document.documentElement) {
+        // check exceptions list
+        for (var exception in exceptions) {
+            if (navigator.userAgent.indexOf(exception) > -1) {
+                return false;
+            }
+        }
+        return true;
+    }
+    return false;
+}());
+
+var newNav = (function ($, document, window, undefined) {
+
+    // cache selectors
+    var sel = {
+        $html: $('html'),
+        $body: $('body'),
+        $globalNav: $('#global-nav'),
+        $overlay: $('#navigation-overlay')
+    },
+
+        //as shown image msrp
+        asShown = {
+            '2012': {
+                compass: "latitude_4x2",
+                liberty: "limited_jet_4x2",
+                patriot: "latitude_4x2",
+                grand_cherokee: "overland_summit_4x2",
+                wrangler: "rubicon",
+                wrangler_unlimited: "sport"
+            }
+        },
+
+        init = function () {
+            
+            // Ensure lazyLoader is available globally
+            if(!chrysler.lazy&&lazyLoader) chrysler.lazy = lazyLoader;
+            if(!chrysler.util) chrysler.util = new chryslerUtil();
+            
+            // legacy
+
+            //added as temporary fix for js errors on site, needs to be removed along with disclaimers in footer.
+            if (/en\/2012\/.*/.test(location.pathname)) {
+                try {
+                    var dis_data = "";
+                    if (cur_year != "" && cur_year != undefined) {
+                        if (cur_vehicle != "" && cur_section != undefined) {
+                            if (cur_section == "features") {
+
+                                dis_data = jeep_group_disclaimers[cur_year][cur_vehicle][cur_section];
+                            }
+
+                            if (dis_data != undefined) {
+                                jQuery('.group_disclaimers').html(dis_data);
+                            }
+                        }
+                    }
+                } catch (err) {
+
+                }
+            }
+            
+            // Temp min width fixes
+            // TODO: Address page level layout issues to remove this
+            if(!sel.$body.hasClass('no-min-width')){
+                minWidthFix();
+                $(window)
+                    .on('resize', minWidthFix);
+            }
+            
+            // move header/footer for legacy page structures
+            sel.$wrapper = $('#wrapper');
+            if ($("#MainContainer").length > 0) sel.$wrapper = $("#MainContainer");
+            
+            if (sel.$wrapper.find('header').length) {
+                $("header").insertBefore(sel.$wrapper);
+                $('<div class="clear"></div>').insertBefore(sel.$wrapper);
+                $("#footer").appendTo("body");
+                $("#subnav-shadow").appendTo("body");
+                $("#nav-shadow").appendTo("body");
+            }
+
+            // add selectors
+            sel.$footer = $('#footer');
+           // sel.$promosWrap = $('.promoswrap', '#promo');
+            sel.$dropDown = $('.dropdown', sel.$globalNav);
+            sel.$modelInfo = $('.model-info', sel.$globalNav);
+            sel.$modelNav = $('.model-nav', sel.$globalNav);
+
+            // this selection would be avoided by delegating from sel.$globalNav
+            // however we will need it later in showDropDown() so so be it
+            sel.$mainLinks = $('> ul > li > a', sel.$globalNav);
+
+
+            sel.$secondaryNav = $('#secondary-nav');
+            sel.$secondaryNavLink = sel.$secondaryNav.find('.has-dropdown > a');
+            sel.$secondaryNavDropdown = sel.$secondaryNavLink.siblings('.dropdown');
+            sel.$searchBox = $('input', '#search-box');
+
+            // attach events
+            sel.$globalNav.on('mouseenter', navEnter).on('mouseleave', hideDropDown).on('mouseenter', '.model-nav > ul > li > a', showModelInfo)
+
+            sel.$mainLinks.on('mouseenter', showDropDown)
+
+            sel.$secondaryNavLink.on('mouseenter', toggleSecondaryNavDropDown);
+
+            sel.$secondaryNav.find('> ul').children().not('.has-dropdown').find('> a').on('mouseenter', hideSecondaryNavDropDown);
+
+            sel.$secondaryNav.on('mouseleave', hideSecondaryNavDropDown);
+
+            sel.$searchBox.focus(hideLabel).blur(showLabel);
+
+            // clear search value on page load
+            sel.$searchBox.find('input').val('');
+
+            //data objects
+            sel.$modelNav.find('> ul').children('li').each(loadVehicleData);
+
+            // init search box
+            if (sel.$searchBox.val() != '') {
+                sel.$searchBox.trigger('blur');
+                sel.$searchBox.siblings('label').hide();
+            }
+
+
+            // set active page
+            //sel.$mainLinks.add(sel.$dropDown.find('a')).each(setActiveLink);
+            sel.$mainLinks.add(sel.$dropDown.find('>nav>ul>li>a')).each(setActiveLink);
+            sel.$secondaryNav.find('a').each(setSecondaryNavActiveLink);
+
+            // fix touch events for iPads
+            if (istouchDevice) {
+                
+                //close all dropdowns on all external link clicks
+                sel.$globalNav.add(sel.$secondaryNav).on('click', 'a', function(){
+                    if(!$(this).siblings('.dropdown').length && !$(this).siblings('.model-info').length){
+                        hideDropDown();
+                        hideSecondaryNavDropDown();
+                    }
+                });
+                
+                // require two clicks to follow links with dropdowns
+                sel.$mainLinks.click(function (event) {
+                    $link = $(this);
+                    if ($link.siblings(".dropdown").length > 0) {
+                        if ($link.attr('data-ipadclick')) {
+                            $link.removeAttr("data-ipadclick");
+                            hideDropDown();
+                        } else {
+                            $link.attr('data-ipadclick', 'true');
+                            event.preventDefault();
+                        }
+                    }
+                });
+                sel.$modelNav.find('> ul > li > a').click(function (event) {
+                    $link = $(this);
+                    if ($link.attr('data-ipadclick')) {
+                        $link.removeAttr("data-ipadclick");
+                        hideDropDown();
+                    } else {
+                        $link.attr('data-ipadclick', 'true');
+                        event.preventDefault();
+                    }
+                });
+                
+                sel.$secondaryNavLink.click(function (event) {
+                    preventDefault(event);
+                });
+
+                sel.$overlay.click(function () {
+                    sel.$globalNav.trigger('mouseleave');
+                });
+            }
+            
+            initFooter();
+
+        },
+        
+        minWidthFix = function () {
+            sel.$html.css('min-width', 0).css('min-width', sel.$body[0].scrollWidth+'px');
+        },
+
+        setActiveLink = function () {
+            if (location.pathname.indexOf($(this).attr("href")) > -1) {
+                $(this).parents('[id*="nav-"]').find('> a').addClass("active");
+            }else if (location.pathname.indexOf($(this).attr("href").replace('/2012/','/2013/')) > -1) {
+                $(this).parents('[id*="nav-"]').find('> a').addClass("active");
+            }else if (location.pathname.indexOf('compare.html') > -1) {
+                $(this).parents('#nav-vehicles').find('> a').addClass("active");
+            }else{ 
+				$('.vhp a').each(function(index){
+					if((this.className.indexOf('-on') > -1) && (this.href.indexOf(location.pathname) > -1)){
+						$('#nav-vehicles > a').addClass("active");
+					}
+				});
+			}
+        },
+
+        setSecondaryNavActiveLink = function () {
+            var $link = $(this),
+            find = location.pathname.indexOf($link.attr("href"));
+            if (find > -1) {
+                if(!/[^a-z]/gi.test(location.pathname.substr(find+$link.attr("href").length))){
+                    if (!$link.parent().hasClass('vhp')) {
+                        var $dropdown = $link.closest('.has-dropdown');
+                        if($dropdown.length){
+                            $dropdown.find('> a').addClass("active");
+                        }else{
+                            $link.addClass("active");
+                        }
+                    }
+                }
+            }
+            // specs link will not trigger TODO: mask url
+            if ((location.pathname.indexOf('/hostc/vsmc/vehicleSpecModels') > -1) && ($link.attr('href').indexOf('/hostc/vsmc/vehicleSpecModels') > -1)){
+                $link.addClass("active");
+            }
+			// for glossary page
+			if ((location.pathname.indexOf('/jeep_capabilities/glossary/index.html') > -1) && ($link.attr('href').indexOf('/jeep_capabilities/faqs/index.html') > -1)){
+                $link.addClass("active");
+				$('#nav-capability > a').addClass("selected");
+            }
+        },
+
+        loadVehicleData = function () {
+            var $el = $(this),
+                vehName = $el.attr('class').split(' ')[0],
+                vehObj = {
+                    year: '2012',
+                    vehicle: vehName
+                },
+                imgShown = asShown[vehObj.year][vehName];
+
+            //when vehicle year default changes   var vehName = el.attr('class').split(' ')[0];
+            // msrp starting at data for each vehicle and replace dollar sign
+            //$el.find('.price').text(Vehicles.getMSRP(vehObj)).html($el.find('.price').text().replace(/\$/gi, '<span>$</span>'));
+            // as shown msrp data for each vehicle
+            vehObj.model = imgShown;
+            //$el.find('.legal').append(Vehicles.getMSRP(vehObj));
+        },
+
+        navEnter = function () {
+            if (sel.$dropDown.hasClass("selected") && !sel.$dropDown.is(":animated")) {
+                sel.$dropDown.stop(true, false);
+                sel.$overlay.stop(true, false);
+            }
+        },
+
+        hideDropDown = function () {
+            sel.$overlay.stop(true, true).delay(150).fadeOut(250);
+            sel.$dropDown.stop(true, true).fadeOut(100, function () {
+                sel.$globalNav.find('.selected').removeClass('selected');
+                sel.$dropDown.removeClass('active');
+                sel.$modelInfo.hide();
+                if (istouchDevice) {
+                    $('a[data-ipadclick]', sel.$globalNav).removeAttr("data-ipadclick");
+                }
+            });
+        },
+
+        showDropDown = function () {
+            var $link = $(this);
+            sel.$modelNav.find('.selected').removeClass('selected');
+            sel.$mainLinks.removeClass('selected');
+            sel.$dropDown.stop(true, true).removeClass('active');
+            sel.$modelInfo.hide();
+            $link.addClass('selected');
+            if (sel.$dropDown.is('.selected')) {
+                sel.$overlay.stop(true, true).fadeTo(0, 0.4);
+                sel.$dropDown.removeClass('selected').fadeOut(100);
+                var $thisDropDown = $link.siblings('.dropdown');
+                if ($thisDropDown.length > 0) {
+                    sel.$overlay.stop(true, true).fadeTo(500, 0.4);
+                    $thisDropDown.addClass('selected').slideDown(200);
+                } else {
+                    sel.$overlay.stop(true, true).fadeTo(0, 0);
+                }
+            } else {
+                var $thisDropDown = $link.siblings('.dropdown');
+                if ($thisDropDown.length > 0) {
+                    sel.$overlay.stop(true, true).fadeTo(500, 0.4);
+                    $thisDropDown.addClass('selected').slideDown(200);
+                } else {
+                    sel.$overlay.stop(true, true).fadeTo(0, 0);
+                }
+            }
+            if (istouchDevice) {
+                $link.attr('data-ipadclick', 'true');
+            }
+        },
+
+        showModelInfo = function () {
+            var $link = $(this);
+            if (!$link.parent().hasClass('selected')) {
+                sel.$dropDown.removeClass('active');
+
+                sel.$modelNav.find('.selected').removeClass('selected');
+
+                sel.$modelInfo.hide();
+
+                $link.parent().addClass('selected');
+				$link.siblings('.model-info').show().find('img[lazysrc]').each(function () {
+                    chrysler.lazy.showPreloader(this);
+                    chrysler.lazy.loadContent(this);
+                });
+                $link.parents('.dropdown').addClass('active');
+                
+                if (istouchDevice) {
+                    $link.attr('data-ipadclick', 'true');
+                }
+            }
+        },
+
+        toggleSecondaryNavDropDown = function () {
+            var $dropdown = $(this).siblings('.dropdown');
+            if (!$dropdown.is(':visible')) {
+                hideSecondaryNavDropDown();
+                if(!$(this).hasClass('active')){
+                    $(this).addClass('active').attr('data-active-dropdown', 'true');
+                }
+                $dropdown.slideDown(200);
+            }
+        },
+
+        hideSecondaryNavDropDown = function () {
+            sel.$secondaryNav.find('a[data-active-dropdown=true]').removeAttr('data-active-dropdown').removeClass('active');
+            sel.$secondaryNavDropdown.fadeOut(100);
+        },
+
+        showLabel = function () {
+            var $input = $(this);
+            if ($input.val() == '') {
+                $input.siblings('label').show();
+            }
+        },
+
+        hideLabel = function () {
+            $(this).siblings('label').hide();
+        },
+
+        preventDefault = function (event) {
+            event.preventDefault();
+        },
+
+        stopEventPropagation = function (event) {
+            event.stopPropagation();
+        },
+
+        initFooter = function () {
+
+            // ready disclaimers
+            $("#disclaimer_msrp").appendTo(sel.$footer);
+
+            var $disclaimers = $("#disclaimers"),
+                $disclaimers_close, disclaimers_appended = false;
+
+            $('#show-disclaimers').click(function () {
+                if (!disclaimers_appended) {
+                    var $lastFooterLi = $(this).parent();
+                    $disclaimers.appendTo($lastFooterLi);
+                    $("<div id='disclaimers-close'></div>").appendTo($lastFooterLi);
+                    $disclaimers_close = $("#disclaimers-close", $lastFooterLi);
+                    $disclaimers_close.click(function () {
+                        linkTrack('footer', 'disclaimers-close');
+                        $(this).hide(100);
+                        $disclaimers.hide(300);
+                    });
+                    disclaimers_appended = true;
+                }
+                $disclaimers.toggle(300);
+                $disclaimers_close.toggle(450);
+                return false;
+            });
+
+            // footer promos
+            /*$.easing.custom = function (x, t, b, c, d) {
+                var s = 1.70158;
+                var p = 0;
+                var a = c;
+                if (t == 0) return b;
+                if ((t /= d) == 1) return b + c;
+                if (!p) p = d * .3;
+                if (a < Math.abs(c)) {
+                    a = c;
+                    var s = p / 4;
+                } else var s = p / (2 * Math.PI) * Math.asin(c / a);
+                return a * Math.pow(2, -10 * t) * Math.sin((t * d - s) * (2 * Math.PI) / p) + c + b;
+            }
+
+            loadPromos();*/
+        }
+
+        /*promoCount = 0,
+
+        loadPromos = function () {
+
+            if ((typeof cur_vehicle != 'undefined' && cur_vehicle.length > 0) && (typeof cur_year != 'undefined' && cur_year.length > 0)) promoPath = "/en/" + cur_year + "/" + cur_vehicle + "/";
+
+            // If promoPath is not defined in the page. Mainly for non VLP pages where the same is not defined.
+            if (typeof promoPath == 'undefined') promoPath = '/en/2012/';
+            if (typeof promoSection == 'undefined') promoSection = 1;
+            $.get(promoPath + 'promos.xml', function (data) {
+                $(data).find('section[type=' + promoSection + ']').each(function () {
+                    var section = $(this);
+                    var promos = section.find('promos');
+
+                    if (promos.length) {
+                        sel.$promosWrap.append('<ul></ul>');
+                        promos.find('promo').each(function (i) {
+                            var p = $(this);
+                            $('ul', sel.$promosWrap).append('<li></li>');
+                            var l = $('li:last', sel.$promosWrap);
+                            if (p.find('html').length) {
+                                l.append(p.find('html').text()).addClass('html');
+                            } else {
+                                l.append('<a href="' + p.find('url').text() + '"><img src="' + p.find('image').text() + '" alt="' + p.find('alt').text() + '" /></a>');
+                                if (p.find('track').length) {
+                                    $('a', l).attr('name', p.find('track').text());
+                                }
+                                if (p.find('cta').length) {
+                                    l.append('<div class="cta"><a href="' + p.find('url').text() + '"><span>' + p.find('cta').text() + '</span></a></div>');
+                                    if (p.find('ctatrack').length) {
+                                        $('.cta a', l).attr('name', p.find('ctatrack').text());
+                                    }
+                                    l.mouseenter(function (e) {
+                                        $('.cta', this).slideDown(200);
+                                    }).mouseleave(function (e) {
+                                        $('.cta', this).slideUp(200);
+                                    });
+                                }
+                            }
+                            if (p.find('class').length) {
+                                l.addClass(p.find('class').text());
+                            }
+                            promoCount++;
+                        });
+                        showPromos();
+                    }
+                });
+            });
+        },
+		*/
+
+        /*showPromos = function () {
+            //  $('ul', sel.$promosWrap).jcarousel({
+            $('.promoswrap ul').jcarousel({
+                easing: 'custom',
+                speed: 900,
+                scroll: 3,
+                size: promoCount,
+                wrap: 'circular',
+                itemFallbackDimension: 296
+            });
+            if ($('#promos').length) $('#promos').remove();
+            $('#promo').css('visibility', 'visible');
+        };*/
+
+    // make available globally
+    return {
+        init: init
+    }
+
+}(jQuery, document, window, undefined));
+
+//replaces form_menu_data.js
+var cur_year = cur_year || '',
+    cur_vehicle = cur_vehicle || '';
+
+
+function submitSearchNewInventory(form) {
+    var year = form.slice(0, 4);
+    var family = form.substr(4);
+    linkTrack("shopping_tools_SNI", form);
+    window.location = '/bridge/inventory.html?app=newinventory&family=' + family + '&zipcode=&dealerid=&year=' + year + '';
+}
+
+function submitCapTour(form) {
+    var year = form.slice(0, 4);
+    var family = form.substr(4);
+    linkTrack("shopping_tools_capability_tour", form);
+    window.location = '/en/' + year + '/' + family + '/capability/capability_tour/';
+}
+
+function submitSearch(argForm) {
+    argForm.submit();
+}

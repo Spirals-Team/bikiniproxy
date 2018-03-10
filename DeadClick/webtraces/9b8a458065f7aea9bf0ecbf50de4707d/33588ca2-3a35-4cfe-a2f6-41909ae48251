@@ -1,0 +1,278 @@
+/**
+ * Main JS file where all custom JS is done
+ */
+(function($) {
+
+	// Cache body to ref for functions
+	var $body = $('body'); // jshint ignore:line
+
+	/* Hover/Click JS for the nav submenu */
+	  //var subMenuJS = function() {
+	    var $mainNavMenu = $('#menu-main-nav'),
+	      $parentLi = $mainNavMenu.find('li.menu-item-has-children');
+
+	    $parentLi.on('hover', function() {
+	      $(this).toggleClass('active');
+	    });
+	  //};
+
+	  //var mobileSubJS = function() {
+			console.log('mobileSubJS');
+
+	    var $mainNavMenu = $('#menu-main-nav-1'),
+	      $parentLi = $mainNavMenu.find('li.menu-item-has-children');
+
+	    $parentLi.on('click', function() {
+				$(this).toggleClass('active');
+				//$(this).find('.sub-menu').slideToggle('fast');
+	    });
+	  //};
+
+		/*if ( $(window).width() > 767 ) {
+			subMenuJS();
+		} else {
+			mobileSubJS();
+		}*/
+		
+		$( window ).resize(function() {
+			/*if ( $(window).width() > 767 ) {
+				subMenuJS();
+			} else {
+				mobileSubJS();
+			}*/
+			
+		});
+
+	/* Init Owl Carousel featured posts slider */
+	var featuredPostsSlider = function() {
+
+		/* Init owl carousel on shop items */
+		var $featuredOwl = $('.featured-posts-slider');
+
+		$featuredOwl.owlCarousel({
+		    loop: true,
+		    margin: 0,
+		    nav: true,
+			navText: ['<i class="fa fa-angle-left">', '<i class="fa fa-angle-right">'],
+			onInitialized: function() {
+				this.$element.addClass('initialized');
+			},
+		    responsive: {
+		        0: {
+		            items: 1
+		        },
+		        600: {
+		            items: 2
+		        },
+				800: {
+					items: 3
+				},
+		        1200: {
+		            items: 4
+		        },
+				1500: {
+					items: 5
+				}
+		    }
+		});
+	};
+
+	/* Init Owl Carousel featured posts slider (Contained blocks version) */
+	var featuredPostsBlocksSlider = function() {
+		/* Init owl carousel on shop items */
+		var $blockOwl = $('.featured-posts-slider-blocks');
+		var multipleSlides = $blockOwl.children().length > 4;
+
+		$blockOwl.owlCarousel({
+			loop: multipleSlides,
+		    margin: 30,
+		    nav: multipleSlides,
+		    navText: ['<i class="fa fa-angle-left">', '<i class="fa fa-angle-right">'],
+			onInitialized: function() {
+				this.$element.addClass('initialized');
+			},
+		    responsive: {
+		        0: {
+		            items: 1
+		        },
+		        600: {
+		            items: 2
+		        },
+				800: {
+					items: 3
+				},
+		        1200: {
+		            items: 4
+		        }
+		    }
+		});
+	};
+
+	/* Init Owl Carousel featured vendors slider */
+	var featuredVendorsSlider = function() {
+		$('.featured-vendors-slider').owlCarousel({
+		    margin: 0,
+			loop: true,
+		    nav: true,
+			navText: ['<i class="fa fa-angle-left">', '<i class="fa fa-angle-right">'],
+			onInitialized: function() {
+				this.$element.addClass('initialized');
+			},
+		    responsive: {
+		        0: {
+		            items: 1
+		        },
+		        600: {
+		            items: 2
+		        },
+				800: {
+					items: 3
+				},
+		        1200: {
+		            items: 4
+		        },
+				1500: {
+					items: 5
+				}
+		    }
+		});
+	};
+
+	/* Init Owl Carousel featured vendors slider */
+	var vendorGallerySlider = function() {
+		$('.vendor-gallery-slider').owlCarousel({
+			autoWidth: true,
+		    margin: 0,
+			loop: true,
+		    nav: true,
+			navText: ['<i class="fa fa-angle-left">', '<i class="fa fa-angle-right">'],
+			onInitialized: function() {
+				this.$element.addClass('initialized');
+			},
+		    responsive: {
+		        0: {
+		            items: 1
+		        },
+		        600: {
+		            items: 2
+		        },
+				800: {
+					items: 3
+				},
+		        1200: {
+		            items: 4
+		        }
+		    }
+		});
+	};
+
+	/* Hide logo on scroll for mobile */
+	var mobileLogo = function() {
+		var $logo = $('.link-logo');
+
+		$(window).scroll(function(){
+		    if( $(window).scrollTop() > 40 ){
+		       $logo.slideUp();
+		    }
+		    else{
+		       $logo.slideDown();
+		    }
+		});
+	};
+
+	var replaceFilterColors = function() {
+		var $colorListItems = $('li.sf-field-taxonomy-wedding-color').find('li.sf-level-0');
+
+		$colorListItems.each(function() {
+			var $this = $(this),
+				color = $this.children('input').val(),
+				$label = $this.children('label.sf-label-checkbox');
+			// Empty the label
+			$label.remove();
+			$this.wrapInner('<label class="color ' + color + '"></label>');
+		});
+	};
+
+	/**
+	 * Show or hide the button depending on the scroll position.
+	 */
+	var animateButton = function() {
+	    var button = $('#back-to-top');
+	    var scrollPosition = $(window).scrollTop();
+	    if (scrollPosition > 600) {
+	        button.fadeIn();
+	    } else {
+	        button.fadeOut();
+	    }
+	};
+
+	/**
+	 * Add bloglovin link to sidebar widget
+	 */
+	var bloglovinWidget = function() {
+		var $widget = '<a href="https://www.bloglovin.com/blogs/snippet-ink-1909071" target="_blank" class="goudy-text">or follow us on Bloglovin\'</a>';
+		$('.simple-social-icons').append($widget);
+	};
+
+	/**
+	 * Modify the Newsletter widget title
+	 */
+	var newsletterWidgetTitle = function() {
+		$('.widget_mc4wp_form_widget').find('h2.widget-title').html('Sign up for our <span>Newsletter</span>');
+	};
+
+	/**
+	 * Create the button and append it to the body.
+	 */
+	$(function () {
+	    $('<a id="back-to-top"><i class="fa fa-angle-up"></i></a>')
+	        .click(function () {
+	            $('html, body').animate({
+	                scrollTop: 0
+	            }, 400);
+	            return false;
+	        })
+	        .appendTo($('body'));
+	});
+
+	/**
+	 * Run the animateButton function on window resize, scroll, and load.
+	 */
+	$(window).resize(animateButton);
+	$(window).scroll(animateButton);
+	$(window).load(animateButton);
+
+	$(document).ready( function() {
+
+		$('.lines-button').on('click', function() {
+			$(this).toggleClass('close-icon');
+		});
+
+		featuredPostsSlider();
+
+		featuredVendorsSlider();
+
+		featuredPostsBlocksSlider();
+
+		if ( $body.has('category-real-weddings') ) {
+			replaceFilterColors();
+		}
+
+		if ( $body.has('single-vendor') ) {
+			vendorGallerySlider();
+		}
+
+		$('.search-form').find('.search-submit').replaceWith('<button type="submit" class="search-submit"><i class="fa fa-search"></i></button>');
+
+		bloglovinWidget();
+
+		newsletterWidgetTitle();
+
+	}); // document.ready()
+
+	// Only on mobile
+	if ( $(window).width() < 768 ) {
+		mobileLogo();
+	}
+
+})(jQuery);

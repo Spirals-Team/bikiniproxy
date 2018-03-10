@@ -1,0 +1,328 @@
+if (!document.SwordCiboodle) {
+    var SwordCiboodle = {};
+}
+
+SwordCiboodle.CiboodleFrameController = (function () {
+
+    var registeredFrames = [];
+    var acceptedOrigins;
+    var intervalId;
+    var lastHash;
+
+    var isIframe = function (element) {
+        return element && element.nodeName && element.nodeName.toUpperCase() === "IFRAME";
+    };
+
+    var isArray = function (obj) {
+        if (obj instanceof Array) {
+            return true;
+        }
+        if (typeof obj !== "object") {
+            return false;
+        }
+        return (obj.constructor.toString().indexOf("Array") !== -1);
+    };
+
+    var findIframes = function (frameIds) {
+        var validIframes = [], i;
+
+        if (!frameIds || !isArray(frameIds)) {
+            var iframeNodes = document.getElementsByTagName("iframe");
+            for (i = 0; i < iframeNodes.length; i++) {
+                var node = iframeNodes.item(i);
+                validIframes.push(node.id);
+            }
+        } else {
+            for (i = 0; i < frameIds.length; i++) {
+                var element = document.getElementById(frameIds[i]);
+                if (element && isIframe(element)) {
+                    validIframes.push(frameIds[i]);
+                }
+            }
+        }
+
+        return validIframes;
+    };
+
+    var validateMessageOrigin = function (messageOrigin) {
+        var i;
+
+        if (acceptedOrigins) {
+            var validOrigin = false;
+            for (i = 0; i < acceptedOrigins.length; i++) {
+                if (acceptedOrigins[i] === messageOrigin || acceptedOrigins[i] === '*') {
+                    validOrigin = true;
+                    break;
+                }
+            }
+            if (!validOrigin) {
+                return false;
+            }
+        }
+
+        return true;
+    };
+
+    var getCiboodleFrameForMessageEvent = function (messageEvent) {
+        var sourceWindow = messageEvent.source, i;
+
+        if (sourceWindow) {
+            for (i = 0; i < registeredFrames.length; i++) {
+                if (registeredFrames[i].getIframeNode().contentWindow === sourceWindow) {
+                    return registeredFrames[i];
+                }
+            }
+        }
+    };
+
+    var stripUrlParameters = function (url) {
+        if (url) {
+            return url.replace(/(.*)[?#].*/, '$1');
+        }
+    };
+
+    var getCiboodleFrameForMessage = function (messageData) {
+        var srcUrl = messageData.srcUrl, i;
+
+        if (srcUrl && srcUrl.length !== 0) {
+            var messageUrl = stripUrlParameters(srcUrl);
+            for (i = 0; i < registeredFrames.length; i++) {
+                var iframeUrl = stripUrlParameters(registeredFrames[i].getIframeNode().src);
+                if (iframeUrl === messageUrl) {
+                    return registeredFrames[i];
+                }
+            }
+        }
+    };
+
+    var getUrlHash = function (url) {
+        var hashIndex = url.indexOf('#');
+        if (hashIndex < 0) {
+            return undefined;
+        }
+        return url.substring(hashIndex);
+    };
+
+    var attachMessageReceiver = function (messageHandler) {
+        if (window.postMessage && !window.useUrlHashForMessagePassing) {
+            if (window.addEventListener) {
+                window.addEventListener("message", messageHandler, false);
+            } else if (window.attachEvent) {
+                window.attachEvent("onmessage", messageHandler);
+            }
+        } else {
+            if (intervalId) {
+                clearInterval(intervalId);
+            }
+            lastHash = getUrlHash(document.location.href);
+            intervalId = setInterval(function () {
+                var hash = getUrlHash(document.location.href);
+                if (!hash) {
+                    return;
+                }
+                var re = /^#?\d+&/;
+                if (hash !== lastHash && re.test(hash)) {
+                    lastHash = hash;
+                    var messageString = hash.replace(re, '');
+                    messageHandler(messageString, true);
+                }
+            }, 100);
+        }
+    };
+
+    var extractDomain = function (url) {
+        if (url) {
+            return url.replace(/([^:]+:\/\/[^\/]+).*/, '$1');
+        }
+    };
+
+    var parseStringMessage = function (messageString) {
+        var nameValueStrings = messageString.split(':');
+        var messageData = {};
+        var i;
+
+        for (i = 0; i < nameValueStrings.length; i++) {
+            var nameValuePair = nameValueStrings[i].split('=');
+            if (nameValuePair.length === 2) {
+                messageData[nameValuePair[0]] = unescape(nameValuePair[1]);
+            }
+        }
+        return messageData;
+    };
+
+    var createMessage = function (messageString) {
+        var message = {};
+        message.data = parseStringMessage(messageString);
+        message.origin = extractDomain(message.data.srcUrl);
+        return message;
+    };
+
+    var handleXDMessage = function (message, isMessageString) {
+        if (isMessageString) {
+            message = createMessage(message);
+        }
+
+        if (!validateMessageOrigin(message.origin)) {
+            return;
+        }
+
+        var ciboodleFrame;
+        if (isMessageString) {
+            ciboodleFrame = getCiboodleFrameForMessage(message.data);
+        } else {
+            ciboodleFrame = getCiboodleFrameForMessageEvent(message);
+        }
+
+        if (ciboodleFrame) {
+            if (typeof message.data === 'string') {
+                ciboodleFrame.handleMessage(parseStringMessage(message.data));
+            } else {
+                ciboodleFrame.handleMessage(message.data);
+            }
+        }
+    };
+
+    return {
+
+        registerIFrames : function (settings, iframeIds) {
+            var ciboodleFrames = [];
+            var validIframeIds = findIframes(iframeIds);
+            var i;
+
+            for (i = 0; i < validIframeIds.length; i++) {
+                var ciboodleFrame = this.registerIFrame(validIframeIds[i], settings);
+                ciboodleFrames.push(ciboodleFrame);
+            }
+            return ciboodleFrames;
+        },
+
+        registerIFrame : function (iframeId, settings) {
+            var element = document.getElementById(iframeId);
+            if (element && isIframe(element)) {
+                var registeredFrame = new SwordCiboodle.CiboodleFrame(iframeId, element, settings);
+                registeredFrames.push(registeredFrame);
+                return registeredFrame;
+            }
+        },
+
+        handleMessage : function (messageData) {
+            var ciboodleFrame = getCiboodleFrameForMessage(messageData);
+            if (ciboodleFrame) {
+                ciboodleFrame.handleMessage(messageData);
+            }
+        },
+
+        acceptXDMessages : function (domains) {
+            if (domains) {
+                acceptedOrigins = domains;
+                attachMessageReceiver(handleXDMessage);
+            }
+        },
+
+        reset : function () {
+            registeredFrames = [];
+            acceptedOrigins = undefined;
+            clearInterval(intervalId);
+            intervalId = undefined;
+            lastHash = undefined;
+            if (window.removeEventListener) {
+                window.removeEventListener("message", handleXDMessage, false);
+            }
+            if (window.detachEvent) {
+                window.detachEvent("onmessage", handleXDMessage);
+            }
+        }
+    };
+
+}());
+
+SwordCiboodle.CiboodleFrame = function (iframeId, iframeNode, settings) {
+    this.iframeId = iframeId;
+    this.iframeNode = iframeNode;
+    this.listeners = [];
+
+    if (settings) {
+        if (settings.minHeight && !isNaN(settings.minHeight)) {
+            this.minHeight = settings.minHeight;
+        }
+        if (settings.maxHeight && !isNaN(settings.maxHeight)) {
+            this.maxHeight = settings.maxHeight;
+        }
+        if (settings.minWidth && !isNaN(settings.minWidth)) {
+            this.minWidth = settings.minWidth;
+        }
+        if (settings.maxWidth && !isNaN(settings.maxWidth)) {
+            this.maxWidth = settings.maxWidth;
+        }
+    }
+};
+
+SwordCiboodle.CiboodleFrame.prototype.getIframeId = function () {
+    return this.iframeId;
+};
+
+SwordCiboodle.CiboodleFrame.prototype.getIframeNode = function () {
+    return this.iframeNode;
+};
+
+SwordCiboodle.CiboodleFrame.prototype.handleMessage = function (messageData) {
+    if (messageData.type === "resize") {
+        this.resize(messageData);
+    } else if (messageData.type === "navigate") {
+        this.navigate(messageData);
+    } else if (messageData.type === "passData") {
+        this.notifyMessageListener(messageData.data);
+    }
+};
+
+SwordCiboodle.CiboodleFrame.prototype.resize = function (resizeData) {
+    if (resizeData.height) {
+        // add padding in case scrolling="no" does not exist
+        if (!(this.iframeNode.scrolling && this.iframeNode.scrolling === "no")) {
+            resizeData.height = resizeData.height + 20;
+        }
+
+        if (this.maxHeight && resizeData.height > this.maxHeight) {
+            this.iframeNode.height = this.maxHeight;
+        } else if (this.minHeight && resizeData.height < this.minHeight) {
+            this.iframeNode.height = this.minHeight;
+        } else {
+            this.iframeNode.height = resizeData.height;
+        }
+    }
+
+    if (resizeData.width) {
+         // add padding in case scrolling="no" does not exist
+        if (!(this.iframeNode.scrolling && this.iframeNode.scrolling === "no")) {
+            resizeData.width = resizeData.width + 20;
+        }
+
+        if (this.maxWidth && resizeData.width > this.maxWidth) {
+            this.iframeNode.width = this.maxWidth;
+        } else if (this.minWidth && resizeData.width < this.minWidth) {
+            this.iframeNode.width = this.minWidth;
+        } else {
+            this.iframeNode.width = resizeData.width;
+        }
+    }
+
+};
+
+SwordCiboodle.CiboodleFrame.prototype.navigate = function (navigationData) {
+    if (navigationData.targetUrl) {
+        window.location.href = navigationData.targetUrl;
+    }
+};
+
+SwordCiboodle.CiboodleFrame.prototype.notifyMessageListener = function (messageData) {
+    var i;
+
+    for (i = 0; i < this.listeners.length; i++) {
+        var listenerFunction = this.listeners[i];
+        listenerFunction(messageData);
+    }
+};
+
+SwordCiboodle.CiboodleFrame.prototype.registerMessageListener = function (listenerFunction) {
+    this.listeners.push(listenerFunction);
+};

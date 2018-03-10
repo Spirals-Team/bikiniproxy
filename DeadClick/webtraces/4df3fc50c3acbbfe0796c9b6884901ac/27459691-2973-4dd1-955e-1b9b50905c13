@@ -1,0 +1,165 @@
+var ads = ads || {};
+
+!function(n){n.preloadImages=function(n,o){window.IMAGES_CACHE={};var e,t,i=n.length;if(0===n.length)return void(o&&"function"==typeof o&&o());for(;e=n.pop();)t=new Image,t.onload=function(n){console.log("Loading image: ",n),window.IMAGES_CACHE[n]=this,i--,0===i&&(console.log("All images are ready..."),o&&"function"==typeof o&&o())}.bind(t,e),t.src=e},n.loadScripts=function(n,o){var e,t,i=n.length;if(0===n.length)return void(o&&"function"==typeof o&&o());for(;e=n.pop();)t=document.createElement("script"),t.defer=!0,t.onload=function(){i--,0===i&&(console.log("All scripts are ready..."),o&&"function"==typeof o&&o())},t.src=e,document.getElementsByTagName("head")[0].appendChild(t)}}(window);
+
+// SEQUENCES
+(function(win) {
+    function sequence(options) {
+        this.config(options);
+    }
+    sequence.prototype.config = function(options) {
+        options = {
+            id: options.id == undefined ? 'sequences' : options.id,
+            number: options.number == undefined ? 1 : options.number,
+            delay: options.delay == undefined ? 1 : options.delay,
+            url: options.url == undefined ? 'images/sequences/' : options.url,
+            prefix: options.prefix == undefined ? 'img' : options.prefix,
+            type: options.type == undefined ? 'jpg' : options.type,
+        };
+
+        for (var i = 1; i <= options.number; i++) {
+            createElements(i);
+            sequence.prototype.list.push(options.url + options.prefix + i + '.' + options.type);
+        }
+
+        function createElements(e) {
+            if (e <= 1)  _img = "<img id='" + options.prefix + e + "' class='img smooth' src='" + options.url + options.prefix + e + "." + options.type + "' />";
+            else _img = "<img id='" + options.prefix + e + "' class='img smooth' src='" + options.url + options.prefix + e + "." + options.type + "' style='visibility: hidden' />";
+            document.getElementById(options.id).innerHTML += _img;
+        }
+
+        ads.sequence.options = options;
+        ads.sequence.number = options.number;
+        ads.sequence.delay = options.delay;
+        ads.sequence.url = options.url;
+        ads.sequence.prefix = options.prefix;
+    };  
+    
+    sequence.prototype.play = function(order, callback, prefix, nums, delay) {
+        var sequenceTime = 0;
+        var sequenceInterval;
+        function sequenceStart() {
+            console.log("Sequence Start ...!");
+            for (var i = 1; i <= nums; i++) {
+                (function(index, _timer) {
+                    sequenceTime += delay * 1000;
+                    setTimeout(function() {
+                        if(index > 1) document.getElementById(prefix + (index-1)).style.visibility = 'hidden';
+                        document.getElementById(prefix + index).style.visibility = 'visible';
+                        if(index == order){
+                            if (callback && typeof(callback) === "function") {
+                                callback();
+                            }
+                        };
+                    }, _timer);
+                    
+                })(i, sequenceTime)
+            }
+        }
+        return sequenceStart();
+    };
+    sequence.prototype.list = [];
+    ads.sequence = sequence;
+})(window);
+
+var $banner = ((function() {
+    // jQuery Fake
+    var $ = function(slt) { return document.querySelector(slt); }
+    var timers = 0;
+    var Tween;
+    var loop = 1;
+    var aniStatus = false;
+
+    // var butterflyDepart = new ads.sequence({
+    //     id: "butterfly-depart",
+    //     number: 47,
+    //     delay: 0.05,
+    //     url: "images/butterfly-depart/", // URL images
+    //     prefix: "img-butterfly-depart-", // prefix for image name
+    //     type: "png" // image type
+    // });
+
+    var butterflyArrivee = new ads.sequence({
+        id: "butterfly-arrivee",
+        number: 49,
+        delay: 0.05,
+        url: "images/butterfly-arrivee/", // URL images
+        prefix: "img-butterfly-arrivee-", // prefix for image name
+        type: "png" // image type
+    });
+
+    function startAds() {
+        loadScripts([
+            'https://s0.2mdn.net/ads/studio/cached_libs/timelinelite_1.19.0_13e3bd0e510d63fd5e5ef9bf9dac7017_min.js',
+            'https://s0.2mdn.net/ads/studio/cached_libs/tweenlite_1.19.0_422f021fad4c20f20cf3640a06ac39e9_min.js',
+            'https://s0.2mdn.net/ads/studio/cached_libs/cssplugin_1.19.0_cfbff7d208ccfdbe176b9855af1eb1fa_min.js'
+            // 'https://s0.2mdn.net/ads/studio/cached_libs/easepack_1.19.0_be87087c08fcec83e2b64c70571fe91f_min.js'
+        ], loadAssets);
+    }
+
+    function loadAssets() {
+        preloadImages(butterflyArrivee.list, mainDOM);
+    }
+
+    function mainDOM() {
+        var ad = $('#ad'),
+            banner = $('#banner');
+
+        addListeners();
+        showAds(true, isSequences); // Check show ad & sequence play
+    }
+
+    function showAds(e, callback){
+        switch(e) {
+            case true:
+                console.info(e);
+                banner.style.opacity = 1;
+                banner.style.visibility = 'visible';
+                break;
+            case false:
+                console.info(e);
+                break;
+        }
+
+        if (callback && typeof(callback) === "function") {
+            callback();
+        }
+    }
+
+    function addListeners(){
+        // clickTag.addEventListener("click", function(){ console.log('Banner Clicked !'); }, false);
+    }
+
+    // Call mainFunc after sequence playing finish.
+    function isSequences() {
+
+        TweenLite.to(['#prod'], 0.75, { autoAlpha: 1, onComplete: function() {
+            // Syntax : Object.play("Number for Stop", "fn", "Prefix Image Name", "Total Images Number", "delay")
+            butterflyArrivee.play(20, mainFunc, "img-butterfly-arrivee-",  49, 0.075);
+        } });
+
+        
+    }
+
+    function mainFunc() {
+        console.info('Animation Starting ...!');
+
+        Tween = new TimelineLite({
+            onStart: _onStart,
+            onUpdate: _onUpdate,
+            onComplete: _onComplete
+        });
+
+        Tween.add(TweenLite.to(['#txt3'], 1, { autoAlpha: 1 }), timers);
+        timers += 2;
+        Tween.add(TweenLite.to(['#cta'], 1, { autoAlpha: 1 }), timers);
+
+        function _onStart() { aniStatus = true; }
+        function _onUpdate() {}
+        function _onComplete() {}
+    }
+
+    return startAds;
+})());
+
+window.addEventListener("load", $banner);

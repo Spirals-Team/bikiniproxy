@@ -1,0 +1,63 @@
+<!doctype html>
+<html>
+  <head>
+    <title>IMA HTML5</title>
+    <meta charset="utf-8" />
+    <!-- empty base tag needed to allow relative player urls to be fixed up inside a friendly iframe -->
+    <base href="">
+    <style>
+    * {
+      margin: 0px;
+      padding: 0px;
+    }
+    #mainContainer {
+      position: relative;
+      width: 100%;
+      height: 100%;
+    }
+    #content, #adContainer {
+      position: absolute;
+      top: 0px;
+      left: 0px;
+      width: 100%;
+      height: 100%;
+    }
+    #contentElement {
+      width: 640px;
+      height: 360px;
+      overflow: hidden;
+    }
+    #playButton {
+      margin-top:10px;
+      vertical-align: top;
+      width: 350px;
+      height: 60px;
+      padding: 0;
+      font-size: 22px;
+      color: white;
+      text-align: center;
+      text-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
+      background: #2c3e50;
+      border: 0;
+      border-bottom: 2px solid #22303f;
+      cursor: pointer;
+      -webkit-box-shadow: inset 0 -2px #22303f;
+      box-shadow: inset 0 -2px #22303f;
+    }    
+    </style>
+  </head>
+
+  <body>
+    <div id="mainContainer">
+      <div id="content">
+        <video id="contentElement" src="minimal.mp4" autoplay>
+        </video>
+      </div>
+      <div id="adContainer"></div>
+    </div>
+    <!-- <button id="playButton">Play</button> -->
+    <script type="text/javascript" src="//imasdk.googleapis.com/js/sdkloader/ima3.js"></script>
+    <script type="text/javascript">"use strict";function sendMessage(e,s,a){try{"string"==typeof s&&(s=JSON.parse(s))}catch(n){}window.parent.postMessage({name:e,dat:s,hiddenStatus:document.hidden,refreshTimeout:a},"*")}function log(e){sendMessage("log",{message:e},!1)}window.addEventListener("message",function(e){function s(e){return"on"+e[0].toUpperCase()+e.slice(1)}if(e.source!=window&&e.data.name){var a=e.data.name;log(">>>> frame sdk got message '"+a+"' ("+e.origin+")");var n=s(a);if(window[n])try{window[n](e.data)}catch(e){var t="Error handling sdk message:"+e.message;log(t),e.stack&&log(e.stack),sendMessage("adError",{code:42,message:t})}else log("can't find message handler "+n+" for message "+a)}},!1);try{Element.prototype.scrollIntoView=function(){sendMessage("warning",{message:"scrollAttempted [0]"})}}catch(e){log("error overriding scrollIntoView")}</script>
+    <script type="text/javascript">"use strict";function simpleStringify(e,a){if(a||(a=1),"object"==typeof e){if(a>4)return"too-deep";var n={};for(var t in e)if(e.hasOwnProperty(t)){var o=e[t];"object"==typeof e[t]?o=simpleStringify(e[t],a+1):"function"==typeof e[t]&&(o="function"),n[t]=o}return JSON.stringify(n)}return""+e}function sendDebugPixel(e,a){sendMessage("wf",{message:e},a)}function resetVolCheck(){firstVolViolation=null,clearInterval(volumeCheckInterval),volumeCheckInterval=null}function requestAds(){log("%%% requestAds"),sendDebugPixel("80a - requestAds"),debugstage="a",log(CONFIG.width+"x"+CONFIG.height+" "+CONFIG.adTag);var e=new google.ima.AdsRequest;e.adTagUrl=CONFIG.adTag,e.linearAdSlotWidth=CONFIG.width,e.linearAdSlotHeight=CONFIG.height,e.nonLinearAdSlotWidth=CONFIG.width,e.nonLinearAdSlotHeight=CONFIG.height/3,adsLoader.requestAds(e)}function adWithSound(){sendMessage("adError",{code:"we",message:"stage:"+debugstage+":adWithSound"}),adsManager&&(adsManager.stop(),adsManager.destroy(),adsManager=null),resetVolCheck()}function isNumeric(e){return!isNaN(parseFloat(e))&&isFinite(e)}function checkPlayerVolume(){if(skipChecking)skipChecking=!1;else{for(var e=document.querySelectorAll("video"),a=0;a<e.length;a++){var n=e[a];if(-1===n.src.indexOf("minimal.mp4")&&n.volume>currentVol)if(log("!! noisy element (vol="+n.volume+" current="+currentVol+") "+n),n.volume=currentVol,log("!! after set, vol="+n.volume),null===firstVolViolation)firstVolViolation=Date.now();else if(Date.now()-firstVolViolation>=500)return void adWithSound()}for(var t=document.querySelectorAll("audio"),a=0;a<t.length;a++){var n=t[a];if(n.volume>currentVol)if(log("!! noisy element (vol="+n.volume+" current="+currentVol+") "+n),n.volume=currentVol,log("!! after set, vol="+n.volume),null===firstVolViolation)firstVolViolation=Date.now();else if(Date.now()-firstVolViolation>=500)return void adWithSound()}var o=null;if(adsManager){try{adsManager.setVolume(currentVol)}catch(d){}o=adsManager.getVolume()}if(isNumeric(o)&&o>currentVol)if(null===firstVolViolation)firstVolViolation=Date.now();else if(Date.now()-firstVolViolation>=500)return void adWithSound()}}function _adLoaderError(e){var a=debugstage;debugstage="j",log("%%% adError");var n=e.getError();log(n),log("errorCode:"+n.getErrorCode()),log("errorType:"+n.getType()),log("message:"+n.getMessage()),log("vastErrorCode:"+n.getVastErrorCode()),log(1009===n.getErrorCode()?"got empty ad response":"got a regular ad error"),sendMessage("adError",{code:n.getErrorCode(),message:"adLoaderError stage:"+a+":"+n.getMessage()})}function _adManagerError(e){var a=e.getError();sendMessage("adError",{code:a.getErrorCode(),message:"adManagerError stage:"+debugstage+":"+a.getMessage()})}function _adLoaded(){log("%%% adLoaded"),sendDebugPixel("80k - _adLoaded"),debugstage="k",sendMessage("adReady")}function _adStarted(){log("%%% _adStarted"),sendMessage("adStarted")}function _adClick(){log("%%% _adClick"),sendMessage("adClick")}function _firstQuartile(){log("%%% _firstQuartile"),sendMessage("adFirstQuartile")}function _midpoint(){log("%%% _midpoint"),sendMessage("adMidpoint")}function _thirdQuartile(){log("%%% _thirdQuartile"),sendMessage("adThirdQuartile")}function _adComplete(){log("%%% _adComplete"),sendMessage("adEnded"),resetVolCheck()}function _adImpression(){log("%%% _adImpression"),sendMessage("adImpression")}function _adPaused(){log("%%% _adPaused"),sendMessage("adPaused")}function _adResumed(){log("%%% _adResumed")}function _contentPauseRequested(){}function _contentResumeRequested(){}function _adManagerLoaded(e){log("%%% _adManagerLoaded"),sendDebugPixel("80d - _adManagerLoaded"),debugstage="d",adsManager=e.getAdsManager(videoContent),adsManager.setVolume(currentVol),adsManager.addEventListener(google.ima.AdErrorEvent.Type.AD_ERROR,_adManagerError),adsManager.addEventListener(google.ima.AdEvent.Type.CONTENT_PAUSE_REQUESTED,_contentPauseRequested),adsManager.addEventListener(google.ima.AdEvent.Type.CONTENT_RESUME_REQUESTED,_contentResumeRequested),adsManager.addEventListener(google.ima.AdEvent.Type.LOADED,_adLoaded),adsManager.addEventListener(google.ima.AdEvent.Type.STARTED,_adStarted),adsManager.addEventListener(google.ima.AdEvent.Type.FIRST_QUARTILE,_firstQuartile),adsManager.addEventListener(google.ima.AdEvent.Type.MIDPOINT,_midpoint),adsManager.addEventListener(google.ima.AdEvent.Type.THIRD_QUARTILE,_thirdQuartile),adsManager.addEventListener(google.ima.AdEvent.Type.COMPLETE,_adComplete),adsManager.addEventListener(google.ima.AdEvent.Type.CLICK,_adClick),adsManager.addEventListener(google.ima.AdEvent.Type.IMPRESSION,_adImpression),adsManager.addEventListener(google.ima.AdEvent.Type.SKIPPED,_adComplete),adsManager.addEventListener(google.ima.AdEvent.Type.PAUSED,_adPaused),adsManager.addEventListener(google.ima.AdEvent.Type.RESUMED,_adResumed),log("%%% calling adsManager.init");try{sendDebugPixel("80e - adsManager.init"),debugstage="e",adsManager.init(CONFIG.width,CONFIG.height,google.ima.ViewMode.NORMAL)}catch(a){sendDebugPixel("80f - adsManager.init error:"+a.message),debugstage="f",log("error in adsManager.init"),log(a)}}function onInit(e){log("*** onInit"),sendDebugPixel("80g - onInit"),debugstage="g",log(simpleStringify(e)),CONFIG=e,window.videoContent=document.getElementById("contentElement"),videoContent.onended=contentEndedListener,google.ima.settings.setVpaidMode(google.ima.ImaSdkSettings.VpaidMode.INSECURE),window.adDisplayContainer=new google.ima.AdDisplayContainer(document.getElementById("adContainer"),videoContent),adDisplayContainer.initialize(),window.adsLoader=new google.ima.AdsLoader(adDisplayContainer),window.adsLoader.getSettings().setVpaidMode(google.ima.ImaSdkSettings.VpaidMode.INSECURE),adsLoader.addEventListener(google.ima.AdsManagerLoadedEvent.Type.ADS_MANAGER_LOADED,_adManagerLoaded,!1),adsLoader.addEventListener(google.ima.AdErrorEvent.Type.AD_ERROR,_adLoaderError,!1),sendMessage("ready")}function onResizeMe(e){{var a=document.getElementById("adContainer");a.getElementsByTagName("iframe")}adsManager&&adsManager.resize(e.width,e.height,google.ima.ViewMode.NORMAL)}function onUnsizeMe(){var e=document.getElementById("adContainer"),a=e.getElementsByTagName("iframe");a[0].width=CONFIG.width,a[0].height=CONFIG.height}function onLoadAd(e){resetVolCheck(),log("*** onLoadAd, calling requestAds"),e.cp&&e.adTag&&(CONFIG.cp=e.cp,CONFIG.adTag=e.adTag),requestAds()}function getElements(e,a){return Array.prototype.slice.call(e.getElementsByTagName(a))}function onProbe(){var e=[];e=e.concat(getElements(document,"video"));var a=[],n=[];for(a=a.concat(getElements(document,"iframe"));a.length>0;){var t=a.shift();n.push(t.outerHTML);try{iframeDoc=t.contentWindow.document,e=e.concat(getElements(iframeDoc,"video")),a=a.concat(getElements(iframeDoc,"iframe"))}catch(o){}}for(var d=[],r=0;r<e.length;r++)e[r].play(),d.push(e[r].outerHTML);sendDebugPixel("probing debugstage: "+debugstage+" vidTagDump: "+d.toString()+" ifrTagDump: "+n.toString(),!1)}function onShowAd(e){resetVolCheck();try{log("*** onShowAd:"+simpleStringify(e)),sendDebugPixel("80h - onShowAd"),debugstage="h";var a=e.volume||0,n=CONFIG.minVolume||0;e.explicitMute&&(n=0);var t=Math.max(a,n);currentVol=t,log("initial ad volume:"+adsManager.getVolume()),adsManager.setVolume(t),log("set volume to:"+t),adsManager.getVolume()!=t&&log("!!! initial ad volume could not be set properly!"),volumeCheckInterval=window.setInterval(checkPlayerVolume,100),sendDebugPixel("80i - adsManager.start"),debugstage="i",adsManager.start(),adsManager.resize(window.innerWidth,window.innerHeight,google.ima.ViewMode.NORMAL)}catch(o){sendMessage("adError",{message:"onShowAd error stage:"+debugstage+":"+o})}}function onSetVolume(e){if(log("*** onSetVolume:"+simpleStringify(e)),"volume"in e){var a=CONFIG.minVolume||0;e.explicit&&(a=0);var n=Math.max(a,e.volume);currentVol>n&&(skipChecking=!0),currentVol=n,adsManager.setVolume(n)}else log("onSetVolume requires a parameter!")}var CONFIG=null,adsManager=null,adsLoader=null,videoContent=null,volumeCheckInterval=null,volumeFreqDowngrade=null,timerHiDuration=5e3,timerIntervalLo=1e3,timerIntervalHi=20,debugstage="0",firstVolViolation=null,currentVol=1e-5,skipChecking=!1,addListener=function(e,a,n){return e.addEventListener?(e.addEventListener(a,n,!1),!0):e.attachEvent?e.attachEvent("on"+a,n):(a="on"+a,"function"==typeof e[a]&&(n=function(e,a){return function(){e.apply(this,arguments),a.apply(this,arguments)}}(e[a],n)),e[a]=n,!0)};addListener(window,"beforeunload",function(){sendDebugPixel("unloaded at stage "+debugstage)});var contentEndedListener=function(){adsLoader.contentComplete()};sendMessage("loaded",{version:window.google.ima.VERSION});</script>
+  </body>
+</html>

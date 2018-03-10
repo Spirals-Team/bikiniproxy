@@ -1,0 +1,1927 @@
+(function(d){var c={},b={},a=null;
+Application={addMessage:function(e,f){c[e]=f
+},getMessage:function(e){return c[e]
+},addSetting:function(e,f){b[e]=f
+},getSetting:function(e){return b[e]
+},getLocaleFromPath:function(){if(!a){try{var g=window.document.location.pathname;
+if(g.length>0&&g.indexOf("/")===0){g=g.substring(1)
+}if(g.length>1){var m=Application.getSetting("allowableCountries")||[],h=Application.getSetting("allowableLanguages")||[],k=g.split("/");
+if(k.length>0){var f=k[0].toLowerCase();
+if(f.length===2&&(d.inArray(f,h)!==-1||d.inArray(f,m)!==-1)){var i=[f];
+if(k.length>1){var j=k[1].toLowerCase();
+if(j.length===2&&d.inArray(j,h)!==-1){i.push(j)
+}}a=i.join("/")
+}}}}catch(l){a=null
+}}return a
+}};
+d(function(){var e=Application.getLocaleFromPath();
+if(e&&e.length>=5){d(document).ajaxSend(function(i,j,h){if(h.url.indexOf(Application.getSetting("baseUrl"))!==-1){var g=h.url.indexOf(document.location.host);
+if(g!==-1){var f=g+document.location.host.length;
+h.url=h.url.substring(0,f)+"/"+e+h.url.substring(f)
+}else{h.url="/"+e+h.url
+}}})
+}})
+}(jQuery));(function(a){a(function(){if(a("body").is("#billingAddresses")){a("#wallet").wallet()
+}})
+}(jQuery));(function(a){a(function(){if(a("body").is("#checkoutShipping")){a("#addressBook").addressBook();
+var b=a("#shippingForm");
+b.addressForm(b.find('select[name$=".country"]'),b.find("#stateProvinceField"),b.find("#zipPostalCodeField"))
+}})
+}(jQuery));(function(a){a(function(){if(a("body").is("#checkoutBilling")){a("#wallet").wallet();
+a("#billingDetails").epBillingSelection();
+a("#billingDetails").find("#newAddressForm, #newPurchaseOrderAddressForm, #taxAddressForm").each(function(b,c){var d=a(c);
+d.addressForm(d.find('select[name$=".country"]'),d.find("#stateProvinceField"),d.find("#zipPostalCodeField"))
+})
+}})
+}(jQuery));(function(a){a(function(){var g,c=a("#orderSummary"),b=a("#subTotalValue"),e=a("#cartShippingCostValue"),d=a("totalBeforeTaxValue");
+function f(i,h){if(h==g){e.html(i);
+c.removeClass("updating")
+}}if(a("body#checkoutDeliveryOptions")[0]){a("#addressBook").addressBook();
+a("#reroute").change(function(){var i=a("#reroute").val(),h={};
+if(i){h.rerouteFulfiller=i
+}a.post("reroute.ep",h,function(j){window.location.reload(true)
+})
+});
+a('#shippingOptionList input[name="selectedShippingServiceLevel"]').change(function(j){var h=a(this).val(),i=a.now();
+g=i;
+c.addClass("updating");
+a.ajax({url:"recalculate-cart-for-selected-shipping-service-level.ep",type:"POST",data:h,success:function(k){f(k,i)
+},contentType:"application/json; charset=utf-8"})
+})
+}})
+}(jQuery));(function(a){a(function(){if(a("body").is("#checkoutRegistration")){a("#j_username").focus()
+}var b=false;
+a("#anonymousRegistrationDiv #email").blur(function(d){var c=/\.ca$/;
+if(c.test(a(this).val())&&!b){a("#anonymousRegistrationDiv #sendNewsletter").prop("checked",false);
+b=true
+}});
+a("#anonymousRegistrationDiv #sendNewsletter").change(function(){b=true
+})
+})
+}(jQuery));(function(a){a(function(){var g,n=a("#anonymousCustomerRegistrationForm"),d=a("#placeOrderForm"),k=a(".place-order-button");
+function h(w,z){if(z==g){var u,x,A=w.totalCurrencyCode,C=w.total,B=false,y=a("#cartDetails .subtotal.tax"),t=a("#cartDetails .order-total"),v=a(),D=y.first().clone();
+D.removeClass().addClass("subtotal tax");
+y.removeClass("updating");
+t.removeClass("updating");
+a.each(w.taxes,function(F,G){var I=G,H=F,J=D.clone();
+B=true;
+var E=Application.getMessage("globals.taxcategory.label."+F);
+J.addClass(H).find(".label").html(E).end().find(".amount .value").html(I);
+v=v.add(J)
+});
+if(!B){u=D.clone();
+x="";
+u.addClass("tax-total").find(".label").html(Application.getMessage("viewCart.shoppingCart.table.tax")+":").end().find(".amount .value").html(pageData.zeroDollars);
+v=v.add(u)
+}y.first().replaceWith(v);
+y.remove();
+t.find(".amount .value").html("("+A+") "+C);
+if(d.hasClass("adyen-form")){d.find('input[name="paymentAmount"]').val(C.replace(/\D/g,""))
+}}}var f,i;
+function o(v){var u=false;
+var t=a("<div/>").addClass("downloads");
+a.each(v,function(w,x){a.each(x.productDownloads,function(y,z){u=true;
+t.append(a("<div/>").addClass("download-item").append(a("<div/>").addClass("title-author").append(a("<div/>").text(a(".product-"+z.productCode+" .title-link").text()).addClass("title")).append(a("<div/>").text(a(".product-"+z.productCode+" .authors").text()).addClass("author"))).append(a("<div/>").addClass("download-link").append(a("<a/>").attr("href",z.url).addClass("download-button").addClass("small").append(a("<span/>").append(a("<div/>").text(Application.getMessage("billingAndReview.download")).addClass("download-text")).append(a("<div/>").text("("+Application.getMessage("billingAndReview.download.type."+z.documentType)+")").addClass("document-type"))))))
+})
+});
+if(u){return t
+}return
+}function b(y){var w=a("#orderStatus");
+var t=a(".order-progress-text");
+var x=a(".status-details");
+var v=a.map(y,function(z){return z.status
+});
+if(a.inArray("authorizing",v)>=0){t.text(Application.getMessage("billingAndReview.processing"));
+return
+}if(a.inArray("failure",v)>=0){w.addClass("error");
+t.text(Application.getMessage("billingAndReview.oops"));
+x.text("").append(a("<p/>").text(Application.getMessage("billingAndReview.captureErrorOccurred"))).append(a("<p/>").html(Application.getMessage("billingAndReview.contactSupportTextWithLink")));
+return
+}if(a.inArray("shipped",v)>=0){var u=a.grep(v,function(z){return z=="shipped"
+});
+if(u.length==v.length){t.text(Application.getMessage("billingAndReview.ebooksReady"));
+t.append(o(y));
+x.html(Application.getMessage("billingAndReview.downloadAnytimeTextWithLink"));
+return
+}t.text(Application.getMessage("billingAndReview.fulfilling")+Application.getMessage("globals.ellipsis"));
+return
+}if(a.inArray("fulfilling",v)>=0){t.text(Application.getMessage("billingAndReview.fulfilling")+Application.getMessage("globals.ellipsis"));
+return
+}}function e(){if(Date.now()>(i+pageData.ebookOrderStatusTimeout)){a(".order-progress-indicator").hide();
+clearInterval(f);
+a(".order-progress-text").text(Application.getMessage("billingAndReview.oops"));
+a(".status-details").html(Application.getMessage("billingAndReview.stoppedDueToTimeoutWithLink"))
+}a.ajax({url:Application.getSetting("baseUrl")+"/customer/order-status.ep",data:{orderNumber:pageData.orderNumber},success:function t(w){var u=a.map(w,function(x){if(x.shipmentType=="ebook"){return x
+}});
+b(u);
+var v=false;
+a.each(u,function(y,x){if(a.inArray(x.status,["authorizing","fulfilling"])!=-1){v=true
+}});
+if(!v){a(".order-progress-indicator").hide();
+clearInterval(f)
+}}})
+}function c(){return"receipt.ep"
+}function l(t){var u=Application.getSetting("paymentAuthorizationDelayMillis");
+setTimeout(function(){window.location.href=t
+},u)
+}function q(u,t){k.removeClass("refresh-indicator").addClass("error-indicator").find("span").html(Application.getMessage("billingAndReview.authorizationError"));
+a("div#errorsSection").append(a("<div/>").addClass("feedback error").html(u));
+l(t)
+}function r(){k.removeClass("refresh-indicator").addClass("success-indicator").find("span").html(Application.getMessage("billingAndReview.authorizationSuccess"));
+l(c())
+}function s(t){a("a").unbind("click");
+k.removeClass("refresh-indicator").removeAttr("disabled").find("span").html(Application.getMessage("billingAndReview.save"));
+a.each(t,function(v,u){if(v=="general"){a("div#errorsSection").append(a("<div/>").addClass("feedback error").html(u))
+}else{a("input[name='"+v+"']").parent().addClass("field-error").append(a("<div/>").addClass("error").html(u))
+}});
+if(a("#lulu-rec").length>0&&window.grecaptcha!=="undefined"){window.grecaptcha.reset();
+k.addClass("luluBtnDisabled recDisabled").attr("disabled","disabled")
+}a(window).scrollTop(""+a("#errorsSection, #anonymousRegistrationBlock").offset().top)
+}function j(v,A){var y=v.find("input#email").val(),t=v.find("input#fullName").val(),z=v.find("input#password").val(),B=v.find("input#passwordConfirmation").val(),C=z!==undefined&&z.length>0;
+if(C||pageData.isRegistrationRequired){sendRegistrationEventToTealium("Click");
+var w="&regFormName="+window.location.href,u;
+if(typeof ga!=="undefined"){try{u=ga.getAll()[0].get("clientId")
+}catch(x){u="null"
+}}else{u="ga undefined"
+}w+="&regGoogleAnalyticsClientId="+u;
+a.ajax({url:v.attr("action"),data:v.serialize()+w,type:"POST",success:function(D){if(!a.isEmptyObject(D.errors)){s(D.errors)
+}else{if(D.customerSignedIn&&window.sendRegistrationEventToTealium){sendRegistrationEventToTealium("Success");
+A()
+}else{sendRegistrationEventToTealium("Error")
+}}},error:function(D){sendRegistrationEventToTealium("Error")
+}})
+}else{A()
+}}function p(t){a.ajax({url:"billing-and-review.ep?"+a("#orderNotesForm").serialize(),type:"POST",success:function(v){if(v.hasOwnProperty("order")&&v.order!==undefined){v=v.order
+}if(typeof v.orderNumber=="undefined"){q(Application.getMessage("billingAndReview.authorizationRedirect.message"),"checkout.ep")
+}else{if(!a.isEmptyObject(v.errors)){s(v.errors)
+}else{if(t!==undefined){t(v)
+}else{var u;
+if(v.expectedView.indexOf("redirect:")===0){u=v.expectedView.substring(9);
+if(u.indexOf("/")===0){u=u.substring(1)
+}}else{u=c()
+}window.location.href=u
+}}}},error:function(u){if(u.readyState===0&&u.status===0){q(Application.getMessage("billingAndReview.authorizationRedirect.message"),"checkout.ep")
+}else{s({general:Application.getMessage("billingAndReview.authorizationRedirect.message")})
+}}});
+return false
+}function m(){k.addClass("refresh-indicator").attr("disabled","disabled").find("span").html(Application.getMessage("billingAndReview.authorizationProcessing"));
+a("a").bind("click",function(t){t.preventDefault()
+});
+a("div#errorsSection div").remove();
+a("form#anonymousCustomerRegistrationForm div#anonymousRegistrationDiv input").each(function(){a(this).parent().removeClass("field-error").find("div.error").remove()
+})
+}if(a("body").is("#checkoutReview")){k.click(function(t){t.preventDefault();
+m();
+j(n,function(){if(d.hasClass("adyen-form")){p(function(u){if(u.hostedPaymentParams!==undefined){a.each(u.hostedPaymentParams,function(v,w){d.find("input[name="+v+"]").val(w)
+})
+}d.submit()
+})
+}else{p()
+}})
+});
+if(pageData.displayEbookSpinner){i=Date.now();
+f=setInterval(e,pageData.ebookOrderStatusInterval)
+}a("#membershipAgreement").on("click",function(){var t=a("#termsAndConditionsPopup");
+t.uiBubble({dismissible:true});
+t.uiBubble("open")
+});
+a("#print").click(function(){window.open("/shop/terms-and-conditions-print.ep","_blank")
+})
+}a([Application.getSetting("imgPath")+"/checkout/alert.png",Application.getSetting("imgPath")+"/checkout/green_tick.png"]).preload()
+});
+a.fn.preload=function(){this.each(function(){a("<img/>")[0].src=this
+})
+}
+}(jQuery));(function(a){a(function(){if(Application.getSetting("privilegedCart")){a("input:text, input:not([type])").css({border:"1px solid"})
+}})
+}(jQuery));(function(a){a(function(){function b(){var J=a(".cc-number").val();
+var C=a("#expiryMonthSelect").val();
+var G=a("#expiryYearSelect").val();
+var E=a(".cc-cvc").val();
+var I=a("#adyen-encrypted-holdername").val();
+var D=a("#adyen-encrypted-generationtime").val();
+var H=a("#adyen-cse-apiKey").val();
+var K={};
+K.enableValidations=false;
+var A=adyen.encrypt.createEncryption(H,K);
+var F={number:J,expiryMonth:C,expiryYear:G,cvc:E,holderName:I,generationtime:D};
+var B=A.encrypt(F);
+a("#adyen-encrypted-data").val(B)
+}function e(){if(a("#creditCardPaymentOption").is(":checked")){var A=a("#cardState").val();
+v(A)
+}}function v(A){if(a("#creditCardPaymentOption").is(":checked")){if(A==="encrypt"){a(".cc-number").payment("formatCardNumber");
+p=true;
+a("input#billingAddress\\.fullName").val(a(":hidden#adyen-encrypted-holdername").val())
+}else{if(A==="update"){q=true;
+y=false;
+t=false;
+p=true;
+a("input#billingAddress\\.fullName").val(a(":hidden#adyen-encrypted-holdername").val())
+}else{q=true;
+y=true;
+p=true;
+t=false;
+if(a("input#billingAddress\\.fullName").length){a("input#billingAddress\\.fullName").val(a(":hidden#adyen-encrypted-holdername").val())
+}if(!a("#cardExpirationDisplay").val()&&a("#creditCardExpiryMonth").val()&&a("#creditCardExpiryYear").val()){a("#cardExpirationDisplay").val(a("#creditCardExpiryMonth").val()+"/"+a("#creditCardExpiryYear").val())
+}}}a(".cc-cvc").payment("formatCardCVC")
+}}function n(B){if(a("#creditCardPaymentOption").is(":checked")){var A=a("#cardState").val();
+if(A=="encrypt"){r();
+z();
+g();
+d();
+if(q&&y&&t&&p){b()
+}}else{if(A==="update"){z();
+g();
+d()
+}else{g()
+}}var C=q&&y&&t&&p;
+if(!C){B.preventDefault()
+}}}function r(){var A=a(".cc-number").val();
+i(a(".cc-number"),!a.payment.validateCardNumber(A));
+if(a(".cc-number").is(".invalid")){q=false;
+h()
+}else{q=true;
+a("#creditCardType").val(a.payment.cardType(a(".cc-number").val()));
+a("#creditCardMaskedNumber").val(k(a(".cc-number").val()));
+j()
+}}function k(D){var C=/^(.*)(\d{4})$/g;
+var B=C.exec(D);
+var A=B[1].replace(/\s/g,"").replace(/./g,"*");
+return A+B[2]
+}function z(){var B=a("#expiryMonthSelect").val();
+var A=a("#expiryYearSelect").val();
+i(a("#cardExpiryMonthYear"),!a.payment.validateCardExpiry(B,A));
+if(a("#cardExpiryMonthYear").is(".invalid")){y=false;
+l()
+}else{y=true;
+a("#creditCardExpiryMonth").val(B);
+a("#creditCardExpiryYear").val(A);
+x()
+}}function g(){var A=a.payment.cardType(a(".cc-number").val());
+if(A===null){A=a("#creditCardType").val()
+}var B=a(".cc-cvc").val();
+i(a(".cc-cvc"),!a.payment.validateCardCVC(B,A));
+if(a(".cc-cvc").is(".invalid")){t=false;
+f()
+}else{t=true;
+a("#creditCardSecurityCode").val(a(".cc-cvc").val());
+w()
+}}function d(){if(!a("#useShippingAddress").is(":checked")){var A=a("input#billingAddress\\.fullName").val();
+if(A.match("^.+\\s.+$")){p=true;
+o();
+a(":hidden#adyen-encrypted-holdername").val(A)
+}else{p=false;
+m()
+}}}function i(A,B){A.toggleClass("invalid",B);
+return this
+}function j(){a(".cc-number").siblings("div.error").remove();
+a(".cc-number").parent().removeClass("field-error");
+u()
+}function x(){a("#cardExpiryMonthYear").children("div.error").remove();
+a("#cardExpiryMonthYear").removeClass("field-error");
+u()
+}function w(){a(".cc-cvc").siblings("div.error").remove();
+a(".cc-cvc").parent().removeClass("field-error");
+u()
+}function o(){a("input#billingAddress\\.fullName").siblings("div.error").remove();
+a("input#billingAddress\\.fullName").parent().removeClass("field-error");
+u()
+}function u(){a("div#errorsSection").siblings(".feedback.error").remove()
+}function h(){var B=a(".cc-number");
+var A;
+if(B.hasClass("invalid")&&!B.parent().hasClass("field-error")){A=Application.getMessage("billingInformation.cardNumberInvalid");
+B.parent().addClass("field-error").append(a("<div/>").addClass("error").html(A))
+}s()
+}function l(){var A=a("#cardExpiryMonthYear");
+var B;
+if(A.hasClass("invalid")&&!A.hasClass("field-error")){B=Application.getMessage("billingInformation.cardExpiryDateInvalid");
+A.addClass("field-error").append(a("<div/>").addClass("error").html(B))
+}s()
+}function f(){var A=a(".cc-cvc");
+var B;
+if(A.hasClass("invalid")&&!A.parent().hasClass("field-error")){B=Application.getMessage("billingInformation.cardSecurityCodeInvalid");
+A.parent().addClass("field-error").append(a("<div/>").addClass("error").html(B))
+}s()
+}function m(){var A=a("input#billingAddress\\.fullName");
+var B;
+if(!A.parent().hasClass("field-error")){B=Application.getMessage("errors.fullname.format");
+A.parent().addClass("field-error").append(a("<div/>").addClass("error").html(B))
+}s()
+}function s(){if(a("div#errorsSection").siblings(".feedback.error").length===0){var A=Application.getMessage("billingInformation.formFieldErrors");
+a("div#errorsSection").after(a("<div/>").addClass("feedback error").html(A))
+}}var c=a("#billingForm").get(0);
+var q=false,y=false,t=false,p=false;
+if(c){a("#paymentSelectorGroup").on("change","input[name=selectedPaymentOption]",function(){e()
+});
+a("#billingForm").on("submit",function(A){n(A)
+});
+e()
+}})
+}(jQuery));(function(a){a(document).ready(function(){if(a("body").is("#creditCards")){var b=a("#wallet"),c="visa mastercard amex discover none";
+b.wallet({allowRedirect:false});
+if(a(".card-data").size()===0){a("#noCardsMessage").show()
+}else{a("#noCardsMessage").hide()
+}}})
+}(jQuery));(function(a){a(function(){if(a("body").is("#emailUs")){var h=a("#emailUsForm");
+var k=(function(){var o={fieldName:["Type_of_Problem__c","Problem__c","Issue__c","typeOfCreation","Support_Type__c","Support_Issue__c","Subject","Lead_Type__c","Lead_Origin__c","RecordType","Owner","Distribution_Type__c","Lulu_Order_ID__c","Lulu_Content_ID__c","Product_Title__c","ISBN_Number__c","Problem_URL__c","file","fileMsg"],fieldTitle:["Type of Problem","Problem","Issue","Type of creation","Support Type","Support Issue","Subject ","Lead Type","Lead Origin","Lead Record Type","Lead Owner","Distribution Type","Lulu Order ID","Lulu Content ID","Product Title","ISBN Number","Problem URL","File upload",""],"1mo2qaop3pi":["My Orders","I have a question about the order process","Payment issue","Case creation","Customer Voice","Order Payment/Processing","Order Payment issue","","","","","","Visible","Visible","Visible","","","",""],"1mo2qaop3ci":["My Orders","I have a question about the order process","Coupon Issue","Case creation","Customer Voice","Coupon issue","Coupon issue","","","","","","Visible","Visible","Visible","","","",""],"1mo2qaop3cmo":["My Orders","I have a question about the order process","Change my order","Case creation","Customer Voice","Cancel/Change order","Order change request","","","","","","Visible","Visible","Visible","","","",""],"1mo2qaop3upo":["My Orders","I have a question about the order process","Using purchase orders","Case creation","Accounting","Purchase Order","Purchase Order","","","","","","Visible","Visible","Visible","","","Visible","emailUs.form.fu.usingPurchaseOrders"],"1mo2qaop3ste":["My Orders","I have a question about the order process","Sales tax exemption","Case creation","Accounting","Sales Tax Exemption","Sales Tax exemption","","","","","","Visible","Visible","Visible","","","Visible","emailUs.form.fu.taxExemption"],"1mo2qaop3fo":["My Orders","I have a question about the order process","Failed order","Case creation","Customer Voice","Order Payment/Processing","Payment issue","","","","","","Visible","Visible","Visible","","","",""],"1mo2qaop3pq":["My Orders","I have a question about the order process","Pricing question","Case creation","Customer Voice","Product pricing","Pricing and Quote","","","","","","Visible","Visible","Visible","","","",""],"1mo2ppp3wwia":["My Orders","I purchased a printed product","When will it arrive?","Case creation","Customer Voice","Shipping/Fulfillment","Order status request","","","","","","Visible","Visible","Visible","","","",""],"1mo2ppp3cmo":["My Orders","I purchased a printed product","Change my order","Case creation","Customer Voice","Change order","Order change request","","","","","","Visible","Visible","Visible","","","",""],"1mo2ppp3ddo":["My Orders","I purchased a printed product","Defective, damaged, or incorrect order","Case creation","GFT","Print","Defective, damaged, or incorrect order","","","","","","Visible","Visible","Visible","","","Visible","emailUs.form.fu.defectiveOrder"],"1mo2ppp3ste":["My Orders","I purchased a printed product","Sales tax exemption","Case creation","Accounting","Sales Tax Exemption","Sales Tax exemption","","","","","","Visible","Visible","Visible","","","Visible","emailUs.form.fu.taxExemption"],"1mo2ppp3se":["My Orders","I purchased a printed product","Something else","Case creation","Customer Voice","General Support","Order - General inquiries","","","","","","Visible","Visible","Visible","","","",""],"1mo2peb":["My Orders","I purchased an eBook","","Case creation","Customer Voice","eBook Order","eBook Order","","","","","","Visible","Visible","Visible","","","",""],"1mo2ppo":["My Orders","I placed a purchase order","","Case creation","Accounting","Purchase Order","Purchase Order","","","","","","Visible","Visible","Visible","","","",""],"1mo2pse3hr":["My Orders","I purchased something else","Helix Review","Case creation","Customer Voice","Helix Review","Helix Review","","","","","","Visible","Visible","Visible","","","",""],"1mo2pse3ps":["My Orders","I purchased something else","Professional Services","Case creation","Services","Professional Services","Professional Services","","","","","","Visible","Visible","Visible","","","",""],"1mo2pse3ec":["My Orders","I purchased something else","EPUB Conversion","Case creation","Services","Low Touch services","EPUB Conversion","","","","","","Visible","Visible","Visible","","","",""],"1mo2pse3d":["My Orders","I purchased something else","Distribution","Case creation","Distribution","Distro Orders","Distribution order","","","","","","Visible","Visible","Visible","","","",""],"1mo2pse3isbn":["My Orders","I purchased something else","ISBN","Case creation","Distribution","ISBN","ISBN order","","","","","","Visible","Visible","Visible","","","",""],"1mo2pse3se":["My Orders","I purchased something else","Something else","Case creation","Customer Voice","General Support","Order inquiry","","","","","","Visible","Visible","Visible","","","",""],"1mo2se":["My Orders","Something else","","Case creation","Customer Voice","General Support","Order inquiry","","","","","","Visible","Visible","Visible","","","",""],"1ce2ceb3fm":["Creating/Editing","I'm creating an eBook","Formatting the manuscript ","Case creation","Customer Voice","Formatting","eBook formatting","","","","","eBook","","Visible","Visible","Visible","","",""],"1ce2ceb3ciem":["Creating/Editing","I'm creating an eBook","Conversion issues and error messages","Case creation","Customer Voice","Conversion issue","eBook conversion issues","","","","","eBook","","Visible","Visible","Visible","","",""],"1ce2ceb3cc":["Creating/Editing","I'm creating an eBook","Creating the cover","Case creation","Customer Voice","Cover","eBook cover creation","","","","","eBook","","Visible","Visible","Visible","","",""],"1ce2ceb3rpd":["Creating/Editing","I'm creating an eBook","Revising the project details","Case creation","Customer Voice","General Support","eBook project details","","","","","eBook","","Visible","Visible","Visible","","",""],"1ce2ceb3rm":["Creating/Editing","I'm creating an eBook","Revising the manuscript","Case creation","Customer Voice","Revision","eBook revision","","","","","eBook","","Visible","Visible","Visible","","",""],"1ce2ceb3he":["Creating/Editing","I'm creating an eBook","I want to hire an expert","Lead generation - Service","","","","Services","Support page","Lulu.com","Leads - Default","eBook","","","","","","",""],"1ce2ceb3se":["Creating/Editing","I'm creating an eBook","Something else","Case creation","Customer Voice","General Support","Publish - General inquiries","","","","","eBook","","Visible","Visible","Visible","","",""],"1ce2cpb3fm":["Creating/Editing","I'm creating a print book","Formatting the manuscript ","Case creation","Customer Voice","Formatting","Print Book formatting","","","","","Print","","Visible","Visible","Visible","","",""],"1ce2cpb3ciem":["Creating/Editing","I'm creating a print book","Conversion issues and error messages","Case creation","Customer Voice","Conversion issue","Print Book conversion issues","","","","","Print","","Visible","Visible","Visible","","",""],"1ce2cpb3cc":["Creating/Editing","I'm creating a print book","Creating the cover","Case creation","Customer Voice","Cover","Print Book cover creation","","","","","Print","","Visible","Visible","Visible","","",""],"1ce2cpb3rpd":["Creating/Editing","I'm creating a print book","Revising the project details","Case creation","Customer Voice","General Support","Print Book project details","","","","","Print","","Visible","Visible","Visible","","",""],"1ce2cpb3rm":["Creating/Editing","I'm creating a print book","Revising the manuscript","Case creation","Customer Voice","Revision","Print Book revision","","","","","Print","","Visible","Visible","Visible","","",""],"1ce2cpb3psp":["Creating/Editing","I'm creating a print book","Product specifications and pricing","Case creation","Customer Voice","General Support","Print Book - Cost and material","","","","","Print","","Visible","Visible","Visible","","",""],"1ce2cpb3he":["Creating/Editing","I'm creating a print book","I want to hire an expert","Lead generation - Service","","","","Services","Support page","Lulu.com","Leads - Default","Print","","","","","","",""],"1ce2cpb3se":["Creating/Editing","I'm creating a print book","Something else","Case creation","Customer Voice","General Support","Publish - General inquiries","","","","","Print","","Visible","Visible","Visible","","",""],"1ce2cc3cp":["Creating/Editing","I'm creating a calendar or photo book","Creation process","Case creation","Customer Voice","Lulu Studio","Lulu Studio - Creation","","","","","","","Visible","Visible","Visible","","",""],"1ce2cc3em":["Creating/Editing","I'm creating a calendar or photo book","Error messages","Case creation","Customer Voice","Conversion issue","Lulu Studio conversion issues","","","","","","","Visible","Visible","Visible","","",""],"1ce2cc3rp":["Creating/Editing","I'm creating a calendar or photo book","Revising the project","Case creation","Customer Voice","Revision","Lulu Studio revision","","","","","","","Visible","Visible","Visible","","",""],"1ce2cc3psp":["Creating/Editing","I'm creating a calendar or photo book","Product specifications and pricing","Case creation","Customer Voice","General Support","Lulu Studio - Cost and material","","","","","","","Visible","Visible","Visible","","",""],"1ce2cc3se":["Creating/Editing","I'm creating a calendar or photo book","Something else","Case creation","Customer Voice","General Support","Publish - General inquiries","","","","","","","Visible","Visible","Visible","","",""],"1s2dbl3dpr":["Selling","Distribution beyond Lulu.com","Distribution process and requirements","Case creation","Distribution","General Distribution","Distribution process inquiry","","","","","Visible","","Visible","Visible","Visible","","",""],"1s2dbl3rlol":["Selling","Distribution beyond Lulu.com","Retail listings outside of Lulu.com","Case creation","Distribution","Distribution Listing","Retail listing issue","","","","","Visible","","Visible","Visible","Visible","","",""],"1s2dbl3ampd":["Selling","Distribution beyond Lulu.com","Approving my project for distribution","Case creation","Distribution","Distribution Approval","Approving project for distribution","","","","","Visible","","Visible","Visible","Visible","","",""],"1s2dbl3rpid":["Selling","Distribution beyond Lulu.com","Revising projects that are in distribution","Case creation","Distribution","Revision","Revising project in distribution","","","","","Visible","","Visible","Visible","Visible","","",""],"1s2dbl3mpr":["Selling","Distribution beyond Lulu.com","My project was rejected","Case creation","Distribution","Distribution Rejection","Rejected project in distribution","","","","","Visible","","Visible","Visible","Visible","","",""],"1s2dbl3rpfd":["Selling","Distribution beyond Lulu.com","Removing a project from distribution","Case creation","Distribution","Distribution Removal","Retiring project from distribution","","","","","Visible","","Visible","Visible","Visible","","",""],"1s2dbl3he":["Selling","Distribution beyond Lulu.com","I want to hire an expert","Lead generation - Service","","","","Services","Support page","Lulu.com","Leads - Default","","","","","","","",""],"1s2dbl3se":["Selling","Distribution beyond Lulu.com","Something else","Case creation","Distribution","General Distribution","Distribution - General inquiries","","","","","Visible","","Visible","Visible","Visible","","",""],"1s2dl3pa":["Selling","Distribution on Lulu.com","Product availability","Case creation","Customer Voice","Availability & Product page","Sell - Product availability","","","","","Visible","","Visible","Visible","Visible","","",""],"1s2dl3pdd":["Selling","Distribution on Lulu.com","Product details display","Case creation","Customer Voice","Availability & Product page","Sell - Product page","","","","","Visible","","Visible","Visible","Visible","Visible","",""],"1s2dl3pad":["Selling","Distribution on Lulu.com","Pricing and discounts","Case creation","Customer Voice","Product pricing","Sell - Product Pricing","","","","","Visible","","Visible","Visible","Visible","","",""],"1s2dl3as":["Selling","Distribution on Lulu.com","Author Spotlight","Case creation","Customer Voice","Spotlight","Sell - Spotlight","","","","","","","Visible","Visible","Visible","Visible","",""],"1s2dl3he":["Selling","Distribution on Lulu.com","I want to hire an expert","Lead generation - Service","","","","Services","Support page","Lulu.com","Leads - Default","","","","","","","",""],"1s2dl3se":["Selling","Distribution on Lulu.com","Something else","Case creation","Customer Voice","General Support","Sell - General inquiries","","","","","Visible","","Visible","Visible","Visible","","",""],"1s2crr":["Selling","Creator revenues/royalties","","Case creation","Accounting","Royalties","Royalties","","","","","","","","","","","",""],"1ma2amla3pi":["My Account","Accessing my Lulu Account","Password issues","Case creation","Customer Voice","Password","Password issues","","","","","","","","","","","",""],"1ma2amla3aq":["My Account","Accessing my Lulu Account","Account questions","Case creation","Customer Voice","Account","Account issues","","","","","","","","","","","",""],"1ma2t3iti":["My Account","Taxes","Income tax information","Case creation","Accounting","Royalties","Income tax questions","","","","","","","","","","","Visible","emailUs.form.fu.incomeTax"],"1ma2t3ste":["My Account","Taxes","Sales tax exemption","Case creation","Accounting","Sales Tax Exemption","Sales Tax exemption","","","","","","Visible","","","","","Visible","emailUs.form.fu.taxExemption"],"1ma2se":["My Account","Something else","","Case creation","Customer Voice","General Support","Account - General inquiries","","","","","","","","","","","",""],"1se2rb":["Something Else","Report a bug","","Case creation","Customer Voice","Bugs","Bug on Lulu.com","","","","","","","","","","Visible","",""],"1se2rrl":["Something Else","Ratings and reviews on Lulu.com","","Case creation","Customer Voice","Ratings & Reviews","Ratings and reviews","","","","","","","","","","Visible","",""],"1se2hr":["Something Else","Helix Review","","Case creation","Customer Voice","Helix Review","Helix Review","","","","","","","","","","","",""],"1se2gi":["Something Else","General inquiries","","Case creation","Customer Voice","General Support","General inquiries","","","","","","","","","","","",""],"1se2he":["Something Else","I want to hire an expert","","Lead generation - Service","","","","Services","Support page","Lulu.com","Leads - Default","","","","","","","",""]};
+var i=function(r){if(!r){throw new Error("Parameter is missing: configRowId.")
+}return o[r]?true:false
+};
+var q=function(u,r){var t=null;
+for(var s=0;
+s<o.fieldName.length;
+s++){if(o.fieldName[s]==u){t=s
+}}if(t===null){throw new Error("Field "+u+" does not exist in the config array.")
+}if(i(r)){return o[r][t]
+}else{return null
+}};
+var p=function(r,s){if(!s){throw new Error("Parameter is missing: $form")
+}s.find('input[name="configRowId"]').val(r);
+s.find(".hiddenFieldsToFillMarker input").each(function(u,t){var x=a(t);
+var w=x.attr("name");
+var v=q(w,r);
+if(v=="Visible"||!v){x.attr("disabled","true");
+x.val("")
+}else{x.removeAttr("disabled");
+x.val(v)
+}});
+s.find(".field.optional").each(function(v,z){var y=a(z);
+var u=y.find("input");
+var A=u.attr("name");
+var w=q(A,r);
+if(A=="file"){var t=s.find("input[name='Lulu_Store__c']").val().substr(3,2);
+if(r=="1mo2qaop3upo"&&!(t=="US"||t=="CA")){w=""
+}var x=Application.getMessage(q("fileMsg",r));
+if(x){y.find(".fieldInfo").html(x)
+}else{y.find(".fieldInfo").html("")
+}}if(w=="Visible"){y.css("display","inline-block");
+u.removeAttr("disabled")
+}else{y.css("display","none");
+u.attr("disabled","true")
+}})
+};
+return{rowExists:i,getValueByFieldName:q,configureEmailUsForm:p}
+}());
+var b=function(i,o){o.addClass("spinner");
+a.ajax({url:Application.getSetting("baseUrl")+"/get-cms-message.ep",type:"GET",data:{contentPath:i},success:function(p){o.html(p);
+o.removeClass("spinner")
+}})
+};
+var j=function(p,o,i){this.val=p;
+this.levelDown=o;
+this.levelUp=i
+};
+var m=new j(null,null,null);
+var n=new j(null,m,null);
+var c=new j(null,n,null);
+m.levelUp=n;
+n.levelUp=c;
+var g=function(r,p){var i=function(v){if(v.data("subId")){return a("#"+v.data("subId"))
+}else{return v.next()
+}};
+var t=function(v){if(v&&v.val){a("#stillNeedHelp").hide();
+a("#emailUsFormBlock").hide();
+var w=a(v.val);
+w.removeClass("active");
+i(w).hide("slow");
+v.val=null;
+t(v.levelDown)
+}};
+var o=function(y){var A=a(y);
+A.addClass("active");
+var v=A.attr("id");
+if(k.rowExists(v)){var x=A.next(".helpText");
+x.show("slow");
+if(!x.html()){b(x.data("cms-path"),x)
+}var w=a("#stillNeedHelp");
+w.data("configRowId",v);
+A.parent().append(w);
+w.show()
+}else{var z=i(A);
+z.show("slow")
+}};
+var q;
+if(r.val==p){if(window.history&&window.history.replaceState){if(r.levelUp){var s=a(r.levelUp.val);
+q=s.attr("href")||s.children("a").attr("href")
+}else{q="?"
+}history.replaceState(null,null,q)
+}t(r);
+return
+}else{t(r)
+}o(p);
+if(window.history&&window.history.replaceState){var u=a(p);
+q=u.attr("href")||u.children("a").attr("href");
+window.history.replaceState(null,null,q)
+}r.val=p
+};
+a(".icon").click(function(i){i.preventDefault();
+a("#treeBlock").show();
+g(c,this)
+});
+a("#treeBlock > ul>li > span").click(function(p){var i=a(this).attr("id");
+if(k.rowExists(i)){var o=k.getValueByFieldName("typeOfCreation",i);
+if(o!=="Lead generation - Service"){p.preventDefault();
+g(n,this)
+}}else{p.preventDefault();
+g(n,this)
+}});
+a("#treeBlock > ul>li > ul>li > span").click(function(p){var i=a(this).attr("id");
+if(k.rowExists(i)){var o=k.getValueByFieldName("typeOfCreation",i);
+if(o!=="Lead generation - Service"){p.preventDefault();
+g(m,this)
+}}else{p.preventDefault();
+g(m,this)
+}});
+var e=function(i){var o=a("#emailUsForm");
+k.configureEmailUsForm(i,o);
+a("#emailUsFormBlock").show(1000,function(){a("html, body").animate({scrollTop:a("#emailUsFormBlock").offset().top},1000)
+})
+};
+a("#treeBlock").delegate("#stillNeedHelp","click",function(o){o.preventDefault();
+var i=a(this).data("configRowId");
+e(i)
+});
+a('input[type="file"]').change(function(){var s=a(this);
+var p=a("#fileErrors");
+p.html("");
+if(typeof FileReader!=="undefined"){var o=5*1024*1024;
+if(s.get(0).files[0].size>o){p.append('<div class="error">'+Application.getMessage("emailUs.form.fu.error.size.immediate")+"</div>");
+s.val("");
+return
+}}var i=s.clone(true);
+i.val("");
+s.hide();
+var r=s.val().match(/[^\/\\]+$/);
+var q=a("<div>"+r+' <i class="icon-remove icon-large"></i></div>');
+q.append(s);
+a(".chosenFiles").append(q);
+a(".fileInputs").prepend(i);
+if(a(".chosenFiles > div").size()>=5){a(".attachFileMsg, .fileInputs > input").css("visibility","hidden")
+}});
+h.delegate(".icon-remove","click",function(){a(this).parent().remove();
+a(".attachFileMsg, .fileInputs > input").css("visibility","visible")
+});
+h.submit(function(p){var i=a("#emailUsForm");
+i.find(".error").hide();
+var q=true;
+var o=i.find(":input[required]").not("[disabled]");
+o.each(function(r,v){var s=a(v);
+var u=s.parent();
+s.val(a.trim(s.val()));
+if(!s.val()){q=false;
+u.find('.error[data-errorType="required"]').show()
+}else{if(s.data("type")=="email"){var t=s.val().match(/^[^@]+@[^@]+\.[^@]+$/g);
+if(!t){q=false;
+u.find('.error[data-errorType="invalid"]').show()
+}}}});
+if(q){i.find("#emailUsSubmit").attr("disabled","true").addClass("disabled")
+}else{p.preventDefault();
+setTimeout(function(){a(":input[placeholder]").blur()
+},100)
+}});
+if(pageData.configRowId){e(pageData.configRowId)
+}var d=null;
+if(a("#successBubble").length){d=a("#successBubble")
+}else{if(a("#failureBubble").length){d=a("#failureBubble")
+}}if(d){d.uiBubble({dismissOnBlur:false});
+d.uiBubble("open");
+d.find(".luluBtn").click(function(i){d.uiBubble("close")
+})
+}for(var f=0;
+f<pageData.deepLinkLevelIds.length;
+f++){var l=pageData.deepLinkLevelIds[f];
+if(l){a("#"+l).click()
+}}}})
+}(jQuery));(function(a){a(function(){a(document).delegate("span.read-more > a[href=#expand_text]","click",function(c){var b=a(this).parent();
+c.stopPropagation();
+c.preventDefault();
+b.fadeOut("fast",function(){b.next("span.more-text").fadeIn("fast")
+})
+});
+a(document).delegate("span.more-text > a[href=#collapse_text]","click",function(b){var c=a(this).parent();
+b.stopPropagation();
+b.preventDefault();
+c.fadeOut("fast",function(){c.prev("span.read-more").fadeIn("fast")
+})
+})
+})
+}(jQuery));(function(a){a(function(){if(a("body").is("#searchResults, #categoryBrowse, #top100, #seeMoreFromShelf")){a(".overlay-block").on("click",function(){a(".age-range-popup").css("display","none");
+a(this).css("display","none")
+});
+a(".explicit-overlay").on("click",function(){a(".overlay-block").css("display","block");
+a(".age-range-popup").css("display","block");
+a(".age-range-popup").attr("data-redirectLink",a(this).attr("data-redirectLink"))
+});
+a(".category a.explicit").on("click",function(){a(".overlay-block").css("display","block");
+a(".age-range-popup").css("display","block");
+a(".age-range-popup").attr("data-redirectLink",a(this).attr("href"));
+return false
+});
+a("#ageRangeForm").on("submit",function(){var d=a("#ageYear").val();
+var i=a("#ageDay").val();
+var g=a("#ageMonth").val();
+var f=new Date();
+var c=new Date(d,g,i);
+var e=f.getFullYear()-c.getFullYear();
+var b=f.getMonth()+1-c.getMonth();
+if(b<0||(b===0&&f.getDate()<c.getDate())){e--
+}var h=a("#ageRangeForm").serialize();
+a.ajax({type:"POST",url:"/shop/customer/set-customer-age.ep",data:h,complete:function(){if(e>=18){a(".overlay-block").css("display","none");
+a(".age-range-popup").css("display","none");
+a.cookie("ageRange",true,{path:"/",domain:document.domain.replace("www","")});
+window.location.replace(a(".age-range-popup").attr("data-redirectLink"))
+}else{a(".overlay-block").css("display","none");
+a(".age-range-popup").css("display","none");
+a.cookie("ageRange",false,{path:"/",domain:document.domain.replace("www","")});
+window.location.reload()
+}return false
+}});
+return false
+});
+a("#formDropdowns select").on("change",function(){if(a("#ageMonth").val()!="0"&&a("#ageDay").val()!="0"&&a("#ageYear").val()!="0"){a("#ageRangeForm .action-row .continue-btn").removeAttr("disabled")
+}else{a("#ageRangeForm .action-row .continue-btn").attr("disabled",true)
+}});
+a("#ageMonth").on("change",function(){if(a(this).val()=="02"){a("#ageDay option[value='31']").hide();
+a("#ageDay option[value='30']").hide();
+a("#ageDay option[value='29']").hide();
+if(a("#ageYear").val()!=="0"&&((parseInt(a("#ageYear").val())%4===0&&parseInt(a("#ageYear").val())%100!==0)||parseInt(a("#ageYear").val())%400===0)){a("#ageDay option[value='29']").show()
+}}else{a("#ageDay option[value='29']").show();
+a("#ageDay option[value='30']").show();
+a("#ageDay option[value='31']").show()
+}if(a(this).val()=="04"||a(this).val()=="06"||a(this).val()=="09"||a(this).val()=="11"){a("#ageDay option[value='31']").hide()
+}else{if(a(this).val()!="02"){a("#ageDay option[value='31']").show()
+}}});
+a("#ageYear").on("change",function(){if(a("ageMonth").val()=="02"){if(((parseInt(a("#ageYear").val())%4===0&&parseInt(a("#ageYear").val())%100!==0)||parseInt(a("#ageYear").val())%400===0)){a("#ageDay option[value='29']").show()
+}else{a("#ageDay option[value='29']").hide()
+}}})
+}})
+}(jQuery));(function(a){a(function(){if(a("body").is("#holidayDeadlines")){a("#region-picker").change(function(c){var b=a("#region-picker").val();
+a(".region:not("+b+")").hide("fast");
+a(".region."+b).show("fast")
+})
+}})
+}(jQuery));(function(c){window.fbAsyncInit=function(){FB.init({status:true,cookie:true,xfbml:true})
+};
+function a(){var f=document.createElement("script"),d=Application.getSetting("locale");
+f.async=true;
+f.src=document.location.protocol+"//connect.facebook.net/"+d+"/all.js";
+document.getElementById("facebookRoot").appendChild(f)
+}function b(){var e=c("#homepageSearchForm"),f=e.attr("action"),d=c("#keyWordSearch");
+e.submit(function(){var g=c.trim(d.val());
+if(g===""){return false
+}})
+}c(document).ready(function(){if(c("body#homepage")[0]){b();
+a();
+c("#newswireLinks").feedCycler({url:"blogFeed.ep"})
+}})
+}(jQuery));(function(b){var e={limit:100,limitUnits:"chars",recalculateDelay:100,warningThreshold:0.8,animate:true};
+var d={FELL_UNDER_WARNING:"textGauge-fell-under-warning",WENT_OVER_WARNING:"textGauge-went-over-warning",FELL_UNDER_LIMIT:"textGauge-fell-under-limit",AT_LIMIT:"textGauge-at-limit",WENT_OVER_LIMIT:"textGauge-went-over-limit"};
+var f=function(j){var h=0;
+var i=encodeURI(j);
+if(i.indexOf("%")!=-1){h=i.split("%").length-1;
+h+=(i.length-(h*3))
+}else{h=i.length
+}return h
+};
+var g=function(h){var k=h.data("textGauge");
+var n=h.val();
+var m=k.$length;
+var i;
+if(k.settings.lengthUnit=="bytes"){k.strlen=f(n)
+}else{k.strlen=n.length
+}if(k.needsRecount){k.needsRecount=false
+}k.$outerBar.removeClass("textGauge-over-limit textGauge-near-limit textGauge-at-limit");
+if(k.strlen>k.settings.limit){m.width(k.barWidth);
+k.$outerBar.addClass("textGauge-over-limit");
+k.overLimit=true;
+h.trigger(d.WENT_OVER_LIMIT);
+i=k.settings.limit/k.strlen;
+var l=parseInt(k.barWidth*i,10);
+if(k.settings.animate){k.$bar.animate({width:l,left:k.barWidth-l},k.settings.recalculateDelay)
+}else{k.$bar.width(l).css({left:k.barWidth-l})
+}}else{if(k.overLimit){k.overLimit=false;
+h.trigger(d.FELL_UNDER_LIMIT);
+k.$bar.width(k.barWidth).css({left:0})
+}if(k.strlen==k.settings.limit){k.$outerBar.addClass("textGauge-at-limit");
+h.trigger(d.AT_LIMIT)
+}else{if(k.strlen<k.settings.limit){k.lastGoodLength=k.strlen;
+k.textBeforeKey=h.val()
+}}i=k.strlen/k.settings.limit;
+var j=parseInt(k.barWidth*i,10);
+if(k.settings.animate){m.animate({width:j+"px"},k.settings.recalculateDelay)
+}else{m.width(j)
+}if(i<1&&i>k.settings.warningThreshold){k.$outerBar.addClass("textGauge-near-limit");
+if(!k.overWarning){h.trigger(d.WENT_OVER_WARNING);
+k.overWarning=true
+}}else{if(k.overWarning){h.trigger(d.FELL_UNDER_WARNING);
+k.overWarning=false
+}}}};
+var c=function(i){var h=b(i.currentTarget);
+var j=h.data("textGauge");
+if(j.settings.recalculateDelay===0){g(h)
+}else{if(!j.needsRecount){j.needsRecount=true;
+setTimeout(function(){g(h)
+},j.settings.recalculateDelay)
+}}};
+var a={init:function(h){if(typeof(h.limitUnits)=="string"&&(h.limitUnits!="bytes"&&h.limitUnits!="chars")){throw new Error("textGauge option 'limitUnits' must be either 'bytes' or 'chars'.")
+}if(h.wentOverLimit&&typeof(h.wentOverLimit)!="function"){throw new Error("textGauge option 'wentOverLimit' must be a function.")
+}if(h.fellUnderLimit&&typeof(h.fellUnderLimit)!="function"){throw new Error("textGauge option 'fellUnderLimit' must be a function.")
+}var i=e;
+if(h){i=b.extend({},e,h)
+}return this.each(function(j,l){var k=b(l);
+k.addClass("textGauge");
+k.data("textGauge",{settings:i,"$outerBar":null,"$bar":null,"$length":null,needsRecount:false,overLimit:false,overWarning:false,barWidth:null});
+if(k.parent().css("position")!="absolute"){k.parent().css("position","relative")
+}var m=k.width()-4;
+var p=b('<div class="textGauge-outer-bar" />').width(m).css("left",k.position().left);
+var o=b('<div class="textGauge-length" />');
+var n=b('<div class="textGauge-bar" />').width(m).append(o).appendTo(p);
+p.insertAfter(k);
+k.bind("keyup.textGauge",c);
+k.data("textGauge").$outerBar=p;
+k.data("textGauge").$bar=n;
+k.data("textGauge").$length=o;
+k.data("textGauge").barWidth=m;
+k.trigger("keyup.textGauge")
+})
+},destroy:function(){return this.each(function(h,j){var i=b(j);
+i.css(i.data("textGauge").originalBottomProperty,i.data("textGauge").originalBottomSpacing);
+i.data("textGauge").$outerBar.remove();
+i.removeData("textGauge").unbind("keyup.textGauge")
+})
+},recount:function(){return this.each(function(h,i){g(b(i))
+})
+}};
+b.fn.textGauge=function(h){var i=this.filter('textarea, :text, input[type="password"]');
+if(a[h]){return a[h].apply(i,Array.prototype.slice.call(arguments,1))
+}else{if(typeof h==="object"||!h){return a.init.apply(i,arguments)
+}else{b.error("Method "+h+" does not exist on jQuery.textGauge")
+}}}
+}(jQuery));(function(d){function h(j){d("#addressId-"+j).remove();
+if(d(".address-data").size()===0){d("#addressBook").addClass("no-background");
+d("#addressBook *").hide();
+d("#noAddressesMessage").show()
+}}function b(k){var j=d("div#deleteAddressError");
+d("#addressId-"+k).removeClass("pending-delete");
+if(j.length===0){j=d('<div class="feedback error" id="deleteAddressError"></div>');
+j.html(Application.getMessage("globals.addressbook.deleteAddressErrorMessage"));
+d("div#errorsSection").append(j)
+}j.hide();
+j.fadeIn("fast")
+}function e(l,k,j){d("#addressId-"+l).addClass("pending-delete");
+d.ajax({type:"GET",url:k+"/remove-address.ep",data:{addressID:l},success:function(n,m,o){if(n&&n.redirect&&j.allowRedirect){window.location=n.redirect
+}h(l)
+},error:function(o,m,n){b(l)
+}});
+return false
+}function f(j){d("form#addressForm input#addressReturnValue").attr("value",j);
+d("#editAddressID").remove();
+d("form#addressForm").submit()
+}function a(q,l){var j=d('<div class="confirm-bubble"/>'),k=d('<span class="confirm-message"/>'),m=d('<div class="confirm-actions"/>'),o=d('<a class="cancel-action" href="#"/>'),p=d('<input type="button" class="confirm-action"/>'),n=d("#addressId-"+q);
+j.append(k).append(m);
+m.append(o).append(p);
+k.html(Application.getMessage("globals.addressbook.confirmAddressDeletion"));
+o.html(Application.getMessage("globals.cancel"));
+p.attr("value",Application.getMessage("globals.ok"));
+o.click(function(r){r.preventDefault();
+j.uiBubble("close")
+});
+p.click(function(){e(q,Application.getSetting("baseUrl"),l);
+j.uiBubble("close")
+});
+j.uiBubble({position:false,appendTo:n,destroyOnClose:true});
+j.css({top:"50%",left:"50%",marginLeft:-(j.outerWidth()/2),marginTop:-(j.outerHeight()/2)});
+j.uiBubble("open")
+}function i(l){var k=l.data,j=d(l.target),m=j.attr("href").substr(1);
+l.preventDefault();
+a(m,k)
+}function g(k){var j=d(k.target),l=j.attr("href").substr(1);
+k.preventDefault();
+f(l)
+}var c={allowRedirect:true};
+d.fn.addressBook=function(j){var l=d(this).first(),k=d.extend({},c,j);
+l.data("addressBook",k);
+l.delegate("a.delete-address","click",k,i);
+l.delegate("a.select-address","click",g)
+}
+}(jQuery));(function(a){a.fn.addressForm=function(h,f,b){function g(i){var j=f.find("select");
+var k=j.val();
+j.empty();
+a.each(i,function(l,m){j.append(a("<option>",{value:l}).text(m))
+});
+j.val(k);
+f.toggle(j.find("option").length>1)
+}function d(i){b.toggle(!!i);
+if(!i){b.find("input").val("")
+}}function c(){var i=h.val();
+a.ajax({url:"get-country-info.ep",data:{countryCode:i},contentType:"application/json; charset=utf-8",success:function(j){if(!(j&&j.subCountries&&("hasPostalCode" in j))){throw new Error("Invalid response from get-country-info.ep for "+i)
+}g(j.subCountries);
+d(j.hasPostalCode)
+}})
+}var e=a(this);
+if(e.length!=1||h.length!=1||f.length!=1||b.length!=1){throw new Error("Invalid argument. Only one element in each jQuery object is expected.")
+}h.change(c);
+c()
+}
+}(jQuery));(function(a){a(jQuery)
+}(function(f){var a=/\+/g;
+function d(i){return b.raw?i:encodeURIComponent(i)
+}function g(i){return b.raw?i:decodeURIComponent(i)
+}function h(i){return d(b.json?JSON.stringify(i):String(i))
+}function c(i){if(i.indexOf('"')===0){i=i.slice(1,-1).replace(/\\"/g,'"').replace(/\\\\/g,"\\")
+}try{i=decodeURIComponent(i.replace(a," "));
+return b.json?JSON.parse(i):i
+}catch(j){}}function e(j,i){var k=b.raw?j:c(j);
+return f.isFunction(i)?i(k):k
+}var b=f.cookie=function(q,p,v){if(p!==undefined&&!f.isFunction(p)){v=f.extend({},b.defaults,v);
+if(typeof v.expires==="number"){var r=v.expires,u=v.expires=new Date();
+u.setTime(+u+r*86400000)
+}return(document.cookie=[d(q),"=",h(p),v.expires?"; expires="+v.expires.toUTCString():"",v.path?"; path="+v.path:"",v.domain?"; domain="+v.domain:"",v.secure?"; secure":""].join(""))
+}var w=q?undefined:{};
+var s=document.cookie?document.cookie.split("; "):[];
+for(var o=0,m=s.length;
+o<m;
+o++){var n=s[o].split("=");
+var j=g(n.shift());
+var k=n.join("=");
+if(q&&q===j){w=e(k,p);
+break
+}if(!q&&(k=e(k))!==undefined){w[j]=k
+}}return w
+};
+b.defaults={};
+f.removeCookie=function(j,i){if(f.cookie(j)===undefined){return false
+}f.cookie(j,"",f.extend({},i,{expires:-1}));
+return !f.cookie(j)
+}
+}));(function(e){var c=function(g,h,i){var f=i[h];
+g.empty();
+e.each(f,function(j,k){e("<option/>").attr("value",j).html(k).appendTo(g)
+})
+};
+function d(l){var n,g,p="paypal invoice external internal credit-card existing-credit-card new-credit-card edit-credit-card purchase-order hosted",m=l.find("#paypalPaymentOption"),j=l.find("#creditCardPaymentOption"),o=l.find("#invoicePaymentOption"),i=l.find("#invoiceType"),h=l.find("#purchaseOrderPaymentOption"),q=l.find("input.hosted-payment-option"),k=l.find("#fullnameField .field-label"),f="billingInformation.fullname";
+q.each(function(){p=p.concat(" hosted-"+e(this).val().substring("Hosted:".length))
+});
+if(j.is(":checked")&&j.val()==="ExistingCreditCard"){e("#newAddressForm").hide()
+}else{e("#newAddressForm").show()
+}if(m.is(":checked")){n="paypal"
+}else{if(h.is(":checked")){n="purchase-order"
+}else{if(j.is(":checked")){switch(j.val()){case"ExistingCreditCard":n="credit-card existing-credit-card";
+break;
+case"NewCreditCard":n="credit-card new-credit-card";
+break;
+case"EditCreditCard":n="credit-card edit-credit-card";
+break;
+default:n="credit-card";
+break
+}f="billingInformation.cardHolderName"
+}else{if(o.is(":checked")){g=i.val();
+n=("invoice "+g).toLowerCase()
+}else{q.each(function(){if(e(this).is(":checked")){n=("hosted hosted-"+e(this).val().substring("Hosted:".length))
+}})
+}}}}k.text(Application.getMessage(f));
+l.removeClass(p).addClass(n)
+}function b(n){var m,k,l,g=n.find("#billingInformation"),o=n.find("#billingAddress"),p=n.find("#creditCardDetails"),j=n.find("#invoiceDetails"),h=n.find(".tax-address"),i=n.find("#purchaseOrderDetails"),f=g.add(o).add(p).add(j).add(h).add(i);
+k=f.filter(":visible");
+m=f.not(":visible");
+f.removeAttr("style");
+d(n);
+m=m.filter(":visible");
+k=k.not(":visible");
+m.hide();
+k.show();
+m.slideDown(250);
+k.slideUp(250)
+}function a(g){var h=g.find('input[name="selectedPaymentOption"]'),f=g.find("#invoiceType");
+h.change(function(){b(g)
+});
+f.change(function(){b(g)
+})
+}e.fn.epBillingSelection=function(h){var o=this,l=o.find("#cardNumberField input"),g=o.find("#useShippingAddress"),v=o.find("#useShippingAddressForPurchaseOrder"),r=o.find("#shippingAddress"),x=o.find("#shippingAddressForPurchaseOrder"),i=o.find("#creditCard"),q=o.find("ul.credit-cards li.credit-card"),n=o.find("ul.credit-cards li.visa"),j=o.find("ul.credit-cards li.mastercard"),k=o.find("ul.credit-cards li.amex"),s=o.find("ul.credit-cards li.discover"),w=o.find("#newAddressForm"),p=o.find("#newPurchaseOrderAddressForm"),m=o.find("#invoiceType"),f=o.find("#invoiceCategory"),u=o.find("#invoiceReason");
+a(o);
+m.change(function(){c(f,m.val(),pageData.typeCategoryMap);
+c(u,f.val(),pageData.categoryReasonMap)
+});
+f.change(function(){c(u,f.val(),pageData.categoryReasonMap)
+});
+function t(z){var y=l.val();
+q.removeClass("active");
+y=y.replace(/[^\d]/g,"");
+if(y.match(/^5[1-5]\d{0,14}$/)){j.addClass("active")
+}else{if(y.match(/^4\d{0,15}/)){n.addClass("active")
+}else{if(y.match(/^3[47]\d{0,13}/)){k.addClass("active")
+}else{if(y.match(/^6011\d{0,12}/)){s.addClass("active")
+}else{q.removeClass("active")
+}}}}}l.keyup(t);
+l.change(function(z){var y=e(this).val(),A="visa mastercard amex discover none";
+t(z);
+if(y.length!=16&&!y.match(/^4\d{12}/)){i.removeClass(A).addClass("none")
+}});
+g.change(function(){if(g.is(":checked")){w.slideUp(250,function(){});
+r.removeClass("unused")
+}else{r.addClass("unused");
+w.slideDown(500,function(){})
+}});
+v.change(function(){if(v.is(":checked")){p.slideUp(250,function(){});
+x.removeClass("unused")
+}else{x.addClass("unused");
+p.slideDown(500,function(){})
+}})
+}
+}(jQuery));(function(d){var a,e={url:"http://www.lulu.com/blog/feed",entriesToShow:4,cyclePeriod:5};
+function c(j){var h=new Date(j),g=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"],i=g[h.getMonth()]+" "+h.getDate()+", "+h.getFullYear();
+return i
+}function b(k,i){var j=d(k),g=j.find("item"),h=[];
+g.each(function(l,o){var n=d(o),m={title:n.find("title").text(),url:n.find("link").text(),author:n.find('[nodeName="dc:creator"]').text(),date:c(n.find("pubDate").text())};
+h.push(m);
+if(l>=i.entriesToShow){return false
+}});
+return h
+}function f(k,j){var g,i=k.length,h=0;
+k[h].fadeIn();
+g=setInterval(function(){k[h].fadeOut(function(){h=(h+1)%i;
+k[h].fadeIn()
+})
+},j);
+return g
+}a={init:function(g){var i=this,h=e;
+if(g){d.extend(h,g)
+}i.data("feedCycler",{settings:h});
+i.feedCycler("refreshFeed")
+},refreshFeed:function(){var g=this;
+g.each(function(){var k,h=d(this),j=h.data("feedCycler").settings,i=h.data("feedCycler").interval,l=[];
+d.get(j.url,function(m){k=b(m,j);
+h.empty();
+d.each(k,function(n,p){var o=d("<a/>").attr("href",p.url).append('<span class="title">'+p.title+"</span>").append(' <span class="author">by '+p.author+"</span>").append(' <span class="date">'+p.date+"</span>");
+o.hide();
+h.append(o);
+l.push(o)
+});
+window.clearInterval(i);
+h.data("feedCycler").interval=f(l,j.cyclePeriod*1000)
+})
+})
+}};
+d.fn.feedCycler=function(g){if(a[g]){return a[g].apply(this,Array.prototype.slice.call(arguments,1))
+}else{if(typeof g=="object"||!g){return a.init.apply(this,arguments)
+}else{d.error("Method "+g+" does not exist on JQuery.feedCycler")
+}}return this
+}
+}(jQuery));(function(e){var b,g={duration:"fast",easing:"swing",show:e.noop,hide:e.noop};
+function f(i){return i.children("a.flyout-menu-toggle")
+}function a(i){return i.find(".flyout-menu-flyout a.flyout-menu-toggle")
+}function h(i){return i.children("div.flyout-menu-flyout")
+}function d(j){var i=e(this).closest(".flyout-menu");
+j.preventDefault();
+j.stopPropagation();
+i.flyoutMenu("show")
+}function c(j){var i=e(this).closest(".flyout-menu");
+j.preventDefault();
+j.stopPropagation();
+i.flyoutMenu("hide")
+}b={init:function(j){var i=this,k=g;
+if(j){e.extend(k,j)
+}i.data("flyoutMenu",{settings:k});
+f(i).bind("click.flyoutMenu",d);
+a(i).bind("click.flyoutMenu",c)
+},show:function(){var i=this;
+i.each(function(){var j=e(this),k=j.data("flyoutMenu").settings;
+h(j).fadeIn(k.duration,k.easing,k.show)
+})
+},hide:function(){var i=this;
+i.each(function(){var j=e(this),k=j.data("flyoutMenu").settings;
+h(j).fadeOut(k.duration,k.easing,k.hide)
+})
+}};
+e.fn.flyoutMenu=function(i){if(b[i]){return b[i].apply(this,Array.prototype.slice.call(arguments,1))
+}else{if(typeof i=="object"||!i){return b.init.apply(this,arguments)
+}else{e.error("Method "+i+" does not exist on JQuery.flyoutMenu")
+}}return this
+}
+}(jQuery));(function(c){var d={pwField:undefined,restrictedValues:[]};
+function g(h,i){if(c.trim(i)!==""&&h.toLowerCase().indexOf(i.toLowerCase())!=-1){return true
+}}function f(k,m){var j,o,n,h,p=0;
+if(k.toLowerCase()=="password"){return -2
+}if(k.length<6){return -1
+}if(m){for(var l=0;
+l<m.length;
+l++){if(g(k,m[l])){return 0
+}}}if(k.match(/[a-z]/)){p+=1;
+j=true
+}if(k.match(/[A-Z]/)){p+=5;
+o=true
+}if(k.match(/\d+/)){p+=5;
+n=true
+}if(k.match(/(\d.*\d.*\d)/)){p+=5
+}if(k.match(/[!,@#$%\^&*?_~]/)){p+=5;
+h=true
+}if(k.match(/[!,@#$%\^&*?_~].*[!,@#$%\^&*?_~]/)){p+=5
+}if(j&&o){p+=2
+}if(k.match(/\d/)&&k.match(/\D/)){p+=2
+}if(j&&o&&n&&h){p+=2
+}return p
+}function e(i,k){var h,j="not-rated try-harder too-short weak fair good strong";
+i.removeClass(j);
+if(k==-2){h="try-harder"
+}else{if(k==-1){h="too-short"
+}else{if(k<=5){h="weak"
+}else{if(k<=10){h="fair"
+}else{if(k<=15){h="good"
+}else{h="strong"
+}}}}}i.addClass(h)
+}function b(l){var i=c(this),h=i.data("passwordMeter"),j=h.data("password-strength").settings,k=[],m;
+if(typeof j.restrictedValues=="function"){k=j.restrictedValues()
+}else{k=j.restrictedValues
+}m=f(i.val(),k);
+e(h,m)
+}var a={init:function(j){var h=this,k=c.extend({},d,j),i=c(j.pwField).first();
+h.addClass("password-evaluator").data("password-strength",{settings:k,pwField:i});
+i.data("passwordMeter",h).keyup(b).keyup()
+}};
+c.fn.pwStrengthMeter=function(h){if(a[h]){return a[h].apply(this,Array.prototype.slice.call(arguments,1))
+}else{if(typeof h=="object"||!h){return a.init.apply(this,arguments)
+}else{c.error("Method "+h+" does not exist on JQuery.pwStrengthMeter")
+}}return this
+}
+}(jQuery));(function(f){var a,k,d,j,m,p,t,s,i,n,u,g,v,x,l,r,c,q,w,z,h,e,y,o=[].slice,b=[].indexOf||function(C){for(var B=0,A=this.length;
+B<A;
+B++){if(B in this&&this[B]===C){return B
+}return -1
+}};
+f=window.jQuery||window.Zepto||window.$;
+f.payment={};
+f.payment.fn={};
+f.fn.payment=function(){var B=arguments[0];
+var A=2<=arguments.length?o.call(arguments,1):[];
+return f.payment.fn[B].apply(this,A)
+};
+j=/(\d{1,4})/g;
+f.payment.cards=d=[{type:"visaelectron",patterns:[4026,417500,4405,4508,4844,4913,4917],format:j,length:[16],cvcLength:[3],luhn:true},{type:"maestro",patterns:[5018,502,503,56,58,639,6220,67],format:j,length:[12,13,14,15,16,17,18,19],cvcLength:[3],luhn:true},{type:"forbrugsforeningen",patterns:[600],format:j,length:[16],cvcLength:[3],luhn:true},{type:"dankort",patterns:[5019],format:j,length:[16],cvcLength:[3],luhn:true},{type:"Visa",patterns:[4],format:j,length:[13,16],cvcLength:[3],luhn:true},{type:"MasterCard",patterns:[51,52,53,54,55,22,23,24,25,26,27],format:j,length:[16],cvcLength:[3],luhn:true},{type:"AmericanExpress",patterns:[34,37],format:/(\d{1,4})(\d{1,6})?(\d{1,5})?/,length:[15],cvcLength:[4],luhn:true},{type:"dinersclub",patterns:[30,36,38,39],format:/(\d{1,4})(\d{1,6})?(\d{1,4})?/,length:[14],cvcLength:[3],luhn:true},{type:"Discover",patterns:[60,64,65,622],format:j,length:[16],cvcLength:[3],luhn:true},{type:"unionpay",patterns:[62,88],format:j,length:[16,17,18,19],cvcLength:[3],luhn:false},{type:"jcb",patterns:[35],format:j,length:[16],cvcLength:[3],luhn:true}];
+a=function(G){var C,A,H,E,D,I,B,F;
+G=(G+"").replace(/\D/g,"");
+for(E=0,I=d.length;
+E<I;
+E++){C=d[E];
+F=C.patterns;
+for(D=0,B=F.length;
+D<B;
+D++){H=F[D];
+A=H+"";
+if(G.substr(0,A.length)===A){return C
+}}}return null
+};
+k=function(C){var B,D,A;
+for(D=0,A=d.length;
+D<A;
+D++){B=d[D];
+if(B.type===C){return B
+}}return null
+};
+g=function(B){var G,F,E,C,D,A;
+E=true;
+C=0;
+F=(B+"").split("").reverse();
+for(D=0,A=F.length;
+D<A;
+D++){G=F[D];
+G=parseInt(G,10);
+if((E=!E)){G*=2
+}if(G>9){G-=9
+}C+=G
+}return C%10===0
+};
+u=function(A){var B;
+if((A.prop("selectionStart")!==null)&&A.prop("selectionStart")!==A.prop("selectionEnd")){return true
+}if(typeof document!==undefined){if(document.getSelection()){return true
+}}return false
+};
+e=function(D,A){var F,B,C;
+try{F=A.prop("selectionStart")
+}catch(E){B=E;
+F=null
+}C=A.val();
+A.val(D);
+if(F!==null&&A.is(":focus")){if(F===C.length){F=D.length
+}A.prop("selectionStart",F);
+return A.prop("selectionEnd",F)
+}};
+c=function(D){var E,B,G,C,I,H,A,F;
+if(D===null){D=""
+}G="\uff10\uff11\uff12\uff13\uff14\uff15\uff16\uff17\uff18\uff19";
+C="0123456789";
+H="";
+E=D.split("");
+for(A=0,F=E.length;
+A<F;
+A++){B=E[A];
+I=G.indexOf(B);
+if(I>-1){B=C[I]
+}H+=B
+}return H
+};
+r=function(A){return setTimeout(function(){var B,C;
+B=f(A.currentTarget);
+C=B.val();
+C=c(C);
+C=C.replace(/\D/g,"");
+return e(C,B)
+})
+};
+x=function(A){return setTimeout(function(){var B,C;
+B=f(A.currentTarget);
+C=B.val();
+C=c(C);
+C=f.payment.formatCardNumber(C);
+return e(C,B)
+})
+};
+t=function(F){var A,B,H,D,C,G,E;
+H=String.fromCharCode(F.which);
+if(!/^\d+$/.test(H)){return
+}A=f(F.currentTarget);
+E=A.val();
+B=a(E+H);
+D=(E.replace(/\D/g,"")+H).length;
+G=16;
+if(B){G=B.length[B.length.length-1]
+}if(D>=G){return
+}if((A.prop("selectionStart")!==null)&&A.prop("selectionStart")!==E.length){return
+}if(B&&B.type==="amex"){C=/^(\d{4}|\d{4}\s\d{6})$/
+}else{C=/(?:^|\s)(\d{4})$/
+}if(C.test(E)){F.preventDefault();
+return setTimeout(function(){return A.val(E+" "+H)
+})
+}else{if(C.test(E+H)){F.preventDefault();
+return setTimeout(function(){return A.val(E+H+" ")
+})
+}}};
+m=function(C){var A,B;
+A=f(C.currentTarget);
+B=A.val();
+if(C.which!==8){return
+}if((A.prop("selectionStart")!==null)&&A.prop("selectionStart")!==B.length){return
+}if(/\d\s$/.test(B)){C.preventDefault();
+return setTimeout(function(){return A.val(B.replace(/\d\s$/,""))
+})
+}else{if(/\s\d?$/.test(B)){C.preventDefault();
+return setTimeout(function(){return A.val(B.replace(/\d$/,""))
+})
+}}};
+l=function(A){return setTimeout(function(){var B,C;
+B=f(A.currentTarget);
+C=B.val();
+C=c(C);
+C=f.payment.formatExpiry(C);
+return e(C,B)
+})
+};
+s=function(B){var A,D,C;
+D=String.fromCharCode(B.which);
+if(!/^\d+$/.test(D)){return
+}A=f(B.currentTarget);
+C=A.val()+D;
+if(/^\d$/.test(C)&&(C!=="0"&&C!=="1")){B.preventDefault();
+return setTimeout(function(){return A.val("0"+C+" / ")
+})
+}else{if(/^\d\d$/.test(C)){B.preventDefault();
+return setTimeout(function(){var F,E;
+F=parseInt(C[0],10);
+E=parseInt(C[1],10);
+if(E>2&&F!==0){return A.val("0"+F+" / "+E)
+}else{return A.val(""+C+" / ")
+}})
+}}};
+i=function(B){var A,D,C;
+D=String.fromCharCode(B.which);
+if(!/^\d+$/.test(D)){return
+}A=f(B.currentTarget);
+C=A.val();
+if(/^\d\d$/.test(C)){return A.val(""+C+" / ")
+}};
+n=function(B){var A,D,C;
+C=String.fromCharCode(B.which);
+if(!(C==="/"||C===" ")){return
+}A=f(B.currentTarget);
+D=A.val();
+if(/^\d$/.test(D)&&D!=="0"){return A.val("0"+D+" / ")
+}};
+p=function(C){var A,B;
+A=f(C.currentTarget);
+B=A.val();
+if(C.which!==8){return
+}if((A.prop("selectionStart")!==null)&&A.prop("selectionStart")!==B.length){return
+}if(/\d\s\/\s$/.test(B)){C.preventDefault();
+return setTimeout(function(){return A.val(B.replace(/\d\s\/\s$/,""))
+})
+}};
+v=function(A){return setTimeout(function(){var B,C;
+B=f(A.currentTarget);
+C=B.val();
+C=c(C);
+C=C.replace(/\D/g,"").slice(0,4);
+return e(C,B)
+})
+};
+h=function(B){var A;
+if(B.metaKey||B.ctrlKey){return true
+}if(B.which===32){return false
+}if(B.which===0){return true
+}if(B.which<33){return true
+}A=String.fromCharCode(B.which);
+return !!/[\d\s]/.test(A)
+};
+w=function(D){var A,B,E,C;
+A=f(D.currentTarget);
+E=String.fromCharCode(D.which);
+if(!/^\d+$/.test(E)){return
+}if(u(A)){return
+}C=(A.val()+E).replace(/\D/g,"");
+B=a(C);
+if(B){return C.length<=B.length[B.length.length-1]
+}else{return C.length<=16
+}};
+z=function(C){var A,D,B;
+A=f(C.currentTarget);
+D=String.fromCharCode(C.which);
+if(!/^\d+$/.test(D)){return
+}if(u(A)){return
+}B=A.val()+D;
+B=B.replace(/\D/g,"");
+if(B.length>6){return false
+}};
+q=function(B){var A,D,C;
+A=f(B.currentTarget);
+D=String.fromCharCode(B.which);
+if(!/^\d+$/.test(D)){return
+}if(u(A)){return
+}C=A.val()+D;
+return C.length<=4
+};
+y=function(E){var B,D,C,A,F;
+B=f(E.currentTarget);
+F=B.val();
+A=f.payment.cardType(F)||"unknown";
+if(!B.hasClass(A)){D=(function(){var I,H,G;
+G=[];
+for(I=0,H=d.length;
+I<H;
+I++){C=d[I];
+G.push(C.type)
+}return G
+})();
+B.removeClass("unknown");
+B.removeClass(D.join(" "));
+B.addClass(A);
+B.toggleClass("identified",A!=="unknown");
+return B.trigger("payment.cardType",A)
+}};
+f.payment.fn.formatCardCVC=function(){this.on("keypress",h);
+this.on("keypress",q);
+this.on("paste",v);
+this.on("change",v);
+this.on("input",v);
+return this
+};
+f.payment.fn.formatCardExpiry=function(){this.on("keypress",h);
+this.on("keypress",z);
+this.on("keypress",s);
+this.on("keypress",n);
+this.on("keypress",i);
+this.on("keydown",p);
+this.on("change",l);
+this.on("input",l);
+return this
+};
+f.payment.fn.formatCardNumber=function(){this.on("keypress",h);
+this.on("keypress",w);
+this.on("keypress",t);
+this.on("keydown",m);
+this.on("keyup",y);
+this.on("paste",x);
+this.on("change",x);
+this.on("input",x);
+this.on("input",y);
+return this
+};
+f.payment.fn.restrictNumeric=function(){this.on("keypress",h);
+this.on("paste",r);
+this.on("change",r);
+this.on("input",r);
+return this
+};
+f.payment.fn.cardExpiryVal=function(){return f.payment.cardExpiryVal(f(this).val())
+};
+f.payment.cardExpiryVal=function(D){var C;
+var B=D.split(/[\s\/]+/,2);
+var E=B[0];
+var A=B[1];
+if((A!==null?A.length:void 0)===2&&/^\d+$/.test(A)){C=(new Date()).getFullYear();
+C=C.toString().slice(0,2);
+A=C+A
+}E=parseInt(E,10);
+A=parseInt(A,10);
+return{month:E,year:A}
+};
+f.payment.validateCardNumber=function(B){var A,C;
+B=(B+"").replace(/\s+|-/g,"");
+if(!/^\d+$/.test(B)){return false
+}A=a(B);
+if(!A){return false
+}return(C=B.length,b.call(A.length,C)>=0)&&(A.luhn===false||g(B))
+};
+f.payment.validateCardExpiry=function(E,B){var C,A,D;
+if(typeof E==="object"&&"month" in E){D=E;
+E=D.month;
+B=D.year
+}if(!(E&&B)){return false
+}E=f.trim(E);
+B=f.trim(B);
+if(!/^\d+$/.test(E)){return false
+}if(!/^\d+$/.test(B)){return false
+}if(!((1<=E&&E<=12))){return false
+}if(B.length===2){if(B<70){B="20"+B
+}else{B="19"+B
+}}if(B.length!==4){return false
+}A=new Date(B,E);
+C=new Date();
+A.setMonth(A.getMonth()-1);
+A.setMonth(A.getMonth()+1,1);
+return A>C
+};
+f.payment.validateCardCVC=function(B,C){var A,D;
+B=f.trim(B);
+if(!/^\d+$/.test(B)){return false
+}A=k(C);
+if(A!==null){return D=B.length,b.call(A.cvcLength,D)>=0
+}else{return B.length>=3&&B.length<=4
+}};
+f.payment.cardType=function(A){var B;
+if(!A){return null
+}return((B=a(A))!==null?B.type:void 0)||null
+};
+f.payment.formatCardNumber=function(C){var B,A,E,D;
+C=C.replace(/\D/g,"");
+B=a(C);
+if(!B){return C
+}E=B.length[B.length.length-1];
+C=C.slice(0,E);
+if(B.format.global){return(D=C.match(B.format))!==null?D.join(" "):void 0
+}else{A=B.format.exec(C);
+if(A===null){return
+}A.shift();
+A=f.grep(A,function(F){return F
+});
+return A.join(" ")
+}};
+f.payment.formatExpiry=function(B){var D,E,A,C;
+E=B.match(/^\D*(\d{1,2})(\D+)?(\d{1,4})?/);
+if(!E){return""
+}D=E[1]||"";
+A=E[2]||"";
+C=E[3]||"";
+if(C.length>0){A=" / "
+}else{if(A===" /"){D=D.substring(0,1);
+A=""
+}else{if(D.length===2||A.length>0){A=" / "
+}else{if(D.length===1&&(D!=="0"&&D!=="1")){D="0"+D;
+A=" / "
+}}}}return D+A+C
+}
+}(jQuery));(function(e,j,a){var i=("placeholder" in j.createElement("input")),k=("placeholder" in j.createElement("textarea")),c=":input[placeholder]";
+e.placeholder={input:i,textarea:k};
+if(!a&&i&&k){e.fn.placeholder=function(){};
+return
+}if(!a&&i&&!k){c="textarea[placeholder]"
+}e.fn.realVal=e.fn.val;
+e.fn.val=function(){var l=e(this),n,m;
+if(arguments.length>0){return l.realVal.apply(this,arguments)
+}n=l.realVal();
+m=l.attr("placeholder");
+return((n==m)?"":n)
+};
+function f(){var l=e(this),n,m;
+if(l.is(":password")){return
+}if(l.data("password")){m=l.next().show();
+e("label[for="+l.attr("id")+"]").attr("for",m.attr("id"));
+l.remove()
+}else{if(l.realVal()==l.attr("placeholder")){l.val("");
+l.removeClass("placeholder")
+}}}function h(){e(this).find(c).each(f)
+}function d(o){var l=o.attributes,p={},n=/^jQuery\d+/;
+for(var m=0;
+m<l.length;
+m++){if(l[m].specified&&!n.test(l[m].name)){p[l[m].name]=l[m].value
+}}return p
+}function g(){var l=e(this),m,n,o;
+n=l.attr("placeholder");
+if(e.trim(l.val()).length>0){return
+}if(l.is(":password")){o=l.attr("id")+"-clone";
+m=e("<input/>").attr(e.extend(d(this),{type:"text",value:n,"data-password":1,id:o})).addClass("placeholder");
+l.before(m).hide();
+e("label[for="+l.attr("id")+"]").attr("for",o)
+}else{l.val(n);
+l.addClass("placeholder")
+}}var b={clear:h};
+e.fn.placeholder=function(l){if(l&&b[l]){return b[l].apply(this,Array.prototype.slice.call(arguments,1))
+}else{this.filter(c).each(g)
+}return this
+};
+e(function(l){var m=l(j);
+m.delegate("form","submit",h);
+m.delegate(c,"focus",f);
+m.delegate(c,"blur",g);
+l(c).placeholder()
+})
+}(jQuery,document,window.debug));(function(g){var f,d,c,m,p,w,u,k,y,n,x="rated-1-stars rated-2-stars rated-3-stars rated-4-stars rated-5-stars",v=false;
+g(function(){f=Application.getSetting("baseUrl")+"/product-reviews.ep";
+d=Application.getSetting("baseUrl")+"/product-previousReviews.ep";
+n=Application.getSetting("baseUrl")+"/salesforce/report-inappropriate-review.ep";
+c=Application.getMessage("product.review.findPrevious");
+m=Application.getMessage("product.review.hidePrevious");
+p=Application.getMessage("product.numberReviewsOne.previous");
+w=Application.getMessage("product.numberReviews.previous");
+u=Application.getMessage("product.noReviews");
+k=Application.getMessage("product.noReviews.previous");
+y=Application.getMessage("product.noReviews.total")
+});
+function i(z){g.ajax({url:Application.getSetting("baseUrl")+"/customer/customer-logged.ep",dataType:"json",type:"GET",async:false,success:function(B,A,C){if(!B){g("form#customerReview button[type=submit]").attr("disabled","disabled");
+g("#customerReview .login-message, #ratingsAndReviews .login-message").css("display","block");
+g("form#customerReview #reviewText").attr("readonly","readonly");
+g("div#ratingsAndReviews div#customerRating").css("display","none")
+}else{if(typeof(z)=="function"){z()
+}}}})
+}function a(C,D){var B=C.data("ratingWidget"),z=C.data("reviewForm"),A=z.find(".star-rating"),F=z.find('select[name="ratingInput"]'),E="rated-"+D+"-stars";
+B.removeClass(x).addClass(E).data("resetClass",B.attr("class"));
+A.removeClass(x).addClass(E).data("resetClass",A.attr("class"));
+F.val(D)
+}function o(F,A,D,z,H){var G=F.data("ratingWidget"),B=F.data("reviewListing"),E=F.data("reviewForm"),C=F.data("reportReviewForm");
+B.addClass("pending-refresh");
+g.ajax({url:f,data:A,dataType:"html",type:"POST",success:function(O,J,N){G.removeClass("pending-refresh");
+E.removeClass("pending-refresh");
+B.removeClass("pending-refresh");
+B.html(O);
+E.uiBubble("close");
+a(F,z);
+if(D){var K=B.offset().top;
+g(document).scrollTop(K)
+}if(window.sendProductReviewEventToTealium){sendProductReviewEventToTealium()
+}var M=document.getElementById("numReviewsToggleLink"),I=document.getElementById("reviewsPagination"),L=document.getElementById("last");
+if(!v&&M!==null&&(I===null||(I!==null&&L===null))){g("#previousReviewsData").show();
+g("#previousReview").hide();
+v=true
+}}})
+}function h(){g("#showReviewsToggleLink").html(g("#showReviewsToggleLink").html().indexOf(c)!=-1?m:c);
+if((g("#numberOfPreviousReviews:contains("+p+")").length>0||g("#numberOfPreviousReviews:contains("+w+")").length>0)&&g("#reviewsData:contains("+u+")").length>0){g("#reviewsData:contains("+u+")").html("")
+}if(g("#previousReview:contains("+k+")").length>0&&g("#reviewsData:contains("+u+")").length>0){g("#reviewsData:contains("+u+")").html("<strong>"+y+"</strong>");
+g("#previousReviewsData").hide()
+}else{if(g("#previousReview:contains("+k+")").length>0){g("#previousReview").hide();
+g("#previousReviewsData").find("div").hide();
+g("#previousReviewsData").append("<strong>"+k+"</strong>")
+}}}function e(z,C,D,A){var B=z.data("previousReviewListing");
+B.addClass("pending-refresh");
+g.ajax({url:d,data:C,dataType:"html",type:"POST",success:function(H,E,G){B.html(H);
+if(D){var F=B.offset().top;
+g(document).scrollTop(F)
+}if(A){g("#showReviewsToggleLink").html(m)
+}else{h()
+}B.removeClass("pending-refresh")
+}})
+}function l(C,B){var F,A,z=g(C.currentTarget),E=z.attr("href"),D="pGUID="+B,G=z.is("div.pagination a");
+C.preventDefault();
+if(E.indexOf("?")!==-1){F=E.split("?");
+A=F[1].split("#");
+D+="&"+A[0]
+}return{linkQuery:D,isPagination:G}
+}function j(C,A,B){var z=l(C,B);
+o(A,z.linkQuery,z.isPagination)
+}function t(D,A,C,B){var z=l(D,C);
+if(B){e(A,z.linkQuery,z.isPagination,true)
+}else{if(g("#showReviewsToggleLink").html().indexOf(c)!=-1){e(A,z.linkQuery,z.isPagination,false)
+}else{g("#previousReview").toggle();
+h()
+}}}function q(z){var A;
+if(z.hasClass("star-1")){A=1
+}else{if(z.hasClass("star-2")){A=2
+}else{if(z.hasClass("star-3")){A=3
+}else{if(z.hasClass("star-4")){A=4
+}else{if(z.hasClass("star-5")){A=5
+}}}}}return A
+}function s(C){var A=C.data("ratingWidget"),z=C.data("reviewForm"),D=z.find("span.star-rating"),B=A.add(D);
+A.data("resetClass",A.attr("class"));
+D.data("resetClass",D.attr("class"));
+B.delegate("a.rate","mouseenter",function(F){var H,G=g(this),E=g(this).closest(".star-rating");
+E.removeClass(x);
+E.addClass("rated-"+q(G)+"-stars")
+});
+B.mouseleave(function(){var E=g(this);
+E.removeClass(x);
+E.addClass(E.data("resetClass"))
+});
+A.delegate("a.rate","click",function(G){var E=g(this),F=q(E),H=E.attr("href").split("?")[1];
+G.preventDefault();
+i(function(){A.addClass("pending-refresh");
+o(C,H,false,F)
+})
+});
+D.delegate("a.rate","click",function(H){var F=g(this),E=F.closest("form").find('select[name="ratingInput"]'),G=q(F);
+H.preventDefault();
+E.val(G);
+D.removeClass(x);
+D.addClass("rated-"+G+"-stars");
+D.data("resetClass",D.attr("class"))
+})
+}function r(I){var B=2500,H=I.data("reviewForm"),D=I.data("reviewLink"),G=I.data("reviewListing"),F=H.find(".review .error"),E=H.find("#reviewText"),A=H.find('button[type="submit"]');
+var C=function(J){if(J){F.html(Application.getMessage("product.review.lengthLimit")).slideDown()
+}else{F.html("").slideUp()
+}};
+var z=function(){var J=g.trim(E.val());
+if(!J||J.length>B){A.attr("disabled","disabled")
+}else{A.removeAttr("disabled")
+}};
+H.uiBubble({dismissible:true});
+E.keyup(z);
+z();
+E.textGauge({animate:false,limit:B});
+H.bind("textGauge-went-over-limit",function(){z();
+C(true)
+});
+H.bind("textGauge-fell-under-limit",function(){z();
+C(false)
+});
+H.find("a.cancel").click(function(J){J.preventDefault();
+H.uiBubble("close")
+});
+D.click(function(J){J.preventDefault();
+i(function(){});
+H.uiBubble("open")
+});
+H.submit(function(L){var N=H.serialize(),K=H.find('select[name="ratingInput"]').val();
+L.preventDefault();
+var J=Application.getMessage("product.editReview");
+D.text(J);
+var M=g.trim(E.val());
+if(!M){z();
+E.textGauge("recount")
+}else{if(M.length>B){C(true);
+z();
+E.textGauge("recount")
+}else{i(function(){H.addClass("pending-refresh");
+G.addClass("pending-refresh");
+o(I,N,false,K,true)
+})
+}}})
+}function b(A){var z,B=A.data("reportReviewForm");
+B.uiBubble({dismissible:true});
+A.delegate("a.report-review","click",function(C){z=g(this);
+C.preventDefault();
+B.find("textarea#additionalComments").val("");
+B.uiBubble("open");
+B.find(".error").empty()
+});
+B.submit(function(G){G.preventDefault();
+var C=g("input#email").val();
+var F=true;
+if(C===""){B.find(" .error").html(Application.getMessage("product.review.inappropriate.email.empty"));
+F=false
+}else{if(!C.match(/^.+?\@.+?\..+?$/g)){B.find(".error").html(Application.getMessage("product.review.inappropriate.email.incorrect"));
+F=false
+}}if(F){var D=B.find("textarea#additionalComments").val(),H=z.data("review-text"),I="\r\n",E=Application.getMessage("product.review.inappropriate.description.part1")+I+H+I+I+Application.getMessage("product.review.inappropriate.description.part2")+I;
+if(D===""){E+=Application.getMessage("product.review.inappropriate.description.part3")
+}else{E+=D
+}g.ajax({url:n,type:B.attr("method"),data:{reviewId:z.data("review-id"),description:E,email:C,firstName:g("input#First_Name__c").val(),lastName:g("input#Last_Name__c").val(),language:g("input#language").val(),retUrl:g("input#retURL").val()},success:function(J){if(J=="SUCCESS"){z.parents(".inappropriate-link").html(Application.getMessage("product.review.inappropriate.reported"))
+}else{if(J=="FAILURE"){z.parents(".inappropriate-link").html(Application.getMessage("product.review.inappropriate.report.failed"))
+}}B.uiBubble("close")
+}})
+}})
+}g.fn.ratingsAndReviews=function(D){var E=this.first();
+if(E.size()===0){return
+}var B=E.find("#reviewsData"),F=E.find("#previousReviewsData"),A=E.find("#customerReview"),z=E.find("a.write-review"),C=E.find("#ratingWidget"),G=E.find("#reportInappropriateReview");
+E.data("ratingWidget",C).data("reviewForm",A).data("reviewLink",z).data("reviewListing",B).data("previousReviewListing",F).data("reportReviewForm",G);
+r(E);
+b(E);
+s(E);
+B.delegate("a:not(.report-review, span.read-more > a[href=#expand_text], span.more-text > a[href=#collapse_text])","click",function(H){j(H,E,D.productId)
+});
+F.delegate("a:not(.report-review, span.read-more > a[href=#expand_text], span.more-text > a[href=#collapse_text], #showReviewsToggleLink)","click",function(H){t(H,E,D.productId,true)
+});
+F.delegate("#showReviewsToggleLink","click",function(H){t(H,E,D.productId,false)
+})
+}
+}(jQuery));(function(i){var w,m={dismissible:false,modal:true,scrollable:false,hoverElements:false,destroyOnClose:false,position:undefined,appendTo:"body",anchorElement:undefined,anchorAt:"topCenter",tooltip:undefined,anchorSpacing:0,dismissOnBlur:true},d=/^top/,x=/Top$/,s=/^right/,c=/Right$/,u=/^bottom/,y=/Bottom$/,r=/^left/,q=/Left$/,v=/Center$/;
+function b(A){var B=function(D){var C=i(D.target);
+if(!i.contains(A[0],C[0])){A.uiBubble("close")
+}};
+return B
+}function a(B){var A=i(B.target).closest(".ui-bubble");
+A.uiBubble("close");
+B.preventDefault()
+}function t(B){var A=i("<div/>").addClass("ui-bubble-scroll-area");
+B.addClass("ui-bubble-scrollable").wrapInner(A)
+}function k(A){i('<a class="ui-bubble-close" href="#">x</a>').click(a).appendTo(A)
+}function h(C,A){var B=i(A).add(C);
+B.one("mouseenter.uiBubble",function(){var D=true;
+C.uiBubble("open");
+B.bind("mousemove.uiBubble",function(E){D=true
+});
+i(document).bind("mousemove.uiBubble",function(E){if(!D){C.uiBubble("close");
+i(document).unbind("mousemove.uiBubble");
+B.unbind("mousemove.uiBubble");
+h(C,B)
+}D=false
+})
+})
+}function l(B){var A=i(window).width(),H=i(window).height(),E=i(window).scrollTop(),C=i(window).scrollLeft(),F=B.outerWidth(),D=B.outerHeight(),I=(C+A/2-F/2),G=(E+H/2-D/2);
+if(G<0){G=50
+}if(I<0){I=50
+}B.css({left:I,top:G})
+}function z(D,B){var C=i(window).scrollLeft()+B[0],A=i(window).scrollLeft()+B[1];
+D.css({left:C,top:A})
+}function n(A){if(A.size()>0){var B=A.position();
+B.left=-(B.left+(parseInt(A.css("marginLeft"),10)||0));
+B.top=-(B.top+(parseInt(A.css("marginTop"),10)||0));
+return B
+}else{return{left:0,top:0}
+}}function o(D){var B,C,G,J=D.data("ui-bubble"),K=J.anchor,A=K.position(),F=D.find(".tooltip"),E=J.settings.anchorAt,I=J.settings.anchorSpacing,H=A;
+if(!D.is(":visible")){B=true;
+D.css({visibility:"hidden"}).show()
+}G={width:F.outerWidth()||0,height:F.outerHeight()||0};
+C={width:D.outerWidth(),height:D.outerHeight()};
+if(B){D.hide().css({visibility:"visible"})
+}H.left+=parseInt(K.css("marginLeft"),10)||0;
+H.top+=parseInt(K.css("marginTop"),10)||0;
+if(d.test(E)){H.top-=(C.height+G.height+I)
+}if(s.test(E)){H.left+=(K.outerWidth()+G.width+I)
+}if(u.test(E)){H.top+=(K.outerHeight()+G.height+I)
+}if(r.test(E)){H.left-=(C.width+G.width+I)
+}if(c.test(E)){H.left+=(K.outerWidth()-C.width)
+}if(y.test(E)){H.top+=(K.outerHeight()-C.height)
+}if(v.test(E)){if(r.test(E)||s.test(E)){H.top+=(K.outerHeight()-C.height)/2
+}if(d.test(E)||u.test(E)){H.left+=(K.outerWidth()-C.width)/2
+}}D.css({top:H.top,left:H.left})
+}function j(){var A=i("body").children(".ui-bubble-modal");
+if(A.length>0){return A
+}else{return null
+}}function g(B){var A=j();
+if(A){A.data("bubbles").add(B)
+}else{i('<div class="ui-bubble-modal/>').appendTo("body").data("bubbles",B)
+}}function f(B){var C,A=j();
+if(A){C=A.data("bubbles").not(B);
+if(C.length===0){A.remove()
+}else{A.data("bubbles",C)
+}}}function p(C){var F,D,B,A,E=C.parent();
+while(!E.is("body")){F=E.css("overflow");
+D=E.css("overflow-x");
+B=E.css("overflow-y");
+if(F=="auto"||F=="scroll"||D=="auto"||D=="scroll"||B=="auto"||B=="scroll"){break
+}A=E.css("position");
+if(A!="static"&&A!="inherit"){break
+}E=E.parent()
+}return E
+}function e(A){return function(B){o(A)
+}
+}w={init:function(B){var E,C,F=this,D=i.extend({},m,B),A=D.appendTo;
+F.data("ui-bubble",{settings:D}).addClass("ui-bubble");
+if(D.anchorElement){E=i(D.anchorElement).first();
+F.data("ui-bubble").anchor=E;
+A=p(E)
+}if(D.tooltip){C=i('<div class="tooltip"><div/></div>');
+C.addClass(D.tooltip).appendTo(F)
+}F.appendTo(A);
+if(D.scrollable){t(F)
+}if(D.dismissible){k(F)
+}if(D.hoverElements){D.modal=false;
+h(F,D.hoverElements)
+}return F
+},open:function(){var A=this.filter(":hidden");
+A.each(function(){var C=i(this),D=C.data("ui-bubble").settings,E=b(C),B=e(C);
+C.data("ui-bubble").closeHandler=E;
+C.data("ui-bubble").resizeHandler=E;
+if(D.dismissOnBlur){window.setTimeout(function(){i(document).bind("click.uiBubble",E)
+},1)
+}if(D.modal){g(C)
+}if(D.anchorElement){o(C);
+i(window).live("resize",B)
+}else{if(D.position!==false&&!D.anchorElement){if(!D.position){l(C)
+}else{z(C,D.position)
+}}}});
+A.fadeIn("fast",function(){A.trigger("ui-bubble-open")
+});
+return A
+},close:function(){var A=this;
+A.fadeOut("fast",function(){A.trigger("ui-bubble-close")
+});
+A.each(function(){var B=i(this),D=B.data("ui-bubble").settings,E=B.data("ui-bubble").closeHandler,C=B.data("ui-bubble").resizeHandler;
+i(document).unbind("click",E);
+i(window).unbind("resize",C);
+if(D.destroyOnClose){B.remove()
+}});
+f(A);
+return A
+}};
+i.fn.uiBubble=function(A){if(w[A]){return w[A].apply(this,Array.prototype.slice.call(arguments,1))
+}else{if(typeof A=="object"||!A){return w.init.apply(this,arguments)
+}else{i.error("Method "+A+" does not exist on JQuery.uiBubble")
+}}return this
+}
+}(jQuery));(function(e){function d(h){e("#creditCard"+h).remove();
+if(e(".card-data").size()===0){e("#wallet").addClass("no-background");
+e("#wallet *").hide();
+e("#noCardsMessage").show()
+}}function a(i){var h=e("div#deleteCreditCardError");
+e("#creditCard"+i).removeClass("pending-delete");
+if(h.length===0){h=e('<div class="feedback error" id="deleteCreditCardError"></div>');
+h.html(Application.getMessage("globals.myWallet.deleteCardErrorMessage"));
+e("div#errorsSection").append(h)
+}h.hide();
+h.fadeIn("fast")
+}function g(k,i,h){var j=e("#creditCardDetails input[name=creditCardId]").val();
+e("#creditCard"+k).addClass("pending-delete");
+e.ajax({type:"GET",url:i+"/remove-credit-card.ep",data:{creditCardID:k,cardInUse:j},success:function(m,l,n){if(m&&m.redirect&&h.allowRedirect){window.location=m.redirect
+}d(k)
+},error:function(n,l,m){a(k)
+}});
+return false
+}function c(j,k){var l,p=e('<div class="confirm-bubble"/>'),o=e('<span class="confirm-message"/>'),h=e('<div class="confirm-actions"/>'),m=e('<a class="cancel-action" href="#"/>'),n=e('<input type="button" class="confirm-action luluBtnSmall"/>'),i=e("#creditCard"+j);
+p.append(o).append(h);
+h.append(m).append(n);
+o.html(Application.getMessage("globals.myWallet.confirmCardDeletion"));
+m.html(Application.getMessage("globals.cancel"));
+n.attr("value",Application.getMessage("globals.ok"));
+m.click(function(q){q.preventDefault();
+p.uiBubble("close")
+});
+n.click(function(){g(j,Application.getSetting("baseUrl"),k);
+p.uiBubble("close")
+});
+p.uiBubble({position:false,appendTo:i,destroyOnClose:true});
+p.css({top:"50%",left:"50%",marginLeft:-(p.outerWidth()/2),marginTop:-(p.outerHeight()/2)});
+p.uiBubble("open")
+}function b(j){var i=j.data,h=e(j.target),k=h.attr("href").substr(1);
+j.preventDefault();
+c(k,i)
+}var f={allowRedirect:true};
+e.fn.wallet=function(h){var j=e(this).first(),i=e.extend({},f,h);
+j.delegate("a.delete-card","click",i,b)
+}
+}(jQuery));(function(c){function a(){var d=c(".language-selection"),e=d.find(".language-popup");
+d.addClass("active");
+e.slideDown()
+}function b(){var d=c(".language-selection"),e=d.find(".language-popup");
+e.slideUp(function(){d.removeClass("active")
+})
+}c(document).ready(function(){c(".language-selection .flag, .language-selection .arrow").click(a);
+c(".language-selection").mouseleave(b)
+})
+}(jQuery));(function(a){a(function(){if(a("body").is("#orderHistory, #orderHistoryDetails")){a(".order .cancel-order, #orderDetails .cancel-order").delegate("a","click",function(c){c.stopPropagation();
+c.preventDefault();
+var i=a(this),d=i.attr("href"),g=i.closest(".order, #orderDetails"),j=a("<div class='confirm-bubble'/>"),h=a("<span class='confirm-message'/>"),b=a('<div class="confirm-actions"/>'),f=a('<a class="cancel-action" href="#"/>'),e=a('<a class="confirm-action" href="#" target="_parent"/>');
+j.append(h).append(b);
+b.append(f).append(e);
+h.html(Application.getMessage("globals.order.cancelOrderConfirm"));
+f.html(Application.getMessage("globals.order.cancelOrderNo"));
+e.html(Application.getMessage("globals.order.cancelOrderYes"));
+e.attr("href",d);
+f.click(function(k){k.preventDefault();
+j.uiBubble("close")
+});
+j.uiBubble({position:false,appendTo:g,destroyOnClose:true});
+j.css({top:"50%",left:"50%",marginLeft:-(j.outerWidth()/2),marginTop:-(j.outerHeight()/2)});
+j.uiBubble("open")
+})
+}})
+}(jQuery));(function(d){function b(f){function e(){}e.prototype=f;
+return new e()
+}function a(){var f=b(this),i=[],h=null,e="",g=0;
+f={setUrl:function(j){e=j
+},addImage:function(j){i.push(j)
+},setImage:function(){if(!h){h=d("#previewpageimage")
+}h.attr({src:e+"/"+i[g]})
+},setArrows:function(){var j=d("#preview_arrow_left"),k=d("#preview_arrow_left_inactive"),l=d("#preview_arrow_right"),m=d("#preview_arrow_right_inactive"),o="on",n="on";
+if(g<=0){o="off"
+}if(g>=i.length-1){n="off"
+}if(o=="on"){j.show();
+k.hide()
+}else{j.hide();
+k.show()
+}if(n=="on"){l.show();
+m.hide()
+}else{l.hide();
+m.show()
+}},previous:function(){if(g>0){g-=1;
+this.setImage()
+}this.setArrows()
+},next:function(){if(g<(i.length-1)){g+=1;
+this.setImage()
+}this.setArrows()
+}};
+return f
+}function c(){var e=b(this),f=0,g=["previewOptionSimple","previewOptionDesign","previewOptionKeep","previewOptionRemove","previewOptionUpload"];
+e={showDetails:function(h){if((h===null)||(h<1)||(h>g.length)){return
+}if(f>0){d("#"+g[f-1]).hide()
+}d("#"+g[h-1]).show();
+f=h;
+var i=d("#previewFocusArrow");
+if(h==2||h==5){i.show()
+}else{i.hide()
+}}};
+return e
+}window.BookPreview=a;
+window.BookPreviewChoice=c
+}(jQuery));(function(a){a(function(){if(a("body").is("#productDetailPage")){a("#ratingsAndReviews").ratingsAndReviews({productId:pageData.productId});
+var d=a("#authorRibbon"),l=a("#addToCartForm"),h=a("#productPreviewAction"),n=a("#productPreviewAction .preview-action"),c=a("#productPreviewAction .preview-bubble"),o="/browse/product/preview.php?pid="+pageData.productId,k="/spotlight/id/"+pageData.authorId,e=a("#shareButtons .embed"),j=a("#productPreviewAction .embed-bubble"),f=window.location;
+j.find("#embedUrl").val(f+"?showPreview=true");
+if(!a("#productDetailPage #pageProduct").is(".services")){d.delegate("a.dismiss-link","click",function(p){d.fadeOut();
+p.preventDefault()
+});
+d.delegate("a#authorAddToCartButton","click",function(p){p.preventDefault();
+l.submit()
+});
+h.delegate("a.preview-action","click",function(p){p.preventDefault();
+p.stopPropagation();
+c.uiBubble("open")
+});
+e.click(function(p){p.preventDefault();
+p.stopPropagation();
+j.uiBubble("open")
+});
+if(document.getElementById("numReviewsToggleLink")!==null){a("#previousReviewsData").hide()
+}else{a("#previousReview").hide()
+}a.ajax({url:o,success:function(r,s,q){var p;
+c.html(r);
+j.find("#embedCode").val(j.find("#embedCode").val()+r);
+n.show();
+e.show();
+c.uiBubble({dismissible:true});
+j.uiBubble({dismissible:true});
+if(f.search.match("showPreview=true")){p=setTimeout(function(){n.click()
+},500)
+}}})
+}if(pageData.authorId!=="$%7BproductMap.bookAuthorId%7D"&&pageData.authorId!=="${productMap.bookAuthorId}"&&pageData.authorId!=="$productMap.bookAuthorId"&&pageData.authorId!=="0"&&pageData.authorId!==0&&pageData.authorId!==undefined){a.ajax({url:k,success:function(r,s,p){var q=a("<a />");
+q.attr("class","author-spotlight-link").attr("href",r).html(Application.getMessage("product.authorSpotlight"));
+q.appendTo(".author-info .spotlight-action")
+}})
+}var m=a("#reportContentContainer");
+var i=a("#reportContentForm");
+var g=a("#reportContentGeneralSubContainer");
+var b=a("#reportContentDMCAIntroduction");
+m.uiBubble({dismissible:true});
+a("#reportContentLink").click(function(p){p.preventDefault();
+m.uiBubble("open")
+});
+a("#reportContentConfirmationSuccessOkBtn, #reportContentConfirmationFailureOkBtn").click(function(p){p.preventDefault();
+m.uiBubble("close")
+});
+a("#reportContentSubject").change(function(){if(this.value===""){g.hide();
+b.hide()
+}else{if(this.value==="DMCA Violation Complaint"){g.hide();
+b.show()
+}else{b.hide();
+g.show();
+var p=i.find("input#reportContentAddress");
+var q=i.find('label[for="reportContentAddress"] span.required');
+if(this.value==="Privacy Violation and/or Defamation"||this.value==="Trademark"){p.attr("required",true);
+q.text("*")
+}else{p.removeAttr("required");
+q.text("")
+}}}});
+a("#reportContentDMCAContinue").click(function(q){q.preventDefault();
+a("#reportContentGeneralHeader").hide();
+b.hide();
+a("#reportContentDMCAHeader").show();
+g.show();
+i.find('[data-DMCA-init-action="remove"]').remove();
+i.find('[data-DMCA-init-action="show"]').show();
+i.find('[data-DMCA-init-action="show"] input, [data-DMCA-init-action="show"] textarea').removeAttr("disabled");
+i.find("input#reportContentAddress").attr("required",true);
+i.find('label[for="reportContentAddress"] span.required').text("*");
+var p=new Date();
+i.find("#reportContentDate").val((p.getMonth()+1)+"/"+p.getDate()+"/"+p.getFullYear())
+});
+i.submit(function(q){q.preventDefault();
+i.find(".error").hide();
+var r=true;
+var p=i.find("input[required], textarea[required]");
+p.each(function(){var s=a(this);
+var u=s.parent();
+if(s.is(":disabled")){return
+}if(!s.val()||(s.attr("type")=="checkbox"&&!s[0].checked)){r=false;
+u.find('.error[data-errorType="required"]').show()
+}else{if(s.data("type")=="email"){var t=s.val().match(/^.+?\@.+?\..+?$/g);
+if(!t){r=false;
+u.find('.error[data-errorType="invalid"]').show()
+}}}});
+if(r){a.ajax({url:Application.getSetting("baseUrl")+"/salesforce/report-inappropriate-content.ep",type:"POST",data:i.serialize(),success:function(s){i.hide();
+if(s=="SUCCESS"){a("#reportContentConfirmationSuccess").show()
+}else{a("#reportContentConfirmationFailure").show()
+}m.uiBubble("close");
+setTimeout(function(){m.uiBubble("open")
+},1000)
+}})
+}})
+}})
+}(jQuery));(function(a){jQuery(document).ready(function(){if(a("body#searchResults")[0]){var c=[];
+var b=function(e){var d=a("#advancedSearchPanel_"+e);
+d.find(":input").each(function(){if(d.css("display")=="none"){if(c[this.name]){a(this).val(c[this.name])
+}}else{c[this.name]=a(this).val();
+a(this).val("")
+}});
+d.fadeToggle(200);
+a("#subPanelControl_"+e).toggleClass("open_sub_panel");
+if(a("#advancedSearchControls li a").is(".open_sub_panel")){a("#advancedSearchPanel_go").css("display","block")
+}else{a("#advancedSearchPanel_go").css("display","none")
+}};
+a("form#advancedSearch").submit(function(){var d=a("#advancedSearch");
+d.find(":input").filter(function(){return a(this).val().length===0
+}).attr("disabled",true);
+return true
+});
+a("#advancedSearch .advanced_search_sub_panel a.advanced_search_sub_panel_close").click(function(){var d=a(this).closest(".advanced_search_sub_panel")[0];
+var e=d.id.replace("advancedSearchPanel_","");
+b(e)
+});
+a("#subPanelControl_title_creator").click(function(){b("title_creator")
+});
+a("#subPanelControl_rating").click(function(){b("rating")
+});
+a("#subPanelControl_language").click(function(){b("language")
+});
+a("#subPanelControl_date").click(function(){b("date")
+});
+a("#advancedSearch :input").each(function(){if(a(this).val()){var d=a(this).closest("div.advanced_search_sub_panel").find("a.advanced_search_sub_panel_close")[0];
+if(d&&!d.clicked){a(d).click();
+d.clicked=true
+}}})
+}})
+}(jQuery));(function(a){a(function(){var c=a("body");
+if(c.is("#shippingAddresses")){a('#addresses div[id^="addressId-"]').each(function(d,e){var f=a(e);
+f.addressForm(f.find('select[name$=".country"]'),f.find("div.subCountryJS"),f.find("div.postalCodeJS"))
+});
+a("#addresses").addressBook({allowRedirect:false})
+}if(c.is("#shippingAddresses")){a("#noAddressesMessage").toggle(a(".address-data").size()===0);
+var b=a("#addresses");
+b.delegate("li.edit > a","click",function(g){g.preventDefault();
+var d=a(this),j=d.closest(".address-data"),f=j.find(".address.display, .actions"),e=j.find("form"),h=a(document).find("form").not(e),i=a(document).find(".address.display, .actions").not(f);
+f=f.add(h);
+e=e.add(i);
+f.slideUp();
+e.slideDown()
+});
+b.delegate(".address.edit .action a.cancel","click",function(g){g.preventDefault();
+var d=a(this),h=d.closest(".address-data"),e=h.find(".address.display, .actions"),f=h.find("form");
+f.slideUp();
+e.slideDown()
+})
+}})
+}(jQuery));(function(a){a(function(){if(a("body").is("#checkoutTermsAndConditions")){var b=a('button[type="submit"]'),c=a('input[name="acceptTerms"]');
+b.attr("disabled","disabled");
+c.change(function(e){var d=c.is(":checked");
+if(d){b.removeAttr("disabled")
+}else{b.attr("disabled","disabled")
+}})
+}})
+}(jQuery));function isPositiveInteger(a){var b=parseInt(a,10);
+if(isNaN(b)||a!=b||b<=0){return false
+}return true
+}function updateCartItemQuantity(a){document.shoppingCart.cartAction.value="updateCartItemQuantity";
+document.shoppingCart.updateCartItemIndex.value=a;
+var b=document.shoppingCart["cartItems["+a+"].quantity"].value;
+if(isPositiveInteger(b)){document.shoppingCart.submit()
+}}function cartCheckout(a){var b=true;
+for(var c=0;
+c<a.length;
+c++){if(!isPositiveInteger(a[c].value)){b=false
+}}if(b){document.shoppingCart.submit()
+}}function applyCode(){document.shoppingCart.cartAction.value="applyCode";
+document.shoppingCart.submit()
+}function removePromoCode(a){var b=document.shoppingCart;
+b.cartAction.value="removePromoCode";
+b.promoCodeToDelete.value=a;
+b.submit()
+}(function(a){a(function(){var b=a("input[name=cartAction]"),f=a("input[name=updateCartItemIndex]"),e=a("input.quantity-input"),d=a("div.couponCode input#code");
+e.focus(function(h){b.val("updateCartItemQuantity");
+var g=a(this).attr("name");
+f.val(g.match(/[0-9]+?/))
+});
+function c(i){var g=i.attr("name").match(/[0-9]+?/),h=document.getElementById("cartItems["+g+"].error");
+if(!isPositiveInteger(i.val())){i.addClass("error");
+a(h).addClass("show")
+}else{i.removeClass("error");
+a(h).removeClass("show")
+}}e.blur(function(g){c(a(this));
+b.val("cartCheckout")
+});
+d.focus(function(g){b.val("applyCode")
+});
+d.blur(function(g){b.val("cartCheckout")
+});
+d.on("keydown",function(g){if(g.which===13){applyCode();
+return false
+}});
+e.on("keydown",function(g){if(g.which===13){c(a(this));
+updateCartItemQuantity(a(this).attr("name").match(/[0-9]+?/));
+return false
+}});
+a("#checkoutButton").click(function(g){cartCheckout(e)
+})
+})
+}(jQuery));

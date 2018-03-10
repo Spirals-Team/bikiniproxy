@@ -1,0 +1,1112 @@
+
+
+if (typeof jQuery === 'undefined') {
+throw new Error('Bootstrap\'s JavaScript requires jQuery')
+}
++function ($) {
+'use strict';
+var version = $.fn.jquery.split(' ')[0].split('.')
+if ((version[0] < 2 && version[1] < 9) || (version[0] == 1 && version[1] == 9 && version[2] < 1) || (version[0] > 2)) {
+throw new Error('Bootstrap\'s JavaScript requires jQuery version 1.9.1 or higher, but lower than version 3')
+}
+}(jQuery);
+
++function ($) {
+'use strict';
+
+ 
+
+var backdrop = '.dropdown-backdrop'
+var toggle = '[data-toggle="dropdown"]'
+var Dropdown = function (element) {
+$(element).on('click.bs.dropdown', this.toggle)
+}
+Dropdown.VERSION = '3.3.6'
+function getParent($this) {
+var selector = $this.attr('data-target')
+if (!selector) {
+selector = $this.attr('href')
+selector = selector && /#[A-Za-z]/.test(selector) && selector.replace(/.*(?=#[^\s]*$)/, '') 
+ }
+var $parent = selector && $(selector)
+return $parent && $parent.length ? $parent : $this.parent()
+}
+function clearMenus(e) {
+if (e && e.which === 3) return
+$(backdrop).remove()
+$(toggle).each(function () {
+var $this = $(this)
+var $parent = getParent($this)
+var relatedTarget = { relatedTarget: this }
+if (!$parent.hasClass('open')) return
+if (e && e.type == 'click' && /input|textarea/i.test(e.target.tagName) && $.contains($parent[0], e.target)) return
+$parent.trigger(e = $.Event('hide.bs.dropdown', relatedTarget))
+if (e.isDefaultPrevented()) return
+$this.attr('aria-expanded', 'false')
+$parent.removeClass('open').trigger($.Event('hidden.bs.dropdown', relatedTarget))
+})
+}
+Dropdown.prototype.toggle = function (e) {
+var $this = $(this)
+if ($this.is('.disabled, :disabled')) return
+var $parent = getParent($this)
+var isActive = $parent.hasClass('open')
+clearMenus()
+if (!isActive) {
+if ('ontouchstart' in document.documentElement && !$parent.closest('.navbar-nav').length) {
+
+ $(document.createElement('div'))
+.addClass('dropdown-backdrop')
+.insertAfter($(this))
+.on('click', clearMenus)
+}
+var relatedTarget = { relatedTarget: this }
+$parent.trigger(e = $.Event('show.bs.dropdown', relatedTarget))
+if (e.isDefaultPrevented()) return
+$this
+.trigger('focus')
+.attr('aria-expanded', 'true')
+$parent
+.toggleClass('open')
+.trigger($.Event('shown.bs.dropdown', relatedTarget))
+}
+return false
+}
+Dropdown.prototype.keydown = function (e) {
+if (!/(38|40|27|32)/.test(e.which) || /input|textarea/i.test(e.target.tagName)) return
+var $this = $(this)
+e.preventDefault()
+e.stopPropagation()
+if ($this.is('.disabled, :disabled')) return
+var $parent = getParent($this)
+var isActive = $parent.hasClass('open')
+if (!isActive && e.which != 27 || isActive && e.which == 27) {
+if (e.which == 27) $parent.find(toggle).trigger('focus')
+return $this.trigger('click')
+}
+var desc = ' li:not(.disabled):visible a'
+var $items = $parent.find('.dropdown-menu' + desc)
+if (!$items.length) return
+var index = $items.index(e.target)
+if (e.which == 38 && index > 0) index-- 
+ if (e.which == 40 && index < $items.length - 1) index++ 
+ if (!~index) index = 0
+$items.eq(index).trigger('focus')
+}
+
+ 
+
+function Plugin(option) {
+return this.each(function () {
+var $this = $(this)
+var data = $this.data('bs.dropdown')
+if (!data) $this.data('bs.dropdown', (data = new Dropdown(this)))
+if (typeof option == 'string') data[option].call($this)
+})
+}
+var old = $.fn.dropdown
+$.fn.dropdown = Plugin
+$.fn.dropdown.Constructor = Dropdown
+
+ 
+
+$.fn.dropdown.noConflict = function () {
+$.fn.dropdown = old
+return this
+}
+
+ 
+
+$(document)
+.on('click.bs.dropdown.data-api', clearMenus)
+.on('click.bs.dropdown.data-api', '.dropdown form', function (e) { e.stopPropagation() })
+.on('click.bs.dropdown.data-api', toggle, Dropdown.prototype.toggle)
+.on('keydown.bs.dropdown.data-api', toggle, Dropdown.prototype.keydown)
+.on('keydown.bs.dropdown.data-api', '.dropdown-menu', Dropdown.prototype.keydown)
+}(jQuery);
+
++function ($) {
+'use strict';
+
+ 
+
+var Modal = function (element, options) {
+this.options = options
+this.$body = $(document.body)
+this.$element = $(element)
+this.$dialog = this.$element.find('.modal-dialog')
+this.$backdrop = null
+this.isShown = null
+this.originalBodyPad = null
+this.scrollbarWidth = 0
+this.ignoreBackdropClick = false
+if (this.options.remote) {
+this.$element
+.find('.modal-content')
+.load(this.options.remote, $.proxy(function () {
+this.$element.trigger('loaded.bs.modal')
+}, this))
+}
+}
+Modal.VERSION = '3.3.6'
+Modal.TRANSITION_DURATION = 300
+Modal.BACKDROP_TRANSITION_DURATION = 150
+Modal.DEFAULTS = {
+backdrop: true,
+keyboard: true,
+show: true
+}
+Modal.prototype.toggle = function (_relatedTarget) {
+return this.isShown ? this.hide() : this.show(_relatedTarget)
+}
+Modal.prototype.show = function (_relatedTarget) {
+var that = this
+var e = $.Event('show.bs.modal', { relatedTarget: _relatedTarget })
+this.$element.trigger(e)
+if (this.isShown || e.isDefaultPrevented()) return
+this.isShown = true
+this.checkScrollbar()
+this.setScrollbar()
+this.$body.addClass('modal-open')
+this.escape()
+this.resize()
+this.$element.on('click.dismiss.bs.modal', '[data-dismiss="modal"]', $.proxy(this.hide, this))
+this.$dialog.on('mousedown.dismiss.bs.modal', function () {
+that.$element.one('mouseup.dismiss.bs.modal', function (e) {
+if ($(e.target).is(that.$element)) that.ignoreBackdropClick = true
+})
+})
+this.backdrop(function () {
+var transition = $.support.transition && that.$element.hasClass('fade')
+if (!that.$element.parent().length) {
+that.$element.appendTo(that.$body) 
+ }
+that.$element
+.show()
+.scrollTop(0)
+that.adjustDialog()
+if (transition) {
+that.$element[0].offsetWidth 
+ }
+that.$element.addClass('in')
+that.enforceFocus()
+var e = $.Event('shown.bs.modal', { relatedTarget: _relatedTarget })
+transition ?
+that.$dialog 
+ .one('bsTransitionEnd', function () {
+that.$element.trigger('focus').trigger(e)
+})
+.emulateTransitionEnd(Modal.TRANSITION_DURATION) :
+that.$element.trigger('focus').trigger(e)
+})
+}
+Modal.prototype.hide = function (e) {
+if (e) e.preventDefault()
+e = $.Event('hide.bs.modal')
+this.$element.trigger(e)
+if (!this.isShown || e.isDefaultPrevented()) return
+this.isShown = false
+this.escape()
+this.resize()
+$(document).off('focusin.bs.modal')
+this.$element
+.removeClass('in')
+.off('click.dismiss.bs.modal')
+.off('mouseup.dismiss.bs.modal')
+this.$dialog.off('mousedown.dismiss.bs.modal')
+$.support.transition && this.$element.hasClass('fade') ?
+this.$element
+.one('bsTransitionEnd', $.proxy(this.hideModal, this))
+.emulateTransitionEnd(Modal.TRANSITION_DURATION) :
+this.hideModal()
+}
+Modal.prototype.enforceFocus = function () {
+$(document)
+.off('focusin.bs.modal') 
+ .on('focusin.bs.modal', $.proxy(function (e) {
+if (this.$element[0] !== e.target && !this.$element.has(e.target).length) {
+this.$element.trigger('focus')
+}
+}, this))
+}
+Modal.prototype.escape = function () {
+if (this.isShown && this.options.keyboard) {
+this.$element.on('keydown.dismiss.bs.modal', $.proxy(function (e) {
+e.which == 27 && this.hide()
+}, this))
+} else if (!this.isShown) {
+this.$element.off('keydown.dismiss.bs.modal')
+}
+}
+Modal.prototype.resize = function () {
+if (this.isShown) {
+$(window).on('resize.bs.modal', $.proxy(this.handleUpdate, this))
+} else {
+$(window).off('resize.bs.modal')
+}
+}
+Modal.prototype.hideModal = function () {
+var that = this
+this.$element.hide()
+this.backdrop(function () {
+that.$body.removeClass('modal-open')
+that.resetAdjustments()
+that.resetScrollbar()
+that.$element.trigger('hidden.bs.modal')
+})
+}
+Modal.prototype.removeBackdrop = function () {
+this.$backdrop && this.$backdrop.remove()
+this.$backdrop = null
+}
+Modal.prototype.backdrop = function (callback) {
+var that = this
+var animate = this.$element.hasClass('fade') ? 'fade' : ''
+if (this.isShown && this.options.backdrop) {
+var doAnimate = $.support.transition && animate
+this.$backdrop = $(document.createElement('div'))
+.addClass('modal-backdrop ' + animate)
+.appendTo(this.$body)
+this.$element.on('click.dismiss.bs.modal', $.proxy(function (e) {
+if (this.ignoreBackdropClick) {
+this.ignoreBackdropClick = false
+return
+}
+if (e.target !== e.currentTarget) return
+this.options.backdrop == 'static'
+? this.$element[0].focus()
+: this.hide()
+}, this))
+if (doAnimate) this.$backdrop[0].offsetWidth 
+
+this.$backdrop.addClass('in')
+if (!callback) return
+doAnimate ?
+this.$backdrop
+.one('bsTransitionEnd', callback)
+.emulateTransitionEnd(Modal.BACKDROP_TRANSITION_DURATION) :
+callback()
+} else if (!this.isShown && this.$backdrop) {
+this.$backdrop.removeClass('in')
+var callbackRemove = function () {
+that.removeBackdrop()
+callback && callback()
+}
+$.support.transition && this.$element.hasClass('fade') ?
+this.$backdrop
+.one('bsTransitionEnd', callbackRemove)
+.emulateTransitionEnd(Modal.BACKDROP_TRANSITION_DURATION) :
+callbackRemove()
+} else if (callback) {
+callback()
+}
+}
+
+
+Modal.prototype.handleUpdate = function () {
+this.adjustDialog()
+}
+Modal.prototype.adjustDialog = function () {
+var modalIsOverflowing = this.$element[0].scrollHeight > document.documentElement.clientHeight
+this.$element.css({
+paddingLeft: !this.bodyIsOverflowing && modalIsOverflowing ? this.scrollbarWidth : '',
+paddingRight: this.bodyIsOverflowing && !modalIsOverflowing ? this.scrollbarWidth : ''
+})
+}
+Modal.prototype.resetAdjustments = function () {
+this.$element.css({
+paddingLeft: '',
+paddingRight: ''
+})
+}
+Modal.prototype.checkScrollbar = function () {
+var fullWindowWidth = window.innerWidth
+if (!fullWindowWidth) { 
+ var documentElementRect = document.documentElement.getBoundingClientRect()
+fullWindowWidth = documentElementRect.right - Math.abs(documentElementRect.left)
+}
+this.bodyIsOverflowing = document.body.clientWidth < fullWindowWidth
+this.scrollbarWidth = this.measureScrollbar()
+}
+Modal.prototype.setScrollbar = function () {
+var bodyPad = parseInt((this.$body.css('padding-right') || 0), 10)
+this.originalBodyPad = document.body.style.paddingRight || ''
+if (this.bodyIsOverflowing) this.$body.css('padding-right', bodyPad + this.scrollbarWidth)
+}
+Modal.prototype.resetScrollbar = function () {
+this.$body.css('padding-right', this.originalBodyPad)
+}
+Modal.prototype.measureScrollbar = function () { 
+ var scrollDiv = document.createElement('div')
+scrollDiv.className = 'modal-scrollbar-measure'
+this.$body.append(scrollDiv)
+var scrollbarWidth = scrollDiv.offsetWidth - scrollDiv.clientWidth
+this.$body[0].removeChild(scrollDiv)
+return scrollbarWidth
+}
+
+ 
+
+function Plugin(option, _relatedTarget) {
+return this.each(function () {
+var $this = $(this)
+var data = $this.data('bs.modal')
+var options = $.extend({}, Modal.DEFAULTS, $this.data(), typeof option == 'object' && option)
+if (!data) $this.data('bs.modal', (data = new Modal(this, options)))
+if (typeof option == 'string') data[option](_relatedTarget)
+else if (options.show) data.show(_relatedTarget)
+})
+}
+var old = $.fn.modal
+$.fn.modal = Plugin
+$.fn.modal.Constructor = Modal
+
+ 
+
+$.fn.modal.noConflict = function () {
+$.fn.modal = old
+return this
+}
+
+ 
+
+$(document).on('click.bs.modal.data-api', '[data-toggle="modal"]', function (e) {
+var $this = $(this)
+var href = $this.attr('href')
+var $target = $($this.attr('data-target') || (href && href.replace(/.*(?=#[^\s]+$)/, ''))) 
+ var option = $target.data('bs.modal') ? 'toggle' : $.extend({ remote: !/#/.test(href) && href }, $target.data(), $this.data())
+if ($this.is('a')) e.preventDefault()
+$target.one('show.bs.modal', function (showEvent) {
+if (showEvent.isDefaultPrevented()) return 
+ $target.one('hidden.bs.modal', function () {
+$this.is(':visible') && $this.trigger('focus')
+})
+})
+Plugin.call($target, option, this)
+})
+}(jQuery);
+
++function ($) {
+'use strict';
+
+ 
+
+function transitionEnd() {
+var el = document.createElement('bootstrap')
+var transEndEventNames = {
+WebkitTransition : 'webkitTransitionEnd',
+MozTransition : 'transitionend',
+OTransition : 'oTransitionEnd otransitionend',
+transition : 'transitionend'
+}
+for (var name in transEndEventNames) {
+if (el.style[name] !== undefined) {
+return { end: transEndEventNames[name] }
+}
+}
+return false 
+ }
+
+ $.fn.emulateTransitionEnd = function (duration) {
+var called = false
+var $el = this
+$(this).one('bsTransitionEnd', function () { called = true })
+var callback = function () { if (!called) $($el).trigger($.support.transition.end) }
+setTimeout(callback, duration)
+return this
+}
+$(function () {
+$.support.transition = transitionEnd()
+if (!$.support.transition) return
+$.event.special.bsTransitionEnd = {
+bindType: $.support.transition.end,
+delegateType: $.support.transition.end,
+handle: function (e) {
+if ($(e.target).is(this)) return e.handleObj.handler.apply(this, arguments)
+}
+}
+})
+}(jQuery);
+function sharePopup(target, callback, width, height) {
+width = typeof width !== 'undefined' ? width : 670;
+height = typeof height !== 'undefined' ? height : 340;
+
+	var left = window.screenX + (window.outerWidth/2 - width/2);
+if (left < 0) {
+left = (screen.width/2)-(width/2);
+}
+var top = window.screenY + (window.outerHeight/2 - height/2);
+if (top < 0) {
+top = (screen.height/2)-(height/2);
+}
+var popup=window.open(target,"_blank","toolbar=no,location=no,directories=no,status=no,copyhistory=no,scrollbars=no,resizable=no,status=no,menubar=no,width="+width+",height="+height+",top="+top+",left="+left);
+if(popup.opener==null){
+popup.opener=window;
+}
+if (window.focus) {
+popup.focus();
+}
+if (typeof callback === 'function') {
+
+ var timer = setInterval(function() {
+if (popup.closed) {
+callback();
+clearInterval(timer);
+}
+}, 500);
+}
+}
+function trackShare(shareAction, shareValue) {
+if (typeof window.trackEvent === 'function' && typeof shareAction !== 'undefined') {
+trackEvent('SocialShare', shareAction, typeof shareValue !== 'undefined' ? shareValue : window.location.href, 1);
+}
+}
+$(document).ready(function() {
+$('.shareLink').click(function(e) {
+e.preventDefault();
+sharePopup($(this).attr('href'));
+trackShare($(this).data('track-event'), $(this).data('track-url'));
+});
+});
+
+function showMobileNavigation() {
+$('.body').addClass('mobile-navigation');
+}
+function hideMobileNavigation() {
+$('.body').removeClass('mobile-navigation');
+}
+$(document).ready(function() {
+$(".showMenu").click(function(e) {
+showMobileNavigation();
+e.preventDefault();
+e.target.blur();
+});
+$(".hideMenu").click(function(e) {
+hideMobileNavigation();
+e.preventDefault();
+e.target.blur();
+});
+}).keyup(function(e){
+
+	if(e.keyCode === 27) {
+hideMobileNavigation();
+}
+});
+
+this.at = this.at || {};
+at.molindo = this.at.molindo || {};
+at.molindo.SetlistUpdateMessageReceiver = function(channelId, comp, close) {
+var _super = new at.molindo.MessageReceiver(channelId);
+var _self = at.molindo.MessageReceiver.derive(_super);
+var _updates = 0;
+var _comp = $('#' + comp);
+var _initialTitle = document.title;
+$('#' + close).click(function() {
+fadeOutComp();
+resetTitle();
+});
+_comp.click(function() {
+resetTitle();
+_updates = 0;
+fadeOutComp();
+});
+_self.onMessageReceived = function(message) {
+updateTitle();
+updateContent();
+fadeInComp(); 
+};
+function fadeInComp() {
+if (_comp.is(':visible') === false) {
+trackSetlistReloadShown();
+_comp.fadeIn(1000);
+}
+}
+function fadeOutComp() {
+if (_comp.is(':visible') === true) {
+_comp.fadeOut(500);
+}
+}
+function updateTitle() {
+document.title = '(' + (++_updates) + ') ' + _initialTitle;
+};
+function resetTitle() {
+document.title = _initialTitle;
+}
+function updateContent() {
+if (_updates == 1) {
+_comp.find('span.content').text('setlist changed')
+} else {
+_comp.find('span.content').text(_updates + ' setlist changes')
+}
+}
+return _self;
+}
+function trackSetlistReloadShown() {
+if (typeof window.trackEvent === 'function') {
+trackEvent('Setlist live update', 'Reload link shown', window.location.href, 0);
+}
+}
+function trackSetlistReloadClicked() {
+if (typeof window.trackEvent === 'function') {
+trackEvent('Setlist live update', 'Reload link clicked', window.location.href, 0);
+}
+}
+
+(function( $ ) {
+var locationCallbackUrl = null;
+var _position = null;
+function success(position, ajax) {
+_position = position;
+if (ajax) {
+doAjaxCall(position);
+}
+}
+function doAjaxCall(position) {
+var wcall = wicketAjaxGet(locationCallbackUrl + '&long=' + position.coords.longitude + "&lat=" + position.coords.latitude, function() { }, function() { });
+}
+function error(msg) {
+var wcall = wicketAjaxGet(locationCallbackUrl, function() { }, function() { });
+}
+$.userLocation = {};
+$.userLocation.setLocationCallback = function (callb, options) {
+locationCallbackUrl = callb;
+getLocation(options);
+}
+$.userLocation.getPosition = function() {
+return _position;
+}
+function getLocation(options) {
+if (navigator.geolocation) {
+var cookieOptions = options['cookieOptions'];
+var cookieVal = null;
+if (cookieOptions != null && cookieOptions.name != null) {
+cookieVal = $.cookie(cookieOptions.name);
+if (cookieVal == 'denied') {
+
+ return false;
+}
+}
+var ajax = options['ajaxCallEnabled'];
+var conf = true;
+
+ if (cookieVal != 'accepted' && options != null && options['customMessage'] != null) {
+conf = confirm(options['customMessage']);
+}
+if (conf) {
+navigator.geolocation.getCurrentPosition(function(position) {
+setCookie(cookieOptions, 'accepted');
+success(position, ajax);
+}, error, {timeout:10000});
+} else {
+setCookie(cookieOptions, 'denied');
+}
+} else {
+error('not supported');
+}
+}
+function setCookie(cookieOptions, val) {
+if (cookieOptions.expires == null) {
+$.cookie(cookieOptions.name, val);
+} else {
+$.cookie(cookieOptions.name, val, { expires: cookieOptions.expires });
+} 
+}
+})( jQuery );
+$.VideoPlayerOutOfViewport = function() {}
+$.VideoPlayerOutOfViewport.toggle = function() { 
+var embed = $('.videoContainer').filter(':visible');
+if (embed) {
+
+ var cont = embed.closest('.videoPlayer');
+return function() {
+if (cont.visible(true)) {
+cont.removeClass("playerOutOfViewport");
+cont.css("height", "");
+} else {
+if (!cont.hasClass("playerOutOfViewport")) {
+
+ 
+ cont.css("height", (cont.outerHeight() + 20));
+cont.addClass("playerOutOfViewport");
+}
+}
+};
+} else {
+return null;
+}
+};
+
+var toggleViewportClass = null;
+
+$.VideoPlayerOutOfViewport.on = function() {
+toggleViewportClass = $.VideoPlayerOutOfViewport.toggle();
+if (toggleViewportClass != null) {
+
+ toggleViewportClass();
+$(window).on('scroll', toggleViewportClass).on('touchmove', toggleViewportClass).resize(toggleViewportClass);
+}
+}
+
+$.VideoPlayerOutOfViewport.off = function() {
+if (toggleViewportClass != null) {
+var cont = $('.videoPlayer').filter(':visible');
+if (cont) {
+cont.removeClass("playerOutOfViewport");
+var video = cont.find('video');
+if (video != null) {
+video.prop('muted', true);
+}
+$(window).off('scroll', toggleViewportClass).off('touchmove', toggleViewportClass).off('resize', toggleViewportClass);
+}
+}
+}
+
+$(function() {
+$('.closeVideo').on('click', function() {$.VideoPlayerOutOfViewport.off();return false;})
+});
+function initAnchors(selector, cssClass) {
+selector.click(function() {
+highlightAnchor($(this).attr('href'), cssClass);
+});
+var hsh = window.location.hash;
+if (hsh != "") {
+highlightAnchor(hsh, cssClass);
+}
+}
+function highlightAnchor(anchor, cssClass) {
+$(anchor).addClass(cssClass, 600, null, setTimeout(function() {
+$(anchor).removeClass(cssClass, 2000);
+}, 3000));
+}
+$(document).ready(function (e) {
+$('li.setlistParts').click(function(e){
+var part = $(this).closest(".main").position().left;
+if((e.pageX - part) < 50) {
+var tooltip = $(this).children(".songTooltip");
+if (tooltip != null) {
+tooltip.toggle();
+}
+}
+});
+});
+
+this.at = this.at || {};
+at.molindo = this.at.molindo || {};
+at.molindo.LiveOptions = function(disableCallback) {
+var _liveUser = null;
+var _disableCallback = disableCallback;
+this.setLiveUser = function(liveUser) {
+_liveUser = liveUser;
+}
+this.isLiveUpdateActive = function() {
+return _liveUser != null;
+}
+this.getDisableCallback = function() {
+return _disableCallback;
+}
+this.isValidLiveUpdate = function(message) {
+return message.data.userInfo.id == _liveUser;
+}
+}
+at.molindo.CurrentlyEditingMessageReceiver = function(channelId, toReplaceComp, disableCallback) {
+var _super = new at.molindo.MessageReceiver(channelId);
+var _self = at.molindo.MessageReceiver.derive(_super);
+var _requestComp = $('#liveRequest');
+var _container = _requestComp.parents('div:eq(0)');
+var _currentSpan = $('#currentUserSpan');
+var _currentUserLink = $('#currentUserLink');
+var _currentUpdatedSpan = $('#currentLastUpdated');
+var _toReplaceComp = $('#' + toReplaceComp);
+var _options = new at.molindo.LiveOptions(disableCallback);
+var _messages = new Array();
+_self.onMessageReceived = function(message) {
+if (message.data.type == "liveUpdate") {
+if (_options.isLiveUpdateActive()) {
+updateSetlist(message);
+} else {
+prepareRequestComp(message);
+fadeIn(_container);
+} 
+} else if (message.data.type == "liveUpdateOff"){
+
+ } else if (message.data.type == "openedForEditing") {
+
+ }
+};
+function prepareRequestComp(message) {
+var inp = $('span.onOff input:checkbox');
+inp.click(function() {
+if ($(this).is(':checked')) {
+_requestComp.hide();
+activateLiveUpdates(message);
+fadeIn(_currentSpan);
+} else {
+deactivateLiveUpdates();
+}
+});
+}
+function updateSetlist(message) {
+
+if (_options.isValidLiveUpdate(message)) {
+var newMarkup = message.data.newMarkup;
+
+ var border = _toReplaceComp.find('div.paperBorder').first();
+border.replaceWith(newMarkup);
+}
+_messages[message.data.userInfo.id] = message;
+showOrHideChangeLink();
+}
+function fadeIn(comp) {
+if (comp.is(':visible') === false) {
+comp.fadeIn(1000);
+}
+}
+function fadeOut(comp) {
+if (comp.is(':visible') === true) {
+comp.fadeOut(500);
+}
+}
+function activateLiveUpdates(message) {
+var id = message.data.userInfo.id;
+var userLink = message.data.userInfo.linkUrl;
+_options.setLiveUser(id);
+updateSetlist(message);
+_currentUserLink.attr('href', userLink);
+_currentUserLink.html(message.data.userInfo.userId);
+_currentUserLink.removeClass('admin', 'moderator', 'roadie');
+if (message.data.userInfo.role != 'USER') {
+_currentUserLink.addClass(message.data.userInfo.role.toLowerCase());
+}
+_currentUpdatedSpan.attr('title', message.data.updatedISOTime);
+_currentUpdatedSpan.timeago();
+$('#liveChangeLink').click(function() {
+var list = $('#liveUserList');
+list.empty();
+for (var i in _messages) {
+list.append(newUserDialogComponent(_messages[i]));
+}
+$('abbr.timeago').timeago();
+fadeIn($('#liveEditingDialog'));
+});
+showOrHideChangeLink();
+}
+function showOrHideChangeLink() {
+var t = $('#liveChangeLink');
+var visible = t.hasClass('hidden') == false;
+if (getObjectSize(_messages) > 1) {
+if (!visible) {
+t.removeClass('hidden');
+}
+} else {
+if (visible) {
+t.addClass('hidden');
+}
+}
+}
+function newUserDialogComponent(message) {
+var listItem = $('<li></li>');
+var link = $('<a class="" href="#"></a>');
+if (_options.isValidLiveUpdate(message)) {
+link.addClass('active');
+}
+var userDiv = $('<div class="editor role"></div>');
+var user = $('<span class=""></span>');
+userDiv.append(user);
+
+ if (message.data.userInfo.role != 'USER') {
+user.addClass(message.data.userInfo.role.toLowerCase());
+}
+var time = $('<abbr class="timeago"></abbr>');
+time.attr('data-isotime', message.data.updatedISOTime);
+var updatedDiv = $('<div class="updated"></div>')
+var small = $('<small></small>');
+updatedDiv.append(small);
+small.append("last updated ");
+small.append(time);
+user.append(message.data.userInfo.userId);
+link.click(function() {
+var currMsg = _messages[message.data.userInfo.id]
+activateLiveUpdates(currMsg);
+fadeOut($('#liveEditingDialog'));
+});
+link.append(userDiv);
+link.append(updatedDiv);
+link.append('<div class="check"><i class="fa fa-check"></i></div>');
+listItem.append(link);
+return listItem;
+}
+function deactivateLiveUpdates() {
+var wcall = wicketAjaxPost(_options.getDisableCallback(),function() { }, function() { });
+}
+function getObjectSize(obj) {
+var len = 0, key;
+for (key in obj) {
+if (obj.hasOwnProperty(key)) len++;
+}
+return len;
+};
+return _self;
+}
+
+function writeDayOfWeek(choiceId, markupId, dayArr) {
+var dayText = $('#' + choiceId + ' select.day option:selected').text();
+
+	var monthText = $('#' + choiceId + ' select.month option:selected').val();
+var yearText = $('#' + choiceId + ' select.year option:selected').text();
+
+	if (yearText === '') {
+yearText = $('#' + choiceId + ' input.dateYear').val();
+}
+if (dayText != '' && monthText != '' && yearText != '') {
+var day = parseInt(dayText);
+var month = parseInt(monthText);
+var year = parseInt(yearText);
+if (!isNaN(day) && !isNaN(month) && !isNaN(year)) {
+
+ var backThen = new Date(year, month, day);
+
+ $('#' + choiceId).siblings('span.shortCuts').hide();
+document.getElementById(markupId).innerHTML = dayArr[backThen.getDay()];
+return false;
+}
+}
+document.getElementById(markupId).innerHTML = '';
+return false;
+}
+
+function selectDay(dateObj, offsetDays, choiceId, useLocal) {
+dateObj.setDate(dateObj.getDate() + offsetDays);
+var day, month, year;
+if (useLocal) {
+day = dateObj.getDate();
+month = dateObj.getMonth();
+year = dateObj.getFullYear();
+currYear = new Date().getFullYear()
+} else {
+day = dateObj.getUTCDate();
+month = dateObj.getUTCMonth();
+year = dateObj.getUTCFullYear();
+currYear = new Date().getUTCFullYear();
+}
+var dayEle = $('#' + choiceId).find('select.day').first();
+var monthEle = $('#' + choiceId).find('select.month').first();
+var yearEle = $('#' + choiceId).find('select.year').first();
+if (dayEle != null && monthEle != null && yearEle != null) {
+dayEle.val(day - 1);
+monthEle.val(month);
+yearEle.val(currYear - year);
+}
+return false;
+}
+
+function initObjectAutocomplete(mountpoint, comp, hiddenField, addDataCallback, indicatorId) {
+var instance = comp.autocomplete({
+delay: 500,
+minLength : 2,
+appendTo : $(comp).parent(),
+source: function(request, response) {
+var d = {};
+d['query'] = request.term;
+if (addDataCallback != null) {
+var v = addDataCallback();
+if (v != null) {
+d = $.extend({}, d, v);
+}
+}
+$.ajax({
+url: window.location.protocol + '//' + window.location.host + mountpoint,
+dataType: 'json',
+data: d,
+success: function(data) {
+response(data.items);
+$('#' + indicatorId).hide();
+},
+error: function(xhr, error){
+response(null);
+$('#' + indicatorId).hide();
+},
+beforeSend : function(xhr) {
+$('#' + indicatorId).show();
+}
+});
+},
+
+
+ select: function(event, ui) { comp.val(ui.item['item']['displayString']); hiddenField.val(ui.item['item']['encodedId']); return false;},
+}).data('ui-autocomplete');
+
+instance._renderItem = function( ul, item) {
+var re = new RegExp('^' + this.term, 'i') ;
+var content = item['item'];
+var highlights = item['highlights'];
+var t = content['displayString'].replace(re,'<strong>' + '$&' + '</strong>');
+var link = $('<a></a>');
+link.append('<span class="name">' + t + '</span>');
+if($.isEmptyObject(highlights) === false) {
+var mainHighlight = highlights[0];
+link.addClass('detail');
+var hlcontent = $('<span class="highlight"></span>');
+hlcontent.append('<span class="highlightLabel">' + mainHighlight.label + '</span>');
+$.each(mainHighlight.data, function(index, hl) {
+hlcontent.append('<span>' + hl + '</span>');
+if (index + 1 < mainHighlight.data.length) {
+hlcontent.append(', ')
+}
+});
+link.append(hlcontent);
+}
+var theLi = $( '<li></li>' )
+.data( 'item.autocomplete', content['displayString'] )
+.append(link)
+.appendTo( ul );
+return theLi;
+};
+instance._renderMenu = function( ul, items ) {
+var that = this;
+$.each( items, function( index, item ) {
+that._renderItemData( ul, item );
+});
+$( ul ).find( "li:odd" ).addClass( "odd" );
+};
+instance._resizeMenu = function() {
+var viewportWidth = $(window).width();
+this.menu.element.outerWidth(Math.min(viewportWidth, 500));
+}
+}
+
+if (typeof(YouTubeSearch) == "undefined")
+YouTubeSearch = { };
+YouTubeSearch.init = function() {
+this.init = function(){}
+youTubePlayer = document.createElement("div");
+document.getElementsByTagName('body')[0].appendChild(youTubePlayer)
+html = []
+html.push('<div id="youTubePlayer" style="display: none">')
+html.push('<div class="youTubePlayerHeader"><a class="youTubePlayerClose" href="javascript:YouTubeSearch.close()" title=""><i class="fa fa-times fa-lg"></i> <span class="sr-only"><wicket:message key="closeVideo">Close</wicket:message></span></a></div>');
+if (YouTubeSearch.childHtml) {
+html.push(YouTubeSearch.childHtml);
+}
+html.push('<div class="youTubePlayerObject" id="youTubePlayerContainer"></div>')
+html.push('</div>')
+youTubePlayer.innerHTML=html.join('');
+}
+YouTubeSearch.search = function(artist, title, results, startPlaying) {
+this.init();
+document.getElementById('youTubePlayer').style.display="none";
+if (this.indicator) {
+document.getElementById(this.indicator).style.display = "block"; 
+}
+var query = (title) ? encodeURIComponent(artist) + " " + encodeURIComponent(title) : encodeURIComponent(artist);
+var callback = (startPlaying == true) ? this._displayPlay : this._displayWait;
+var url = "https://www.googleapis.com/youtube/v3/search?part=snippet&q="+query+"&type=video&key=AIzaSyBw1XDOsa3t2gMD-WohR_EjVHSe7FaqovI";
+$.ajax({
+url : url,
+context: this,
+type: 'GET',
+success : callback
+})
+this.currentQuery = query;
+}
+YouTubeSearch.play = function(videoId, startPlaying) {
+
+ var videos = document.getElementsByTagName("video");
+for(i = 0;i < videos.length; i++) {
+videos[i].muted = true;
+}
+var id = "youTubePlayerObject";
+if (!document.getElementById(id)) {
+var c = document.createElement("div");
+c.setAttribute("id", id);
+document.getElementById("youTubePlayerContainer").appendChild(c);
+}
+document.getElementById('youTubePlayer').style.display="block";
+this.playVideo(videoId, startPlaying);
+}
+YouTubeSearch.player = null;
+YouTubeSearch.playVideo = function(theVideoId, startPlaying) {
+
+
+ if (this.player != null) {
+this.player.destroy();
+}
+this.player = new YT.Player( "youTubePlayerContainer", {
+height: "100%",
+width: "100%",
+videoId: theVideoId,
+playerVars: { 'autoplay' : (startPlaying ? 1 : 0), 'border':0, 'fs':1, 'showsearch':0, 'enablejsapi':1},
+events: { "onStateChange": onytplayerStateChange }
+});
+
+
+
+}
+
+function onytplayerStateChange(event) {
+var newState = event.data;
+switch(newState) {
+case 0: if (YouTubeSearch.onVideoEnded) YouTubeSearch.onVideoEnded(); break;
+case 1: if (YouTubeSearch.onVideoPlaying) YouTubeSearch.onVideoPlaying(); break;
+case 2: if (YouTubeSearch.onVideoPause) YouTubeSearch.onVideoPause(); break;
+case 3: if (YouTubeSearch.onVideoBuffering) YouTubeSearch.onVideoBuffering(); break;
+case 5: if (YouTubeSearch.onVideoCued) YouTubeSearch.onVideoCued(); break;
+}
+}
+YouTubeSearch._displayPlay=function(data) {
+this._display(data, true);
+}
+YouTubeSearch._displayWait=function(data) {
+this._display(data, false);
+}
+YouTubeSearch._display=function(data, startPlaying) {
+this.entries = data.items || [];
+var html = ['<ul class="videos">'];
+for (var i = 0; i < this.entries.length; i++) {
+var entry = this.entries[i];
+var title = entry.snippet.title;
+var thumbnailUrl = entry.snippet.thumbnails['default'].url;
+html.push('<li><a href="javascript:YouTubeSearch.play(\'', entry.id.videoId, '\', true)" title="', title,
+'"><img src="',
+thumbnailUrl, '" width="130" height="97"/><span class="title"><strong>', title, '</strong></span></a></li>');
+}
+html.push('</ul><div class="youTubeBranding"><a href="http://www.youtube.com/" target="_blank"><img src="https://code.google.com/apis/youtube/images/badge3.gif" /></a></div>')
+document.getElementById('youTubeResults').innerHTML = html.join('');
+if (this.entries.length > 0 && startPlaying) {
+this.play(this.entries[0].id.videoId, startPlaying);
+}
+if (this.onLoad) {
+this.onLoad();
+}
+if (this.indicator) {
+document.getElementById(this.indicator).style.display = "none"; 
+}
+}
+YouTubeSearch.close = function() {
+document.getElementById('youTubePlayer').style.display="none";
+if (this.player != null) {
+this.player.destroy();
+this.player = null;
+}
+}
+YouTubeSearch.setPlaylist = function(playList, startPlaying) {
+this._playList = playList
+if (startPlaying) this.playIndex(0)
+}
+YouTubeSearch.playIndex = function(index, lang) {
+if (this._playList && this._playList['length'] && this._playList.length > index) {
+this.defaultSearch(this._playList[index]['artist'], this._playList[index]['song'], 1, true, lang)
+YouTubeSearch.onVideoEnded = function(){YouTubeSearch.playIndex(index + 1, lang)};
+}
+}
+YouTubeSearch.defaultSearch = YouTubeSearch.search
+function getUserCoordsIfAvailable() {
+if ($.userLocation && $.userLocation.getPosition())	{
+var position = $.userLocation.getPosition();
+if (position.coords) {
+return { 'lon' : position.coords.longitude, 'lat' : position.coords.latitude };
+}
+}
+return null;
+}
+function applyClientDate(markupId, date, locale) {
+$('#' + markupId).text(date.toLocaleDateString(locale,{ year: 'numeric', month: 'short', day: 'numeric' }));
+}

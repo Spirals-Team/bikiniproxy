@@ -1,0 +1,96 @@
+adroll_adv_id = "";
+adroll_pix_id = "";
+
+(function () {
+    function parseQuery(query) {
+        var Params = new Object();
+        if (!query) return Params;
+        var Pairs = query.split(/[;&]/);
+        for (var i = 0; i < Pairs.length; i++) {
+            var KeyVal = Pairs[i].split('=');
+            if (!KeyVal || KeyVal.length != 2) continue;
+            var key = decodeURIComponent(KeyVal[0]);
+            var val = decodeURIComponent(KeyVal[1]);
+            val = val.replace(/\+/g, ' ');
+            Params[key] = val;
+        }
+        return Params;
+    }
+
+    function setCookie(cname, cvalue) {
+        var d = new Date();
+        d.setTime(d.getTime() + (1825*24*60*60*1000));
+        var expires = "expires="+ d.toUTCString();
+        document.cookie = cname + "=" + cvalue + "; " + expires;
+    }
+
+    function getCookie(cname) {
+        var name = cname + "=";
+        var ca = document.cookie.split(';');
+        for(var i = 0; i <ca.length; i++) {
+            var c = ca[i];
+            while (c.charAt(0)==' ') {
+                c = c.substring(1);
+            }
+            if (c.indexOf(name) == 0) {
+                return c.substring(name.length,c.length);
+            }
+        }
+        return "";
+    }
+
+    if (typeof Shopify !== undefined && Shopify.Checkout !== undefined) {
+        if (Shopify.Checkout.page !== undefined && Shopify.Checkout.page === "thank_you") {
+            if (Shopify.checkout !== undefined && Shopify.checkout["total_price"]) {
+                adroll_conversion_value = Shopify.checkout["total_price"];
+                adroll_currency = Shopify.checkout["currency"];
+                adroll_email = Shopify.checkout["email"];
+                adroll_shopify_empty_referrer = document.referrer == "";
+                adroll_segments = "shopify_responsive_checkout";
+
+                // dupe conversion cookie check
+                var order_id = Shopify.checkout["order_id"]
+                var customer_id = Shopify.checkout["customer_id"]
+                var cookie_name = "__adroll_shopify_event_"+ order_id + '_' + customer_id
+                var dupe_cookie = getCookie(cookie_name)
+                if (dupe_cookie == "") {
+                    // first time seen, not a dupe
+                    setCookie(cookie_name, Shopify.checkout["total_price"])
+                    adroll_shopify_dupe_conversion = false;
+                }
+                else {
+                    adroll_shopify_dupe_conversion = true;
+                }
+                adroll_custom_data = {"ORDER_ID": Shopify.checkout["order_id"], "USER_ID": Shopify.checkout["customer_id"],"SHOPIFY_DUPE": adroll_shopify_dupe_conversion, "SHOPIFY_EMPTY_REFERRER": adroll_shopify_empty_referrer};
+            }
+        }
+    }
+
+    // Normal AdRoll Pixel onLoad code here
+    var _onload = function(){
+        if (document.readyState && !/loaded|complete/.test(document.readyState)){setTimeout(_onload, 10);return}
+        if (!window.__adroll_loaded){__adroll_loaded=true;setTimeout(_onload, 50);return}
+        var scr = document.createElement("script");
+        var host = (("https:" == document.location.protocol) ? "https://s.adroll.com" : "http://a.adroll.com");
+        scr.setAttribute('async', 'true');
+        scr.type = "text/javascript";
+        scr.src = host + "/j/roundtrip.js";
+        ((document.getElementsByTagName('head') || [null])[0] ||
+        document.getElementsByTagName('script')[0].parentNode).appendChild(scr);
+    };
+
+    var scripts = document.getElementsByTagName('script');
+    for(var i = 0; i < scripts.length; i++){
+        var script = scripts[i];
+        if (script.src && script.src.indexOf('shopify_rolling_bootstrap.js') != -1) {
+            var queryString = script.src.replace(/^[^\?]+\??/, '');
+            var params = parseQuery(queryString);
+            adroll_adv_id = params["adroll_adv_id"];
+            adroll_pix_id = params["adroll_pix_id"];
+            // call pixel load code here
+            _onload();
+            break;
+        }
+    }
+
+}());

@@ -1,0 +1,125 @@
+// JavaScript Document
+
+
+if(document.getElementById('edit-submit-pages-site')){
+	document.getElementById('edit-submit-pages-site').value="";
+}
+
+
+/*--- Fonction appelée pour le changement de Photo ----*/
+
+function changePhoto(photo,photoV,url)
+{
+		$(".details-item .views-field-field-item-img-back-fid img").removeAttr("width","");
+		$(".details-item .views-field-field-item-img-back-fid img").removeAttr("height","");
+		$(".details-item .views-field-field-item-img-fid img").removeAttr("width","");
+		$(".details-item .views-field-field-item-img-fid img").removeAttr("height","");
+
+	    $(".details-item .views-field-field-item-img-fid").fadeOut('fast', function() {
+			$(".details-item .views-field-field-item-img-fid img").attr("src","");
+			$(".details-item .views-field-field-item-img-fid a.cloud-zoom").attr("href","");
+			$(".details-item .views-field-field-item-img-fid img").attr("src",url+"/imagecache/img_width_450/products/"+photo);
+			$(".details-item .views-field-field-item-img-fid").fadeIn('fast');
+		});
+
+		$(".details-item .views-field-field-item-img-back-fid").fadeOut('fast', function() {
+			$(".details-item .views-field-field-item-img-back-fid img").attr("src","");
+			$(".details-item .views-field-field-item-img-back-fid img").attr("src",url+"/imagecache/vign_90_150/products/"+photoV);
+			$(".details-item .views-field-field-item-img-back-fid").fadeIn('fast');
+      	});
+		
+}
+
+
+
+$(function(){
+
+
+
+	 
+
+	
+	$('#block-locale-0 li.en a').html("<img src=\"/sites/all/themes/shot/img/interface/en-nb.png\" />");
+	$('#block-locale-0 li.fr a').html("<img src=\"/sites/all/themes/shot/img/interface/fr-nb.png\" />"); 
+	
+	$('#block-locale-0 li.en a').attr("href","/");
+	$('#block-locale-0 li.fr a').attr("href","/fr");
+	
+	/*--- OVER sur les Drapeaux ----------*/
+	$("#block-locale-0 li.en").mouseout(function(){
+		$('#block-locale-0 li.en a img').attr("src","/sites/all/themes/shot/img/interface/en-nb.png");
+	}).mouseover(function(){
+		$('#block-locale-0 li.en a img').attr("src","/sites/all/themes/shot/img/interface/en.jpg");
+	});
+	
+	$("#block-locale-0 li.fr").mouseout(function(){
+		$('#block-locale-0 li.fr a img').attr("src","/sites/all/themes/shot/img/interface/fr-nb.png");
+	}).mouseover(function(){
+		$('#block-locale-0 li.fr a img').attr("src","/sites/all/themes/shot/img/interface/fr.jpg");
+	});
+	
+	
+	/*----- ACTION YOUTUBE -----*/
+	$("#block-block-4 .youtubelink").click(function(){
+		//window.open('http://www.youtube.com/','_blank');
+	});
+	
+	
+
+	/*--- Active Trail dans Menu Taxonomy -----*/
+    menuP = $("a.active").parents("li.menuparent");
+	menuP.children().css("color","#978952");
+
+	/*-- Changement de photo dans detail item  ---*/
+	$(".details-item .views-field-field-item-img-back-fid img").click(function(){
+		var numPhoto    = $(".details-item .views-field-field-item-img-back-fid img").index(this);
+		var nomFichier  = $(".details-item .views-field-field-item-img-back-fid img:eq("+numPhoto+")").attr("src").split("/");
+		var nomFichierV = $(".details-item .views-field-field-item-img-fid img:eq(0)").attr("src").split("/");
+		
+			url = nomFichier[0]+"/"+nomFichier[1]+"/"+nomFichier[2]+"/"+nomFichier[3]+"/"+nomFichier[4]+"/"+nomFichier[5];
+			nomFichier = nomFichier[nomFichier.length-1];	
+			nomFichierV = nomFichierV[nomFichierV.length-1];
+			changePhoto(nomFichier, nomFichierV, url);
+			
+			// affiche / masque les repères
+			if($(".repere.front").css('display') == "block"){
+				$(".repere.back").css('display', 'block');
+				$(".repere.front").css('display', 'none');
+			}else{
+				$(".repere.back").css('display', 'none');
+				$(".repere.front").css('display', 'block');
+			}
+	});
+
+
+	$(".details-item .views-field-field-item-img-fid").hover(function(){
+		
+		var numPhoto    = $(".details-item .views-field-field-item-img-back-fid img").index(this);
+		var nomFichier = $(".details-item .views-field-field-item-img-fid img:eq(0)").attr("src").split("/");
+		url = nomFichier[0]+"/"+nomFichier[1]+"/"+nomFichier[2]+"/"+nomFichier[3]+"/"+nomFichier[4]+"/"+nomFichier[5];
+		nomFichier = nomFichier[nomFichier.length-1];
+		
+		$(".details-item .views-field-field-item-img-fid #cloud-zoom-big").css("background-image","url("+url+"/imagecache/original/products/"+nomFichier+")");
+		$(".details-item .views-field-field-item-img-fid #cloud-zoom-big").css("background-repeat","no-repeat");
+	});
+
+
+
+
+	/*-- NICE MENU FADE */
+	$("#header .nice-menu li.menuparent").hover(function(){
+	/*	$("#header .nice-menu li ul").hide();
+		$("#header .nice-menu li ul").fadeIn('fast');*/
+	});
+	
+
+	
+});
+
+$('#block-views-fb_news-block_1').jScrollPane();
+
+
+
+
+
+

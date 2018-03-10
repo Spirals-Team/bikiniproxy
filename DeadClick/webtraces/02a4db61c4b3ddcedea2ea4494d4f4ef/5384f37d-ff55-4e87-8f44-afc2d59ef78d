@@ -1,0 +1,155 @@
+var pfEmail = (function(window, undef) {
+  var pfEmail = {},
+      url,
+      readyCalled = false, isReady = false,
+      imgSetupDelay = 1000,
+      emailDomain,
+      head = document.getElementsByTagName('head')[0];
+
+  var protocol = document.location.protocol.split(':')[0];
+  var cdnDomain = protocol == 'https' ? 'https://d2b4ldk1jau3bi.cloudfront.net': 'http://cdn.instaemail.net';
+
+  if(window.localDev)
+    emailDomain = 'http://local.printfriendly.com:3000';
+  else
+    emailDomain = protocol + '://email-srv.printfriendly.com';
+
+  try {url = top.location.href;} catch(e) {url = window.location.href;}
+
+  var emailSrc = emailDomain + '/email/from_url' + '?product=1&url=' + encodeURIComponent(url);
+
+  function addStyles() {
+    var style = document.createElement('style'),
+        rules = document.createTextNode('#pf-email-wrapper {text-align:center; overflow: hidden; position:absolute; top: 20px; left:50%; z-index:16777269; margin-left:-350px; padding:12px; background-color:rgba(0, 0, 0, 0.51); filter:progid:DXImageTransform.Microsoft.gradient(startColorStr=\'#82000000\',EndColorStr=\'#82000000\');} ');
+    style.type = 'text/css';
+    if(style.styleSheet) {
+      style.styleSheet.cssText = rules.nodeValue;
+    } else  {
+      style.appendChild(rules);
+    }
+    head.appendChild(style);
+  }
+
+  function remove(id) {
+    var elem = document.getElementById(id);
+    elem.parentNode.removeChild(elem);
+  }
+
+  function show(id) {
+    var elem = document.getElementById(id);
+    elem.style.display = 'block';
+  }
+
+  function hide(id) {
+    var elem = document.getElementById(id);
+    elem.style.display = 'none';
+  }
+
+  function addMask() {
+    var mask = document.createElement('div');
+    mask.setAttribute('id','pf-email-mask');
+    document.body.appendChild(mask);
+  }
+
+  function setupIframe() {
+    var wrapperId = 'pf-email-wrapper';
+    var wrapper = document.getElementById(wrapperId);
+    if(wrapper) {
+      iframe = document.getElementById('pf-email-iframe');
+      iframe.src = emailSrc;
+      show(wrapperId);
+    } else {
+      wrapper = document.createElement('div');
+      wrapper.setAttribute('id', wrapperId);
+      document.body.appendChild(wrapper);
+      wrapper.innerHTML = [
+          '<a href="#" onClick="pfEmail.cleanup();return false" style="position:absolute;right:0; top:0; z-index:16777270; width:69px;height:60px; background:url(\'' + cdnDomain + '/images/btn-close-pf-confirm.png\') no-repeat 26px 20px;"></a>',
+          '<iframe frameborder="0" id="pf-email-iframe" style="width: 720px; height:480px; overflow:hidden; z-index:16777270; background:#E2E2E2;"',
+            'src="' + emailSrc + '"></iframe>',
+        ].join(' ');
+    }
+  }
+
+  pfEmail.setupButtonImg = function() {
+    var buttonLink = document.getElementById('instaemail-button');
+    if(buttonLink) {
+      var buttonImgSrc = cdnDomain + '/images/' + buttonLink.getAttribute('data-button-img') + '.png';
+      buttonLink.innerHTML = '<img style="border:none;-webkit-box-shadow:none; box-shadow:none;" alt="Email this page" src="' + buttonImgSrc + '" />';
+    } else if(imgSetupDelay < 30000) {
+      setTimeout(pfEmail.setupButtonImg, imgSetupDelay);
+      imgSetupDelay += 1000;
+    }
+  };
+
+  pfEmail.cleanup = function() {
+    hide('pf-email-wrapper');
+    remove('pf-email-mask');
+  };
+
+  pfEmail.init = function() {
+    pfEmail.ready(function() {
+      if(navigator.userAgent.match(/(iphone|ipad|ipod|android|opera.mini|mobile|phone)/i)) {
+        window.top.location.href = emailSrc;
+      } else {
+        addStyles();
+        addMask();
+        setupIframe();
+      }
+    });
+  };
+
+  pfEmail.applyCallback = function(callback) {
+    isReady = true;
+    // setTimeout for an edge case
+    // http://bugs.jquery.com/ticket/5443
+    return setTimeout(callback, 1);
+  };
+
+  pfEmail.ready = function(callback) {
+    if (isReady)
+      return callback();
+
+    if (readyCalled)
+        return;
+    readyCalled = true;
+
+    if (/complete|loaded|interactive/.test(document.readyState)) {
+      pfEmail.applyCallback(callback);
+    }
+    var onReady, onComplete, done;
+    // For awesome browsers
+    if (document.addEventListener) {
+      onComplete = function () {
+        document.removeEventListener('DOMContentLoaded', onComplete, false);
+        window.removeEventListener('load', onComplete, false);
+        if (!done) {
+            done = true;
+            pfEmail.applyCallback(callback);
+        }
+      };
+      document.addEventListener('DOMContentLoaded', onComplete, false);
+      window.addEventListener('load', onComplete, false);
+    } else if (document.attachEvent) {
+      onComplete = function () {
+        document.detachEvent('onreadystatechange', onReady);
+        window.detachEvent('onload', onComplete);
+        if (!done) {
+            done = true;
+            pfEmail.applyCallback(callback);
+        }
+      };
+      onReady = function () {
+        if (document.readyState === 'complete')
+          onComplete();
+      };
+      document.attachEvent('onreadystatechange', onReady);
+      window.attachEvent('onload', onComplete);
+    }
+  };
+
+  return pfEmail;
+})(window);
+pfEmail.setupButtonImg();
+if(window.pfAutoStart) {
+  pfEmail.init();
+}

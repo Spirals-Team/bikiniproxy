@@ -1,0 +1,51 @@
+_satellite.pushAsyncScript(function(event, target, $variables){
+  /* steelhouse conversion tracking pixel - Atlas Tags */
+var pagename = "";
+var market = "";
+var addlparams = "";
+
+if(TagManagerData.Locale.indexOf("_FR") > -1){
+  market = "FR";
+}
+if(TagManagerData.Locale.indexOf("_DE") > -1){
+	market = "DE";
+}
+if(TagManagerData.Locale.indexOf("_ES") > -1){
+	market = "ES";
+}
+if(TagManagerData.PageType == "Home"){
+  pagename = "homepage"
+}
+if(TagManagerData.PageType == "StoreLocatorSearch"){
+  pagename = "dealer"
+}
+if(TagManagerData.PageType == "CHKTThanks"){
+  pagename = "transaction";
+  addlparams += "&order_id=" + TagManagerData.OrderNumber + "&revenue=" + TagManagerData.OrderGross;
+}
+if(document.location.href.toLowerCase().indexOf('testedtough.html') > -1){
+  pagename = "testedtough";
+}
+if(TagManagerData.PageType == "Cart"){
+  pagename = "step_cart";
+}
+if(TagManagerData.PageType == "CHKTShipping"){
+  pagename = "step_shipping";
+}
+if(TagManagerData.PageType == "CHKTBilling"){
+  pagename = "step_billing";
+}
+if(document.location.href.indexOf("registration=true") > -1){
+  pagename = "account";
+}
+if(TagManagerData.CustomerNumber != "null" && pagename != ""){
+	addlparams += "&id_client="+TagManagerData.CustomerNumber;
+}
+if(pagename != "" && market != ""){
+  var e = document.createElement("script");
+  e.async = true;
+  e.src ="https://ad.atdmt.com/m/a.js;m=11082201070535;cache=" + Math.random() + "?page_name=" + pagename + "&market=" + market + addlparams;
+  var s = document.getElementsByTagName("script")[0];
+  s.parentNode.insertBefore(e, s);
+}
+});

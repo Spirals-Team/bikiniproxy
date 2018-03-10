@@ -1,0 +1,310 @@
+/*jslint browser: true*/
+/*global Juggernaut*/
+
+/**
+* .
+*
+* @class GoogleAdTag
+* @namespace Juggernaut.OO.Views
+* @constructor
+* @extends Juggernaut.OO.Views.View
+*/
+Juggernaut.OO.Views.GoogleAdTag = Juggernaut.OO.utils.extendClass(
+	Juggernaut.OO.Views.View,
+	{
+		pubMethods: {
+			/**
+			* .
+			*
+			* @method	init
+			* @param {Object} options .
+			*/
+			init: function( options ) {
+				"use strict";
+				//console.log( 'GoogleAdTag_vw.js/init' );
+				if( window.googletag && window.googletag.defineSlot && options && ( options.selector || options.$container ) && options.config && !this.inited ) {
+					//console.log( 'GoogleAdTag_vw.js/init: test passed' );
+					this.bindAll( this );
+
+					if( options && options.config && options.config.targeting && !options.config.targeting.sect ) {
+						options.config.targeting.sect = 'ros';
+						options.config.networkCode += 'ros';
+					}
+					this._model = new Juggernaut.OO.Models.GoogleAdTag();
+					this.model.bindAll( this.model );
+					this.model.createDefaults();
+					var id = ( options.id || options.id === 0 ) ?
+						options.id :
+						Math.floor( Math.random() * ( 100000000 - 0 ) ) + 0;
+					this._model.init( { id: id }, this );
+					this._$container = ( options.selector ) ? $( options.selector ) : options.$container;
+					if( options.sizedEls ) {
+						this._sizedEls = options.sizedEls;
+						for ( var i = this._sizedEls.length - 1; i >= 0; i-- ) {
+							if( _.isString( this._sizedEls[ i ] ) ) {
+								this._sizedEls[ i ] = $( this._sizedEls[ i ] );
+							}
+						}
+					}
+					for( var key in options.config ) {
+						this.model[ key ] = options.config[ key ];
+					}
+					this.model.targetDiv = ( this.model.targetDiv ) ?
+						this.model.targetDiv + '_smrt_' + this.model.id :
+						'ad_' + this.model.id;
+
+					if( this.model.listensForResize ) {
+						this._onResize = _.throttle( this._onResize, 500 );
+					}
+					this.listen();
+					if( window.Wonderland ) {
+						Wonderland.register( 'ad', this );
+					}
+					this._inited = true;
+				}
+			},
+
+			/**
+			* .
+			*
+			* @method	listen
+			*/
+			listen: function() {
+				"use strict";
+				this.model.on( 'isEmpty:updated', this._onEmptyUpdate );
+				this.model.on( 'sizeChange:updated', this._onDimensUpdate );
+				if( this.model.listensForResize ) {
+					$( window ).on( 'resize', this._onResize );
+				}
+			},
+
+			/**
+			* .
+			*
+			* @method	unlisten
+			*/
+			unlisten: function() {
+				"use strict";
+				this.model.off( 'isEmpty:updated', this._onEmptyUpdate );
+				this.model.off( 'sizeChange:updated', this._onDimensUpdate );
+				if( this.model.listensForResize ) {
+					$( window ).off( 'resize', this._onResize );
+				}
+			},
+
+			/**
+			* .
+			*
+			* @method	load
+			* @param {Object} options .
+			*/
+			load: function( options ) {
+				"use strict";
+				if( options && options.initConfig ) {
+					this.init( options.initConfig );
+				}
+				if( this.inited ) {
+					if ( !this.model.loaded ) {
+						this.createDiv();
+						this.model.defineSlot();
+						this.model.display();
+						this._sizeContainer();
+					} else {
+						this.model.refresh();
+					}
+				}
+			},
+
+			/**
+			* .
+			*
+			* @method	createDiv
+			*/
+			createDiv: function() {
+				"use strict";
+				this._$curAd = $( '<div>' );
+				this.$curAd.attr({
+					id: this.model.targetDiv
+				});
+				this.$container.append( this.$curAd );
+			},
+
+			/**
+			* .
+			*
+			* @method	clear
+			*/
+			clear: function() {
+				"use strict";
+				if( this.inited ) {
+					this.model.clear();
+				}
+			},
+
+			/**
+			* .
+			*
+			* @method	refresh
+			*/
+			refresh: function() {
+				"use strict";
+				this.model.refresh();
+			},
+
+			/**
+			* .
+			*
+			* @method	destroy
+			* @param {} fromWonderland .
+			*/
+			destroy: function( fromWonderland ) {
+				"use strict";
+				if( this.inited ) {
+					if( fromWonderland || !window.Wonderland ) {
+						this.unlisten();
+						if( this.$curAd ) {
+							this.$curAd.remove();
+						}
+						this.clear();
+						this.model.applyDefaults();
+						this._$container = null;
+						this._$curAd = null;
+						this._sizedEls = false;
+						this._inited = false;
+						delete this._model;
+						delete this.model;
+					} else {
+						Wonderland.destroyModule( 'ad', this.model.id );
+					}
+				}
+			},
+
+			/**
+			* .
+			*
+			* @private
+			* @method	_onDimensUpdate
+			*/
+			_onDimensUpdate: function() {
+				"use strict";
+				this._sizeContainer();
+			},
+
+			/**
+			* .
+			*
+			* @private
+			* @method	_sizeContainer
+			*/
+			_sizeContainer: function() {
+				if( this.model.width && this.model.height ) {
+					var i;
+					if( this.model.containerClass ) {
+						this._$container.removeClass( this.model.containerClass );
+						if( this.sizedEls ) {
+							for ( i = this.sizedEls.length - 1; i >= 0; i-- ) {
+								this.sizedEls[ i ].removeClass( this.model.containerClass );
+							}
+						}
+					}
+					this.model.containerClass = 'ad-' + this.model.width + 'x' + this.model.height;
+					this._$container.addClass( this.model.containerClass );
+					if( this.sizedEls ) {
+						for ( i = this.sizedEls.length - 1; i >= 0; i-- ) {
+							this.sizedEls[ i ].addClass( this.model.containerClass );
+						}
+					}
+					this.model.trigger( 'dimensionsUpdate' );
+				}
+			},
+
+			/**
+			* .
+			*
+			* @private
+			* @method	_onEmptyUpdate
+			*/
+			_onEmptyUpdate: function() {
+				"use strict";
+				var i;
+				if( this.model.isEmpty ) {
+					this._$container.addClass( 'ad-empty' );
+					if( this.sizedEls ) {
+						for ( i = this.sizedEls.length - 1; i >= 0; i-- ) {
+							this.sizedEls[ i ].addClass( 'ad-empty' );
+						}
+					}
+				} else {
+					this._$container.removeClass( 'ad-empty' );
+					if( this.sizedEls ) {
+						this._$container.removeClass( 'ad-empty' );
+						for ( i = this.sizedEls.length - 1; i >= 0; i-- ) {
+							this.sizedEls[ i ].removeClass( 'ad-empty' );
+						}
+					}
+
+				}
+			},
+
+			/**
+			* .
+			*
+			* @private
+			* @method	_onResize
+			*/
+			_onResize: function() {
+				"use strict";
+				if( this.model.displayed ) {
+					this.refresh();
+				}
+			}
+		},
+		getProps: { //cannot be set without underscore (sadly _prop is available from outside)
+			/**
+			* .
+			*
+			* @protected
+			* @property $container
+			* @default null
+			* @type<a href="https://api.jquery.com/Types/#jQuery" target="_blank">jQuery</a>
+			*/
+			$container: null,
+			/**
+			* .
+			*
+			* @protected
+			* @property sizedEls
+			* @default null
+			* @type Array
+			*/
+			sizedEls: null,
+			/**
+			* .
+			*
+			* @protected
+			* @property $curAd
+			* @default null
+			* @type <a href="https://api.jquery.com/Types/#jQuery" target="_blank">jQuery</a>
+			*/
+			$curAd: null,
+			/**
+			* .
+			*
+			* @protected
+			* @property model
+			* @default null
+			* @type Juggernaut.OO.Models.GoogleAdTag
+			*/
+			model: null,
+			/**
+			* .
+			*
+			* @protected
+			* @property inited
+			* @default false
+			* @type Boolean
+			*/
+			inited: false
+		}
+	}
+);

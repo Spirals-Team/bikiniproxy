@@ -1,0 +1,646 @@
+/*
+	This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+	Author: Sam Tsvilik
+	Version: 2.0
+	Last Modified: 12/05/2011
+*/
+(function(document, $, bam, undef) {
+	//Load Bam dependencies
+	bam.require(["jpath-2.0", "class"]).done(
+
+	function(ctx) {
+		//After dependencies are loaded - execute module itself
+		var NULL = null,
+			FALSE = !1,
+			TRUE = !0,
+			OBJECT = 'object',
+			STRING = 'string',
+			FUNC = "function",
+			ARRAY = "array",
+			module, jsonAttrRx = /^@[\w-:]+$/,
+			nsAttrRx = /^@xmlns$/,
+			iNodePropertiesRx = /_super|ns|nodeName|typeOf|hasCDATA|$comments/,
+			util = {
+				isIE: function() {
+					return (+"\0" === 0);
+				},
+				isXNode: function(o) {
+					return (typeof(o) === OBJECT && o.nodeName !== undef);
+				},
+				isNodeSet: function(o) {
+					return $.isArray(o);
+				}
+			},
+
+			IChild, IRoot, INode;
+
+		//Converts XML DOM to JSON
+		var XMLUtils = {
+			//Creates an XMLDomDocument instance
+			newDocument: function(rootTagName, namespaceURL) {
+				if (!rootTagName) rootTagName = "";
+				if (!namespaceURL) namespaceURL = "";
+				if (document.implementation && document.implementation.createDocument) {
+					// This is the W3C standard way to do it
+					return document.implementation.createDocument(namespaceURL, rootTagName, NULL);
+				} else { // This is the IE way to do it
+					// Create an empty document as an ActiveX object
+					// If there is no root element, this is all we have to do
+					var doc = new ActiveXObject("MSXML2.DOMDocument");
+					// If there is a root tag, initialize the document
+					if (rootTagName) {
+						// Look for a namespace prefix
+						var prefix = "";
+						var tagname = rootTagName;
+						var p = rootTagName.indexOf(':');
+						if (p !== -1) {
+							prefix = rootTagName.substring(0, p);
+							tagname = rootTagName.substring(p + 1);
+						}
+						// If we have a namespace, we must have a namespace prefix
+						// If we don't have a namespace, we discard any prefix
+						if (namespaceURL) {
+							if (!prefix) prefix = "a0"; // What Firefox uses
+						} else prefix = "";
+						// Create the root element (with optional namespace) as a
+						// string of text
+						var text = "<" + (prefix ? (prefix + ":") : "") + tagname + (namespaceURL ? (" xmlns:" + prefix + '="' + namespaceURL + '"') : "") + "/>";
+						// And parse that text into the empty document
+						doc.loadXML(text);
+					}
+					return doc;
+				}
+			},
+
+			//Parses XML string and tries to convert it to XMLDocument object
+			xmlToString: function(xnode) {
+				var out;
+				if ("XMLSerializer" in window) {
+					var serializer = new XMLSerializer();
+					out = serializer.serializeToString(xnode);
+				} else {
+					out = xnode.xml;
+				}
+				out = out.replace(/xmlns=\"\"/g, ''); //Bug-fix for FF and IE
+				return out;
+			},
+
+			//Converts Text to XML
+			textToXML: function(strXML) {
+				var xmlDoc = NULL;
+				try {
+					xmlDoc = ("DOMParser" in window) ? new DOMParser() : new ActiveXObject("MSXML2.DOMDocument");
+					xmlDoc.async = FALSE;
+				} catch (e) {
+					throw new Error("XML Parser could not be instantiated");
+				}
+				var out = NULL,
+					isParsed = TRUE;
+				if (util.isIE()) {
+					isParsed = xmlDoc.loadXML(strXML);
+					out = (isParsed) ? xmlDoc : FALSE;
+				} else {
+					out = xmlDoc.parseFromString(strXML, "text/xml");
+					isParsed = (out.documentElement.tagName !== "parsererror");
+				}
+				if (!isParsed) {
+					throw new Error("Error parsing XML string");
+				}
+				return out;
+			}
+		};
+
+		//JSON Serialization singleton factory
+		var JSONUtils = (function() {
+			var xdoc;
+
+			function createNode(name, obj) {
+				var out, ns = (obj && "@xmlns" in obj) ? obj["@xmlns"] : null;
+
+				if (ns) {
+					if ("createElementNS" in xdoc) {
+						out = xdoc.createElementNS(ns, name);
+					} else {
+						out = xdoc.createElement(name);
+						out.setAttribute("xmlns", ns);
+					}
+				} else {
+					out = xdoc.createElement(name);
+				}
+				return out;
+			}
+			//Builds out XML DOM from JSON structure (recursive)
+
+			function assemble(dest, obj) {
+				if (dest && obj) {
+					var tmp, nElem, ns;
+					if ($.type(obj) === OBJECT) {
+						$.each(obj, function(n, v) {
+							switch ($.type(v)) {
+							case OBJECT:
+								if (!(n === "parent" && v instanceof INode)) {
+									tmp = dest.appendChild(createNode(n, v));
+									assemble(tmp, v);
+								}
+								break;
+							case ARRAY:
+								/**
+								 * This is an exception that applies ONLY if instead of repeating tags, we want different tags in ORDER
+								 * if node name uses '*' name, then ordered list is appended to parent node in order w/o creating a wrapper tag
+								 */
+								if(n === "*") {
+									assemble(dest, v);
+								} else {
+									for (var i = 0, m = v.length, s; m > i; i++) {
+										s = v[i];
+										tmp = dest.appendChild(createNode(n));
+										assemble(tmp, s);
+									}
+								}
+								break;
+							case STRING:
+								if (nsAttrRx.test(n)) {
+									break;
+								} else if (jsonAttrRx.test(n)) {
+									dest.setAttribute(String(n.slice(1)), v);
+								} else if (n === "CDATA") {
+									dest.appendChild(xdoc.createCDATASection(v));
+								} else if (n === "TEXT" || n === "Text") {
+									dest.appendChild(xdoc.createTextNode(v));
+								} else if (!((obj instanceof INode) && iNodePropertiesRx.test(n))) { //filter out INode native properties
+									tmp = dest.appendChild(xdoc.createElement(n));
+									assemble(tmp, {
+										Text: v
+									});
+								}
+								break;
+							case FUNC:
+								break;
+							default:
+								if (jsonAttrRx.test(n)) {
+									dest.setAttribute(String(n.slice(1)), v);
+								} else if (!((obj instanceof INode) && iNodePropertiesRx.test(n))) { //filter out INode native properties
+									tmp = dest.appendChild(xdoc.createElement(n));
+									assemble(tmp, {
+										Text: v + ''
+									});
+								}
+
+							}
+						});
+					} else if ($.type(obj) === ARRAY) {
+						for (var i = 0, m = obj.length, o; m > i; i++) {
+							o = obj[i];
+							assemble(dest, o);
+						}
+					} else if ($.type(obj) !== "window" && $.type(obj) !== FUNC) {
+						dest.appendChild(xdoc.createTextNode(obj));
+					}
+				}
+			}
+
+			return {
+				serializeToString: function() {
+					var xml = this.serializeToXML.apply(this, arguments);
+					return XMLUtils.xmlToString(xml.documentElement);
+				},
+				serializeToXML: function() {
+					if (arguments.length > 0) {
+						var i = 0,
+							tag = arguments[i++],
+							ns = (arguments.length >= 3) ? arguments[i++] : "",
+							obj = arguments[i++],
+							root = XMLUtils.newDocument(tag, ns);
+						xdoc = root;
+						assemble(root.documentElement, obj);
+						return root;
+					}
+				}
+			};
+		})();
+
+		//Base Child class
+		IChild = ctx["class"].extend({
+			init: function(parent) {
+				this.parent = parent;
+			}
+		});
+		//Base Node Class: IChild
+		INode = IChild.extend({
+			init: function() {
+				var parent = NULL,
+					name = NULL,
+					value = NULL;
+				switch (arguments.length) {
+				case 1:
+					name = arguments[0];
+					break;
+				case 2:
+					parent = arguments[0];
+					name = arguments[1];
+					break;
+				case 3:
+					parent = arguments[0];
+					name = arguments[1];
+					value = arguments[2];
+					break;
+				default:
+					name = "noname";
+				}
+				this.nodeName = name;
+				this.Text = value || "";
+				this._super(parent);
+			},
+			//Get/Set attribute
+			attr: function() {
+				var out, attr, val;
+				if (arguments.length) {
+					switch (arguments.length) {
+					case 1:
+						attr = $.trim(arguments[0]);
+						val = this["@" + attr] || this[attr];
+						if (val !== undef && !$.isArray(val)) {
+							out = val;
+						}
+						break;
+					case 2:
+						attr = $.trim(arguments[0]);
+						val = arguments[1];
+						if ($.type(attr) === STRING) {
+							this[(jsonAttrRx.test(attr)) ? attr : "@" + attr] = val;
+							out = this;
+						}
+						break;
+					}
+				}
+				return out;
+			},
+			//Looks for nested element by jPath expression
+			find: function(sel, fn) {
+				var out = NULL;
+				out = ctx.jpath.filter(this, sel, fn);
+				return out;
+			},
+			//Adds XML comment
+			addComment: function(comment) {
+				if ($.type(comment) === STRING) {
+					if (this.$comments === undef) {
+						this.$comments = [];
+					}
+					this.$comments.push(comment);
+				}
+				return this;
+			},
+			//Get/Set node value
+			val: function(v) {
+				var out = this;
+				if (v !== undef) {
+					this.Text = v;
+				} else {
+					out = this.Text;
+				}
+				return out;
+			},
+			//Returns XML Document
+			toXML: function() {
+				var root = JSONUtils.serializeToXML(this.nodeName, this.ns, this);
+				return root;
+			},
+			//Returns XML Document as string
+			toXMLString: function() {
+				var root = this.toXML(),
+					out = XMLUtils.xmlToString(root);
+				return out;
+			},
+			//Appends Child node
+			appendChild: function(nodeClassInst) {
+				if (nodeClassInst !== undef && nodeClassInst instanceof INode) {
+					nodeClassInst.parent = this;
+					if (this[nodeClassInst.nodeName] === undef) {
+						this[nodeClassInst.nodeName] = XMLObjectifierEngine.makeNodeSet();
+					}
+					this[nodeClassInst.nodeName].push(nodeClassInst);
+				}
+			},
+			//Default toString override
+			toString: function() {
+				return this.Text;
+			}
+		});
+		//Base Root Class: INode
+		IRoot = INode.extend({
+			init: function(name) {
+				this._super(name);
+				this.ns = "";
+				this.typeOf = "xmlObjectifier";
+
+				//Root has no parent
+				delete this.parent;
+			}
+		});
+
+		//Node Object - can have children
+		var INodeSetMethods = {
+			find: function(pattern) {
+				return ctx.jpath.filter(this, pattern);
+			},
+			getNodesByAttribute: function(attr, obj) {
+				var out = [],
+					n = this.length,
+					node, aval;
+				if (n && $.type(attr) === STRING && obj !== undef) {
+					out = ctx.jpath.filter(this, "*[" + attr + "=" + obj + "]");
+				}
+				return (!out.length) ? NULL : out;
+			},
+			getNodesByValue: function(obj) {
+				var out = [],
+					n = this.length,
+					node;
+				if (n && obj !== undef) {
+					out = ctx.jpath.filter(this, "*[Text=" + obj + "]");
+				}
+				return (!out.length) ? NULL : out;
+			},
+			contains: function(attr, obj) {
+				var out = FALSE,
+					n = this.length,
+					node, aval;
+				if (n && $.type(attr) === STRING && obj !== undef) {
+					while (n--) {
+						node = this[n];
+						aval = node[attr];
+						if (aval !== undef && aval === obj) {
+							out = TRUE;
+							break;
+						}
+					}
+				}
+				return out;
+			},
+			indexOf: function() {
+				var out = -1,
+					attr, obj, n = this.length,
+					node, val;
+				if (n) {
+					switch (arguments.length) {
+					case 1:
+						obj = arguments[0];
+						while (n--) {
+							node = this[n];
+							val = node.val();
+							if (val !== undef && val === obj) {
+								out = n;
+								break;
+							}
+						}
+						break;
+					case 2:
+						attr = arguments[0];
+						obj = arguments[1];
+						while (n--) {
+							node = this[n];
+							val = node[attr];
+							if (val !== undef && val === obj) {
+								out = n;
+								break;
+							}
+						}
+						break;
+					}
+				}
+				return out;
+			},
+			sortByAttribute: function(attr, dir) {
+				if (this.length && $.type(attr) === STRING) {
+					this.sort(function(a, b) {
+						var _a = (a.attr(attr)),
+							_b = (b.attr(attr));
+						_a = !isNaN(_a) ? parseFloat(_a) : _a;
+						_b = !isNaN(_b) ? parseFloat(_b) : _b;
+						var _out = (_a < _b) ? -1 : (_b < _a) ? 1 : 0;
+						_out = (dir !== undef && dir.toLowerCase() === "desc") ? (0 - _out) : _out;
+						return _out;
+					});
+				}
+			},
+			sortByValue: function(dir) {
+				if (this.length) {
+					this.sort(function(a, b) {
+						var _a = (a.Text),
+							_b = (b.Text);
+						_a = !isNaN(_a) ? parseFloat(_a) : _a;
+						_b = !isNaN(_b) ? parseFloat(_b) : _b;
+						var _out = (_a < _b) ? -1 : (_b < _a) ? 1 : 0;
+						_out = (dir !== undef && dir.toLowerCase() === "desc") ? (0 - _out) : _out;
+						return _out;
+					});
+				}
+			},
+			sortByChildNode: function(nodeName, dir) {
+				if (this.length && $.type(nodeName) === STRING) {
+					this.sort(function(a, b) {
+						var _a = a[nodeName],
+							_b = b[nodeName];
+						_a = (_a !== undef && _a.length) ? _a[0].Text : NULL;
+						_b = (_b !== undef && _b.length) ? _b[0].Text : NULL;
+						//---------------------------------------------------//
+						_a = !isNaN(_a) ? parseFloat(_a) : _a;
+						_b = !isNaN(_b) ? parseFloat(_b) : _b;
+						var _out = (_a < _b) ? -1 : (_b < _a) ? 1 : 0;
+						_out = (dir !== undef && dir.toLowerCase() === "desc") ? (0 - _out) : _out;
+						return _out;
+					});
+				}
+			},
+			first: function() {
+				var out = NULL;
+				if (this.length) {
+					out = this[0];
+				}
+				return out;
+			},
+			last: function() {
+				var out = NULL;
+				if (this.length) {
+					out = this.slice(-1);
+				}
+				return out;
+			}
+		};
+		//INodeSet Class
+
+		function INodeSet() {
+			var out = [];
+			$.extend(out, INodeSetMethods);
+			return out;
+		}
+
+
+		//Engine Factory
+		var XMLObjectifierEngine = {
+			makeNodeSet: function() {
+				return INodeSet();
+			},
+			makeNode: function(parent, obj) {
+				var name = $.trim(obj.localName || obj.baseName),
+					node = new INode(parent, name);
+				node.ns = obj.prefix || "";
+				this.setAttributes(node, obj);
+				return node;
+			},
+			setAttributes: function(obj, xnode) {
+				if (xnode !== undef && xnode.attributes.length) {
+					var a = xnode.attributes.length,
+						attr = NULL,
+						attName = NULL;
+					//Order is irrelevant (speed-up)
+					while (a--) {
+						attr = xnode.attributes[a];
+						attName = "@" + attr.name;
+						obj[attName] = attr.value;
+					}
+				}
+			},
+			run: function(parent, xobj) {
+				var curChild, newNode;
+				if (parent !== undef && xobj !== undef) {
+					if (xobj.hasChildNodes()) {
+						var nodesLen = xobj.childNodes.length - 1,
+							n = 0;
+						do {
+							curChild = xobj.childNodes[n];
+							switch (curChild.nodeType) {
+							case 1:
+								//Node
+								//Create a single node
+								newNode = XMLObjectifierEngine.makeNode(parent, curChild);
+								if ($.isFunction(this.decorator)) {
+									var _dout = this.decorator.apply(newNode, [newNode]);
+									//Skip node if decorator returns FALSE
+									if (_dout === FALSE) {
+										continue;
+									}
+								}
+								if (newNode) {
+									//Add child node to parent
+									parent.appendChild(newNode);
+									//Recursive call if node contains children
+									if (curChild.hasChildNodes()) {
+										XMLObjectifierEngine.run.apply(this, [newNode, curChild]);
+									}
+								}
+								break;
+							case 3:
+								//Text Value
+								if (!parent.Text) {
+									parent.val($.trim(curChild.nodeValue));
+								} else {
+									parent.Text += $.trim(curChild.nodeValue);
+								}
+								break;
+							case 4:
+								//CDATA
+								parent.hasCDATA = TRUE;
+								parent.val(curChild.text !== undef ? $.trim(curChild.text) : $.trim(curChild.nodeValue));
+								break;
+							case 8:
+								//Comments
+								if (this.noComments === undef || !this.noComments) {
+									if (parent.$comments === undef) {
+										parent.$comments = [];
+									}
+									parent.$comments.push($.trim(curChild.nodeValue));
+								}
+								break;
+							}
+						} while (n++ < nodesLen);
+					}
+				}
+			},
+			init: function(xobj, opt) {
+				opt = opt || {
+					noComments: TRUE
+				};
+				if ($.type(xobj) === STRING) {
+					xobj = XMLUtils.textToXML(xobj);
+				} else if (util.isXNode(xobj)) {
+					xobj = xobj;
+				} else {
+					xobj = NULL;
+				}
+				//If invalid xml object - abort
+				if (!xobj) {
+					return NULL;
+				}
+				//Determine a document root node
+				var xroot = (xobj.nodeType === 9) ? xobj.documentElement : (xobj.nodeType === 11) ? xobj.firstChild : xobj;
+				//Root Node
+				var root = new IRoot(xroot.nodeName);
+				if ($.isFunction(opt.decorator)) {
+					opt.decorator.apply(root, [root]);
+				}
+				//If init argument is just a text or CDATA return value
+				if (xobj.nodeType === 3 || xobj.nodeType === 4) {
+					return xobj.nodeValue;
+				}
+				//Begins a recursive process to build out a JSON structure
+				this.run.apply(opt, [root, xroot]);
+				this.setAttributes(root, xroot);
+				return root;
+			}
+		};
+		module = {
+			//All Public members
+			xmlToJSON: function(xdoc, opt) {
+				return XMLObjectifierEngine.init(xdoc, opt);
+			},
+			/*
+					@rootTagName <String> - name of the root node, may include prefix i.e. x:root
+					@namespaceURI <String> - namespace URI, specify only if prefix is used in rootTagName
+					@json <object> - json object to be serialized to XML
+
+					returns <String> - XML String version of JSON object
+
+					NOTE:
+					Use property names TEXT|Text - to set node value and CDATA - to set CDATA data section
+					Ex.
+					{ mynode: { Text: "Hello World" } } - //<mynode>Hello World</mynode>
+					{ mynode: { CDATA: "Hello World" } } - //<mynode><![CDATA[Hello World]]></mynode>
+					{ mynode: { @text: "Hello World" } } - //<mynode text="Hello World" />
+					{ items: { item: [
+						{"@name": "Sam", "@value": 1},
+						{"@name": "Alex", "@value": 2},
+					] } } - //<items><item name="Sam" value="1"/><item name="Alex" value="2"/></items>
+				*/
+			jsonToXML: function( /*rootTagName, [namespaceURI], json, nodeOrder */ ) {
+				return JSONUtils.serializeToString.apply(JSONUtils, arguments);
+			},
+			//Converts Text to XML DOM
+			textToXML: XMLUtils.textToXML,
+			//Classes exposed for prototype extensibility
+			xmlObjectifier: {
+				RootClass: IRoot,
+				//Root node only
+				NodeClass: INode,
+				//Node element
+				NodeSetClass: INodeSetMethods //NodeSet class
+			}
+		};
+
+		//Extend bam
+		bam.register("xml", 2.0, module);
+	});
+})(document, jQuery, bam);

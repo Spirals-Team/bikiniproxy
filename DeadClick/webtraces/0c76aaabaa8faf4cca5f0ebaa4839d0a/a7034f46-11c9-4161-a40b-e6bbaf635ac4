@@ -1,0 +1,78 @@
+/**
+ * Created by fabwebworld on 29/05/15.
+ */
+
+jQuery(document).ready(function () {
+  var showhide = function (eObj) {
+    ////console.log('Calling Showhide');
+    ////if(jQuery(eObj).hasClass()) {
+    ////
+    ////}
+    //console.log(jQuery('.hofteaser-new-result.collapsed').height());
+    //jQuery('.hofteaser-new-result.collapsed').animate({
+    //  height: jQuery('.hofteaser-new-result.collapsed').height()
+    //}, 2000, function () {
+    //  // Animation complete.
+    //});
+
+    jQuery('.hofteaser-new-result.collapsed').toggleClass('expand-b');
+
+  };
+
+  var callmorehofteaser = function (eObj) {
+    console.log('Calling Ajax');
+
+    var ajax_object = {
+      'we_value': '1',
+      'ajax_url': 'http://www.claibornefarm.com/wp-admin/admin-ajax.php'
+    };
+
+    var data = {
+      'action': 'my_action',
+      'whatever': ajax_object.we_value      // We pass php values differently!
+    };
+
+    jQuery.post(ajax_object.ajax_url, data, function (response) {
+      jQuery('.hofteaser-new-result.collapsed').html(response);
+    }).done(function () {
+      //showhide();
+      jQuery(eObj).removeClass('ajax-executing');
+    }).always(function () {
+    	setTimeout(function(){
+	      jQuery('.hofteaser-new-result').css({
+	        'height': jQuery('.hofteaser-new-result').height()
+	      });
+      	},1000);
+      //jQuery('.hofteaser-new-result.collapsed').removeClass('expand-b');
+    });
+  };
+
+  jQuery('.get-more-hofteaser').click(function () {
+    jQuery(this).toggleClass('collapsed')
+
+    // If ajax already executed don't run ajax again
+    if (jQuery(this).hasClass('ajax-executed')) {
+      showhide();
+    }
+    else {
+      // Call Ajax if button is clicked first time
+      jQuery(this).addClass('ajax-executed ajax-executing');
+      callmorehofteaser(this);
+    }
+    console.log("Click Working");
+  });
+
+  jQuery('.about_us_video').hover(function(){
+    jQuery('.about_us_video .overlay').toggleClass('zoom');
+    jQuery('.about_us_video .overlay h2').toggleClass('change');
+  });
+  jQuery('.about_us_video .overlay').click(function(){
+    jQuery(this).addClass('left');
+    var href = jQuery('.about_us_video').find('iframe').attr('src');
+    jQuery('.about_us_video').delay(900, function(){
+      jQuery(this).find('iframe').attr('src', href + '&autoplay=1');
+    });
+  });
+
+
+});

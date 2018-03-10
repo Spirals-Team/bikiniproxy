@@ -1,0 +1,33 @@
+var RolloverImages = new Array();
+var Rollover_Cache = new Array();
+var Rollover_Out;
+var Rollover_OutSrc;
+
+function RolloverInit()
+{
+	var imageName;
+	for (imageName in RolloverImages) {
+		if (!RolloverImages[imageName]) continue;
+		Rollover_Cache[imageName] = new Image();
+        if (!isString(RolloverImages[imageName])) continue;
+		Rollover_Cache[imageName].src = RolloverImages[imageName];
+	}
+	RolloverImages = new Array();
+}
+
+function RolloverOn(name, target)
+{
+	if (!target) target = name;
+	if (document.images && Rollover_Cache[name]) {
+		Rollover_Out = target;
+		Rollover_OutSrc = document.images[target].src;
+		document.images[target].src = Rollover_Cache[name].src;
+	}
+}
+
+function RolloverOff()
+{
+	if (Rollover_Out && Rollover_OutSrc && document.images)	{
+		document.images[Rollover_Out].src = Rollover_OutSrc;	
+	}
+}

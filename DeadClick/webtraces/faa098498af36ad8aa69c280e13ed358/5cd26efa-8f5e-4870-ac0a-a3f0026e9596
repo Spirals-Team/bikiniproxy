@@ -1,0 +1,9 @@
+
+/* File BEGIN: /home/cms/prod/live/applications/cnbc.com/staticcontent/scripts/inits/chartbeatMostPopular.js */
+
+CNBC_Utils.execute('chartbeat most popular',function(){var initData=cnbc.app.getInitData('chartbeatMostPopular'),refreshInterval=initData.refreshInterval;var id=initData.containerId;if(initData.templateName=='home_page_ng'){var chartBeatUrl=initData.chartbeatUrl+"?$DEVICE$=web";}else{var productName=(CNBC_Settings.productName)?"?$DEVICE$="+CNBC_Settings.productName:"";var chartBeatUrl=initData.chartbeatUrl+productName;}
+function renderModule(){$.ajax({url:chartBeatUrl,success:function(data){var result=$.trim($(data).text());if(!result){return false;}
+if($.trim($('#'+id).text())!=result){$('#'+id).html(data);}
+if(cnbc&&cnbc.omnitureHomePageTracking&&cnbc.omnitureHomePageTracking.mostPopular){cnbc.omnitureHomePageTracking.mostPopular();}
+if(CNBC_Settings.isNative&&typeof CNBC_Utils.addUrlParameter=='function'){$('.chartbeat_data_module ul li .headline a').each(function(i,e){var index=i+1;CNBC_Utils.addUrlParameter($(e),'trk=mostpopular::'+index+':'+CNBC_Settings.pageNodeId);});CNBC_Utils.addUrlParameter=null;}}});}
+renderModule();if(refreshInterval){window.setInterval(renderModule,refreshInterval*1000);}});

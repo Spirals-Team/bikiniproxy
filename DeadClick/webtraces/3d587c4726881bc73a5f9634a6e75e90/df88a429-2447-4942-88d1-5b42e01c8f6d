@@ -1,0 +1,223 @@
+/**
+* Double-sticker generic handler
+* v0.1 - prototype, tuned for toolbox.com
+* Documentation in progress...
+*
+*/
+ 
+var __ZDSTICKY = __ZDSTICKY || (function () {
+  var sidebarHeight = 0,             // set in Init
+      sidebarStickyRange = 1000,     // the pixel range where the MPU units should stick
+      topLeaderboard = null,
+      topLeaderboardAnchor = null,
+      topSidebarAnchor = null;
+      topSidebarAd = null,
+      bottomSidebarAd = null,
+      bottomSidebarAnchor = null,
+      pageContainer = null,
+      sidebarHeight = null,
+      topMenuHeight = null,
+      enableDebug = false;
+
+
+  // unsticks the leaderboard - should be called on the viewabile event or after a timeout (e.g. 8 sec)
+  var unstickLeaderboard = function(ad) {
+  	topLeaderboard.removeClass("zdStickyFixed").addClass("zdUnSticky");
+  	jQuery(document.body).removeClass("hasStickyLeaderboard"); 
+    scrollAds();
+  };
+
+  var initCSS = function() {
+    
+    var css = "<style type='text/css'> .zdStickyLeaderboard { position: relative; height: auto; min-height: 90px; transition: all .5s; }" +
+    ".zdStickyFixed > div { position: fixed; } .zdStickyFixed.zdUnSticky > div { position: relative; }" +
+    " .zdStickyLeaderboard.zdStickyFixed > div { top: 45px; z-index: 10002; }" + 
+    " .zdStickyTopSidebar, .zdStickyBottomSidebar { min-height: 250px; text-align: center; position: relative; }" +
+    " .zdStickyTopSidebar.zdStickyFixed > div, .zdStickyBottomSidebar.zdStickyFixed > div { z-index: 10001; top: 45px; width: 346px; padding: 10px 0px; background-color: #FFF; }" +
+    " .hasStickyLeaderboard .zdStickyTopSidebar.zdStickyFixed > div, .hasStickyLeaderboard .zdStickyBottomSidebar.zdStickyFixed > div { top: 145px; }" +
+    ". .zdStickyBottomSidebar.zdStickyFixed > div { z-index: 10000; }"+
+    " </style>";
+    jQuery(css).appendTo("head");
+
+  } 
+  
+  // initializes all values for positions, assumes we're going to have a 728x90
+  var init = function (opts) {
+  	if (!opts) { opts = {} }
+  	topLeaderboard = jQuery((opts.topLeaderboard) ? opts.topLeaderboard : '#zdstickyLeaderboard');
+    topSidebarAd = jQuery((opts.topSidebarAd) ? opts.topSidebarAd : '#zdstickyTopSidebar');  	
+    bottomSidebarAd = jQuery((opts.bottomSidebarAd) ? opts.bottomSidebarAd : '#zdstickyBottomSidebar');
+    sidebarStickyRange = (opts.sidebarStickyRange) ? opts.sidebarStickyRange : 1000;
+    pageContainer = jQuery((opts.pageContainerElement) ? opts.pageContainerElement : "#content");
+    sidebarHeight = pageContainer.offset().top + pageContainer.height();
+
+	detectAnchors();
+    initCSS();
+    
+    scrollAds();
+    jQuery(window).scroll(scrollAds);
+    setTimeout(unstickLeaderboard, opts.leaderboardTimeout ? opts.leaderboardTimeout : 8000);
+    if (window.ZDVTools) { window.ZDVTools.onViewable.push(unstickLeaderboard); }
+
+	// reset sticky properties on refresh
+	topLeaderboard.addClass("zdStickyLeaderboard");
+	topSidebarAd.addClass("zdStickyTopSidebar");
+	bottomSidebarAd.addClass("zdStickyBottomSidebar");
+	jQuery(".zdUnSticky").removeClass("zdUnSticky");
+  };
+
+  var detectAnchors = function() {
+    sidebarHeight = pageContainer.offset().top + pageContainer.height();
+	topMenuHeight = 0;
+	
+    if (topLeaderboard.length) {
+      topLeaderboardAnchor = topLeaderboard.offset() || null;
+      if (topLeaderboardAnchor) {
+        topLeaderboardAnchor.bottom = topLeaderboardAnchor.top + topLeaderboard.height();
+        //topMenuHeight = (topLeaderboard.hasClass("zdStickyFixed")) ?  topLeaderboardAnchor.bottom : topLeaderboardAnchor.top;
+        topMenuHeight = (topLeaderboard.hasClass("zdStickyFixed")) ?  topLeaderboardAnchor.bottom : 41;
+      }
+    }
+    if (topSidebarAd.length) {
+      topSidebarAnchor = topSidebarAd.offset() || null;
+      if (topSidebarAnchor) {
+        topSidebarAnchor.bottom = topSidebarAnchor.top + topSidebarAd.height();
+      }
+    }
+    if (bottomSidebarAd.length) {
+      bottomSidebarAnchor = bottomSidebarAd.offset() || null;
+      if (bottomSidebarAnchor) {
+    	bottomSidebarAnchor.bottom = bottomSidebarAnchor.top + bottomSidebarAd.height();
+      }
+    }
+  }
+
+  // sets the margin top of the article content, adds a standard padding
+  var setContentMargin = function (marginPx) {
+    jQuery(".stickypage #main").css({"margin-top": (marginPx + topPadding) + "px"});
+  };
+
+  // Called when google knows the size.
+  var DFPSlotRendered = function (event) {
+  	if (event.isEmpty) return;
+  	var idx = event.slot.getSlotId().d
+  	if (topLeaderboard.find("#"+idx).length) { topLeaderboard.css("min-height", event.size[1]); }
+  	if (topSidebarAd.find("#"+idx).length) { topSidebarAd.css("min-height", event.size[1]); }
+  	if (bottomSidebarAd.find("#"+idx).length) { bottomSidebarAd.css("min-height", event.size[1]); }
+
+  	scrollAds();
+  };
+
+  // Responsible for positioning all the ads correctly
+  // Called in the scroll event, but also whenever you need to jostle the positions of the elements on the page
+  var scrollAds = function (e) {
+    var scrollPos = jQuery(window).scrollTop();
+	var scrollPos2 = scrollPos;
+	detectAnchors();
+	
+	// stick or unstick leaderboard
+	if (topLeaderboardAnchor && !topLeaderboard.hasClass("zdUnSticky") ) {
+	  if (scrollPos >= topLeaderboardAnchor.top) {
+	  	if (!topLeaderboard.hasClass("zdStickyFixed")) { 
+	  	  topLeaderboard.addClass("zdStickyFixed");
+	  	  jQuery(document.body).addClass("hasStickyLeaderboard"); 
+	  	}
+	  	scrollPos2 = scrollPos + topLeaderboardAnchor.bottom;
+	  } else {
+	  	if (topLeaderboard.hasClass("zdStickyFixed")) { 
+	  	  topLeaderboard.removeClass("zdStickyFixed");
+	  	  jQuery(document.body).removeClass("hasStickyLeaderboard"); 
+	  	}
+	  }
+	} else if (topLeaderboardAnchor) {
+		scrollPos2 = scrollPos + topLeaderboardAnchor.top;
+	} 
+	
+	// scrolling below the sidebar top anchor
+	if (topSidebarAnchor && scrollPos2 >= topSidebarAnchor.top) {
+		if (bottomSidebarAnchor && scrollPos2 <= bottomSidebarAnchor.top) { 
+			bottomSidebarAd.removeClass("zdStickyFixed").children("div").css("top", "");
+		}
+		var sidebarRail = topSidebarAnchor.top + topSidebarAd.height() + sidebarStickyRange;
+		if (bottomSidebarAnchor && sidebarRail > bottomSidebarAnchor.top) { sidebarRail = bottomSidebarAnchor.top - 10; }
+		if (scrollPos2 + topSidebarAd.height() > sidebarRail) {
+			var d = sidebarRail - (scrollPos2 + topSidebarAd.height());
+			var t = topMenuHeight - Math.abs(d);
+			if (t > topMenuHeight) t = topMenuHeight;
+			topSidebarAd.addClass("zdStickyFixed").children("div").css("top", t);
+		} else {
+			if (topLeaderboard.hasClass("zdStickyFixed")) {
+			  topSidebarAd.addClass("zdStickyFixed").children("div").css("top", topLeaderboardAnchor.bottom);
+			} else {
+			  topSidebarAd.addClass("zdStickyFixed").children("div").css("top", "");
+			}
+		}
+		
+		if (bottomSidebarAnchor && scrollPos2 >= bottomSidebarAnchor.top) {
+			if (scrollPos2 + bottomSidebarAd.height() > sidebarHeight) {
+			  var d = sidebarHeight - (scrollPos2 + bottomSidebarAd.height());
+			  var t = topMenuHeight - Math.abs(d);
+			  if (t > topMenuHeight) t = topMenuHeight;
+			  bottomSidebarAd.addClass("zdStickyFixed").children("div").css("top", t);
+			  //var h = bottomSidebarAd.children("div").get(0).getBoundingClientRect().top;
+			  //if (h < 0) h = 0;
+			  //bottomSidebarAd.addClass("zdStickyFixed").children("div").css("top", h + d);
+			} else {
+			  bottomSidebarAd.addClass("zdStickyFixed").children("div").css("top", "");
+			}
+			if (topSidebarAd.hasClass("zdStickyFixed")) {
+				//topSidebarAd.removeClass("zdStickyFixed").children("div").css("top", "");
+			}
+		} 
+		
+	} else {
+		topSidebarAd.removeClass("zdStickyFixed").children("div").css("top", "");
+		bottomSidebarAd.removeClass("zdStickyFixed").children("div").css("top", "");
+	}
+		
+  };
+
+  return {
+    init: init,
+    detectAnchors: detectAnchors,
+    refreshGeometry: detectAnchors,
+    unstickLeaderboard: unstickLeaderboard,
+    DFPSlotRendered: DFPSlotRendered
+  };
+
+}());
+
+//Initialize Sticky Banner and Scrolling Med Rects
+if (window.jQuery) {
+  jQuery(document).ready(function () { 
+    __ZDSTICKY.init((typeof ZDStickyOptions !== 'undefined') ? ZDStickyOptions : {}); 
+  });
+} else {
+  document.addEventListener("DOMContentLoaded", function(event) { 
+    __ZDSTICKY.init((typeof ZDStickyOptions !== 'undefined') ? ZDStickyOptions : {});
+  });
+  (function() { 
+     var h = document.getElementsByTagName('head').item(0);
+	 var s = document.createElement("script");
+     s.type = "text/javascript"; s.async="true";
+     s.src="//ajax.googleapis.com/ajax/libs/jquery/1.11.2/jquery.min.js";
+     h.appendChild(s);
+  })();
+}
+
+if (typeof __ZDSTICKY !== "undefined") {
+  var googletag = googletag || {}; googletag.cmd = googletag.cmd || [];
+  googletag.cmd.push(function() {
+    googletag.pubads().addEventListener('slotRenderEnded', __ZDSTICKY.DFPSlotRendered);
+  });
+}
+
+if (typeof ZDVTools === "undefined") {
+  (function() { 
+     var h = document.getElementsByTagName('head').item(0);
+	 var s = document.createElement("script");
+     s.type = "text/javascript"; s.async="true";
+     s.src="//static.ziffdavis.com/jst/zdvtools.min.js";
+     h.appendChild(s);
+  })();
+}

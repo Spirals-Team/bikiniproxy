@@ -1,0 +1,48 @@
+jQuery(document).ready(function() {
+
+   /* Tracking event */
+
+   var lang = jQuery('html').attr('lang');
+
+   /* Formulaire contact support technique */
+   jQuery('.support-form form').submit(function(){
+      var action = jQuery('.m4jRadioWrap input[type="radio"]:checked').val();
+      var instrument = jQuery('.m4jSelection option:selected').val();
+      ga('send', 'event', { eventCategory: 'form support technique', eventAction: 'formulaire ' + action, eventLabel: lang });
+   });
+
+   /* Formulaire de contact */
+   jQuery('.contact-form form').submit(function(){
+      ga('send', 'event', { eventCategory: 'Contact', eventAction: 'Soumettre formulaire contact', eventLabel: lang });
+   });
+   
+   /* Clic bouton Acheter ou louer */
+   jQuery('.boutonVert').click(function(){
+      var instrument = jQuery('.menu_products .current.active span.image-title').text();
+      ga('send', 'event', { eventCategory: 'Produit', eventAction: 'Clic btn acheter ou louer ' + instrument, eventLabel: lang });
+   });
+
+   /* Formulaire intérêt produit */
+   jQuery('.buy-or-rent-form form').submit(function(){
+      var instrument = jQuery('.m4jSelection option:selected').val();
+      ga('send', 'event', { eventCategory: 'Produit', eventAction: 'Envoi formulaire acheter/louer ' + instrument, eventLabel: lang });
+   });
+
+   /* Lightbox Envoyer cette page */
+   jQuery('#pf-email-form').submit(function(){
+      ga('send', 'event', { eventCategory: 'Contact', eventAction: 'Envoyer cette page', eventLabel: lang});
+   });
+
+
+
+    /* Fancybox */
+
+    jQuery("a[href$='.jpg'],a[href$='.png'],a[href$='.gif'],a[href$='.JPG'],a[href$='.PNG'],a[href$='.GIF']").attr('rel', 'group').attr('class', 'fancybox').fancybox({
+    	type : "image",
+    	beforeShow : function() {
+	        var alt = this.element.find('img').attr('alt');
+	        this.inner.find('img').attr('alt', alt);
+	        this.title = alt;
+	    }
+    });
+});

@@ -1,0 +1,67 @@
+_satellite.pushBlockingScript(function(event, target, $variables){
+  var debug = true;
+//set dtm cookie  
+function dtm_set_cookie(stat) {  
+    document.cookie = "allowEmailSignupModalDTM=" + stat + ";domain=.sothebys.com;path=/;expires=Fri, 31 Dec 9999 23:59:59 GMT"; 	
+}
+function dtm_set_cookie_modal_native(stat) {  
+    document.cookie = "allowEmailSignupModal=" + stat + ";domain=.sothebys.com;path=/;expires=Fri, 31 Dec 9999 23:59:59 GMT"; 	
+}
+//Function to Read a specific Cookie
+function dtm_get_cookie(c_name) {
+    var c_value = document.cookie;
+    var c_start = c_value.indexOf(" " + c_name + "=");
+    if (c_start == -1) {
+        c_start = c_value.indexOf(c_name + "=");
+    }
+    if (c_start == -1) {
+        c_value = null;
+    } else {
+        c_start = c_value.indexOf("=", c_start) + 1;
+        var c_end = c_value.indexOf(";", c_start);
+        if (c_end == -1) {
+            c_end = c_value.length;
+        }
+        c_value = unescape(c_value.substring(c_start, c_end));
+    }
+    return c_value;
+};
+ 
+try{ 
+	if(debug){
+		console.debug("DTM:Cookies - _satellite.readCookie('allowEmailSignupModal'):", _satellite.readCookie("allowEmailSignupModal")); 
+		console.debug("DTM:Cookies - _satellite.readCookie('allowEmailSignupModalDTM'):", _satellite.readCookie("allowEmailSignupModalDTM")); 
+	} 
+	
+	if(_satellite.readCookie("allowEmailSignupModal") === undefined){
+		//first visit, no cookie. Set allowEmailSignupModal to true to allow email modal 
+		dtm_set_cookie("false");
+		dtm_set_cookie_modal_native("true");
+		//_satellite.setCookie("allowEmailSignupModal", "true", "");		
+		//_satellite.setCookie("allowEmailSignupModalDTM", "false", "");
+		if(debug){
+			console.debug("DTM:Cookies - 1st visit - allowEmailSignupModal:", _satellite.readCookie("allowEmailSignupModal")); 
+			console.debug("DTM:Cookies - 1st visit - allowEmailSignupModalDTM:", _satellite.readCookie("allowEmailSignupModalDTM")); 
+		}
+		
+	}else if(_satellite.readCookie("allowEmailSignupModalDTM") === "false"){
+		//2nd + visit. Set allowEmailSignupModal to false to prevent email modal 
+		//_satellite.setCookie("allowEmailSignupModal", "false", "");	
+		dtm_set_cookie_modal_native("false");
+		if(debug){
+			console.debug("DTM:Cookies - multi visit - allowEmailSignupModal:", _satellite.readCookie("allowEmailSignupModal")); 
+			console.debug("DTM:Cookies - multi visit - allowEmailSignupModalDTM:", _satellite.readCookie("allowEmailSignupModalDTM"));  
+		}
+		
+	}else{
+		
+		if(debug){
+			console.debug("DTM:Cookies - ? - allowEmailSignupModal:", _satellite.readCookie("allowEmailSignupModal")); 
+			console.debug("DTM:Cookies - ? - allowEmailSignupModalDTM:", _satellite.readCookie("allowEmailSignupModalDTM"));  
+		}
+	}
+	 
+}catch(err){
+	console.debug("DTM:Cookies error:", err); 
+}
+});

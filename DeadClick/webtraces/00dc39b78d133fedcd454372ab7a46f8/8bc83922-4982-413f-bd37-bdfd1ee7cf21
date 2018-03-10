@@ -1,0 +1,162 @@
+/* UTM Referrals */
+/*try{
+	sbjs.init({
+        lifetime: 3,
+        domain: 'jeep-russia.ru',
+        callback: placeData
+    });
+
+    function placeData(sb) {
+        console.group("Sourcebuster");
+
+        console.log('sb_current_typ    - '+ sb.current.typ);
+        console.log('sb_current_src    - '+ sb.current.src);
+        console.log('sb_current_mdm    - '+ sb.current.mdm);
+        console.log('sb_current_cmp    - '+ sb.current.cmp);
+        console.log('sb_current_cnt    - '+ sb.current.cnt);
+        console.log('sb_current_trm    - '+ sb.current.trm);
+
+        console.log('sb_current_add_fd - '+ sb.current_add.fd);
+        console.log('sb_current_add_ep - '+ sb.current_add.ep);
+        console.log('sb_current_add_rf - '+ sb.current_add.rf);
+
+        console.groupEnd();
+    }
+}catch(err){
+    if (typeof console != 'undefined' && typeof console.log == 'function') {
+        console.log("name: " + err.name + "\nmessage: " + err.message + "\nstack: " + err.stack);
+    }
+}*/
+/**/
+
+
+
+var Qvars = {
+	'homepage' : 'Q_Jeep_m',
+	'cherokee_2014':'Q_cherokee_2014_cm',
+	'compass_2014':'Q_compass_2014_cm',
+	'grand_cherokee_2014':'Q_grand_cherokee_2014_cm',
+	'wrangler':'Q_wrangler_cm',
+	'wrangler_unlimited':'Q_wrangler_unlimited_cm',
+	'cherokee_2014_cfg':'Q_cherokee_cfg',
+	'compass_2014_cfg':'Q_compass_cfg',
+	'grand_cherokee_2014_cfg':'Q_grand_cherokee_cfg',
+	'wrangler_cfg':'Q_wrangler_cfg',
+	'wrangler_unlimited_cfg':'Q_wrangler_unlimited_cfg',
+	'brochure_download':'Q_bdl',
+	'test-drive':'Q_td',
+	'dealer_list':'Q_dlr',
+	'service':'Q_srv',
+	'prices':'Q_prs',
+	'chrysler_finance':'Q_chfin',
+	'news-offers':'Q_ofrs'
+}
+
+try{
+	var quisma_track_obj = pi;
+}catch(err){
+	//console.log("name: " + err.name + "\nmessage: " + err.message + "\nstack: " + err.stack);
+}
+
+$j( document ).ready(function() {
+
+	try{
+		if(sitePage=="cherokee_2014"){
+			setTimeout('ga_script(\'NoBounce\',\'Over 30 seconds\',\'cherokee_2014\')',30000);
+		}
+		if(sitePage=="dealer_list"){
+			setTimeout('ga_script(\'NoBounce\',\'Over 30 seconds\',\'dealer_list\')',30000);
+		}
+		quisma_script(Qvars[sitePage]);
+	}catch(err){
+		//console.log("name: " + err.name + "\nmessage: " + err.message + "\nstack: " + err.stack);
+	}
+
+    $j('[data-trackslider]').click(function() {
+		var arr_pr = $j(this).attr("data-trackslider").split('*');
+        var category = '';
+		if(arr_pr[0]=='brochure'||arr_pr[0]=='testdrive'){
+			set_form(arr_pr[0],arr_pr[1]);
+            category = 'model-range';
+		}else{
+            category = arr_pr[1];
+        }
+
+        try{
+            ga_script('MainSliderActivity',category,arr_pr[2]);
+            var yaParams = {category: category , label: arr_pr[2]};
+            yaCounter21513349.reachGoal('MainSliderActivity', yaParams);
+        }catch(err){
+            console.log("name: " + err.name + "\nmessage: " + err.message + "\nstack: " + err.stack);
+        }
+    });
+
+	$j('[data-track]').click(function() {
+		var arr_pr = $j(this).attr("data-track").split('*');
+		try{
+			var arr_index = '';
+			switch (arr_pr[0]) {
+			  case 'configure':
+  				arr_index =arr_pr[1]+'_cfg';
+  				break;
+			  case 'brochure':
+  				arr_index = 'brochure_download';
+  				break;
+			  case 'testdrive':
+  				arr_index = 'test-drive';
+  				break;
+			}
+			quisma_script(Qvars[arr_index]);
+		}catch(err){
+			console.log("name: " + err.name + "\nmessage: " + err.message + "\nstack: " + err.stack);
+		}
+		try{
+			ga_script(arr_pr[0],arr_pr[1],arr_pr[2]);
+		}catch(err){
+			console.log("name: " + err.name + "\nmessage: " + err.message + "\nstack: " + err.stack);
+		}
+		if(arr_pr[0]=='brochure' || arr_pr[0]=='testdrive' || arr_pr[0]=='kmi-c-suv'){
+			set_form(arr_pr[0],arr_pr[1]);
+		}
+	});
+});
+
+function set_form(form,model){
+	switch (model) {
+		case 'renegade_2015':
+			model ='RENEGADE';
+			break
+		case 'cherokee_2014':
+			model ='CHEROKEE';
+			break
+		case 'compass_2014':
+			model = 'COMPASS';
+			break
+		case 'grand_cherokee_2014':
+			model = 'GRAND%20CHEROKEE';
+			break
+		case 'wrangler':
+			model = 'WRANGLER';
+			break
+		case 'wrangler_unlimited':
+			model = 'WRANGLER%20UNLIMITED';
+			break
+    default:
+      model = '';
+      break
+	}
+	overlay_form(form,model);
+}
+
+function quisma_script(groupname){
+	pi = quisma_track_obj;
+	pi.campaign = "6e616e79d491ba42638558caf0364003";
+	pi.type = groupname;
+	pi.sitegroup = groupname;
+	pi.Track();
+}
+
+function ga_script(category,action,opt_label){
+    if(action != 'model-range' || category != 'chrysler_finance') opt_label = "new_" + opt_label;
+    ga('send', 'event', category, action, opt_label);
+}

@@ -1,0 +1,67 @@
+/**
+ *  Disable google analytics if the user does not accept the terms and condiions
+ */
+
+// Change Id Google Analytics
+var idGa = "UA-50161749-1";
+
+// Cookies Functions
+function createCookie(name,value,days) {
+    if (days) {
+        var date = new Date();
+        date.setTime(date.getTime()+(days*24*60*60*1000));
+        var expires = "; expires="+date.toGMTString();
+    }
+    else var expires = "";
+    document.cookie = name+"="+value+expires+"; path=/";
+}
+
+function readCookie(name) {
+    var nameEQ = name + "=";
+    var ca = document.cookie.split(';');
+    for(var i=0;i < ca.length;i++) {
+        var c = ca[i];
+        while (c.charAt(0)==' ') c = c.substring(1,c.length);
+        if (c.indexOf(nameEQ) == 0) return c.substring(nameEQ.length,c.length);
+    }
+    return null;
+}
+
+function eraseCookie(name) {
+    createCookie(name,"",-1);
+}
+
+
+// Cookie Name
+var cookieTermName = 'acceptTermsCookie'
+
+// Erase Manually Accept Terms Cookie
+function eraseAcceptTermCookie(){
+    eraseCookie(cookieTermName);
+}
+
+function toogleBannerCookie(){
+    console.log('test',cookieTermName);
+    if(readCookie(cookieTermName) === null){
+        // Disable Analytics
+        // window['ga-disable-'+idGa] = true;
+    }
+}
+
+// If user accept terms
+function acceptTermsCookie(){
+    createCookie(cookieTermName,1,370);
+
+    var element = document.getElementById("cookie");
+    element.parentNode.removeChild(element);
+}
+
+toogleBannerCookie();
+
+// On dom ready append message terms and conditions
+document.addEventListener("DOMContentLoaded", function(event) {
+    console.log('Test 2',readCookie(cookieTermName));
+    if(readCookie(cookieTermName) === null){
+        document.getElementById('cookie').style.display = 'block';
+    }
+});

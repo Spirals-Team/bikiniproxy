@@ -1,0 +1,1 @@
+processTargusData({"targus": { "segment" : "000", "zip" : "", "age" : "", "gender" : "", "sk" : "" }});

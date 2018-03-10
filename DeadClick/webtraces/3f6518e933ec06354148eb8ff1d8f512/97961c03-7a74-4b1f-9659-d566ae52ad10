@@ -1,0 +1,258 @@
+/*
+Responsive Ads v1.06b
+
+Author: AOL UK Media 
+
+Date: 	17/07/2013
+*/
+
+(function (win, doc) {
+
+	var ResponsiveAds = (typeof ResponsiveAds !== "undefined" &&  typeof ResponsiveAds === "object") ? ResponsiveAds : {};
+
+	ResponsiveAds.init =  function(ads_inventory, is_responsive) {
+	
+			this.is_responsive		= is_responsive || false;
+			this.triggered_layout 	= this.layoutDetect();
+			this.inventory			= ads_inventory || {};
+			this.c3s_section_key	= responsiveC3Skey || "test";
+		
+			this.debugToConsole('>>ResponsiveAds: Cobrand is: ' + io_c3sd.cobrand);
+			this.debugToConsole('>>ResponsiveAds: Layout is: ' + (this.triggered_layout ? this.triggered_layout : 'desktop'));
+			this.debugToConsole('>>ResponsiveAds: C3S Section name used: ' + io_c3sd.section_key );
+			this.renderAds(this.inventory);
+	};
+
+	ResponsiveAds.removeNode = function(nodeID) {
+
+		var nodeID = document.getElementById(nodeID || 'c3s-init');
+		
+		if (nodeID.parentNode) {
+			
+			nodeID.parentNode.removeChild(nodeID);
+			return true;
+		}
+		return false;
+	};
+	
+	ResponsiveAds.loadScript = function(url, nodeID, callback) {
+
+        var script = document.createElement("script");
+        
+        script.type = "text/javascript";
+		script.src = url || '';
+		script.id = nodeID || 'js-' + new Date().getTime();
+
+        if (script.readyState) { // IE Browser
+            
+            script.onreadystatechange = function () {
+                
+                if (script.readyState == "loaded" || script.readyState == "complete") {
+                    
+                    script.onreadystatechange = null;
+                    callback();
+                }
+            };
+        } 
+        else { // Other Browsers
+           
+          	script.onload = function () {
+                
+                callback();
+            };
+        }
+        document.getElementsByTagName("head")[0].appendChild(script);
+		this.debugToConsole('>>ResponsiveAds: New script loaded: ' + url);
+    };
+
+	ResponsiveAds.layoutDetect = function() {
+	
+		var deviceMap = {
+			"desktop" 		: false,
+			"tablet"  		: "largescreen",
+			"wide-phone"  	: "mediumscreen",
+			"phone"  		: "smallscreen"
+		}
+		return deviceMap[window.DI.activeLayout()];
+	};
+
+	ResponsiveAds.clearAds = function(adSpots) {
+		
+		var tempStr = ";";
+		
+		for (var j in adSpots) { //1st level
+			for (var k in adSpots[j]) { //2nd level
+
+				var adKey = adSpots[j][k];
+				var elem = document.getElementById(adKey['placementId']);
+
+				if ( elem && !new RegExp(adKey['placementId'], 'gi').test(tempStr)) {
+					elem.innerHTML = '';
+					tempStr += adKey['placementId'] + ";";
+					this.debugToConsole('>>ResponsiveAds: '+adKey['placementId']+' placement div has been cleared.');
+				}
+			}
+		}
+		this.debugToConsole('>>ResponsiveAds: All placements clear.');
+	};
+
+	ResponsiveAds.renderAds = function(adSpots) {
+		
+		var adsNode = (typeof io_c3sd !== 'undefined' && typeof io_c3sd.ads !== 'undefined') ? io_c3sd.ads : false;
+				
+		if (!adsNode) {
+			
+			this.debugToConsole('>>ResponsiveAds: io_c3sd Object not found. Start to plug Default MNs for all placement ids...');
+		}	
+		
+		if ( this.is_responsive ) {
+			
+			adSpots = adSpots[window.DI.activeLayout()];
+			this.debugToConsole('>>ResponsiveAds: Inventory section used to match: '+window.DI.activeLayout());
+		} 
+		else {
+			
+			adSpots = adSpots['desktop'];
+			this.debugToConsole('>>ResponsiveAds: Script running in NOT Responsive mode. Inventory section used: desktop .');
+		} 
+		
+		for (var j in adSpots) {
+
+			var elem = document.getElementById(adSpots[j]['placementId']);
+			
+			if ( elem ) {
+				
+				if (adsNode && adsNode.hasOwnProperty(j)) {
+			
+					this.debugToConsole(">>ResponsiveAds: Matching inventory & io_c3sd : Found " + j + " : " + adSpots[j]['placementId']);
+					this.triggerAd({ mn: io_c3sd.ads[j], w: adSpots[j]['adWidth'], h: adSpots[j]['adHeight'], type: (adSpots[j]['type']||'ajax'), id: adSpots[j]['placementId'], v: adSpots[j]['adVisibility'] });
+				} 
+				else {
+					
+					this.debugToConsole(">>ResponsiveAds: " + j + " not found on io_c3sd, placing Default MN "+io_c3sMN_fallback);
+					this.triggerAd({ mn: io_c3sMN_fallback, w: adSpots[j]['adWidth'], h: adSpots[j]['adHeight'], type: (adSpots[j]['type']||'ajax'), id: adSpots[j]['placementId'], v: adSpots[j]['adVisibility'] });
+				}	
+			} 
+			else {
+				
+				this.debugToConsole('>>ResponsiveAds: Ad placeholder ' + adSpots[j]['placementId'] + ' not found in the DOM.');
+			}			
+		}
+		this.is_responsive ? this.updateAds() : this.debugToConsole('>>ResponsiveAds: Script running in NOT Responsive mode. No refresh on orentationchange/resize.');
+	};
+
+	ResponsiveAds.triggerAd = function(adObj) {
+
+		if ( typeof adObj !== 'undefined' && typeof adObj === 'object') {
+			
+			var adMN 			= adObj.mn 		|| false,
+				adWidth 		= adObj.w 		|| 1,
+				adHeight 		= adObj.h 		|| 1,
+				adVisibility	= adObj.v 		|| false,
+				adType 			= adObj.type 	|| false,
+				adElemId 		= adObj.id 		|| false;
+
+			//no ad mn supplied
+			if (!adMN) return;
+
+			//Trim function fallback
+			if (!String.prototype.trim) {
+				String.prototype.trim = function () {
+					return this.replace(/^\s+|\s+$/g, '');
+				};
+			}
+			
+			if ( adWidth == 'lb' ) {
+				
+				// used to fix reskin in case the leaderboard is not called as the first ad.
+				adSetAJAXAddOn('1');
+				adSetAddOn('1');
+				this.debugToConsole('>>ResponsiveAds: adSetAJAXAddOn(1) and adSetAddOn(1) called for '+adElemId);
+			} 
+
+			if (adVisibility) {		// Enabling MPU BTF Ads
+				
+				adSetType('F'); 
+
+				// Following condition set adSetInView for the AdVisibility with a value coming from C3S if present. Default is D.
+				typeof io_c3sd.ads !== "undefined" && typeof io_c3sd.ads.adsetinview !== "undefined" && adSetInView(io_c3sd.ads.adsetinview) || adSetInView('D');
+
+				this.debugToConsole('>>ResponsiveAds: AdVisibility Activated for the placementId: '+adElemId+' with value: '+ (typeof io_c3sd.ads !== "undefined" && typeof io_c3sd.ads.adsetinview !== "undefined" && io_c3sd.ads.adsetinview || 'D') );
+			}
+
+			//( adType && adType === 'ajax' ) ? htmlAdWH( adMN.trim(), adWidth, adHeight, adType, adElemId ) : htmlAdWH(adMN.trim(), adWidth, adHeight );
+			( adType && typeof adType === 'string' ) ? htmlAdWH( adMN, adWidth, adHeight, adType, adElemId ) : htmlAdWH(adMN.trim(), adWidth, adHeight );
+			
+							
+			if (adVisibility) {		// Disabling MPU BTF Ads
+				
+				adSetInView('0');
+				adSetType('');					
+			}				
+			
+			this.debugToConsole('>>ResponsiveAds: Rendered MN:'+adMN+' - adWidth:'+adWidth+' - adHeight:'+adHeight+' - placementId:'+adElemId+' - adType: '+adType+' - AdVisibility: '+adVisibility);
+		}
+	};
+
+	ResponsiveAds.getAdMagicNumbers = function(layout, isRender) {
+		var _c3sHost = (Site && Site.C3S && Site.C3S.host) ? Site.C3S.host : "rs.aol.co.uk";
+		var _this = this,
+			 url = "https://" + _c3sHost + "/1.0/" + (layout ? layout + "." : "") + _this.c3s_section_key + "/cobrand.js";
+		
+		this.removeNode();
+		this.loadScript(url, 'c3s-init', function() {
+			
+			isRender && _this.renderAds(_this.inventory);
+		});
+	};
+
+	ResponsiveAds.updateAdMagicNumbers = function(delay) {
+		
+		var _this = ResponsiveAds;
+		
+		_this.isPageFocus = true;		
+		_this.isPageFocus = typeof window.isPageFocus === "boolean" ? window.isPageFocus : _this.isPageFocus;
+		_this.debugToConsole('>>ResponsiveAds: isPageFocus: ' + _this.isPageFocus);
+		
+		if (typeof this.timer !== 'undefined') clearTimeout(this.timer);		
+			
+		this.timer = setTimeout(function() {
+			
+			var new_layout = _this.layoutDetect();
+			_this.debugToConsole('>>ResponsiveAds: '+ (_this.triggered_layout ? _this.triggered_layout : 'desktop') +' <TO> '+ (new_layout || 'desktop') );
+			
+			if ( _this.triggered_layout === new_layout ){
+				
+				_this.debugToConsole('>>ResponsiveAds: No Ad call needed.');						
+				return;
+			}
+		}, delay);	
+	};
+
+	ResponsiveAds.updateAds = function() {
+		
+		var _this = this;
+
+		if (!window.DI) return;
+		
+		DI.addEvent(window, 'orientationchange', function(){
+			
+			_this.updateAdMagicNumbers(500);
+		});
+		DI.addEvent(window, 'resize', function(){
+			
+			_this.updateAdMagicNumbers(500);
+		});
+	};
+
+	ResponsiveAds.debugToConsole = function(content) {
+		
+		if (window.console && window.console.log && /responsive_ads=(1|true)/i.test(location.search)) {
+		
+			console.log(content);
+		}
+	};
+	
+	window.RA = ResponsiveAds;
+
+}(window, document));

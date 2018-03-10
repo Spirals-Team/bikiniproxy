@@ -1,0 +1,200 @@
+/**
+ * isMobile.js v0.3.1
+ * https://github.com/kaimallea/isMobile
+ *
+ * A simple library to detect Apple phones and tablets,
+ * Android phones and tablets, other mobile devices (like blackberry, mini-opera and windows phone),
+ * and any kind of seven inch device, via user agent sniffing.
+ *
+ * @author: Kai Mallea (kmallea@gmail.com)
+ *
+ * @license: http://creativecommons.org/publicdomain/zero/1.0/
+ */
+(function (global) {
+
+    var apple_phone            = /iPhone/i,
+        apple_ipod             = /iPod/i,
+        apple_tablet           = /iPad/i,
+        android_phone          = /(?=.*\bAndroid\b)(?=.*\bMobile\b)/i, // Match 'Android' AND 'Mobile'
+        android_tablet         = /Android/i,
+        android_legacy_browser = /Linux; U; Android/i, // Old android default browser
+        windows_phone          = /IEMobile/i,
+        windows_tablet         = /(?=.*\bWindows\b)(?=.*\bTouch\b)/i, // Match 'Windows' AND 'Touch'
+        other_blackberry       = /BlackBerry/i,
+        other_opera            = /Opera Mini/i,
+        other_firefox          = /(Firefox).*(Mobile)|(Mobile).*(Firefox)/i, // Match 'Firefox' AND 'Mobile'
+        seven_inch = new RegExp(
+            '(?:' +         // Non-capturing group
+
+            'Nexus 7' +     // Nexus 7
+
+            '|' +           // OR
+
+            'BNTV250' +     // B&N Nook Tablet 7 inch
+
+            '|' +           // OR
+
+            'Kindle Fire' + // Kindle Fire
+
+            '|' +           // OR
+
+            'Silk' +        // Kindle Fire, Silk Accelerated
+
+            '|' +           // OR
+
+            'GT-P1000' +    // Galaxy Tab 7 inch
+
+            ')',            // End non-capturing group
+
+            'i');           // Case-insensitive matching
+
+    var match = function(regex, userAgent) {
+        return regex.test(userAgent);
+    };
+
+    var IsMobileClass = function(userAgent) {
+        var ua = userAgent || navigator.userAgent;
+
+        this.apple = {
+            phone:  match(apple_phone, ua),
+            ipod:   match(apple_ipod, ua),
+            tablet: match(apple_tablet, ua),
+            device: match(apple_phone, ua) || match(apple_ipod, ua) || match(apple_tablet, ua)
+        };
+        this.android = {
+            phone:  match(android_phone, ua),
+            tablet: !match(android_phone, ua) && match(android_tablet, ua),
+            device: match(android_phone, ua) || match(android_tablet, ua),
+            legacy: match(android_legacy_browser, ua)
+        };
+        this.windows = {
+            phone:  match(windows_phone, ua),
+            tablet: match(windows_tablet, ua),
+            device: match(windows_phone, ua) || match(windows_tablet, ua)
+        };
+        this.other = {
+            blackberry: match(other_blackberry, ua),
+            opera:      match(other_opera, ua),
+            firefox:    match(other_firefox, ua),
+            device:     match(other_blackberry, ua) || match(other_opera, ua) || match(other_firefox, ua)
+        };
+        this.seven_inch = match(seven_inch, ua);
+        this.any = this.apple.device || this.android.device || this.windows.device || this.other.device || this.seven_inch;
+        // excludes 'other' devices and ipods, targeting touchscreen phones
+        this.phone = this.apple.phone || this.android.phone || this.windows.phone || this.other.device;
+        // excludes 7 inch devices, classifying as phone or tablet is left to the user
+        this.tablet = this.apple.tablet || this.android.tablet || this.windows.tablet;
+    };
+
+    var IM = new IsMobileClass();
+    IM.Class = IsMobileClass;
+
+    if (typeof module != 'undefined' && module.exports) {
+        module.exports = IM;
+    } else if (typeof define === 'function' && define.amd) {
+        define(IM);
+    }
+
+    global.isMobile = IM;
+
+})(this);
+
+/**
+ * @file cookie-helper.js
+ * @author Terry <tprudent@france24.com>
+ */
+(function( factory ) {
+    if ( typeof define === 'function' && define.amd ) {
+        // AMD. Register as an anonymous module.
+        define([], factory);
+    } else {
+        // Browser globals
+        // Force the namespace to __cookieHelper
+        window.__cookieHelper = factory();
+    }
+})(function() {
+    var l = document.location;
+    var subdomain = l.hostname.split('.').length > 1 ? l.hostname.split('.').slice(1).join('.') : l.hostname;
+
+    return {
+        setCookie: function(id, value, expires, path, domain) {
+            if (!id) return;
+            path        = path || '/';
+            expires     = expires || new Date( new Date().getTime() + 3600000 ).toUTCString();
+            domain      = domain || subdomain;
+            return document.cookie = "%id=%value; expires=%expires; path=%path; domain=%domain"
+                .replace('%id', id)
+                .replace('%value', value)
+                .replace('%expires', expires)
+                .replace('%path', path)
+                .replace('%domain', domain);
+        },
+        unsetCookie: function(id) {
+            var hostParts = l.hostname.split('.');
+            var qcookie = '';
+            for (var i = 0; i < hostParts.length; i++) {
+                qcookie += this.setCookie(id, '', new Date(0).toUTCString(), '/', hostParts.slice(i).join('.')) + ';';
+            }
+            return qcookie;
+        },
+        readCookie: function(id) {
+            var regexp = new RegExp(id + '=([^;]*)', 'g');
+            var matches = regexp.exec(document.cookie);
+            return matches && matches.length > 0 ? matches[1] : false;
+        }
+    }
+});
+
+if (typeof domainConfig == "undefined") {
+    var domainConfig = {
+        baseDomain: 'rfi.priv',
+        defaultSubdomain: 'www',
+        mobileSubdomain: 'm',
+        tabletSubdomain: 't'
+    };
+}
+
+(function(domainConfig) {
+    function redirect(baseDomain, subdomain) {
+        var regexp = new RegExp(
+            "(https?:\/\/)(.*)(" + baseDomain + ")(\/.*)",
+            'g'
+        );
+
+        var aURL = regexp.exec(window.location.href)
+
+        if (
+            aURL
+            && aURL[1] // Should contain the protocol
+            && aURL[3] // Should contain base domain
+            // Avoid cycling/infinite redirections
+            && aURL[2] != domainConfig.mobileSubdomain
+            && aURL[2] != domainConfig.tabletSubdomain
+        ) {
+            var href = aURL[1] // Protocol
+                + subdomain // mobile subdomain
+                + '.' +aURL[3] + aURL[4];
+            window.location.href = href;
+        }
+    }
+    
+    if (isMobile.phone || isMobile.seven_inch || isMobile.other.device) {
+        // Keep the current referrer in a cookie
+        if (typeof window.__cookieHelper == 'object') {
+            var l = document.location;
+            var r = document.referrer;
+            var subdomain = l.hostname.split('.').length > 1 ? l.hostname.split('.').slice(1).join('.') : l.hostname;
+            if (r && !new RegExp('^https?://(.*\.)?' + subdomain, 'g').test(r))
+                window.__cookieHelper.setCookie('original-referrer', document.referrer);
+        }
+        redirect(domainConfig.baseDomain, domainConfig.mobileSubdomain);
+    }
+
+    /**
+    if (isMobile.tablet) {
+        redirect(domainConfig.baseDomain, domainConfig.tabletSubdomain);
+    }
+    /**/
+
+})(domainConfig);
+

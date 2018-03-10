@@ -1,0 +1,181 @@
+/* 
+ * 
+ * Javascript modification specific for the ICG theme
+ * 
+ */
+
+function shuffle(array) {
+  var currentIndex = array.length, temporaryValue, randomIndex ;
+
+  // While there remain elements to shuffle...
+  while (0 !== currentIndex) {
+
+    // Pick a remaining element...
+    randomIndex = Math.floor(Math.random() * currentIndex);
+    currentIndex -= 1;
+
+    // And swap it with the current element.
+    temporaryValue = array[currentIndex];
+    array[currentIndex] = array[randomIndex];
+    array[randomIndex] = temporaryValue;
+  }
+
+  return array;
+}
+
+
+
+function demoAccordion () {
+	
+	var rows = Array();
+	var arrow = ["true","true","true","true","true","true","true","true","true","true","true","true","true","true"];
+	var rowIndex = 0;
+
+	jQuery('.page-software-demo .view-id-software_demo .views-row').each(function () { 
+	
+		jQuery(this).hover(function() {
+			jQuery(this).css('cursor','hand'); 
+		}, function() {  
+			jQuery(this).css('cursor','pointer');
+		}); <!-- hover --!>
+	
+		rows[rowIndex] = jQuery(this);
+	
+		rows[rowIndex].find('h2').addClass('icon-arrow-right3');
+		
+		rows[rowIndex].find('.version').hide();
+		rows[rowIndex].find('p').hide();
+		rows[rowIndex].find('ol').hide();
+		rows[rowIndex].find('.demo-download-link').hide();
+	
+		rows[rowIndex].click(function() {
+		
+		  	if (arrow[rowIndex] == false) {
+			  	jQuery(this).find('h2').removeClass('icon-arrow-down2').addClass('icon-arrow-right3');
+			  	arrow[rowIndex] = true;
+		  	} else {
+			  	jQuery(this).find('h2').removeClass('icon-arrow-right3').addClass('icon-arrow-down2');
+			  	arrow[rowIndex] = false;
+		  	} <!-- if --!>
+		  	
+		  console.log("click");
+		  
+		  
+		  jQuery(this).find('.version').toggle();
+		  jQuery(this).find('p').toggle();
+		  jQuery(this).find('ol').toggle();
+		  jQuery(this).find('.demo-download-link').toggle();
+		  
+		  
+		  
+		  jQuery(this).find('.demo-download-link a').hover(function() {
+			
+			jQuery(this).parent().css('cursor','hand');
+			jQuery(this).parent().parent().parent().find('.version').show();
+			jQuery(this).parent().parent().parent().find('p').show();
+			jQuery(this).parent().parent().parent().find('ol').show();
+			jQuery(this).parent().parent().parent().find('.demo-download-link').show();
+		  }, function() {
+			 jQuery(this).parent().css('cursor','pointer'); 
+		  }); <!-- hover --!>
+		
+		
+		});<!-- click --!>
+		
+	rowIndex++;
+	
+
+	});<!-- software demo --!>	
+}
+
+jQuery(document).ready(function() {
+    
+	jQuery('input.default-value').each(function() {
+       var default_value = this.value;
+       jQuery(this).focus(function() {
+          if(this.value == default_value) {
+             this.value = '';
+          }
+       });
+
+       jQuery(this).blur(function() {
+          if(this.value == '') {
+             this.value = default_value;
+            }
+       }); 
+    });	
+	
+	
+	
+	jQuery('#block-search-form .search span').addClass('icon icomoon icon-search5');
+	
+	
+	
+	
+	
+	
+	console.log("Here I am");
+	
+	jQuery('.field-name-field-accordion .field-items').hide();
+			
+	jQuery('.field-name-field-accordion').toggle(function() {
+		jQuery('.field-name-field-accordion .field-items').show();
+	}, function() {
+		jQuery('.field-name-field-accordion .field-items').hide();
+	});
+	
+	var blocks = new Array();
+	var blocksArea  = new Array();
+	var blocksImage = new Array();
+	var blocksTitle = new Array();
+	var blocksBody  = new Array();
+	
+	var counter = 0;
+
+	jQuery('#content-middle .block-views .views-row').each(function() {
+		blocksArea[counter] = jQuery(this).find('.views-field-field-featured-area').html();
+		blocksImage[counter] = jQuery(this).find('.views-field-field-featured-image').html();
+		blocksTitle[counter] = jQuery(this).find('.views-field-title-1').html();
+		blocksBody[counter] = jQuery(this).find('.views-field-body').html();
+		blocks.push(counter);
+		counter++;
+	});
+	
+	shuffle(blocks);
+	
+	var counter = 0;
+	
+	jQuery('#content-middle .block-views .views-row').each(function() {
+		current = blocks[counter];
+	/*	
+		featuredArea = '<div class="views-field views-field-field-featured-area">'+ blocksArea[current] + '</div>';
+		featuredImage = '<div class="views-field views-field-field-featured-image">'+ blocksImage[current] + '</div>';
+		featuredTitle = '<div class="views-field views-field-title-1">'+ blocksTitle[current] + '</div>';
+		featuredBody = '<div class="views-field views-field-body">'+ blocksBody[current] + '</div>';
+		*/
+		
+		jQuery(this).find('.views-field-field-featured-area').html(blocksArea[current]);
+		jQuery(this).find('.views-field-field-featured-image').html(blocksImage[current]);
+		jQuery(this).find('.views-field-title-1').html(blocksTitle[current]);
+		jQuery(this).find('.views-field-body').html(blocksBody[current]);
+		
+		counter++;
+	});
+	
+});
+
+
+(function ($) {
+  $(document).delegate('.views-reset-button .form-submit','click',function(event) {
+    event.preventDefault();
+    $('form').each(function() {
+      $('form select option').removeAttr('selected');
+      $('form input[type=text]').attr('value', '');
+      this.reset();
+    }); 
+    $('.views-submit-button .form-submit').click();
+    return false;
+  }); 
+}(jQuery));
+
+

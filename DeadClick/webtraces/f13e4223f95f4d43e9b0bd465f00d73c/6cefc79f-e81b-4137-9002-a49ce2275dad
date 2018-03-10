@@ -1,0 +1,206 @@
+/**
+* PLUGIN INITS
+* Place all init calls for jQuery plugins or other below.
+*/
+(function($){
+	// Add hoverIntent functionality to main navigation.
+	$("#main-nav ul.menu > li").hoverIntent(
+		function(){ $(this).children('ul').fadeIn('fast'); },
+		function(){ $(this).children('ul').fadeOut('fast'); }
+	);
+	
+	// Main spotlight slider.
+	$('#main-spotlight').slick({
+		autoplay		: true,
+		autoplaySpeed	: 10000,
+		speed			: 500,
+		dots			: true,
+		arrows			: false
+	});
+	
+	// Add customscrollbar functionality to containers with the applied class.
+	$('.widget-socialmedia-scrollbar > div.widget-socialmedia').mCustomScrollbar({
+		theme				: 'dark',
+		contentTouchScroll	: false,
+		scrollButtons		: { enable: true }
+	});
+})(jQuery);
+
+/**
+* MAIN NAV SCROLLING DESKTOP FUNCTIONALITY
+* Instead of downloading an entire skrollr library for only a single element we will provide the functionality
+* within our own library. This functionality will only be triggered on desktop and not mobile devices.
+*
+* [ ] Make modular in order to be reused on other elements.
+*/
+(function($){
+	// Elem vars.
+	var main_nav = $('#main-nav');
+	var temple_nav = $('#temple-nav');
+	var wp_height = (main_nav.hasClass('is-admin'))? 32: 0;
+
+	// Useful vars.
+	var trigger_pos = temple_nav.height();
+	var cur_pos = $(this).scrollTop();
+
+	// Adjust margin for sibling of main nav.
+	main_nav.next().addClass('nav-adjust');
+	
+	// The following functionality is reserved for desktop users only.
+	if(!(/Android|iPhone|iPad|iPod|BlackBerry|Windows Phone/i).test(navigator.userAgent || navigator.vendor || window.opera)){
+		// Do an initial check upon first page load for scroll position.
+		if(cur_pos>=trigger_pos){
+			adjust_nav_on();
+		}
+		
+		// Now, keep an eye on the scroll position and adjust the menu when needed.
+		$(window).on('scroll',function(){
+			cur_pos = $(this).scrollTop();
+			
+			if(cur_pos>=trigger_pos){
+				adjust_nav_on();
+			} else {
+				adjust_nav_off();
+			}
+		});
+	}
+	
+	function adjust_nav_on(){
+		main_nav.css({
+			'position'	: 'fixed',
+			'top'		: wp_height
+		});
+		$('[data-nav-adjust]').css('top', main_nav.height() + wp_height); // any elems that need their top positions adjusted as well...
+	}
+	function adjust_nav_off(){
+		main_nav.css({
+			'position'	: 'absolute',
+			'top'		: trigger_pos+wp_height+1 // extra pixel for border...
+		});
+		$('[data-nav-adjust]').css('top', main_nav.height() + trigger_pos + wp_height + 1);
+	}
+})(jQuery);
+
+/**
+* SPOTLIGHT ADJUST
+* Adjust the width/height of the spotlight container to fit the user's remaining viewport.
+*/
+(function($){
+	var temple_nav = $('#temple-nav').height();
+	var main_nav = $('#main-nav').height();
+	var wp_height = ($('#main-nav').hasClass('is-admin'))? 32: 0;
+	var proper_height = $(window).height() - (temple_nav+main_nav+wp_height);
+	
+	$('#main-spotlight').height(proper_height);
+	$('#main-spotlight .item').css({
+		'display'	: 'block',
+		'width'		: $(document).innerWidth(true),
+		'height'	: proper_height
+	});
+})(jQuery);
+
+/**
+* SOCIAL MEDIA ADJUST
+* Adjust the width/height of the social media container to fit that row's remaining height. We are only going to adjust size
+* if the viewport is larger than most mobile phones.
+*/
+(function($){
+	/*var viewport_w = $(window).width();
+	if(viewport_w>990){
+		var fp_leftcol = $('#frontpage-leftcol').height();
+		$('#main-socialmedia > div').css('height',fp_leftcol);
+	}*/
+	
+	// loop through all other elems besides socialmedia one.
+	// the difference of their heights and the main container heights is what we want.
+	var viewport_w = $(window).width();
+	var height_vals = 0;
+	var fp_leftcol = $('#frontpage-leftcol').height();
+	var socialmed_elem = $('#main-socialmedia > div.widget-socialmedia');
+	
+	if(viewport_w>990){
+		$('#main-socialmedia > div').each(function(){
+			if( $(this).attr('class').indexOf('widget-socialmedia') == -1 ) height_vals += $(this).outerHeight();
+		});
+		
+		var height_diff = fp_leftcol - height_vals;
+		var socialmed_margin = socialmed_elem.outerHeight(true) - socialmed_elem.outerHeight();
+		socialmed_elem.css('height', height_diff - socialmed_margin);
+	}
+})(jQuery);
+
+/**
+* LATEST NEWS SLIDER
+* Disable the default arrows functionality and recreate in order to provide better positioning on desktop
+* and mobile versions.
+*/
+(function($){
+	var elem = $('#main-latestnews');
+	elem.slick({
+		infinite: true,
+		slidesToShow: 4, slidesToScroll: 4,
+		arrows: false,
+		responsive: [
+			{
+				breakpoint: 1000,
+				settings: { slidesToShow:3, slidesToScroll:3, arrows:false }
+			},
+			{
+				breakpoint: 850,
+				settings: { slidesToShow:2, slidesToScroll:2, arrows:false }
+			},
+			{
+				breakpoint: 600,
+				settings: { slidesToShow:1, arrows:false }
+			}
+		]
+	}).find('button').click(function(){
+		if($(this).attr('class')=='slick-prev') elem.slickPrev();
+		else elem.slickNext();
+	});
+})(jQuery);
+
+/**
+* Fixed Navigation Activator
+* Brings back old fixed nav functionality but just for larger screens.
+*/
+(function($){
+	const TRIGGER_WIDTH = 1800;
+	var win_width = $(window).width();
+	
+	if(win_width > TRIGGER_WIDTH){
+		// grab fixed_nav, set position to absolute. adjust left/top position.
+		// is there a fixed nav?
+		var fixednav_elem = $('#fixed-nav');
+		var menu_elem = fixednav_elem.children('ul.menu');
+		if(typeof fixednav_elem != 'undefined' && typeof menu_elem != 'undefined'){
+			fixednav_elem.css({
+				'position'	:	'absolute',
+				'top'		:	'-60px',
+				'left'		:	'-1120px'
+			});
+			
+			menu_elem.css({
+				'position'	:	'fixed',
+				'z-index'	:	'0'
+			});
+		}
+	}
+})(jQuery);
+
+/**
+ * Javascript for MSSB RFI
+ */
+
+(function($){
+    var loc = window.location.pathname;
+    var dir = loc.substring(0, loc.lastIndexOf('/'));
+    var dirs = dir.split("/");
+    if (!dirs.indexOf('the-executive-master-of-science-in-sport-business') >= 0) {
+        if (dirs.indexOf('master-of-science-in-sport-business') >= 0) {
+            $("#js--rfi-link").attr("href", "http://sthm.temple.edu/graduate-programs/admissions/request-more-information-mssb"); 
+        } else {
+        }
+    } else {
+    }
+})(jQuery);

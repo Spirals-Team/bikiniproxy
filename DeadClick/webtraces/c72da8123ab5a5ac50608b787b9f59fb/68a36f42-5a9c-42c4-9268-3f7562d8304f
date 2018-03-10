@@ -1,0 +1,2977 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>SysAdmin's Journey</title>
+  <meta name="author" content="Justin Ellison">
+
+  
+  <meta name="description" content="At the request of the authors of Vault, I've decided to take this content down. It was creating a lot of problems for people who aren't using Vault &hellip;">
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://sysadminsjourney.com/">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <link href="/atom.xml" rel="alternate" title="SysAdmin's Journey" type="application/atom+xml">
+  <script src="/javascripts/modernizr-2.0.js"></script>
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+  <script>!window.jQuery && document.write(unescape('%3Cscript src="/javascripts/libs/jquery.min.js"%3E%3C/script%3E'))</script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="http://fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="http://fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+
+  
+  <script type="text/javascript">
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-5430710-2']);
+    _gaq.push(['_trackPageview']);
+
+    (function() {
+      var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+      ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    })();
+  </script>
+
+
+</head>
+
+<body   >
+  <header role="banner"><hgroup>
+  <h1><a href="/">SysAdmin's Journey</a></h1>
+  
+</hgroup>
+
+</header>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="/atom.xml" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
+  
+</ul>
+  
+<form action="https://www.google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="sitesearch" value="sysadminsjourney.com">
+    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+  </fieldset>
+</form>
+  
+<ul class="main-navigation">
+  <li><a href="/">Blog</a></li>
+  <li><a href="/blog/archives">Archives</a></li>
+  <li><a href="/contact">Contact</a></li>
+  <li><a href="/about">About</a></li>
+</ul>
+
+</nav>
+  <div id="main">
+    <div id="content">
+      <div class="blog-index">
+  
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2015/10/30/replicating-hashicorp-vault-in-a-multi-datacenter-setup/">Replicating Hashicorp Vault in a Multi-DataCenter Setup</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+<time class='entry-date' datetime='2015-10-30T12:45:58-05:00'><span class='date'><span class='date-month'>Oct</span> <span class='date-day'>30</span><span class='date-suffix'>th</span>, <span class='date-year'>2015</span></span> <span class='time'>12:45 pm</span></time>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><div class="alert alert-danger">At the request of the authors of Vault, I've decided to take this content down.  It was creating a lot of problems 
+for people who aren't using Vault in exactly the same way I was, and it was likely causing more harm than good.  If you need a way to reliably do 
+  Vault replication, you'll want to look into the Vault Premium package.</div>
+
+
+
+
+<!--
+This post will go over how to use [HashiCorp's Vault](https://vaultproject.io) with [HashiCorp's Consul](http://consul.io) as a backend
+in a multiple datacenter arrangement.  This post is a cleaned up summary of what happened in [this Github issue](https://github.com/hashicorp/vault/issues/674).
+
+Very, very special thanks go out to Jeff Mitchell with Hashicorp.  Without his help, I never would have been able to accomplish what I had originally set out to do.
+
+# The Use Case
+ - You have more than one physical datacenter.
+ - You need to have a HA Vault setup in each datacenter
+ - You don't want to lose functionality in any datacenter if the connection between them is severed.
+ - You want to have all Vault auth tokens, secrets, and policies available in all datacenters.
+ - You have one *read+write* "source" datacenter where you will be creating Vault tokens, policies, and secrets.
+ - You have one or more *read-only* "destination" datacenters where Vault data will be replicated to, but never modified.  We'll use one in our example, but I use 3 and see no real scalability problems with anything less than 20.
+
+
+# Context and Assumptions
+
+Throughout this post, I'll refer to two datacenters: Datacenter A and Datacenter B.  Datacenter A will represent our "source" datacenter, and B will
+represent our "destination" datacenter.  For brevity, we'll assume that these are both physically 
+separate datacenters as well as separate Consul datacenters.  We'll also assume that there is VPN or an alternative connectivity solution in place.  
+
+Lastly, this post assumes that you're familiar with working with both Vault and Consul.  Please read all the docs on both products([Consul](https://www.consul.io/docs/index.html),[Vault](https://vaultproject.io/docs)).  Hashicorp has 
+went to great pains to produce some really good documentation, please don't let their efforts go to waste.
+
+# The Problem
+
+While Consul itself supports multiple datacenters, there's some problems in the way that it handles things them that cause problems when 
+you're putting Vault in front of it.
+
+1. Your first thought might be to use multiple datacenters in Consul, and point all of your Vaults at the same datacenter.  This technically 
+will work, but if Datacenter A loses connectivity to Datacenter B, Vault will not function in Datacenter B until connectivity is restored.
+1. You might next come upon [consul-replicate](https://github.com/hashicorp/consul-replicate).  This is the right tool for the job, but the devil's in
+the details.  First, you can't replicate the entire k/v store -- you have to exclude some things from being replicated.
+1. If you get all that figured out, you'll quickly discover that even though everything seems to be working fine via consul-replicate, your changes
+don't show up in Datacenter B until after you restart and unseal Vault.
+
+# The Solution
+
+The solution is to setup Vault to point at a local Consul cluster.  We'll use consul-replicate to replicate specific data from Consul in the source datacenter (A) to
+the destinatation datacenter (B)
+
+For performance, Vault makes use of a read cache.  Since only one Vault instance is actually marked as active and that active instance is the only one that sees _any_ operations,
+it caches every read indefinitely in process memory.  Since we're using consul-replicate to essentially change the data underneath Vault without using Vault API's, you need 
+to disable that read cache.  
+
+## Step 1: Setup Consul clusters in each datacenter
+
+By following the [awesome documentation on Consul](https://www.consul.io/docs/index.html), you'll have a Consul cluster up and running in each datacenter in no time.
+*NOTE:* You need to set your ```encrypt``` and ```acl_master_token``` to the same values in order to make multiple datacenters work in Consul.
+
+## Step 2: Make the Consul clusters aware of the nodes in the other datacenters
+
+Use the ```consul join -wan <<hostname of Consul host in other datacenter>>``` command to establish communications between each Consul cluster.
+
+## Step 3: Install HA Vault in each datacenter
+
+Use the [awesome documentation on Vault](https://vaultproject.io/docs) to build HA Vault clusters in each datacenter.  Point each Vault instance at it's local Consul datacenter.
+Vault instance 1 in Datacenter A would have a ```vault.hcl``` file like this:
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+</pre></td><td class='code'><pre><code class='json'><span class='line'><span class="err">backend</span> <span class="s2">&quot;consul&quot;</span> <span class="p">{</span>
+</span><span class='line'>  <span class="err">address</span> <span class="err">=</span> <span class="nt">&quot;localhost:8500&quot;</span>
+</span><span class='line'>  <span class="err">advertise_addr</span> <span class="err">=</span> <span class="s2">&quot;https://vault1.datacenterA.com:8200&quot;</span>
+</span><span class='line'>  <span class="err">token</span> <span class="err">=</span> <span class="s2">&quot;XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX&quot;</span>
+</span><span class='line'>  <span class="err">path</span> <span class="err">=</span> <span class="s2">&quot;vault&quot;</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="err">listener</span> <span class="s2">&quot;tcp&quot;</span> <span class="p">{</span>
+</span><span class='line'>  <span class="err">address</span> <span class="err">=</span> <span class="nt">&quot;vault1.datacenterA.com:8200&quot;</span>
+</span><span class='line'>  <span class="err">tls_cert_file</span> <span class="err">=</span> <span class="s2">&quot;/etc/pki/tls/certs/wildcard.datacenterA.com.crt&quot;</span>
+</span><span class='line'>  <span class="err">tls_key_file</span> <span class="err">=</span> <span class="s2">&quot;/etc/pki/tls/private/datacenterA.com.key&quot;</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+Vault instance 1 in Datacenter B would have a ```vault.hcl``` like this:
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+</pre></td><td class='code'><pre><code class='json'><span class='line'><span class="err">disable_cache</span> <span class="err">=</span> <span class="kc">true</span>
+</span><span class='line'><span class="err">backend</span> <span class="s2">&quot;consul&quot;</span> <span class="p">{</span>
+</span><span class='line'>  <span class="err">address</span> <span class="err">=</span> <span class="nt">&quot;localhost:8500&quot;</span>
+</span><span class='line'>  <span class="err">advertise_addr</span> <span class="err">=</span> <span class="s2">&quot;https://vault1.datacenterB.com:8200&quot;</span>
+</span><span class='line'>  <span class="err">token</span> <span class="err">=</span> <span class="s2">&quot;XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX&quot;</span>
+</span><span class='line'>  <span class="err">path</span> <span class="err">=</span> <span class="s2">&quot;vault&quot;</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="err">listener</span> <span class="s2">&quot;tcp&quot;</span> <span class="p">{</span>
+</span><span class='line'>  <span class="err">address</span> <span class="err">=</span> <span class="nt">&quot;vault1.datacenterB.com:8200&quot;</span>
+</span><span class='line'>  <span class="err">tls_cert_file</span> <span class="err">=</span> <span class="s2">&quot;/etc/pki/tls/certs/wildcard.datacenterB.com.crt&quot;</span>
+</span><span class='line'>  <span class="err">tls_key_file</span> <span class="err">=</span> <span class="s2">&quot;/etc/pki/tls/private/datacenterB.com.key&quot;</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+The big thing to notice here is that we turn off the read cache in our destination datacenter.
+
+<div class="alert alert-warning">IMPORTANT: the disable_cache functionality is new and is only available in Vault 0.4.0 and up.  Vault 0.4.0 wasn't available at the time of this writing.  If you need this functionality and 0.4.0 isn't available yet, you need to build from source.</div>
+
+## Step 4: Set Up Consul-Replicate
+
+At this point, you will have all of the endpoints set up in the proper manner.  The last piece to this puzzle is to replicate the data from the source to the destination(s) via [consul-replicate](https://github.com/hashicorp/consul-replicate).  Consul-replicate is a very specific tool written for a very specific purpose, and I'll admit that the docs for it aren't up to par with the other tools in Hashicorp's suite.  Rest assured, it works perfectly once you've got it set up.
+
+Consul-replicate works by connecting our destination Consul cluster, queries the keys that we instruct it to sync using Consul's built-in remote datacenter capabilities, and synchronizes these key-value pairs to our destination Consul cluster's local datacenter.
+
+Download the latest consul-replicate release, and install it on one of the Consul nodes in datacenter B.  Your ```/etc/consul-replicate.hcl``` should look something like this:
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+</pre></td><td class='code'><pre><code class='json'><span class='line'><span class="err">consul</span> <span class="err">=</span> <span class="s2">&quot;127.0.0.1:8500&quot;</span>
+</span><span class='line'><span class="err">token</span> <span class="err">=</span> <span class="s2">&quot;XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX&quot;</span>
+</span><span class='line'><span class="err">retry</span> <span class="err">=</span> <span class="s2">&quot;10s&quot;</span>
+</span><span class='line'><span class="err">max_stale</span> <span class="err">=</span> <span class="s2">&quot;10m&quot;</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="err">prefix</span> <span class="p">{</span>
+</span><span class='line'>    <span class="err">source</span> <span class="err">=</span> <span class="nt">&quot;vault/sys/token@datacenterA&quot;</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'>  <span class="err">prefix</span> <span class="p">{</span>
+</span><span class='line'>    <span class="err">source</span> <span class="err">=</span> <span class="nt">&quot;vault/sys/policy@datacenterA&quot;</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'>  <span class="err">prefix</span> <span class="p">{</span>
+</span><span class='line'>    <span class="err">source</span> <span class="err">=</span> <span class="nt">&quot;vault/logical@datacenterA&quot;</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'>  <span class="err">prefix</span> <span class="p">{</span>
+</span><span class='line'>    <span class="err">source</span> <span class="err">=</span> <span class="nt">&quot;vault/audit@datacenterA&quot;</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'>  <span class="err">prefix</span> <span class="p">{</span>
+</span><span class='line'>    <span class="err">source</span> <span class="err">=</span> <span class="nt">&quot;vault/core/audit@datacenterA&quot;</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'>  <span class="err">prefix</span> <span class="p">{</span>
+</span><span class='line'>    <span class="err">source</span> <span class="err">=</span> <span class="nt">&quot;vault/core/auth@datacenterA&quot;</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'>  <span class="err">prefix</span> <span class="p">{</span>
+</span><span class='line'>    <span class="err">source</span> <span class="err">=</span> <span class="nt">&quot;vault/core/keyring@datacenterA&quot;</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'>  <span class="err">prefix</span> <span class="p">{</span>
+</span><span class='line'>    <span class="err">source</span> <span class="err">=</span> <span class="nt">&quot;vault/core/mounts@datacenterA&quot;</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'>  <span class="err">prefix</span> <span class="p">{</span>
+</span><span class='line'>    <span class="err">source</span> <span class="err">=</span> <span class="nt">&quot;vault/core/seal-config@datacenterA&quot;</span>
+</span><span class='line'>  <span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+The key here:
+##### <div class="alert alert-danger">DON'T REPLICATE THE ENTIRE /vault TREE!!!</div>
+
+It's not so much about what you DO replicate as it is what you DON'T replicate.  Jeff helped me out tremendously here:
+
+> The values I gave above should be a good baseline. You definitely do not want /core/leader or /core/lock and if you replicate /sys/expire you'll have multiple DCs all trying to revoke the same leases, which is a very bad idea.
+
+> ...
+
+> From some looking at a basic layout with the file physical backend, you'd want to copy /sys/token but not /sys/expire, yes to /logical/, and yes much of /core but not /core/leader and not /core/lock.
+
+Once you have your prefixes defined, you can start up consul-replicate: ```/usr/local/bin/consul-replicate -config=/etc/consul-replicate.hcl -log-level=info```.  Within a few seconds, all of your Vault data should be replicated up to your destination datacenter.
+
+# Conclusion
+
+While unsupported, I've found this setup to be fast and stable in our use case.  We use Vault more as a encrypted secret keystore for passwords that applications need access to, and don't use any of the more esoteric features such as the various auth backends.  We simply use the token auth and generic secret storage along with the file audit backend.  Replication is near-immediate, and the performance penalty incurred due to disabling the read cache has been acceptable.
+-->
+
+</div>
+  
+  
+
+
+    </article>
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/content/using-git-submodules-dynamic-puppet-environments">Using Git Submodules With Dynamic Puppet Environments</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+<time class='entry-date' datetime='2012-02-06T00:00:00-06:00'><span class='date'><span class='date-month'>Feb</span> <span class='date-day'>6</span><span class='date-suffix'>th</span>, <span class='date-year'>2012</span></span> <span class='time'>12:00 am</span></time>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>There comes a point in the lifecycle of every Puppet setup where you realize
+that you&rsquo;re going to be much better off utilizing other peoples' Puppet
+modules whenever possible.  It&rsquo;s what makes OSS great &ndash; why should I reinvent
+the wheel when I can help make your wheel even better?  I&rsquo;ve found what I
+think is a very productive setup &ndash; it leverages Git (specifically branches,
+submodules, and hooks), Gitolite permissions, and Puppet environments to
+create a workflow that a team of admins can use to iterate over new features
+on without disturbing each other.</p>
+
+<p>Most of pieces to this puzzle are very well documented elsewhere, I&rsquo;ll provide
+links where necessary.</p>
+
+<h2>Step 1: Establish Dynamic Environment Workflow</h2>
+
+<p>The first step is to go read &ldquo;<a href="http://puppetlabs.com/blog/git-workflow-and-puppet-environments/">Git Workflow and Puppet
+Environments</a>&rdquo; written by Adrien Thebo of Puppet Labs.  Once you&rsquo;ve
+implemented that setup, you should be able to do the following from your
+workstation:</p>
+
+<div class="highlight"><pre><code class="language-bash" data-lang="bash">git clone git@git:puppet.git
+<span class="nb">cd </span>puppet
+git checkout -b mybrokenbranch
+<span class="nb">echo</span> <span class="s2">&quot;this line breaks everything&quot;</span> &gt;&gt; manifests/site.pp
+git commit -am <span class="s1">&#39;Intentionally breaking things&#39;</span>
+git push origin mybrokenbranch</code></pre></div>
+
+
+<p>At this point, you now have a new environment named &lsquo;mybrokenbranch&rsquo; on your
+Puppetmaster. You can test the setup by ssh'ing into the client machines and
+run:</p>
+
+<div class="highlight"><pre><code class="language-bash" data-lang="bash">puppet agent --test --environment mybrokenbranch --noop</code></pre></div>
+
+
+<p>That obviously won&rsquo;t be a happy puppet run. The key
+point here being that your other environments are not impacted by the work of
+this one admin. Let&rsquo;s delete the local and remote branch. From your
+workstation:</p>
+
+<div class="highlight"><pre><code class="language-bash" data-lang="bash">git checkout master
+git branch -d mybrokenbranch
+git push origin :mybrokenbranch</code></pre></div>
+
+
+<p>Note that
+the Puppetmaster says that it&rsquo;s deleted the environment. Feel free to verify
+that by running the above command on the Puppet client, it will complain about
+not having an environment.</p>
+
+<h2>Step 2: Incorporate Git Submodules</h2>
+
+<p>With all that setup, let&rsquo;s go ahead and implement support for git submodules.
+I have a pull request off to Adrien to implement this functionality, but until
+he commits it in, you can use <a href="https://github.com/justintime/puppet-git-hooks">my fork on github</a>. Replace the update
+hook with the updated version on your git server. Now, let&rsquo;s try pulling a git
+submodule into our repo. Again, from your workstation:</p>
+
+<div class="highlight"><pre><code class="language-bash" data-lang="bash">git checkout -b firewall
+git submodule add git://github.com/puppetlabs/puppetlabs-firewall.git modules/firewall
+git add .gitmodules modules/firewall
+git commit -m <span class="s1">&#39;Adding firewall submodule&#39;</span>
+git push origin firewall</code></pre></div>
+
+
+<p>Note in the output that the Puppetmaster is checking out the
+git submodule into the new environment. Go ahead and log into the
+Puppetmaster, and look in your firewall environment, you should see all the
+manifests and whatnot there.</p>
+
+<p>Here&rsquo;s where I need to stamp a disclosure notice &ndash; git submodules aren&rsquo;t all
+milk and honey. There&rsquo;s some funky situations you can get yourself into if
+you&rsquo;re not careful. Thankfully, there&rsquo;s not many of those situations you can&rsquo;t
+get yourself out of. I highly recommend reading the <a href="http://progit.org/book/ch6-6.html">Pro Git chapter on submodules</a> before doing anything with
+them.</p>
+
+<h2>Step 3: Implement Access Controls on Gitolite</h2>
+
+<p>This next step is entirely optional, but works out well for us. We have a
+setup where I&rsquo;m the only admin that can write to the master and testing
+branches of our git repo, but any sysadmin can create their own branch, test
+it, and delete it if need be. <a href="http://sitaramc.github.com/gitolite/">Setting up gitolite</a> is far beyond the scope of
+this post, but if you have about an hour of free time, you can have it setup
+and running. However, below I&rsquo;ve pasted the relevant snippet from
+gitolite.conf that enforces those permissions.</p>
+
+<div class="highlight"><pre><code class="language-bash" data-lang="bash">repo    puppet                                                                                                          
+  RW+     <span class="o">=</span> JustinEllison
+  <span class="nv">R</span>       <span class="o">=</span> @SysAdmins Fisheye-puppet PuppetMaster
+               - master <span class="nv">testing</span> <span class="o">=</span> @SysAdmins
+  RW+     <span class="o">=</span> @SysAdmins</code></pre></div>
+
+
+<h2>Step 4: Profit!</h2>
+
+<p>To summarize it all, here&rsquo;s the workflow for an admin to add a new feature in
+our Puppet setup:</p>
+
+<ol>
+<li>Create a new VM which will be the testing ground for the new feature.</li>
+<li>Create a local feature branch to implement the new feature in. The admin iterates over this branch (pushing the branch to origin) getting things working with his VM.</li>
+<li>Once he&rsquo;s happy with the results on his VM, he&rsquo;s required to login to another sandbox VM, and run it against the same puppet branch with the &lsquo;&ndash;noop&rsquo; flag to ensure nothing unintended happens.</li>
+<li>At this point, the positive and the negative have been tested, and he then asks me to merge the feature branch into master.</li>
+<li>I then do a</li>
+</ol>
+
+
+<div class="highlight"><pre><code class="language-bash" data-lang="bash">git diff ...origin/newfeature</code></pre></div>
+
+
+<p> We go over any changes, and I merge it in.
+ 1.  From there, we follow our normal deployment method of tagging a release, and manually checking out the tag on the Puppetmaster.</p>
+
+<p>While it&rsquo;s certainly not perfect, this workflow setup has allowed us to work
+together as a team while still implementing some best practices. In
+particular, the dynamic environments allow us to test our features extensively
+before releasing them into production. This is especially important in a team
+where the admins aren&rsquo;t Ruby programmers that can write puppet-rspec tests.</p>
+
+<p>Before the integration of git submodules with the dynamic environment
+workflow, we were manually merging external repos into our own setup, and it
+was an absolute nightmare. Now, to update our repo to use a new version of
+someone else&rsquo;s module, we just create a new feature branch, update the
+submodule, test, and merge.</p>
+
+<p>What workflows do you and your team use that make life with Puppet better?
+Please share below.</p>
+</div>
+  
+  
+
+
+    </article>
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/content/2011/11/14/vpsnet-review">VPS.net Review</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+<time class='entry-date' datetime='2011-11-14T00:00:00-06:00'><span class='date'><span class='date-month'>Nov</span> <span class='date-day'>14</span><span class='date-suffix'>th</span>, <span class='date-year'>2011</span></span> <span class='time'>12:00 am</span></time>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>I&rsquo;ve been running a single node from <a href="http://vps.net">VPS.net</a> for about a
+year now.  Please note that my specific experience has been in their &ldquo;Chicago
+Zone D data center&rdquo;, but if you check out their <a href="http://status.vps.net">status
+page</a> or search
+<a href="http://twitter.com/#!/search/%23vpsnet">Twitter</a>, you&rsquo;ll find a lot of others
+having the same issues.  While there&rsquo;s a lot of good things to write about,
+where they fail is the most important area to me: availabilty. The pros of
+using VPS.net include pricing, control panel, and console level access.  As is
+typical for a VPS provider, they give you many &ldquo;add-on&rdquo; options such as
+backup, etc that you can enable &ndash; I&rsquo;ve not investigated them myself.  Perhaps
+the one of the nicest features is the ability to add server resources or
+&ldquo;nodes&rdquo; on the fly with minimal downtime. However, it seems that VPS.net has
+made a horrible choice in selecting what SAN they use to back their VM&rsquo;s.
+Examine the graphic below: <img src="/assets/images/vps-net-availabiltiy.png" alt="" /> As you
+can see, I&rsquo;m getting less than 2 nines worth of uptime from my node.  Each and
+everytime there&rsquo;s been an issue, support has been quick to point out that
+they&rsquo;ve had some sort of SAN issue, and that the SAN is &lsquo;resyncing&rsquo;.  The
+problem is that while the SAN is resyncing, I/O to my node is so horrible, I
+can&rsquo;t cat a 500 byte file to stdout in less than 10 seconds.  So, the node
+will respond to a ping, but it can&rsquo;t serve up a static image via Apache.  For
+all intents and purposes, that&rsquo;s down in my book. The <a href="http://status.vps.net/2011/10/chi-d-cloud/">last SAN
+synchronization</a> took the better
+part of two days, during which time my node was unusable. In my experience,
+the SAN is the most important building block when architecting a service
+that&rsquo;s meant to be highly available.  Until VPS.net can address their SAN
+issues, they are likely to continue to have prolonged downtimes.  Until that&rsquo;s
+been fixed, there&rsquo;s just no way I can recommend their services to anyone.</p>
+</div>
+  
+  
+
+
+    </article>
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/content/2011/10/19/its-not-you-its-me-call-node-gallery-co-maintainers">It's Not You, It's Me: Call for Node Gallery Co-maintainers</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+<time class='entry-date' datetime='2011-10-19T00:00:00-05:00'><span class='date'><span class='date-month'>Oct</span> <span class='date-day'>19</span><span class='date-suffix'>th</span>, <span class='date-year'>2011</span></span> <span class='time'>12:00 am</span></time>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>There&rsquo;s only a certain amount of bandwidth in a person&rsquo;s day. As you get
+older, that bandwidth seems to become more and more constrained. Kids are
+extreme bandwidth hogs :) Over the years I&rsquo;ve found that I have enough
+bandwidth in my life to deal with one obsession that&rsquo;s not part of my day job
+at any given time. For the last couple years, that obsession has been with
+<a href="http://drupal.org">Drupal</a> and specifically with <a href="http://drupal.org/project/node_gallery">Node
+Gallery</a>. In my very biased opinion,
+it&rsquo;s the most user-friendly and integrated gallery experience you can have
+with Drupal 6.x. Also IMHO, there&rsquo;s a huge void in Drupal 7 with respect to
+butt-kicking gallery modules, one that&rsquo;s begging to be filled with a Node
+Gallery 7.x branch. But I just can&rsquo;t bring myself to that one simple git
+command. I&rsquo;ve had several changes at work in the past year, and I&rsquo;m no longer
+working with Drupal and PHP on a regular basis. I&rsquo;ve become enthralled with
+Puppet as of late, and that&rsquo;s proven to be the gateway drug to the devops
+movement for me. I&rsquo;m reading books on Kanban, learning a bit of Ruby, building
+deployment pipelines, and soaking up anything I can on devops. It seems
+sysadmins who can code really do have a place in the world, and it appears to
+be in devops. It&rsquo;s not burnout, it&rsquo;s simply a matter of prioritization on
+demands for a limited resource. There&rsquo;s just no time left over for Drupal
+anymore. Back to the point of this post &ndash; Node Gallery needs a co-maintainer
+who can take the module into the 7.x branch. The recently released 6.x-3.x
+branch has proven to be quite stable, and would likely require only very
+minimal maintenance. You can take it for a spin on the <a href="http://ng3demo.sysadminsjourney.com">demo
+site</a>, or read all about it&rsquo;s features on
+the <a href="http://drupal.org/project/node_gallery">project page</a>. Here&rsquo;s some quick
+points:</p>
+
+<ul>
+<li>It has a reported user base of just under 3,800 sites, which puts it at right around #400 on the top modules list.</li>
+<li>It has a great user base that&rsquo;s proven to be active in the issue queue. Many of the support requests have been resolved by members of the community whom have never written a line of code. It has a strong German presence, and has been translated.</li>
+<li>It integrates very tightly with <a href="http://drupal.org/project/views">Views</a>, and supports bulk uploading with <a href="http://drupal.org/project/plupload">Plupload</a>. It has it&rsquo;s own access module in <a href="http://drupal.org/project/node_gallery_access">Node Gallery Access</a>, as well as a handful of other modules (all of which are listed on the <a href="http://drupal.org/project/node_gallery">project page</a>) it integrates with very well.</li>
+<li>It&rsquo;s been engineered to perform well from the start. If your server can handle the load of 100,000 nodes, there&rsquo;s no reason it should be able to handle 100,000 Node Gallery image nodes &ndash; even if those are all in one gallery.</li>
+<li>The administration UI aims to provide a working gallery setup out-of-the-box that works for 90% of the users, yet provide enough buttons and knobs for the remaining 10% to be able to tweak what they need.</li>
+<li>It runs the gamut of technologies in Drupal; making use of caching, Views integration, jQuery and jQuery UI, CCK, Node Access, Batch API, etc.</li>
+<li><p>What differentiates Node Gallery from most other gallery modules is that each and every image in a gallery isn&rsquo;t just a field, it&rsquo;s an entire node. This opens up huge possibilities for interactions with other contrib modules. The original reason for me selecting Node Gallery was because it was the only way I could sell individual images using Ubercart.
+Who I&rsquo;m looking for:</p></li>
+<li><p>This module is likely a bit complex for someone who&rsquo;s never maintained a module before. If you&rsquo;ve maintained your own Drupal module (either privately or on d.o), take a look at the code and make sure you can understand what&rsquo;s going on.</p></li>
+<li>Drupal 7 API experience is a must; experience in migrating D6 modules to D7 is a plus.</li>
+<li>Ideally, you need to have an &ldquo;itch that needs scratching&rdquo; &ndash; in other words, you should probably have a need for an image gallery.
+If you&rsquo;d like to take a crack at bringing Node Gallery to Drupal 7, <a href="http://drupal.org/user/99149/contact">contact
+me</a>, or <a href="http://drupal.org/node/add/project-issue/node_gallery">file an
+issue</a> in the issue
+queue.</li>
+</ul>
+
+</div>
+  
+  
+
+
+    </article>
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/content/2011/09/20/drupal-heroku">Drupal on Heroku</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+<time class='entry-date' datetime='2011-09-21T00:00:00-05:00'><span class='date'><span class='date-month'>Sep</span> <span class='date-day'>21</span><span class='date-suffix'>st</span>, <span class='date-year'>2011</span></span> <span class='time'>12:00 am</span></time>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p><a href="http://www.heroku.com">Heroku</a> has been around for awhile now, but has been primarily a rails host. Well, <a href="http://blog.heroku.com/archives/2011/9/15/facebook/">until recently</a> anway. With the announcement of their Facebook integration, many others have noted that *any* PHP app can at least parse on Heroku&rsquo;s cedar stack. I&rsquo;ll be honest, it took me longer to get ruby+rails setup on my Macbook than it did to get a proof-of-concept installation of Drupal up and running. Here&rsquo;s what I did:</p>
+
+<ol>
+<li>Get ruby, rails, and the heroku gem installed and running. <a href="http://pragmaticstudio.com/blog/2010/9/23/install-rails-ruby-mac">This page</a> had me up and running pretty quickly on my Mac.</li>
+<li>Download and extract Drupal:</li>
+</ol>
+
+
+<div class="highlight"><pre><code class="language-console" data-lang="console"><span class="go">curl http://ftp.drupal.org/files/projects/drupal-6.22.tar.gz | tar -xzvf -; cd drupal-6.22</span></code></pre></div>
+
+
+<ol>
+<li>Initialize your git repo:</li>
+</ol>
+
+
+<div class="highlight"><pre><code class="language-console" data-lang="console"><span class="go">git init</span></code></pre></div>
+
+
+<ol>
+<li><p>Here&rsquo;s what makes all this proof-of-concept only. Many of the features used in Drupal core&rsquo;s .htaccess file assume that the webhost has enabled the &ldquo;AllowOverride All&rdquo; option. Heroku doesn&rsquo;t allow this, it only allows a small subset of overrides. <strong>DOING THIS WILL MORE THAN LIKELY COMPROMISE THE SECURITY OF YOUR DRUPAL INSTALL. </strong>Open up .htaccess in your editor, and comment out any line that starts with these strings:</p>
+
+<ul>
+<li>Order</li>
+<li>Options</li>
+<li>DirectoryIndex</li>
+<li>php_value</li>
+</ul>
+</li>
+<li><p>Add Drupal to git, and commit:</p></li>
+</ol>
+
+
+<div class="highlight"><pre><code class="language-console" data-lang="console"><span class="go">git add .; git commit -m &#39;initial commit&#39;</span></code></pre></div>
+
+
+<ol>
+<li>Create your heroku application. You&rsquo;ll need to have signed up for a free account on <a href="http://www.heroku.com">http://www.heroku.com</a> and give the following command your login credentials:</li>
+</ol>
+
+
+<div class="highlight"><pre><code class="language-console" data-lang="console"><span class="go">heroku create --stack cedar</span></code></pre></div>
+
+
+<ol>
+<li>Push your code up to heroku (note the URL it gives you back):</li>
+</ol>
+
+
+<div class="highlight"><pre><code class="language-console" data-lang="console"><span class="go">git push heroku master</span></code></pre></div>
+
+
+<ol>
+<li>Now, we need to setup the Postgres instance:</li>
+</ol>
+
+
+<div class="highlight"><pre><code class="language-console" data-lang="console"><span class="go">heroku addons:add shared-database</span></code></pre></div>
+
+
+<ol>
+<li>Let&rsquo;s display our Postgres credentials:</li>
+</ol>
+
+
+<div class="highlight"><pre><code class="language-console" data-lang="console"><span class="go">heroku config</span></code></pre></div>
+
+
+<ol>
+<li>You can now hit your Drupal instance at the URL given to you by your last git push. Install as you normally would, selecting Postgres as your database, and filling in the user, password, database, and host given to you by &lsquo;heroku config&rsquo;. Make sure to change the host from localhost under the &ldquo;Advanced&rdquo; fieldset.</li>
+</ol>
+
+
+<p>  At this point, you can poke around your install, and start seeing what all else is broken :) &lsquo;heroku logs -t&rsquo; is your friend. If you don&rsquo;t believe me, <a href="http://electric-mountain-6735.herokuapp.com/">here&rsquo;s a D7 instance</a>, and <a href="http://freezing-light-7795.herokuapp.com/">here&rsquo;s a D6 one</a>.</p>
+
+<p>  Seriously, the .htaccess point is a deal-breaker. Unless someone with more time on their hands than I do can suggest a more secure configuration (or heroku allows Drupal to override all), there&rsquo;s some serious security ramifications to commenting out the lines in .htaccess.</p>
+
+<p>  Drupal is definitely slow on the free plan for Heroku, but I mean, it&rsquo;s free; what did you expect? Drupal 6 seemed to work throughout, but I noticed when getting D7 up and running that I couldn&rsquo;t hit some &ldquo;heavy&rdquo; URL&rsquo;s like /admin/configure and /admin/reports/status. I could get into other sub-menus such as /admin/configure/development/performance. We all know D7 takes a fair amount of horsepower to run, and horses aren&rsquo;t free :). The whole point of heroku is being able to scale your app by dragging a slider in a web ui, and there&rsquo;s no reason to believe that Drupal wouldn&rsquo;t start running much faster given more resources from a non-free plan.</p>
+
+<p>  The point of this blog post was to just jot down my notes and save someone else a little time in getting started &ndash; hopefully the community can come up with some ideas so we have another awesome choice in Drupal hosting!</p>
+</div>
+  
+  
+
+
+    </article>
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/content/2011/04/19/selecting-right-cdn-your-website">Selecting the Right CDN for YOUR Website</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+<time class='entry-date' datetime='2011-04-19T00:00:00-05:00'><span class='date'><span class='date-month'>Apr</span> <span class='date-day'>19</span><span class='date-suffix'>th</span>, <span class='date-year'>2011</span></span> <span class='time'>12:00 am</span></time>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>At one of my jobs, we recently went through the process of selecting a
+<a href="http://en.wikipedia.org/wiki/Content_delivery_network">CDN (Content Delivery Network)</a> for our site. While the first rule of
+CDN’s is that “any CDN is better than no CDN”, it can be argued that
+certain CDN’s are a better fit in certain situation than others. This
+post is basically a summary of the process we went through when
+selecting our CDN. By no means is this a statement of “XYZ is better
+than ABC”, it’s simply documentation of the process we went through in
+order to select the right one for our business. While most CDN’s are
+compatible with Drupal via excellent contrib modules such as <a href="http://drupal.org/project/cdn">CDN</a>,
+this information presented in this article is relative to any website
+and isn’t Drupal-specific.</p>
+
+<p>To illustrate the importance of a CDN using real numbers, one image
+being fetched from the data center to our office takes about 323ms. That
+same image fetched from Seattle is 483ms, and from Washington DC takes
+599ms. The worst cases appear when coming overseas - to fetch the same
+image from Paris it takes on average 1,141ms <strong>for just that one image</strong>.</p>
+
+<p>A Content Delivery Network (CDN) shortens that distance between your
+static content and the end-user. While the text on most web pages is
+dynamic, most images, JavaScript, and CSS are static. These static
+objects make up a large percentage of the total bytes downloaded for
+each page view. By using a CDN, you place static content as close to the
+end-user as possible. In turn this decreases the page load time a
+end-user experiences by leaps and bounds.</p>
+
+<h3>Pre-selection Criteria</h3>
+
+<p>There’s a plethora of CDN’s to choose from, and if you don’t filter the
+initial list down to five or fewer providers, you’ll end up spending
+months in evaluation time. By defining specific must-have features, we
+were able to limit the initial number of companies to compare to four.
+Many CDN’s provide value-add services above and beyone static objects,
+such as “Dynamic Site Acceleration” – this evaluation looked solely at
+serving up static file content, e.g. JPEG, GIF, CSS, and Javascript.</p>
+
+<p>The filtering properties we used to limit scope were:</p>
+
+<ol>
+<li><p><strong>The CDN must provide “origin pull” or “reverse proxy” support</strong>. If
+the CDN receives a request for a file that doesn’t exist at the edge, it
+applies a customer-defined URL rewrite to the request, and proxies the
+request to the origin site. If the image exists at the origin, the edge
+server caches the image locally and serves it to the client from there.
+For example, the CDN host name might be cdn.example.com (which points to
+the edge), and the origin site (my server) would be www.example.com. If
+I point my browser to <a href="http://cdn.example.com/logo.gif,">http://cdn.example.com/logo.gif,</a> and that file
+doesn’t exist at the edge, the CDN will make a request for
+<a href="http://www.example.com/logo.gif.">http://www.example.com/logo.gif.</a> If that file exists, it is fetched and
+cached. If it doesn’t exist, a 404 is returned to the client. The trade
+off is that you don’t have to pre-seed static content to the CDN, but
+the first user request for a static object takes a bit longer to
+complete (because it results in two requests instead of one). Once the
+edge network’s cache is primed, there is no performance difference
+between origin pull and CDN origin.</p></li>
+<li><p><strong>The CDN must propagate cache-related HTTP headers from the origin to
+the end-user</strong> We’ve went to great lengths to use versioning of
+filenames so that we can set far-future expires headers on 99% of our
+static content as recommended by <a href="https://developer.yahoo.com/performance/rules.html">Yahoo’s “Best Practices for Speeding Up Your Website”</a>.
+This results in far fewer HTTP requests to render a
+page that has already been requested by the end-user previously,
+ultimately decreasing page response time. Some CDN’s that offer origin
+pull do not proxy these headers back.</p></li>
+<li><p><strong>The CDN must use GZip compression on text-based content</strong> Most CDN’s
+support this, but it’s something you definitely want to check. When
+serving up static text-based content such as CSS or Javascript, the CDN
+can and should compress it for you before sending it to the end-user.
+Compression makes the overall page content smaller, and therefore faster
+to render.</p></li>
+<li><p><strong>Response time must be consistent and fast</strong> Performance is a tricky
+thing. While having the fastest response time overall didn’t guarantee
+that a CDN would “win”, having consistent relative poor performance
+would guarantee a CDN would “lose”. Try not to focus too much on
+performance numbers – most of the CDN’s will have a standard deviation
+less than ten milliseconds between each other. In our research we found
+out quickly that there’s a lot of features more important to us than 5ms
+worth of response time.</p></li>
+<li><p><strong>100% Uptime SLA</strong> Since a CDN is at it’s most basic level a
+geographically distributed cluster of cache servers, it should be
+implied that a CDN can provide 100% uptime. If one POP goes down,
+requests should be automatically routed to the next nearest POP. If your
+CDN doesn’t offer this, you need a new CDN.</p></li>
+<li><p><strong>Company financial strength and solvency</strong> This is something often
+overlooked when people evaluate, but was very important to us. There are
+a lot of CDN’s out there, and we found only 2 or 3 that could put in
+writing that they are a profitable corporation. Our implementation
+required a fair amount of work, and it would take us some time to switch
+to another CDN. If your CDN goes dark in the middle of the night, how
+long will it take you to switch?</p></li>
+</ol>
+
+
+<h3>Important Features</h3>
+
+<p>Whereas not meeting any of the above requirements would result in being
+excluded from our comparison, the following features were key points of
+consideration. Not meeting them all wouldn’t exclude a CDN, but on the
+flip side, implementing them all would put the CDN in very good
+standing.</p>
+
+<ol>
+<li><p><strong>Price</strong>. While high prices weren’t going to scare us away, bang
+for the buck played a large part in our decision. We weren’t
+interested in paying a premium for brand recognition.</p></li>
+<li><p><strong>Strong international presence</strong>. Our guests include international
+clients, and poor static object performance for those clients was
+the key motivation for implementing a CDN in the first place.</p></li>
+<li><p><strong>Contract terms</strong>. Some CDN’s do month-to-month, some do 12 month,
+others require longer as you negotiate price.</p></li>
+<li><p><strong>Overage fees</strong>. CDN’s meter you on the amount of bandwidth you
+consume. You pay for a “bucket”. No CDN’s turn your service off
+after you exceed that bucket, they just bill you for overages. The
+good CDN’s will bill you at the same per-GB rate that you pay for
+your monthly bucket. Some CDN’s charge as much as 2x for overages.
+Avoid those.</p></li>
+<li><p><strong>Traffic accounting</strong>. One other thing often overlooked with origin
+pull CDN’s is whether or not the traffic between the edge POP’s and
+the customer origin is counted as traffic against your total. Some
+CDN’s count it against your bucket, others don’t.</p></li>
+<li><p><strong>Setup fees</strong>. CDN’s vary wildly on their setup fees. Some are
+free, some charge more than $5,000. Make sure you incorporate that
+cost into your decision.</p></li>
+<li><p><strong>User Interface</strong>. All CDN’s offer some form of web-based
+interface. The quality of the interface greatly differs between
+CDN’s. I could swear that some of the interfaces I saw were written
+in CGI Perl in the late 90’s. Others interfaces offered everything a
+customer could ever want, including detailed analytics and
+reporting. Key questions to ask are “If I get a bad image out on the
+edge, how do I purge it?”, and “How do I tell how much bandwidth is
+being consumed throughout the CDN at any particular point in time?”</p></li>
+</ol>
+
+
+<h3>External Reporting Data</h3>
+
+<p>We chose to invest in one month’s worth of reporting from
+<a href="http://cloudharmony.com/reports">CloudHarmony’s CloudReports</a> service. This gave us a quick way to
+examine performance of CDN’s to the actual end-user browser behind a
+real cable/dsl/dialup connection (not to a datacenter somewhere). While
+some might view those reports expensive, we found it quite a bargain to
+have another independent view into the performance of a vast majority of
+CDN’s.</p>
+
+<h3>The Contenders</h3>
+
+<p>Given the above requirements, coupled with the performance data provided
+from CloudHarmony we were able to refine our list of CDN’s to consider.
+In alphabetical order:</p>
+
+<ol>
+<li><a href="http://www.akamai.com">Akamai</a></li>
+<li><a href="http://www.cachefly.com">CacheFly</a></li>
+<li><a href="http://www.edgecast.com">EdgeCast</a></li>
+<li><a href="http://www.limelight.com">LimeLight</a></li>
+</ol>
+
+
+<h3>First elimination: Akamai</h3>
+
+<p>Akamai is to the CDN market what Bose is to the home audio market. While
+it’s not inherently a bad product, you’re paying a huge premium for the
+brand name. While we never got so far as to setup a demo account, the
+performance data provided by CloudHarmony and other sources didn’t favor
+them well at all. My personal opinion (which is little more than a wild
+guess) on why Akamai doesn’t perform as well is because of their
+product’s age. Their network is by far the largest one out there, and I
+can guess that keeping up with the latest optimizations and protocols is
+a huge undertaking.</p>
+
+<p>When speaking with Akamai, I got the impression that they really don’t
+care to sell their static object delivery product by itself. Their reps
+focused mostly on trying to upsell their Dynamic Site Acceleration
+product. While DSA might indeed be a great product, it wasn’t what we
+were interested in.</p>
+
+<p>In the end, the best price I could get out of Akamai was more than twice
+that of the next most expensive CDN in our comparison, and they wanted a
+3 year contract at that price. I’m just not that into paying twice as
+much for an equal product, so they were eliminated. If we should move to
+a Dynamic Site Acceleration type of service later, Akamai will
+definitely be re-evaluated at that time.</p>
+
+<h3>Second elimination: LimeLight</h3>
+
+<p>LimeLight Networks is the 2nd largest CDN provider, behind Akamai. It’s
+fitting that they are right behind Akamai, because they came across like
+a smaller Akamai to me. Their pricing is much more competitive than
+Akamai, and performance appeared to be quite good across the board. They
+supposedly have a nice web and reporting interface, but I was unable to
+get a demo setup without filling out paperwork that would have required
+approval from our legal department. Therein lies the problem with
+LimeLight – getting them to do anything outside the everyday norm was
+like pulling teeth. Like Akamai, LimeLight also is focused on the upsell
+and seemed to me generally disinterested in selling their static
+delivery service.</p>
+
+<p>If for some reason, we had to switch away from our primary choice, my
+second choice would likely be LimeLight Networks, but only after I was
+able to obtain a demo account so that I could verify their performance
+was within acceptable range and the functionality of their user
+interface.</p>
+
+<h3>Independent Performance comparisons</h3>
+
+<p>I was able to easily procure demo accounts from EdgeCast and CacheFly,
+so I set up some performance testing of our own using <a href="http://www.pingdom.com">Pingdom</a> to
+download a typical JPEG image from each Pingdom POP using the origin
+pull setup. Note that since Pingdom’s servers are in data centers and
+not in actual residences; this isn’t a measure of end-to-end
+performance, rather a way to compare apples to apples response time from
+various regions around the world. The executive summary here is that
+while EdgeCast “edged” out CacheFly, the real message is that any CDN is
+so much better than none at all:</p>
+
+<table>
+<thead>
+<tr>
+<th style="text-align:left;">CDN                  </th>
+<th style="text-align:left;"> US/Non-US    </th>
+<th style="text-align:left;"> Location                 </th>
+<th style="text-align:left;"> # of Polls </th>
+<th style="text-align:left;"> Avg Response Time </th>
+<th style="text-align:left;"> Max Response Time </th>
+<th style="text-align:left;"> StdDev</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left;">CacheFly             </td>
+<td style="text-align:left;"> Non-US       </td>
+<td style="text-align:left;"> Amsterdam 2, Netherlands </td>
+<td style="text-align:left;"> 289        </td>
+<td style="text-align:left;"> 68                </td>
+<td style="text-align:left;"> 4202              </td>
+<td style="text-align:left;"> 285.98</td>
+</tr>
+<tr>
+<td style="text-align:left;"></td>
+<td style="text-align:left;">              </td>
+<td style="text-align:left;"> Copenhagen, Denmark      </td>
+<td style="text-align:left;"> 259        </td>
+<td style="text-align:left;"> 158               </td>
+<td style="text-align:left;"> 461               </td>
+<td style="text-align:left;"> 36.02</td>
+</tr>
+<tr>
+<td style="text-align:left;"></td>
+<td style="text-align:left;">              </td>
+<td style="text-align:left;"> Frankfurt, Germany       </td>
+<td style="text-align:left;"> 287        </td>
+<td style="text-align:left;"> 41                </td>
+<td style="text-align:left;"> 567               </td>
+<td style="text-align:left;"> 32.38</td>
+</tr>
+<tr>
+<td style="text-align:left;"></td>
+<td style="text-align:left;">              </td>
+<td style="text-align:left;"> London 2, UK             </td>
+<td style="text-align:left;"> 290        </td>
+<td style="text-align:left;"> 29                </td>
+<td style="text-align:left;"> 2489              </td>
+<td style="text-align:left;"> 145.26</td>
+</tr>
+<tr>
+<td style="text-align:left;"></td>
+<td style="text-align:left;">              </td>
+<td style="text-align:left;"> London, UK               </td>
+<td style="text-align:left;"> 284        </td>
+<td style="text-align:left;"> 29                </td>
+<td style="text-align:left;"> 127               </td>
+<td style="text-align:left;"> 11.30</td>
+</tr>
+<tr>
+<td style="text-align:left;"></td>
+<td style="text-align:left;">              </td>
+<td style="text-align:left;"> Madrid, Spain            </td>
+<td style="text-align:left;"> 259        </td>
+<td style="text-align:left;"> 201               </td>
+<td style="text-align:left;"> 586               </td>
+<td style="text-align:left;"> 31.36</td>
+</tr>
+<tr>
+<td style="text-align:left;"></td>
+<td style="text-align:left;">              </td>
+<td style="text-align:left;"> Manchester, UK           </td>
+<td style="text-align:left;"> 281        </td>
+<td style="text-align:left;"> 129               </td>
+<td style="text-align:left;"> 1709              </td>
+<td style="text-align:left;"> 184.87</td>
+</tr>
+<tr>
+<td style="text-align:left;"></td>
+<td style="text-align:left;">              </td>
+<td style="text-align:left;"> Montreal, Canada         </td>
+<td style="text-align:left;"> 286        </td>
+<td style="text-align:left;"> 105               </td>
+<td style="text-align:left;"> 3084              </td>
+<td style="text-align:left;"> 250.63</td>
+</tr>
+<tr>
+<td style="text-align:left;"></td>
+<td style="text-align:left;">              </td>
+<td style="text-align:left;"> Paris, France            </td>
+<td style="text-align:left;"> 286        </td>
+<td style="text-align:left;"> 143               </td>
+<td style="text-align:left;"> 521               </td>
+<td style="text-align:left;"> 60.11</td>
+</tr>
+<tr>
+<td style="text-align:left;"></td>
+<td style="text-align:left;">              </td>
+<td style="text-align:left;"> Stockholm, Sweden        </td>
+<td style="text-align:left;"> 286        </td>
+<td style="text-align:left;"> 54                </td>
+<td style="text-align:left;"> 882               </td>
+<td style="text-align:left;"> 80.88</td>
+</tr>
+<tr>
+<td style="text-align:left;"></td>
+<td style="text-align:left;"> Non-US Total </td>
+<td style="text-align:left;">                          </td>
+<td style="text-align:left;"> 2807       </td>
+<td style="text-align:left;"> 94                </td>
+<td style="text-align:left;"> 4202              </td>
+<td style="text-align:left;"> 157.88</td>
+</tr>
+<tr>
+<td style="text-align:left;"></td>
+<td style="text-align:left;"> US           </td>
+<td style="text-align:left;"> Atlanta, Georgia         </td>
+<td style="text-align:left;"> 289        </td>
+<td style="text-align:left;"> 16                </td>
+<td style="text-align:left;"> 398               </td>
+<td style="text-align:left;"> 23.52</td>
+</tr>
+<tr>
+<td style="text-align:left;"></td>
+<td style="text-align:left;">              </td>
+<td style="text-align:left;"> Chicago, IL              </td>
+<td style="text-align:left;"> 288        </td>
+<td style="text-align:left;"> 56                </td>
+<td style="text-align:left;"> 2615              </td>
+<td style="text-align:left;"> 158.33</td>
+</tr>
+<tr>
+<td style="text-align:left;"></td>
+<td style="text-align:left;">              </td>
+<td style="text-align:left;"> Dallas 4, TX             </td>
+<td style="text-align:left;"> 286        </td>
+<td style="text-align:left;"> 40                </td>
+<td style="text-align:left;"> 960               </td>
+<td style="text-align:left;"> 74.61</td>
+</tr>
+<tr>
+<td style="text-align:left;"></td>
+<td style="text-align:left;">              </td>
+<td style="text-align:left;"> Dallas 5, TX             </td>
+<td style="text-align:left;"> 289        </td>
+<td style="text-align:left;"> 26                </td>
+<td style="text-align:left;"> 1506              </td>
+<td style="text-align:left;"> 89.08</td>
+</tr>
+<tr>
+<td style="text-align:left;"></td>
+<td style="text-align:left;">              </td>
+<td style="text-align:left;"> Dallas 6, TX             </td>
+<td style="text-align:left;"> 291        </td>
+<td style="text-align:left;"> 47                </td>
+<td style="text-align:left;"> 1473              </td>
+<td style="text-align:left;"> 132.25</td>
+</tr>
+<tr>
+<td style="text-align:left;"></td>
+<td style="text-align:left;">              </td>
+<td style="text-align:left;"> Denver, CO               </td>
+<td style="text-align:left;"> 289        </td>
+<td style="text-align:left;"> 216               </td>
+<td style="text-align:left;"> 925               </td>
+<td style="text-align:left;"> 72.18</td>
+</tr>
+<tr>
+<td style="text-align:left;"></td>
+<td style="text-align:left;">              </td>
+<td style="text-align:left;"> Herndon, VA              </td>
+<td style="text-align:left;"> 288        </td>
+<td style="text-align:left;"> 473               </td>
+<td style="text-align:left;"> 3472              </td>
+<td style="text-align:left;"> 196.13</td>
+</tr>
+<tr>
+<td style="text-align:left;"></td>
+<td style="text-align:left;">              </td>
+<td style="text-align:left;"> Houston 3, TX            </td>
+<td style="text-align:left;"> 289        </td>
+<td style="text-align:left;"> 107               </td>
+<td style="text-align:left;"> 382               </td>
+<td style="text-align:left;"> 18.15</td>
+</tr>
+<tr>
+<td style="text-align:left;"></td>
+<td style="text-align:left;">              </td>
+<td style="text-align:left;"> Las Vegas, NV            </td>
+<td style="text-align:left;"> 288        </td>
+<td style="text-align:left;"> 74                </td>
+<td style="text-align:left;"> 3044              </td>
+<td style="text-align:left;"> 180.60</td>
+</tr>
+<tr>
+<td style="text-align:left;"></td>
+<td style="text-align:left;">              </td>
+<td style="text-align:left;"> Los Angeles, CA          </td>
+<td style="text-align:left;"> 289        </td>
+<td style="text-align:left;"> 12                </td>
+<td style="text-align:left;"> 92                </td>
+<td style="text-align:left;"> 11.52</td>
+</tr>
+<tr>
+<td style="text-align:left;"></td>
+<td style="text-align:left;">              </td>
+<td style="text-align:left;"> New York, NY             </td>
+<td style="text-align:left;"> 289        </td>
+<td style="text-align:left;"> 175               </td>
+<td style="text-align:left;"> 2571              </td>
+<td style="text-align:left;"> 152.29</td>
+</tr>
+<tr>
+<td style="text-align:left;"></td>
+<td style="text-align:left;">              </td>
+<td style="text-align:left;"> San Francisco, CA        </td>
+<td style="text-align:left;"> 287        </td>
+<td style="text-align:left;"> 28                </td>
+<td style="text-align:left;"> 231               </td>
+<td style="text-align:left;"> 24.17</td>
+</tr>
+<tr>
+<td style="text-align:left;"></td>
+<td style="text-align:left;">              </td>
+<td style="text-align:left;"> Seattle, WA              </td>
+<td style="text-align:left;"> 288        </td>
+<td style="text-align:left;"> 174               </td>
+<td style="text-align:left;"> 1083              </td>
+<td style="text-align:left;"> 108.41</td>
+</tr>
+<tr>
+<td style="text-align:left;"></td>
+<td style="text-align:left;">              </td>
+<td style="text-align:left;"> Tampa, Florida           </td>
+<td style="text-align:left;"> 267        </td>
+<td style="text-align:left;"> 68                </td>
+<td style="text-align:left;"> 3048              </td>
+<td style="text-align:left;"> 214.49</td>
+</tr>
+<tr>
+<td style="text-align:left;"></td>
+<td style="text-align:left;">              </td>
+<td style="text-align:left;"> Washington, DC           </td>
+<td style="text-align:left;"> 286        </td>
+<td style="text-align:left;"> 163               </td>
+<td style="text-align:left;"> 1547              </td>
+<td style="text-align:left;"> 141.67</td>
+</tr>
+<tr>
+<td style="text-align:left;"></td>
+<td style="text-align:left;"> US Total     </td>
+<td style="text-align:left;">                          </td>
+<td style="text-align:left;"> 4303       </td>
+<td style="text-align:left;"> 112               </td>
+<td style="text-align:left;"> 3472              </td>
+<td style="text-align:left;"> 170.11</td>
+</tr>
+<tr>
+<td style="text-align:left;">CacheFly Total       </td>
+<td style="text-align:left;">              </td>
+<td style="text-align:left;">                          </td>
+<td style="text-align:left;"> 7110       </td>
+<td style="text-align:left;"> 105               </td>
+<td style="text-align:left;"> 4202              </td>
+<td style="text-align:left;"> 165.61</td>
+</tr>
+<tr>
+<td style="text-align:left;"></td>
+<td style="text-align:left;">              </td>
+<td style="text-align:left;">                          </td>
+<td style="text-align:left;">            </td>
+<td style="text-align:left;">                   </td>
+<td style="text-align:left;">                   </td>
+<td></td>
+</tr>
+<tr>
+<td style="text-align:left;">EdgeCast Small       </td>
+<td style="text-align:left;"> Non-US       </td>
+<td style="text-align:left;"> Amsterdam 2, Netherlands </td>
+<td style="text-align:left;"> 284        </td>
+<td style="text-align:left;"> 62                </td>
+<td style="text-align:left;"> 381               </td>
+<td style="text-align:left;"> 27.49</td>
+</tr>
+<tr>
+<td style="text-align:left;"></td>
+<td style="text-align:left;">              </td>
+<td style="text-align:left;"> Copenhagen, Denmark      </td>
+<td style="text-align:left;"> 254        </td>
+<td style="text-align:left;"> 126               </td>
+<td style="text-align:left;"> 1148              </td>
+<td style="text-align:left;"> 87.72</td>
+</tr>
+<tr>
+<td style="text-align:left;"></td>
+<td style="text-align:left;">              </td>
+<td style="text-align:left;"> Frankfurt, Germany       </td>
+<td style="text-align:left;"> 284        </td>
+<td style="text-align:left;"> 40                </td>
+<td style="text-align:left;"> 318               </td>
+<td style="text-align:left;"> 19.05</td>
+</tr>
+<tr>
+<td style="text-align:left;"></td>
+<td style="text-align:left;">              </td>
+<td style="text-align:left;"> London 2, UK             </td>
+<td style="text-align:left;"> 284        </td>
+<td style="text-align:left;"> 26                </td>
+<td style="text-align:left;"> 975               </td>
+<td style="text-align:left;"> 59.59</td>
+</tr>
+<tr>
+<td style="text-align:left;"></td>
+<td style="text-align:left;">              </td>
+<td style="text-align:left;"> London, UK               </td>
+<td style="text-align:left;"> 283        </td>
+<td style="text-align:left;"> 23                </td>
+<td style="text-align:left;"> 191               </td>
+<td style="text-align:left;"> 14.38</td>
+</tr>
+<tr>
+<td style="text-align:left;"></td>
+<td style="text-align:left;">              </td>
+<td style="text-align:left;"> Madrid, Spain            </td>
+<td style="text-align:left;"> 252        </td>
+<td style="text-align:left;"> 176               </td>
+<td style="text-align:left;"> 1174              </td>
+<td style="text-align:left;"> 112.31</td>
+</tr>
+<tr>
+<td style="text-align:left;"></td>
+<td style="text-align:left;">              </td>
+<td style="text-align:left;"> Manchester, UK           </td>
+<td style="text-align:left;"> 275        </td>
+<td style="text-align:left;"> 86                </td>
+<td style="text-align:left;"> 1494              </td>
+<td style="text-align:left;"> 118.26</td>
+</tr>
+<tr>
+<td style="text-align:left;"></td>
+<td style="text-align:left;">              </td>
+<td style="text-align:left;"> Montreal, Canada         </td>
+<td style="text-align:left;"> 283        </td>
+<td style="text-align:left;"> 163               </td>
+<td style="text-align:left;"> 601               </td>
+<td style="text-align:left;"> 59.56</td>
+</tr>
+<tr>
+<td style="text-align:left;"></td>
+<td style="text-align:left;">              </td>
+<td style="text-align:left;"> Paris, France            </td>
+<td style="text-align:left;"> 283        </td>
+<td style="text-align:left;"> 94                </td>
+<td style="text-align:left;"> 1537              </td>
+<td style="text-align:left;"> 140.76</td>
+</tr>
+<tr>
+<td style="text-align:left;"></td>
+<td style="text-align:left;">              </td>
+<td style="text-align:left;"> Stockholm, Sweden        </td>
+<td style="text-align:left;"> 271        </td>
+<td style="text-align:left;"> 162               </td>
+<td style="text-align:left;"> 967               </td>
+<td style="text-align:left;"> 81.87</td>
+</tr>
+<tr>
+<td style="text-align:left;"></td>
+<td style="text-align:left;"> Non-US Total </td>
+<td style="text-align:left;">                          </td>
+<td style="text-align:left;"> 2753       </td>
+<td style="text-align:left;"> 94                </td>
+<td style="text-align:left;"> 1537              </td>
+<td style="text-align:left;"> 99.35</td>
+</tr>
+<tr>
+<td style="text-align:left;"></td>
+<td style="text-align:left;"> US           </td>
+<td style="text-align:left;"> Atlanta, Georgia         </td>
+<td style="text-align:left;"> 284        </td>
+<td style="text-align:left;"> 129               </td>
+<td style="text-align:left;"> 523               </td>
+<td style="text-align:left;"> 34.51</td>
+</tr>
+<tr>
+<td style="text-align:left;"></td>
+<td style="text-align:left;">              </td>
+<td style="text-align:left;"> Chicago, IL              </td>
+<td style="text-align:left;"> 284        </td>
+<td style="text-align:left;"> 26                </td>
+<td style="text-align:left;"> 463               </td>
+<td style="text-align:left;"> 35.86</td>
+</tr>
+<tr>
+<td style="text-align:left;"></td>
+<td style="text-align:left;">              </td>
+<td style="text-align:left;"> Dallas 4, TX             </td>
+<td style="text-align:left;"> 277        </td>
+<td style="text-align:left;"> 30                </td>
+<td style="text-align:left;"> 339               </td>
+<td style="text-align:left;"> 25.79</td>
+</tr>
+<tr>
+<td style="text-align:left;"></td>
+<td style="text-align:left;">              </td>
+<td style="text-align:left;"> Dallas 5, TX             </td>
+<td style="text-align:left;"> 284        </td>
+<td style="text-align:left;"> 26                </td>
+<td style="text-align:left;"> 581               </td>
+<td style="text-align:left;"> 50.32</td>
+</tr>
+<tr>
+<td style="text-align:left;"></td>
+<td style="text-align:left;">              </td>
+<td style="text-align:left;"> Dallas 6, TX             </td>
+<td style="text-align:left;"> 284        </td>
+<td style="text-align:left;"> 23                </td>
+<td style="text-align:left;"> 430               </td>
+<td style="text-align:left;"> 33.68</td>
+</tr>
+<tr>
+<td style="text-align:left;"></td>
+<td style="text-align:left;">              </td>
+<td style="text-align:left;"> Denver, CO               </td>
+<td style="text-align:left;"> 281        </td>
+<td style="text-align:left;"> 244               </td>
+<td style="text-align:left;"> 2169              </td>
+<td style="text-align:left;"> 150.12</td>
+</tr>
+<tr>
+<td style="text-align:left;"></td>
+<td style="text-align:left;">              </td>
+<td style="text-align:left;"> Herndon, VA              </td>
+<td style="text-align:left;"> 280        </td>
+<td style="text-align:left;"> 24                </td>
+<td style="text-align:left;"> 301               </td>
+<td style="text-align:left;"> 20.44</td>
+</tr>
+<tr>
+<td style="text-align:left;"></td>
+<td style="text-align:left;">              </td>
+<td style="text-align:left;"> Houston 3, TX            </td>
+<td style="text-align:left;"> 281        </td>
+<td style="text-align:left;"> 115               </td>
+<td style="text-align:left;"> 441               </td>
+<td style="text-align:left;"> 40.02</td>
+</tr>
+<tr>
+<td style="text-align:left;"></td>
+<td style="text-align:left;">              </td>
+<td style="text-align:left;"> Las Vegas, NV            </td>
+<td style="text-align:left;"> 281        </td>
+<td style="text-align:left;"> 56                </td>
+<td style="text-align:left;"> 559               </td>
+<td style="text-align:left;"> 34.32</td>
+</tr>
+<tr>
+<td style="text-align:left;"></td>
+<td style="text-align:left;">              </td>
+<td style="text-align:left;"> Los Angeles, CA          </td>
+<td style="text-align:left;"> 283        </td>
+<td style="text-align:left;"> 11                </td>
+<td style="text-align:left;"> 94                </td>
+<td style="text-align:left;"> 8.45</td>
+</tr>
+<tr>
+<td style="text-align:left;"></td>
+<td style="text-align:left;">              </td>
+<td style="text-align:left;"> New York, NY             </td>
+<td style="text-align:left;"> 284        </td>
+<td style="text-align:left;"> 72                </td>
+<td style="text-align:left;"> 1134              </td>
+<td style="text-align:left;"> 161.16</td>
+</tr>
+<tr>
+<td style="text-align:left;"></td>
+<td style="text-align:left;">              </td>
+<td style="text-align:left;"> San Francisco, CA        </td>
+<td style="text-align:left;"> 280        </td>
+<td style="text-align:left;"> 23                </td>
+<td style="text-align:left;"> 118               </td>
+<td style="text-align:left;"> 11.01</td>
+</tr>
+<tr>
+<td style="text-align:left;"></td>
+<td style="text-align:left;">              </td>
+<td style="text-align:left;"> Seattle, WA              </td>
+<td style="text-align:left;"> 282        </td>
+<td style="text-align:left;"> 131               </td>
+<td style="text-align:left;"> 3571              </td>
+<td style="text-align:left;"> 333.38</td>
+</tr>
+<tr>
+<td style="text-align:left;"></td>
+<td style="text-align:left;">              </td>
+<td style="text-align:left;"> Tampa, Florida           </td>
+<td style="text-align:left;"> 260        </td>
+<td style="text-align:left;"> 166               </td>
+<td style="text-align:left;"> 4977              </td>
+<td style="text-align:left;"> 303.29</td>
+</tr>
+<tr>
+<td style="text-align:left;"></td>
+<td style="text-align:left;">              </td>
+<td style="text-align:left;"> Washington, DC           </td>
+<td style="text-align:left;"> 282        </td>
+<td style="text-align:left;"> 83                </td>
+<td style="text-align:left;"> 686               </td>
+<td style="text-align:left;"> 111.97</td>
+</tr>
+<tr>
+<td style="text-align:left;"></td>
+<td style="text-align:left;"> US Total     </td>
+<td style="text-align:left;">                          </td>
+<td style="text-align:left;"> 4207       </td>
+<td style="text-align:left;"> 77                </td>
+<td style="text-align:left;"> 4977              </td>
+<td style="text-align:left;"> 148.63</td>
+</tr>
+<tr>
+<td style="text-align:left;">EdgeCast Small Total </td>
+<td style="text-align:left;">              </td>
+<td style="text-align:left;">                          </td>
+<td style="text-align:left;"> 6960       </td>
+<td style="text-align:left;"> 84                </td>
+<td style="text-align:left;"> 4977              </td>
+<td style="text-align:left;"> 131.64</td>
+</tr>
+<tr>
+<td style="text-align:left;"></td>
+<td style="text-align:left;">              </td>
+<td style="text-align:left;">                          </td>
+<td style="text-align:left;">            </td>
+<td style="text-align:left;">                   </td>
+<td style="text-align:left;">                   </td>
+<td></td>
+</tr>
+<tr>
+<td style="text-align:left;">Data Center          </td>
+<td style="text-align:left;"> Non-US       </td>
+<td style="text-align:left;"> Amsterdam 2, Netherlands </td>
+<td style="text-align:left;"> 292        </td>
+<td style="text-align:left;"> 837               </td>
+<td style="text-align:left;"> 1344              </td>
+<td style="text-align:left;"> 35.72</td>
+</tr>
+<tr>
+<td style="text-align:left;"></td>
+<td style="text-align:left;">              </td>
+<td style="text-align:left;"> Copenhagen, Denmark      </td>
+<td style="text-align:left;"> 262        </td>
+<td style="text-align:left;"> 990               </td>
+<td style="text-align:left;"> 4195              </td>
+<td style="text-align:left;"> 297.90</td>
+</tr>
+<tr>
+<td style="text-align:left;"></td>
+<td style="text-align:left;">              </td>
+<td style="text-align:left;"> Frankfurt, Germany       </td>
+<td style="text-align:left;"> 291        </td>
+<td style="text-align:left;"> 867               </td>
+<td style="text-align:left;"> 1533              </td>
+<td style="text-align:left;"> 57.14</td>
+</tr>
+<tr>
+<td style="text-align:left;"></td>
+<td style="text-align:left;">              </td>
+<td style="text-align:left;"> London 2, UK             </td>
+<td style="text-align:left;"> 291        </td>
+<td style="text-align:left;"> 725               </td>
+<td style="text-align:left;"> 1065              </td>
+<td style="text-align:left;"> 25.95</td>
+</tr>
+<tr>
+<td style="text-align:left;"></td>
+<td style="text-align:left;">              </td>
+<td style="text-align:left;"> London, UK               </td>
+<td style="text-align:left;"> 290        </td>
+<td style="text-align:left;"> 811               </td>
+<td style="text-align:left;"> 1114              </td>
+<td style="text-align:left;"> 49.50</td>
+</tr>
+<tr>
+<td style="text-align:left;"></td>
+<td style="text-align:left;">              </td>
+<td style="text-align:left;"> Madrid, Spain            </td>
+<td style="text-align:left;"> 262        </td>
+<td style="text-align:left;"> 1005              </td>
+<td style="text-align:left;"> 1765              </td>
+<td style="text-align:left;"> 75.84</td>
+</tr>
+<tr>
+<td style="text-align:left;"></td>
+<td style="text-align:left;">              </td>
+<td style="text-align:left;"> Manchester, UK           </td>
+<td style="text-align:left;"> 281        </td>
+<td style="text-align:left;"> 899               </td>
+<td style="text-align:left;"> 8928              </td>
+<td style="text-align:left;"> 580.11</td>
+</tr>
+<tr>
+<td style="text-align:left;"></td>
+<td style="text-align:left;">              </td>
+<td style="text-align:left;"> Montreal, Canada         </td>
+<td style="text-align:left;"> 291        </td>
+<td style="text-align:left;"> 342               </td>
+<td style="text-align:left;"> 412               </td>
+<td style="text-align:left;"> 11.52</td>
+</tr>
+<tr>
+<td style="text-align:left;"></td>
+<td style="text-align:left;">              </td>
+<td style="text-align:left;"> Paris, France            </td>
+<td style="text-align:left;"> 293        </td>
+<td style="text-align:left;"> 1128              </td>
+<td style="text-align:left;"> 2680              </td>
+<td style="text-align:left;"> 230.78</td>
+</tr>
+<tr>
+<td style="text-align:left;"></td>
+<td style="text-align:left;">              </td>
+<td style="text-align:left;"> Stockholm, Sweden        </td>
+<td style="text-align:left;"> 292        </td>
+<td style="text-align:left;"> 1063              </td>
+<td style="text-align:left;"> 4056              </td>
+<td style="text-align:left;"> 367.89</td>
+</tr>
+<tr>
+<td style="text-align:left;"></td>
+<td style="text-align:left;"> Non-US Total </td>
+<td style="text-align:left;">                          </td>
+<td style="text-align:left;"> 2845       </td>
+<td style="text-align:left;"> 864               </td>
+<td style="text-align:left;"> 8928              </td>
+<td style="text-align:left;"> 326.71</td>
+</tr>
+<tr>
+<td style="text-align:left;"></td>
+<td style="text-align:left;"> US           </td>
+<td style="text-align:left;"> Atlanta, Georgia         </td>
+<td style="text-align:left;"> 291        </td>
+<td style="text-align:left;"> 316               </td>
+<td style="text-align:left;"> 1017              </td>
+<td style="text-align:left;"> 63.48</td>
+</tr>
+<tr>
+<td style="text-align:left;"></td>
+<td style="text-align:left;">              </td>
+<td style="text-align:left;"> Chicago, IL              </td>
+<td style="text-align:left;"> 290        </td>
+<td style="text-align:left;"> 170               </td>
+<td style="text-align:left;"> 253               </td>
+<td style="text-align:left;"> 7.02</td>
+</tr>
+<tr>
+<td style="text-align:left;"></td>
+<td style="text-align:left;">              </td>
+<td style="text-align:left;"> Dallas 4, TX             </td>
+<td style="text-align:left;"> 292        </td>
+<td style="text-align:left;"> 191               </td>
+<td style="text-align:left;"> 3214              </td>
+<td style="text-align:left;"> 253.67</td>
+</tr>
+<tr>
+<td style="text-align:left;"></td>
+<td style="text-align:left;">              </td>
+<td style="text-align:left;"> Dallas 5, TX             </td>
+<td style="text-align:left;"> 292        </td>
+<td style="text-align:left;"> 145               </td>
+<td style="text-align:left;"> 263               </td>
+<td style="text-align:left;"> 14.52</td>
+</tr>
+<tr>
+<td style="text-align:left;"></td>
+<td style="text-align:left;">              </td>
+<td style="text-align:left;"> Dallas 6, TX             </td>
+<td style="text-align:left;"> 291        </td>
+<td style="text-align:left;"> 147               </td>
+<td style="text-align:left;"> 358               </td>
+<td style="text-align:left;"> 22.93</td>
+</tr>
+<tr>
+<td style="text-align:left;"></td>
+<td style="text-align:left;">              </td>
+<td style="text-align:left;"> Denver, CO               </td>
+<td style="text-align:left;"> 291        </td>
+<td style="text-align:left;"> 71                </td>
+<td style="text-align:left;"> 272               </td>
+<td style="text-align:left;"> 14.63</td>
+</tr>
+<tr>
+<td style="text-align:left;"></td>
+<td style="text-align:left;">              </td>
+<td style="text-align:left;"> Herndon, VA              </td>
+<td style="text-align:left;"> 293        </td>
+<td style="text-align:left;"> 316               </td>
+<td style="text-align:left;"> 487               </td>
+<td style="text-align:left;"> 15.43</td>
+</tr>
+<tr>
+<td style="text-align:left;"></td>
+<td style="text-align:left;">              </td>
+<td style="text-align:left;"> Houston 3, TX            </td>
+<td style="text-align:left;"> 293        </td>
+<td style="text-align:left;"> 177               </td>
+<td style="text-align:left;"> 372               </td>
+<td style="text-align:left;"> 19.66</td>
+</tr>
+<tr>
+<td style="text-align:left;"></td>
+<td style="text-align:left;">              </td>
+<td style="text-align:left;"> Las Vegas, NV            </td>
+<td style="text-align:left;"> 290        </td>
+<td style="text-align:left;"> 246               </td>
+<td style="text-align:left;"> 3194              </td>
+<td style="text-align:left;"> 392.02</td>
+</tr>
+<tr>
+<td style="text-align:left;"></td>
+<td style="text-align:left;">              </td>
+<td style="text-align:left;"> Los Angeles, CA          </td>
+<td style="text-align:left;"> 291        </td>
+<td style="text-align:left;"> 303               </td>
+<td style="text-align:left;"> 1188              </td>
+<td style="text-align:left;"> 57.60</td>
+</tr>
+<tr>
+<td style="text-align:left;"></td>
+<td style="text-align:left;">              </td>
+<td style="text-align:left;"> New York, NY             </td>
+<td style="text-align:left;"> 290        </td>
+<td style="text-align:left;"> 346               </td>
+<td style="text-align:left;"> 1120              </td>
+<td style="text-align:left;"> 123.55</td>
+</tr>
+<tr>
+<td style="text-align:left;"></td>
+<td style="text-align:left;">              </td>
+<td style="text-align:left;"> San Francisco, CA        </td>
+<td style="text-align:left;"> 293        </td>
+<td style="text-align:left;"> 229               </td>
+<td style="text-align:left;"> 519               </td>
+<td style="text-align:left;"> 22.28</td>
+</tr>
+<tr>
+<td style="text-align:left;"></td>
+<td style="text-align:left;">              </td>
+<td style="text-align:left;"> Seattle, WA              </td>
+<td style="text-align:left;"> 290        </td>
+<td style="text-align:left;"> 489               </td>
+<td style="text-align:left;"> 1078              </td>
+<td style="text-align:left;"> 170.33</td>
+</tr>
+<tr>
+<td style="text-align:left;"></td>
+<td style="text-align:left;">              </td>
+<td style="text-align:left;"> Tampa, Florida           </td>
+<td style="text-align:left;"> 270        </td>
+<td style="text-align:left;"> 331               </td>
+<td style="text-align:left;"> 4105              </td>
+<td style="text-align:left;"> 247.99</td>
+</tr>
+<tr>
+<td style="text-align:left;"></td>
+<td style="text-align:left;">              </td>
+<td style="text-align:left;"> Washington, DC           </td>
+<td style="text-align:left;"> 290        </td>
+<td style="text-align:left;"> 595               </td>
+<td style="text-align:left;"> 1511              </td>
+<td style="text-align:left;"> 235.84</td>
+</tr>
+<tr>
+<td style="text-align:left;"></td>
+<td style="text-align:left;"> US Total     </td>
+<td style="text-align:left;">                          </td>
+<td style="text-align:left;"> 4347       </td>
+<td style="text-align:left;"> 271               </td>
+<td style="text-align:left;"> 4105              </td>
+<td style="text-align:left;"> 208.20</td>
+</tr>
+<tr>
+<td style="text-align:left;">Data Center Total    </td>
+<td style="text-align:left;">              </td>
+<td style="text-align:left;">                          </td>
+<td style="text-align:left;"> 7192       </td>
+<td style="text-align:left;"> 506               </td>
+<td style="text-align:left;"> 8928              </td>
+<td style="text-align:left;"> 390.52</td>
+</tr>
+</tbody>
+</table>
+
+
+<p>&hellip; and to really drive the point home for the PHB&rsquo;s, we consolidate the
+data and give a very telling graph:</p>
+
+<p><img src="/assets/images/cdn.png" alt="" /></p>
+
+<h3>Third elimination: CacheFly</h3>
+
+<p>CacheFly is an up-and-comer in the CDN arena. They have <strong>very</strong>
+aggressive pricing, and have very good performance as well. If the site
+in question was a popular blog or community website and was very price
+sensitive, I would select CacheFly as my first choice CDN. However,
+where they fall short is in reporting and their web interface. The best
+way to contact their support department is via email or web-based form.
+Their web interface left a huge amount to be desired, and they have very
+little documentation on how to use it. There is no reporting whatsoever
+– you get raw log files and have to write our own reporting scripts on
+top of that data. I couldn&rsquo;t help but wonder about all the “what ifs”.
+What if we get an incorrect image cached and need to have it cleared
+from their network? If we see a DDoS at the CDN, how do we know? These
+and other similiar questions are what ultimately eliminated CacheFly.</p>
+
+<p>In CacheFly&rsquo;s defense, I was told that they were working on a complete
+refactor of the user interface and was offered a chance to help beta it,
+but I was under time constraints and declined. The issues I had with the
+UI may or may not be present at the time of this writing.</p>
+
+<h3>The winner (for us): EdgeCast</h3>
+
+<p>It will appear when reading this post that I used the process of
+elimination to find the &ldquo;lesser of all evils&rdquo;, but understand that&rsquo;s
+just the writing style I chose to convey the process. It wasn&rsquo;t that
+EdgeCast didn&rsquo;t lose, it&rsquo;s that they won. Here&rsquo;s why:</p>
+
+<ul>
+<li>EdgeCast is routinely in the top tier of CDN’s in terms of
+performance.</li>
+<li>Their support is very knowledgeable and responsive.</li>
+<li>The sales reps care about your business and are willing to work with
+you.</li>
+<li>They offer the most features of any CDN I evaluated. One such
+feature is &ldquo;rollover&rdquo; where if you don&rsquo;t use all your allotted
+transfer for one month, the remainder gets added to next months
+allotment. This is perfect for a business with holiday traffic
+spikes such as ours.</li>
+<li>While they aren’t the cheapest CDN, they are certainly affordable,
+and offered the best “bang for the buck” for the feature set we
+needed.</li>
+<li>Their UI is fully functional, offering configuration, reporting, and
+analytics in an easy to use fashion. The UI includes a fully
+functional rules engine (for additional charge) that allows you to
+apply actions such as cache purge, header change, etc based upon
+conditions like client IP, HTTP request header, etc.</li>
+<li>Last but certainly not least, the company is one of only two
+profitable CDN’s in the market today.</li>
+</ul>
+
+
+<h3>IT&rsquo;S NOT THE DESTINATION, IT&rsquo;S THE JOURNEY!!!</h3>
+
+<p>Please don&rsquo;t read this article and walk away saying &ldquo;Justin recommends
+EdgeCast, that&rsquo;s who we&rsquo;re going with&rdquo;. For one, if you&rsquo;re letting my
+blog posts make business decisions for you instead of doing due
+diligence, then you&rsquo;re doing it wrong.</p>
+
+<p>For our <strong>very specific needs</strong> EdgeCast was the best fit. For your
+needs, you will very possibly arrive at a completely different decision,
+and that&rsquo;s great. By all means, blog about it. What I&rsquo;m trying to convey
+is that there are a lot of points of comparison when going through your
+evaluation, and not all of them are obvious. It&rsquo;s hard to get an
+objective point of view when doing this on your own &ndash; this is my best
+attempt at documenting what I came across.</p>
+
+<p>Hopefully if you haven&rsquo;t implemented a CDN for your busy sites, this
+post will motivate you to do so. If you&rsquo;re unhappy with your current
+CDN, perhaps this post has given you some insight on how to find a
+replacement. If you&rsquo;re happy with your current CDN, please leave
+comments as to why.</p>
+
+<p>Lastly, I was in no way influenced monetarily or otherwise by any
+vendors, and none of the links in this article contain referral ID&rsquo;s.
+This is all my personal opinion and in no way represents the opinion of
+my employers.</p>
+</div>
+  
+  
+
+
+    </article>
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/content/2011/04/06/lead-sysadmin-position-available">Lead SysAdmin Position Available</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+<time class='entry-date' datetime='2011-04-06T00:00:00-05:00'><span class='date'><span class='date-month'>Apr</span> <span class='date-day'>6</span><span class='date-suffix'>th</span>, <span class='date-year'>2011</span></span> <span class='time'>12:00 am</span></time>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>There&rsquo;s a blog post to follow with when/why, etc., but without
+further ado: I&rsquo;m moving to a new position at Buckle, and that means
+we need a new Lead SysAdmin.  It&rsquo;s a great job at a great company,
+in a great place to raise a family (Kearney, NE).  You get paid
+well, get a good yearly budget for new toys, and equipment, and
+it&rsquo;s overall a very fun position. If interested, <a href="http://sysadminsjourney.com/contact">drop me a
+line</a>, and I&rsquo;ll make sure your
+resume gets the proper attention.  To apply online, <a href="https://storefront.kenexa.com/buckle/cc/CCJobSearchAction.ss?command=CCSearchPage">click
+here</a>,
+and search for jobs within 5 miles of zip code 68845.  The job
+title is &ldquo;Web Development - Lead Systems Administrator&rdquo;. Here&rsquo;s the
+job posting: JOB DETAIL Job Title:  ** Web Development - Lead
+Systems Administrator**
+<img src="https://storefront.kenexa.com/buckle/cc/images/orange_line.gif" alt="image" />
+Location:  Buckle Corporate Office &amp; Distribution Center  2407 W
+24th Street  KEARNEY, Nebraska 68845-0000
+<img src="https://storefront.kenexa.com/buckle/cc/images/orange_line.gif" alt="image" />
+Job Description:  ### Lead Systems Administrator **Position
+Summary:** The Lead Systems Administrator will be responsible for
+the deployment and maintenance of Unix/Linux systems and
+application software in multiple environments. The ideal candidate
+will possess a deep understanding of large scale Unix deployments
+and will lead the team responsible for the infrastructure serving
+all e-commerce and intranet applications. Additionally, this person
+must be able to function effectively in a fast-paced environment
+where projects range from maintenance to upgrades to new
+deployments and technologies. Our Systems Administrators also serve
+as Network Administrators for the smaller networks their systems
+reside in, so strong knowledge of ethernet, TCP/IP, and network
+security is required. **Responsibilities:** • Maintain all
+servers and workstations on WSD team, including production,
+development, and staging of servers for the e-commerce platform and
+company intranet • Setup, maintain, and manage an enterprise-class
+backup strategy for WSD team servers and workstations • Automate
+tasks via custom scripting • Assist in architecting and designing
+solid server solutions **Requirements:** • Expertise in setting
+up robust and reliable server architectures. Additionally, a large
+appetite for automating the mundane is preferred and will be
+encouraged. ● In-depth knowledge of technologies that include but
+are not limited to: Linux systems administration, Java VM tuning,
+Weblogic Administration, Apache HTTPD/NGINX Administration, All
+layers of TCP/IP, subnetting, etc., IPSEC VPN’s, ISC BIND, Load
+balancing and clustering technologies, Shell scripting, Nagios
+monitoring and RRD administration, RPM packaging format and
+patching best practices • A bachelor’s degree in Computer Science
+or other discipline • Minimum 4-5 years of previous
+system-administration experience in a professional environment
+**Compensation:** Market/negotiable, relocation assistance is a
+possibility for the right candidate.</p>
+</div>
+  
+  
+
+
+    </article>
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/content/2010/07/14/case-study-migrating-xml-drupal-using-migrate">Case Study in Migrating XML to Drupal Using Migrate</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+<time class='entry-date' datetime='2010-07-14T00:00:00-05:00'><span class='date'><span class='date-month'>Jul</span> <span class='date-day'>14</span><span class='date-suffix'>th</span>, <span class='date-year'>2010</span></span> <span class='time'>12:00 am</span></time>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>Sorry for the lack of posts as of late &ndash; a massive upgrade operation at
+$DAYJOB has had me out of commission for a few weeks. Also, I&rsquo;ve had the great
+fortune to be able to be part of a migration to Drupal which exposed me to
+<a href="http://drupal.org/project/migrate">migrate</a> and friends. Yes, I said &ldquo;great
+fortune&rdquo; in the same sentence with &ldquo;migration&rdquo; without using a negative -
+that&rsquo;s just how awesome this module is. My first impression when looking at
+the documentation for migrate was that it didn&rsquo;t seem complete. While it&rsquo;s
+true that the documentation could be better (what module couldn&rsquo;t use better
+documentation?), the problem is that no two migrations are alike. Because of
+this, the best documentation is not going to be written by the module authors,
+it will be written by the module <em>users</em> - they are the ones that come up with
+the recipies to fill the cookbook. There are several good reasons why there
+aren&rsquo;t many recipes available:</p>
+
+<ul>
+<li>Developers don&rsquo;t like doing migrations. It can be painful, and often takes quite a bit of time.</li>
+<li>Users don&rsquo;t like migrations. They see a migration of data as something easily done, and they often get sticker shock when presented with estimates for a large migration.</li>
+<li>Migration code is written in a flurry before the site is active. Right before launch, development crescendos, and then is often never used again (because no two migrations are the same).
+This being my first migration, I vowed that I would document my experience,
+because I learned so much from it. In this particular migration, we had to
+migrate a huge XML file into about 2,200 nodes in 3 content types. Read on for
+my contribution to the cookbook! First, some discussion on the general
+workflow and some design decisions. Since I had to get XML into the database
+before I could run the migrate, I wrote a command line script to do just that.
+When you need to manipulate data between your source and destination (i.e.,
+change all references to www.olddomain.com to www.newdomain.com), you usually
+have to do this via the hooks that the migrate module provides. In my case,
+there were a few cases where doing the data munging in the command line script
+was much easier than doing it within the hooks. The problem with making
+transformations within the command line script is that with every change, I
+had to re-run the script. This wasn&rsquo;t a big deal, as the XML to MySQL script
+took around 15 seconds to complete. I also quickly discovered that if you have
+less than 10 entities of one type (Story content type, user, etc), it&rsquo;s
+usually better to just hand-migrate them. The most straight-forward migration
+will take 1 hour at a minimum to setup and test &ndash; if it will take less than
+that to copy/paste, save your time and do it the less sexy way. Since we had
+to transform the XML into MySQL tables, and there was a lot of data in the XML
+that we didn&rsquo;t need, I decided the best way to dynamically change what we
+import and what we didn&rsquo;t was by using hook_install() and Drupal&rsquo;s DB schema
+API. By naming the MySQL table columns the same as the XML attributes, we can
+add and remove data to be transformed quite easily. Lastly, I need to re-
+iterate that this was my first migration. What I describe here works for me,
+but may very well not be the best way to do it. Also, I will not duplicate
+what you can learn from the migrate module documentation, so make sure to read
+that first. Let me know any suggestions you may have in the comments.</li>
+</ul>
+
+
+<h2>Install Module Dependencies</h2>
+
+<p>The first step is to install module dependencies. You&rsquo;ll need
+<a href="http://drupal.org/project/views">Views</a>,
+<a href="http://drupal.org/project/schema">Schema</a>, <a href="http://drupal.org/project/tw">Table Wizard(tw)</a>. You&rsquo;ll also want to install
+<a href="http://drupal.org/project/migrate">Migrate</a>, and <a href="http://drupal.org/project/migrate_extras">Migrate Extras</a> if you want to do any work
+with CCK fields. I must admit that I hadn&rsquo;t seen Table Wizard before this
+project, but it will always be present in my dev installs from here out. If
+you find yourself using SQLYog, PHPMyAdmin, or some other tool to simply look
+at data in the database, be sure to check it out.</p>
+
+<h2>Create Our Custom Module</h2>
+
+<p>As I mentioned above, we are relying on the Drupal Schema API to make a lot of
+this easy, so let&rsquo;s make a custom module that sets up our schemas for us.
+We&rsquo;ll call this module my_import. Create a new directory in your modules
+directory, and name it my_import. First, create my_import.info with this
+inside:</p>
+
+<div class="highlight"><pre><code class="language-ini" data-lang="ini"><span class="na">name</span> <span class="o">=</span> <span class="s">My Import</span>
+<span class="na">description</span> <span class="o">=</span> <span class="s">&quot;An import module.&quot;</span>
+<span class="na">core</span> <span class="o">=</span> <span class="s">6.x</span>
+<span class="na">dependencies[]</span> <span class="o">=</span> <span class="s">migrate</span>
+<span class="na">dependencies[]</span> <span class="o">=</span> <span class="s">migrate_extras</span>
+<span class="na">dependencies[]</span> <span class="o">=</span> <span class="s">content</span>
+<span class="na">dependencies[]</span> <span class="o">=</span> <span class="s">path_redirect</span>
+<span class="na">package</span> <span class="o">=</span> <span class="s">Database</span></code></pre></div>
+
+
+<p>Nothing too wild here, just requiring some modules that we&rsquo;ll
+be using later. Now, create my_import.install in the same directory with this
+inside:</p>
+
+<div class="highlight"><pre><code class="language-php" data-lang="php"><span class="cp">&lt;?php</span>
+<span class="k">function</span> <span class="nf">my_import_schema</span><span class="p">()</span> <span class="p">{</span>
+  <span class="nv">$schema</span> <span class="o">=</span> <span class="k">array</span><span class="p">();</span>
+  
+  <span class="nv">$schema</span><span class="p">[</span><span class="s1">&#39;clickability_articles&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="k">array</span><span class="p">(</span>
+    <span class="s1">&#39;fields&#39;</span> <span class="o">=&gt;</span> <span class="k">array</span><span class="p">(</span>
+      <span class="s1">&#39;id&#39;</span> <span class="o">=&gt;</span> <span class="k">array</span><span class="p">(</span>
+        <span class="s1">&#39;type&#39;</span> <span class="o">=&gt;</span> <span class="s1">&#39;int&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;not null&#39;</span> <span class="o">=&gt;</span> <span class="k">TRUE</span><span class="p">,</span>
+        <span class="s1">&#39;description&#39;</span> <span class="o">=&gt;</span> <span class="nx">t</span><span class="p">(</span><span class="s1">&#39;Clickability article ID&#39;</span><span class="p">),</span>
+      <span class="p">),</span>
+      <span class="s1">&#39;createDate&#39;</span> <span class="o">=&gt;</span> <span class="k">array</span><span class="p">(</span>
+        <span class="s1">&#39;type&#39;</span> <span class="o">=&gt;</span> <span class="s1">&#39;datetime&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;not null&#39;</span> <span class="o">=&gt;</span> <span class="k">TRUE</span><span class="p">,</span>
+        <span class="s1">&#39;description&#39;</span> <span class="o">=&gt;</span> <span class="nx">t</span><span class="p">(</span><span class="s1">&#39;Clickability article creation date.&#39;</span><span class="p">),</span>
+      <span class="p">),</span>
+      <span class="s1">&#39;editDate&#39;</span> <span class="o">=&gt;</span> <span class="k">array</span><span class="p">(</span>
+        <span class="s1">&#39;type&#39;</span> <span class="o">=&gt;</span> <span class="s1">&#39;datetime&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;not null&#39;</span> <span class="o">=&gt;</span> <span class="k">TRUE</span><span class="p">,</span>
+        <span class="s1">&#39;description&#39;</span> <span class="o">=&gt;</span> <span class="nx">t</span><span class="p">(</span><span class="s1">&#39;Clickability article edit date&#39;</span><span class="p">),</span>
+      <span class="p">),</span>
+      <span class="s1">&#39;title&#39;</span> <span class="o">=&gt;</span> <span class="k">array</span><span class="p">(</span>
+        <span class="s1">&#39;type&#39;</span> <span class="o">=&gt;</span> <span class="s1">&#39;text&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;not null&#39;</span> <span class="o">=&gt;</span> <span class="k">TRUE</span><span class="p">,</span>
+        <span class="s1">&#39;description&#39;</span> <span class="o">=&gt;</span> <span class="nx">t</span><span class="p">(</span><span class="s1">&#39;Clickability article title&#39;</span><span class="p">),</span>
+      <span class="p">),</span>
+      <span class="s1">&#39;author&#39;</span> <span class="o">=&gt;</span> <span class="k">array</span><span class="p">(</span>
+        <span class="s1">&#39;type&#39;</span> <span class="o">=&gt;</span> <span class="s1">&#39;text&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;not null&#39;</span> <span class="o">=&gt;</span> <span class="k">FALSE</span><span class="p">,</span>
+        <span class="s1">&#39;description&#39;</span> <span class="o">=&gt;</span> <span class="nx">t</span><span class="p">(</span><span class="s1">&#39;Clickability content author (optional)&#39;</span><span class="p">),</span>
+      <span class="p">),</span>
+      <span class="s1">&#39;articleauthor&#39;</span> <span class="o">=&gt;</span> <span class="k">array</span><span class="p">(</span>
+        <span class="s1">&#39;type&#39;</span> <span class="o">=&gt;</span> <span class="s1">&#39;text&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;not null&#39;</span> <span class="o">=&gt;</span> <span class="k">TRUE</span><span class="p">,</span>
+        <span class="s1">&#39;description&#39;</span> <span class="o">=&gt;</span> <span class="nx">t</span><span class="p">(</span><span class="s1">&#39;Clickability article author&#39;</span><span class="p">),</span>
+      <span class="p">),</span>
+      <span class="s1">&#39;summary&#39;</span> <span class="o">=&gt;</span> <span class="k">array</span><span class="p">(</span>
+        <span class="s1">&#39;type&#39;</span> <span class="o">=&gt;</span> <span class="s1">&#39;text&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;not null&#39;</span> <span class="o">=&gt;</span> <span class="k">TRUE</span><span class="p">,</span>
+        <span class="s1">&#39;description&#39;</span> <span class="o">=&gt;</span> <span class="nx">t</span><span class="p">(</span><span class="s1">&#39;Clickability article short summary&#39;</span><span class="p">),</span>
+      <span class="p">),</span>
+      <span class="s1">&#39;body&#39;</span> <span class="o">=&gt;</span> <span class="k">array</span><span class="p">(</span>
+        <span class="s1">&#39;type&#39;</span> <span class="o">=&gt;</span> <span class="s1">&#39;text&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;not null&#39;</span> <span class="o">=&gt;</span> <span class="k">TRUE</span><span class="p">,</span>
+        <span class="s1">&#39;size&#39;</span> <span class="o">=&gt;</span> <span class="s1">&#39;big&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;description&#39;</span> <span class="o">=&gt;</span> <span class="nx">t</span><span class="p">(</span><span class="s1">&#39;Clickability article body&#39;</span><span class="p">),</span>
+      <span class="p">),</span>
+      <span class="s1">&#39;placement&#39;</span> <span class="o">=&gt;</span> <span class="k">array</span><span class="p">(</span>
+        <span class="s1">&#39;type&#39;</span> <span class="o">=&gt;</span> <span class="s1">&#39;text&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;not null&#39;</span> <span class="o">=&gt;</span> <span class="k">FALSE</span><span class="p">,</span>
+        <span class="s1">&#39;description&#39;</span> <span class="o">=&gt;</span> <span class="nx">t</span><span class="p">(</span><span class="s1">&#39;Clickability article related article placement lists&#39;</span><span class="p">),</span>
+      <span class="p">),</span>
+      <span class="s1">&#39;thumbnail&#39;</span> <span class="o">=&gt;</span> <span class="k">array</span><span class="p">(</span>
+        <span class="s1">&#39;type&#39;</span> <span class="o">=&gt;</span> <span class="s1">&#39;text&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;not null&#39;</span> <span class="o">=&gt;</span> <span class="k">FALSE</span><span class="p">,</span>
+        <span class="s1">&#39;description&#39;</span> <span class="o">=&gt;</span> <span class="nx">t</span><span class="p">(</span><span class="s1">&#39;Clickability article thumbnail&#39;</span><span class="p">),</span>
+      <span class="p">),</span>
+      <span class="s1">&#39;image&#39;</span> <span class="o">=&gt;</span> <span class="k">array</span><span class="p">(</span>
+        <span class="s1">&#39;type&#39;</span> <span class="o">=&gt;</span> <span class="s1">&#39;text&#39;</span><span class="p">,</span>
+        <span class="c1">// @todo: Some articles do not have an image, but we require Master Image to be set.</span>
+        <span class="s1">&#39;not null&#39;</span> <span class="o">=&gt;</span> <span class="k">FALSE</span><span class="p">,</span>
+        <span class="s1">&#39;description&#39;</span> <span class="o">=&gt;</span> <span class="nx">t</span><span class="p">(</span><span class="s1">&#39;Clickability article image&#39;</span><span class="p">),</span>
+      <span class="p">),</span>
+      <span class="s1">&#39;image2&#39;</span> <span class="o">=&gt;</span> <span class="k">array</span><span class="p">(</span>
+        <span class="s1">&#39;type&#39;</span> <span class="o">=&gt;</span> <span class="s1">&#39;text&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;not null&#39;</span> <span class="o">=&gt;</span> <span class="k">FALSE</span><span class="p">,</span>
+        <span class="s1">&#39;description&#39;</span> <span class="o">=&gt;</span> <span class="nx">t</span><span class="p">(</span><span class="s1">&#39;Clickability article image page 2&#39;</span><span class="p">),</span>
+      <span class="p">),</span>
+      <span class="s1">&#39;image3&#39;</span> <span class="o">=&gt;</span> <span class="k">array</span><span class="p">(</span>
+        <span class="s1">&#39;type&#39;</span> <span class="o">=&gt;</span> <span class="s1">&#39;text&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;not null&#39;</span> <span class="o">=&gt;</span> <span class="k">FALSE</span><span class="p">,</span>
+        <span class="s1">&#39;description&#39;</span> <span class="o">=&gt;</span> <span class="nx">t</span><span class="p">(</span><span class="s1">&#39;Clickability article image page 3&#39;</span><span class="p">),</span>
+      <span class="p">),</span>
+      <span class="s1">&#39;master_image_byline_title&#39;</span> <span class="o">=&gt;</span> <span class="k">array</span><span class="p">(</span>
+        <span class="s1">&#39;type&#39;</span> <span class="o">=&gt;</span> <span class="s1">&#39;text&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;not null&#39;</span> <span class="o">=&gt;</span> <span class="k">FALSE</span><span class="p">,</span>
+        <span class="s1">&#39;description&#39;</span> <span class="o">=&gt;</span> <span class="nx">t</span><span class="p">(</span><span class="s1">&#39;Clickability article image page 7&#39;</span><span class="p">),</span>
+      <span class="p">),</span>
+      <span class="s1">&#39;tags&#39;</span> <span class="o">=&gt;</span> <span class="k">array</span><span class="p">(</span>
+        <span class="s1">&#39;type&#39;</span> <span class="o">=&gt;</span> <span class="s1">&#39;text&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;not null&#39;</span> <span class="o">=&gt;</span> <span class="k">FALSE</span><span class="p">,</span>
+        <span class="s1">&#39;description&#39;</span> <span class="o">=&gt;</span> <span class="nx">t</span><span class="p">(</span><span class="s1">&#39;Clickability article image page 7&#39;</span><span class="p">),</span>
+      <span class="p">),</span>
+      <span class="s1">&#39;status&#39;</span> <span class="o">=&gt;</span> <span class="k">array</span><span class="p">(</span>
+        <span class="s1">&#39;type&#39;</span> <span class="o">=&gt;</span> <span class="s1">&#39;text&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;not null&#39;</span> <span class="o">=&gt;</span> <span class="k">TRUE</span><span class="p">,</span>
+        <span class="s1">&#39;description&#39;</span> <span class="o">=&gt;</span> <span class="nx">t</span><span class="p">(</span><span class="s1">&#39;Clickability article status&#39;</span><span class="p">),</span>
+      <span class="p">),</span>
+      <span class="s1">&#39;websitePlacements&#39;</span> <span class="o">=&gt;</span> <span class="k">array</span><span class="p">(</span>
+        <span class="s1">&#39;type&#39;</span> <span class="o">=&gt;</span> <span class="s1">&#39;text&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;not null&#39;</span> <span class="o">=&gt;</span> <span class="k">TRUE</span><span class="p">,</span>
+        <span class="s1">&#39;description&#39;</span> <span class="o">=&gt;</span> <span class="nx">t</span><span class="p">(</span><span class="s1">&#39;Clickability book review status&#39;</span><span class="p">),</span>
+      <span class="p">),</span>
+      <span class="p">),</span>
+    <span class="s1">&#39;primary key&#39;</span> <span class="o">=&gt;</span> <span class="k">array</span><span class="p">(</span><span class="s1">&#39;id&#39;</span><span class="p">),</span>
+  <span class="p">);</span>
+  <span class="k">return</span> <span class="nv">$schema</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="k">function</span> <span class="nf">my_import_install</span><span class="p">()</span> <span class="p">{</span>
+  <span class="nv">$ret</span> <span class="o">=</span> <span class="nx">drupal_install_schema</span><span class="p">(</span><span class="s1">&#39;my_import&#39;</span><span class="p">);</span>
+  <span class="k">return</span> <span class="nv">$ret</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="k">function</span> <span class="nf">my_import_uninstall</span><span class="p">()</span> <span class="p">{</span>
+  <span class="nv">$ret</span> <span class="o">=</span> <span class="nx">drupal_uninstall_schema</span><span class="p">(</span><span class="s1">&#39;my_import&#39;</span><span class="p">);</span>
+  <span class="k">return</span> <span class="nv">$ret</span><span class="p">;</span>
+<span class="p">}</span></code></pre></div>
+
+
+<p>When I created the schema, I took care to make sure
+that the column names in my table exactly matched the attributes and elements
+I was looking to pull out of the XML file. This saves a lot of coding later.
+Any time we change the schema, you can create a hook_update_N() function, or
+just change the schema and disable+uninstall+install the custom module. I did
+the latter with a drush alias and it worked well. The hook_install() and
+hook_uninstall() functions simply add and remove the tables.</p>
+
+<h2>Setup the Command Line Script to Import the XML into the DB</h2>
+
+<p>Create the file myimport.php in your module directory, and paste in the
+following:</p>
+
+<div class="highlight"><pre><code class="language-php" data-lang="php"><span class="x">#!/usr/bin/php</span>
+<span class="cp">&lt;?php</span>
+<span class="c1">// get the path to our XML file</span>
+<span class="nv">$args</span> <span class="o">=</span> <span class="nb">getopt</span><span class="p">(</span><span class="s2">&quot;f:&quot;</span><span class="p">);</span>
+
+<span class="c1">// Bootstrap Drupal</span>
+<span class="k">require_once</span> <span class="s1">&#39;./includes/bootstrap.inc&#39;</span><span class="p">;</span>
+<span class="nx">drupal_bootstrap</span><span class="p">(</span><span class="nx">DRUPAL_BOOTSTRAP_FULL</span><span class="p">);</span>
+
+<span class="c1">// Make sure my_import is enabled</span>
+<span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">module_exists</span><span class="p">(</span><span class="s1">&#39;my_import&#39;</span><span class="p">))</span> <span class="p">{</span> 
+  <span class="k">echo</span> <span class="s2">&quot;I need the my_import module enabled!  Exiting.</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">;</span>
+  <span class="k">exit</span><span class="p">(</span><span class="mi">1</span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="cm">/*</span>
+<span class="cm"> * Make sure our media directory exists.</span>
+<span class="cm"> * We will import from this directory into whatever directory filefield is configured for</span>
+<span class="cm"> * so we should remove this dir when done with the migration.</span>
+<span class="cm"> */</span>
+<span class="nv">$media_dir</span> <span class="o">=</span> <span class="nx">file_directory_path</span><span class="p">()</span> <span class="o">.</span><span class="s1">&#39;/migrated&#39;</span><span class="p">;</span>
+<span class="k">echo</span> <span class="s2">&quot;Media dir = </span><span class="si">$media_dir\n</span><span class="s2">&quot;</span><span class="p">;</span>
+<span class="k">if</span> <span class="p">(</span><span class="o">!</span> <span class="nb">is_dir</span><span class="p">(</span><span class="nv">$media_dir</span><span class="p">))</span> <span class="p">{</span>
+  <span class="nb">mkdir</span><span class="p">(</span><span class="nv">$media_dir</span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="c1">// Slurp in our XML file.  If your XML file is huge, watch your PHP memory limits</span>
+<span class="nv">$xml</span> <span class="o">=</span> <span class="nb">simplexml_load_file</span><span class="p">(</span><span class="nv">$args</span><span class="p">[</span><span class="s1">&#39;f&#39;</span><span class="p">]);</span>
+<span class="k">echo</span> <span class="s2">&quot;XML Loaded.</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">;</span>
+
+<span class="nv">$rowcount</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+<span class="c1">// Here we iterate over each child of the root of the XML, which in our case is a Article</span>
+<span class="k">foreach</span> <span class="p">(</span><span class="nv">$xml</span><span class="o">-&gt;</span><span class="na">children</span><span class="p">()</span> <span class="k">as</span> <span class="nv">$content</span><span class="p">)</span> <span class="p">{</span>
+  <span class="c1">// Setup our $obj object which represents a row in the DB, and use some caching to </span>
+  <span class="c1">// not abuse drupal_get_schema().</span>
+  <span class="nv">$obj</span> <span class="o">=</span> <span class="k">new</span> <span class="k">stdClass</span><span class="p">;</span>
+  <span class="k">static</span> <span class="nv">$schema</span> <span class="o">=</span> <span class="k">array</span><span class="p">();</span>
+  
+  <span class="c1">// Dereference our child from the parent $xml, or xpath performance sucks hard</span>
+  <span class="nv">$content</span> <span class="o">=</span> <span class="nb">simplexml_load_string</span><span class="p">(</span><span class="nv">$content</span><span class="o">-&gt;</span><span class="na">asXML</span><span class="p">());</span>
+  
+  <span class="nv">$table</span> <span class="o">=</span> <span class="k">NULL</span><span class="p">;</span>
+  <span class="nv">$content_type</span> <span class="o">=</span> <span class="k">NULL</span><span class="p">;</span>
+  <span class="k">switch</span><span class="p">((</span><span class="nx">string</span><span class="p">)</span> <span class="nv">$content</span><span class="p">[</span><span class="s1">&#39;type&#39;</span><span class="p">])</span> <span class="p">{</span> 
+    <span class="c1">// Add more case statements for more content types as needed</span>
+    <span class="k">case</span> <span class="s1">&#39;Article&#39;</span><span class="o">:</span>
+      <span class="nv">$table</span> <span class="o">=</span> <span class="s1">&#39;clickability_articles&#39;</span><span class="p">;</span>
+      <span class="nv">$content_type</span> <span class="o">=</span> <span class="s1">&#39;article&#39;</span><span class="p">;</span>
+      <span class="k">break</span><span class="p">;</span>
+    <span class="c1">// All cases below are silently ignored - we are not importing them</span>
+    <span class="k">case</span> <span class="s1">&#39;Book Reviews&#39;</span><span class="o">:</span>
+    <span class="k">case</span> <span class="s1">&#39;Blog Topic&#39;</span><span class="o">:</span>
+    <span class="k">case</span> <span class="s1">&#39;Event&#39;</span><span class="o">:</span>
+    <span class="k">case</span> <span class="s1">&#39;Job&#39;</span><span class="o">:</span> 
+      <span class="c1">// Ignored</span>
+      <span class="k">break</span><span class="p">;</span>
+    <span class="k">default</span><span class="o">:</span>
+      <span class="c1">// Any content type not accounted for gets reported</span>
+      <span class="k">echo</span> <span class="s2">&quot;Warning: unknown content of type &quot;</span><span class="o">.</span> <span class="nv">$content</span><span class="p">[</span><span class="s1">&#39;type&#39;</span><span class="p">]</span> <span class="o">.</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">;</span>
+  <span class="p">}</span>
+  <span class="k">if</span> <span class="p">(</span><span class="nb">isset</span><span class="p">(</span><span class="nv">$table</span><span class="p">))</span> <span class="p">{</span>
+    <span class="k">if</span> <span class="p">(</span><span class="o">!</span> <span class="nb">isset</span><span class="p">(</span><span class="nv">$schema</span><span class="p">[</span><span class="nv">$table</span><span class="p">]))</span> <span class="p">{</span>
+      <span class="c1">// Get the table schema from Drupal</span>
+      <span class="nv">$schema</span><span class="p">[</span><span class="nv">$table</span><span class="p">]</span> <span class="o">=</span> <span class="nx">drupal_get_schema</span><span class="p">(</span><span class="nv">$table</span><span class="p">);</span>
+      <span class="c1">// On first run, truncate the table</span>
+      <span class="nv">$sql</span> <span class="o">=</span> <span class="s2">&quot;truncate table </span><span class="si">{</span><span class="nv">$table</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">;</span>
+      <span class="nx">db_query</span><span class="p">(</span><span class="nv">$sql</span><span class="p">);</span>
+      <span class="k">echo</span> <span class="s2">&quot;</span><span class="si">$table</span><span class="s2"> truncated.</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">;</span>
+    <span class="p">}</span>
+    <span class="c1">// This function does the heavy lifting, creating the $obj object from the XML data</span>
+    <span class="nv">$obj</span> <span class="o">=</span> <span class="nx">xml2object</span><span class="p">(</span><span class="nv">$content</span><span class="p">,</span> <span class="nv">$schema</span><span class="p">[</span><span class="nv">$table</span><span class="p">],</span> <span class="nv">$content</span><span class="p">[</span><span class="s1">&#39;type&#39;</span><span class="p">]);</span> 
+    <span class="c1">// There are some cases where $obj is intentionally null, only write to the db if not null</span>
+    <span class="k">if</span> <span class="p">(</span><span class="nv">$obj</span><span class="p">)</span> <span class="p">{</span>
+      <span class="nv">$ret</span> <span class="o">=</span> <span class="nx">drupal_write_record</span><span class="p">(</span><span class="nv">$table</span><span class="p">,</span> <span class="nv">$obj</span><span class="p">);</span>
+      <span class="k">if</span> <span class="p">(</span><span class="nv">$ret</span><span class="p">)</span> <span class="p">{</span>
+        <span class="nv">$rowcount</span><span class="o">++</span><span class="p">;</span>
+      <span class="p">}</span>
+    <span class="p">}</span>
+  <span class="p">}</span>
+<span class="p">}</span>
+<span class="k">echo</span> <span class="s2">&quot;Inserted </span><span class="si">$rowcount</span><span class="s2"> rows.</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">;</span>
+
+<span class="k">function</span> <span class="nf">xml2object</span><span class="p">(</span><span class="nv">$xml</span><span class="p">,</span> <span class="nv">$tableschema</span><span class="p">,</span> <span class="nv">$content_type</span><span class="p">)</span> <span class="p">{</span>
+  
+  <span class="k">global</span> <span class="nv">$media_dir</span><span class="p">;</span>
+  <span class="nv">$obj</span> <span class="o">=</span> <span class="k">new</span> <span class="k">stdClass</span><span class="p">;</span>
+  <span class="c1">// Our main iterator is the column names in the table</span>
+  <span class="k">foreach</span> <span class="p">(</span><span class="nb">array_keys</span><span class="p">(</span><span class="nv">$tableschema</span><span class="p">[</span><span class="s1">&#39;fields&#39;</span><span class="p">])</span> <span class="k">as</span> <span class="nv">$field</span><span class="p">)</span> <span class="p">{</span>
+    <span class="k">switch</span><span class="p">(</span><span class="nv">$field</span><span class="p">)</span> <span class="p">{</span>
+      <span class="k">case</span> <span class="s1">&#39;master_image_byline_title&#39;</span><span class="o">:</span>
+        <span class="c1">// This field is populated when we work with the images later on</span>
+        <span class="k">break</span><span class="p">;</span>
+      <span class="k">case</span> <span class="s1">&#39;id&#39;</span><span class="o">:</span>
+        <span class="nv">$obj</span><span class="o">-&gt;</span><span class="nv">$field</span> <span class="o">=</span> <span class="nv">$xml</span><span class="p">[</span><span class="nv">$field</span><span class="p">];</span>
+        <span class="k">break</span><span class="p">;</span>
+      <span class="k">case</span> <span class="s1">&#39;status&#39;</span><span class="o">:</span>
+        <span class="nv">$obj</span><span class="o">-&gt;</span><span class="nv">$field</span> <span class="o">=</span> <span class="p">(</span><span class="nx">string</span><span class="p">)</span><span class="nv">$xml</span><span class="o">-&gt;</span><span class="nv">$field</span><span class="p">;</span>
+        <span class="k">break</span><span class="p">;</span>
+      <span class="c1">// A Clickability placement roughly corresponds to a Drupal term</span>
+      <span class="k">case</span> <span class="s1">&#39;placement&#39;</span><span class="o">:</span>
+        <span class="nv">$element</span> <span class="o">=</span>  <span class="nb">array_pop</span><span class="p">(</span><span class="nv">$xml</span><span class="o">-&gt;</span><span class="na">xpath</span><span class="p">(</span><span class="s2">&quot;//field[@name=&#39;</span><span class="si">$field</span><span class="s2">&#39;]&quot;</span><span class="p">));</span>
+        <span class="nv">$obj</span><span class="o">-&gt;</span><span class="nv">$field</span> <span class="o">=</span> <span class="p">(</span><span class="nx">string</span><span class="p">)</span><span class="nv">$element</span><span class="o">-&gt;</span><span class="na">row</span><span class="o">-&gt;</span><span class="na">value</span><span class="p">;</span>
+        <span class="nv">$obj</span><span class="o">-&gt;</span><span class="nv">$field</span> <span class="o">=</span> <span class="nx">map_taxonomy</span><span class="p">(</span><span class="nv">$obj</span><span class="o">-&gt;</span><span class="nv">$field</span><span class="p">,</span> <span class="nv">$content_type</span><span class="p">);</span>
+        <span class="k">break</span><span class="p">;</span>
+      <span class="k">case</span> <span class="s1">&#39;author&#39;</span><span class="o">:</span>
+        <span class="nv">$element</span> <span class="o">=</span>  <span class="nb">array_pop</span><span class="p">(</span><span class="nv">$xml</span><span class="o">-&gt;</span><span class="na">xpath</span><span class="p">(</span><span class="s2">&quot;//field[@name=&#39;</span><span class="si">$field</span><span class="s2">&#39;]&quot;</span><span class="p">));</span>
+        <span class="nv">$obj</span><span class="o">-&gt;</span><span class="nv">$field</span> <span class="o">=</span> <span class="p">(</span><span class="nx">string</span><span class="p">)</span><span class="nv">$element</span><span class="o">-&gt;</span><span class="na">value</span><span class="p">;</span>
+        <span class="k">break</span><span class="p">;</span>
+      <span class="k">case</span> <span class="s1">&#39;image2&#39;</span><span class="o">:</span>
+      <span class="k">case</span> <span class="s1">&#39;image3&#39;</span><span class="o">:</span>
+        <span class="c1">// Combine image2 and image3 elements in Clickability into our multivalue filefield as csv</span>
+        <span class="k">if</span> <span class="p">(</span><span class="nv">$content_type</span> <span class="o">==</span> <span class="s2">&quot;Article&quot;</span><span class="p">)</span> <span class="p">{</span>
+          <span class="nv">$mediaplacement</span> <span class="o">=</span> <span class="nb">array_pop</span><span class="p">(</span><span class="nv">$xml</span><span class="o">-&gt;</span><span class="na">xpath</span><span class="p">(</span><span class="s2">&quot;//mediaPlacement[@name=&#39;</span><span class="si">$field</span><span class="s2">&#39;]&quot;</span><span class="p">));</span>
+          <span class="c1">// migrate module requires full path to filefield source</span>
+          <span class="nv">$obj</span><span class="o">-&gt;</span><span class="nv">$field</span> <span class="o">=</span> <span class="nb">getcwd</span><span class="p">()</span> <span class="o">.</span><span class="s1">&#39;/&#39;</span><span class="o">.</span> <span class="nv">$media_dir</span> <span class="o">.</span><span class="s1">&#39;/&#39;</span><span class="o">.</span> <span class="p">(</span><span class="nx">string</span><span class="p">)</span><span class="nv">$mediaplacement</span><span class="o">-&gt;</span><span class="na">media</span><span class="o">-&gt;</span><span class="na">path</span><span class="p">;</span>
+          <span class="k">if</span> <span class="p">(</span><span class="nb">substr</span><span class="p">(</span><span class="nv">$obj</span><span class="o">-&gt;</span><span class="nv">$field</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span> <span class="o">==</span> <span class="s1">&#39;/&#39;</span><span class="p">)</span>  <span class="p">{</span>
+            <span class="nv">$obj</span><span class="o">-&gt;</span><span class="nv">$field</span> <span class="o">=</span> <span class="k">NULL</span><span class="p">;</span>
+          <span class="p">}</span>
+          <span class="k">else</span> <span class="p">{</span>
+            <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="k">empty</span><span class="p">(</span><span class="nv">$obj</span><span class="o">-&gt;</span><span class="na">image</span><span class="p">))</span> <span class="p">{</span>
+              <span class="nv">$obj</span><span class="o">-&gt;</span><span class="na">image</span> <span class="o">.=</span> <span class="s2">&quot;,&quot;</span><span class="p">;</span>
+            <span class="p">}</span>
+            <span class="nv">$obj</span><span class="o">-&gt;</span><span class="na">image</span> <span class="o">.=</span> <span class="nv">$obj</span><span class="o">-&gt;</span><span class="nv">$field</span><span class="p">;</span>
+          <span class="p">}</span>
+        <span class="p">}</span>
+        <span class="k">break</span><span class="p">;</span>
+      <span class="k">case</span> <span class="s1">&#39;thumbnail&#39;</span><span class="o">:</span>
+      <span class="k">case</span> <span class="s1">&#39;image&#39;</span><span class="o">:</span>
+        <span class="nv">$mediaplacement</span> <span class="o">=</span> <span class="nb">array_pop</span><span class="p">(</span><span class="nv">$xml</span><span class="o">-&gt;</span><span class="na">xpath</span><span class="p">(</span><span class="s2">&quot;//mediaPlacement[@name=&#39;</span><span class="si">$field</span><span class="s2">&#39;]&quot;</span><span class="p">));</span>
+        <span class="c1">// migrate module requires full path to filefield source</span>
+        <span class="nv">$obj</span><span class="o">-&gt;</span><span class="nv">$field</span> <span class="o">=</span> <span class="nb">getcwd</span><span class="p">()</span> <span class="o">.</span><span class="s1">&#39;/&#39;</span><span class="o">.</span> <span class="nv">$media_dir</span> <span class="o">.</span><span class="s1">&#39;/&#39;</span><span class="o">.</span> <span class="p">(</span><span class="nx">string</span><span class="p">)</span><span class="nv">$mediaplacement</span><span class="o">-&gt;</span><span class="na">media</span><span class="o">-&gt;</span><span class="na">path</span><span class="p">;</span>
+        <span class="c1">// Check the schema.  If the field is required, then fill in a default, otherwise wipe it</span>
+        <span class="nv">$required</span> <span class="o">=</span> <span class="nv">$tableschema</span><span class="p">[</span><span class="s1">&#39;fields&#39;</span><span class="p">][</span><span class="nv">$field</span><span class="p">][</span><span class="s1">&#39;not null&#39;</span><span class="p">];</span>
+        <span class="c1">// If the file path ends in a /, then the XML did not have an image for this article</span>
+        <span class="c1">// -- if we require one, make a default</span>
+        <span class="k">if</span> <span class="p">(</span><span class="nb">substr</span><span class="p">(</span><span class="nv">$obj</span><span class="o">-&gt;</span><span class="nv">$field</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span> <span class="o">==</span> <span class="s1">&#39;/&#39;</span><span class="p">)</span>  <span class="p">{</span>
+          <span class="k">if</span> <span class="p">(</span><span class="nv">$required</span><span class="p">)</span> <span class="p">{</span>
+            <span class="k">echo</span> <span class="s2">&quot;</span><span class="si">$content_type</span><span class="s2"> with ID of &quot;</span><span class="o">.</span> <span class="nv">$obj</span><span class="o">-&gt;</span><span class="na">id</span> <span class="o">.</span><span class="s2">&quot; does not have a </span><span class="si">$field</span><span class="s2">.  Adding test.gif.</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">;</span>
+            <span class="nv">$obj</span><span class="o">-&gt;</span><span class="nv">$field</span> <span class="o">.=</span> <span class="s2">&quot;test.gif&quot;</span><span class="p">;</span>
+            <span class="nb">touch</span><span class="p">(</span><span class="nv">$obj</span><span class="o">-&gt;</span><span class="nv">$field</span><span class="p">);</span>
+          <span class="p">}</span>
+          <span class="k">else</span> <span class="p">{</span>
+            <span class="c1">// NOTE: We need this patch for this to work: http://drupal.org/node/780920</span>
+            <span class="nv">$obj</span><span class="o">-&gt;</span><span class="nv">$field</span> <span class="o">=</span> <span class="k">NULL</span><span class="p">;</span>
+          <span class="p">}</span>
+        <span class="p">}</span>
+        <span class="k">else</span> <span class="p">{</span>
+          <span class="c1">// Transfer the caption on the image in the XML to the CCK byline accreditation</span>
+          <span class="nv">$obj</span><span class="o">-&gt;</span><span class="na">master_image_byline_title</span> <span class="o">=</span> <span class="p">(</span><span class="nx">string</span><span class="p">)</span><span class="nv">$mediaplacement</span><span class="o">-&gt;</span><span class="na">caption</span><span class="p">;</span>
+          <span class="c1">// See if the file exists on the filesystem</span>
+          <span class="k">if</span> <span class="p">(</span><span class="o">!</span> <span class="nb">file_exists</span><span class="p">(</span><span class="nv">$obj</span><span class="o">-&gt;</span><span class="nv">$field</span><span class="p">))</span> <span class="p">{</span>
+            <span class="c1">// Nope, let&#39;s fill it in with our default image</span>
+            <span class="k">echo</span> <span class="nv">$obj</span><span class="o">-&gt;</span><span class="nv">$field</span> <span class="o">.</span><span class="s2">&quot; does not exist, replacing with test.gif.</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">;</span>
+            <span class="nv">$obj</span><span class="o">-&gt;</span><span class="nv">$field</span> <span class="o">=</span> <span class="nb">preg_replace</span><span class="p">(</span><span class="s1">&#39;#^(.*)/(.*)$#&#39;</span><span class="p">,</span> <span class="s1">&#39;\1/test.gif&#39;</span><span class="p">,</span> <span class="nv">$obj</span><span class="o">-&gt;</span><span class="nv">$field</span><span class="p">);</span>
+          <span class="p">}</span>
+          
+          <span class="c1">// Replace .bmp with .jpg</span>
+          <span class="nv">$jpg</span> <span class="o">=</span> <span class="nb">preg_replace</span><span class="p">(</span><span class="s1">&#39;/\.bmp$/&#39;</span><span class="p">,</span> <span class="s1">&#39;.jpg&#39;</span><span class="p">,</span> <span class="nv">$obj</span><span class="o">-&gt;</span><span class="nv">$field</span><span class="p">);</span>
+          <span class="k">if</span> <span class="p">(</span><span class="nv">$jpg</span> <span class="o">!=</span> <span class="nv">$obj</span><span class="o">-&gt;</span><span class="nv">$field</span><span class="p">)</span> <span class="p">{</span>
+            <span class="k">if</span> <span class="p">(</span><span class="nb">file_exists</span><span class="p">(</span><span class="nv">$jpg</span><span class="p">))</span> <span class="p">{</span>
+              <span class="nv">$obj</span><span class="o">-&gt;</span><span class="nv">$field</span> <span class="o">=</span> <span class="nv">$jpg</span><span class="p">;</span>
+            <span class="p">}</span>
+            <span class="k">else</span> <span class="p">{</span>
+              <span class="c1">// Tell the user what to do to create the image and exit.</span>
+              <span class="k">echo</span> <span class="s2">&quot;ID &quot;</span><span class="o">.</span> <span class="nv">$obj</span><span class="o">-&gt;</span><span class="na">id</span> <span class="o">.</span><span class="s2">&quot; has a image of type bmp, and no jpg found on the file system.</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">;</span>
+              <span class="k">echo</span> <span class="s2">&quot;Create them by running &#39;mogrify -format jpg /path/to/*.bmp&#39; and re-run this script.</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">;</span>
+              <span class="k">exit</span><span class="p">(</span><span class="mi">1</span><span class="p">);</span>
+            <span class="p">}</span>
+            
+          <span class="p">}</span>
+        <span class="p">}</span>
+        <span class="k">break</span><span class="p">;</span>
+      <span class="c1">// Any DB column not explicity defined above maps cleanly with the code below</span>
+      <span class="k">default</span><span class="o">:</span>
+        <span class="nv">$obj</span><span class="o">-&gt;</span><span class="nv">$field</span> <span class="o">=</span> <span class="p">(</span><span class="nx">string</span><span class="p">)</span><span class="nb">array_pop</span><span class="p">(</span><span class="nv">$xml</span><span class="o">-&gt;</span><span class="na">xpath</span><span class="p">(</span><span class="s2">&quot;//field[@name=&#39;</span><span class="si">$field</span><span class="s2">&#39;]&quot;</span><span class="p">));</span>
+        <span class="k">break</span><span class="p">;</span>
+    <span class="p">}</span>
+
+  <span class="p">}</span>
+  
+  <span class="c1">// We assume it does not need imported until we prove otherwise</span>
+  <span class="nv">$needs_imported</span> <span class="o">=</span> <span class="k">FALSE</span><span class="p">;</span>
+  <span class="nv">$tags</span> <span class="o">=</span> <span class="k">array</span><span class="p">();</span>
+  <span class="nv">$websitePlacements</span> <span class="o">=</span> <span class="k">array</span><span class="p">();</span>
+  <span class="k">foreach</span> <span class="p">(</span><span class="nv">$xml</span><span class="o">-&gt;</span><span class="na">xpath</span><span class="p">(</span><span class="s2">&quot;//websitePlacement&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="nv">$websitePlacement</span><span class="p">)</span> <span class="p">{</span>
+    <span class="c1">// Only if the XML says the domain is www.newdomain.com do we need to import</span>
+    <span class="k">if</span> <span class="p">(</span><span class="nv">$websitePlacement</span><span class="o">-&gt;</span><span class="na">domain</span> <span class="o">==</span> <span class="s1">&#39;www.newdomain.com&#39;</span><span class="p">)</span> <span class="p">{</span>
+      <span class="nv">$needs_imported</span> <span class="o">=</span> <span class="k">TRUE</span><span class="p">;</span>
+      
+      <span class="c1">// Convert the old &quot;sections&quot; into tag taxonomy</span>
+      <span class="nv">$tags</span><span class="p">[]</span> <span class="o">=</span> <span class="nb">substr</span><span class="p">(</span><span class="nv">$section</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="nb">strlen</span><span class="p">(</span><span class="nv">$section</span><span class="p">));</span>
+      
+      <span class="c1">// Grab the old URLs from websitePlacement, and place them on an array</span>
+      <span class="nv">$section</span> <span class="o">=</span> <span class="p">(</span><span class="nx">string</span><span class="p">)</span><span class="nv">$websitePlacement</span><span class="o">-&gt;</span><span class="na">section</span><span class="p">;</span>
+      <span class="nv">$oldurl</span> <span class="o">=</span> <span class="nv">$section</span> <span class="o">.</span><span class="s1">&#39;/&#39;</span><span class="o">.</span> <span class="nv">$obj</span><span class="o">-&gt;</span><span class="na">id</span> <span class="o">.</span><span class="s1">&#39;.html&#39;</span><span class="p">;</span>
+      <span class="nv">$websitePlacements</span><span class="p">[]</span> <span class="o">=</span> <span class="nv">$oldurl</span><span class="p">;</span>
+      
+      <span class="c1">// If we do not have a placement yet, we try to set some form of taxonomy</span>
+      <span class="k">if</span> <span class="p">(</span><span class="o">!</span> <span class="nb">isset</span><span class="p">(</span><span class="nv">$obj</span><span class="o">-&gt;</span><span class="na">placement</span><span class="p">))</span> <span class="p">{</span>
+        <span class="nv">$taxo</span> <span class="o">=</span> <span class="nx">map_taxonomy</span><span class="p">(</span><span class="nv">$section</span><span class="p">,</span> <span class="nv">$content_type</span><span class="p">);</span>
+        <span class="c1">// NOTE: We need this patch for this to work: http://drupal.org/node/780920</span>
+        <span class="nv">$obj</span><span class="o">-&gt;</span><span class="na">placement</span> <span class="o">=</span> <span class="nv">$taxo</span><span class="p">;</span>
+      <span class="p">}</span>
+      <span class="c1">// If the XML did not explicity tell us the createDate, we use the start date from the webSitePlacement</span>
+      <span class="k">if</span> <span class="p">(</span><span class="k">empty</span><span class="p">(</span><span class="nv">$obj</span><span class="o">-&gt;</span><span class="na">createDate</span><span class="p">))</span> <span class="p">{</span>
+        <span class="nv">$date</span> <span class="o">=</span> <span class="p">(</span><span class="nx">string</span><span class="p">)</span><span class="nv">$websitePlacement</span><span class="o">-&gt;</span><span class="na">startDate</span><span class="p">;</span>
+        <span class="nv">$obj</span><span class="o">-&gt;</span><span class="na">createDate</span> <span class="o">=</span> <span class="nb">substr</span><span class="p">(</span><span class="nv">$date</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="nb">strlen</span><span class="p">(</span><span class="nv">$date</span><span class="p">)</span> <span class="o">-</span><span class="mi">4</span><span class="p">);</span>
+        <span class="nv">$obj</span><span class="o">-&gt;</span><span class="na">editDate</span> <span class="o">=</span> <span class="nv">$obj</span><span class="o">-&gt;</span><span class="na">createDate</span><span class="p">;</span>
+      <span class="p">}</span>
+    <span class="p">}</span>    
+  <span class="p">}</span>
+  <span class="nv">$obj</span><span class="o">-&gt;</span><span class="na">websitePlacements</span> <span class="o">=</span> <span class="nb">implode</span><span class="p">(</span><span class="s1">&#39;,&#39;</span><span class="p">,</span> <span class="nv">$websitePlacements</span><span class="p">);</span>
+  <span class="nv">$obj</span><span class="o">-&gt;</span><span class="na">tags</span> <span class="o">=</span> <span class="nb">implode</span><span class="p">(</span><span class="s1">&#39;,&#39;</span><span class="p">,</span> <span class="nv">$tags</span><span class="p">);</span>
+  
+  <span class="c1">// Return the object only if we need it imported</span>
+  <span class="k">return</span> <span class="nv">$needs_imported</span> <span class="o">?</span> <span class="nv">$obj</span> <span class="o">:</span> <span class="k">NULL</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="k">function</span> <span class="nf">map_taxonomy</span><span class="p">(</span><span class="nv">$oldtext</span><span class="p">,</span> <span class="nv">$content_type</span><span class="p">)</span> <span class="p">{</span>
+  <span class="c1">// Simple maps of Clickability placements to Drupal terms</span>
+  <span class="k">if</span> <span class="p">(</span><span class="nv">$content_type</span> <span class="o">==</span> <span class="s1">&#39;Job&#39;</span><span class="p">)</span> <span class="p">{</span>
+    <span class="k">return</span> <span class="k">NULL</span><span class="p">;</span>
+  <span class="p">}</span>
+  <span class="k">if</span> <span class="p">(</span><span class="nb">preg_match</span><span class="p">(</span><span class="s1">&#39;/building/i&#39;</span><span class="p">,</span> <span class="nv">$oldtext</span><span class="p">))</span> <span class="p">{</span>
+    <span class="k">return</span> <span class="s2">&quot;Green Building&quot;</span><span class="p">;</span>
+  <span class="p">}</span>
+  <span class="k">if</span> <span class="p">(</span><span class="nb">preg_match</span><span class="p">(</span><span class="s1">&#39;/(clean|energy)/i&#39;</span><span class="p">,</span> <span class="nv">$oldtext</span><span class="p">))</span> <span class="p">{</span>
+    <span class="k">return</span> <span class="s2">&quot;Clean Energy&quot;</span><span class="p">;</span>
+  <span class="p">}</span>
+  <span class="k">if</span> <span class="p">(</span><span class="nb">preg_match</span><span class="p">(</span><span class="s1">&#39;/financ/i&#39;</span><span class="p">,</span> <span class="nv">$oldtext</span><span class="p">))</span> <span class="p">{</span>
+    <span class="k">return</span> <span class="s2">&quot;Finance&quot;</span><span class="p">;</span>
+  <span class="p">}</span>
+  <span class="k">if</span> <span class="p">(</span><span class="nb">preg_match</span><span class="p">(</span><span class="s1">&#39;/food/i&#39;</span><span class="p">,</span> <span class="nv">$oldtext</span><span class="p">))</span> <span class="p">{</span>
+    <span class="k">return</span> <span class="s2">&quot;Food &amp; Farms&quot;</span><span class="p">;</span>
+  <span class="p">}</span>
+  <span class="k">if</span> <span class="p">(</span><span class="nb">preg_match</span><span class="p">(</span><span class="s1">&#39;/marketing/i&#39;</span><span class="p">,</span> <span class="nv">$oldtext</span><span class="p">))</span> <span class="p">{</span>
+    <span class="k">return</span> <span class="s2">&quot;Green Marketing&quot;</span><span class="p">;</span>
+  <span class="p">}</span>
+  <span class="k">if</span> <span class="p">(</span><span class="nb">preg_match</span><span class="p">(</span><span class="s1">&#39;/recycled/i&#39;</span><span class="p">,</span> <span class="nv">$oldtext</span><span class="p">))</span> <span class="p">{</span>
+    <span class="k">return</span> <span class="s2">&quot;Recycled Markets&quot;</span><span class="p">;</span>
+  <span class="p">}</span>
+  <span class="k">if</span> <span class="p">(</span><span class="nb">preg_match</span><span class="p">(</span><span class="s1">&#39;/technol/i&#39;</span><span class="p">,</span> <span class="nv">$oldtext</span><span class="p">))</span> <span class="p">{</span>
+    <span class="k">return</span> <span class="s2">&quot;Technology&quot;</span><span class="p">;</span>
+  <span class="p">}</span>
+  <span class="k">if</span> <span class="p">(</span><span class="nb">preg_match</span><span class="p">(</span><span class="s1">&#39;/leaders/i&#39;</span><span class="p">,</span> <span class="nv">$oldtext</span><span class="p">))</span> <span class="p">{</span>
+    <span class="k">return</span> <span class="s2">&quot;Business Leaders&quot;</span><span class="p">;</span>
+  <span class="p">}</span>
+  <span class="k">if</span> <span class="p">(</span><span class="nb">preg_match</span><span class="p">(</span><span class="s1">&#39;/transportation/i&#39;</span><span class="p">,</span> <span class="nv">$oldtext</span><span class="p">))</span> <span class="p">{</span>
+    <span class="k">return</span> <span class="s2">&quot;Transportation&quot;</span><span class="p">;</span>
+  <span class="p">}</span>
+  <span class="k">return</span> <span class="k">NULL</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="cp">?&gt;</span><span class="x"></span></code></pre></div>
+
+
+<p>Wow, that&rsquo;s a lot of code. I&rsquo;ve commented
+it pretty heavily, but here&rsquo;s the &ldquo;40,000 foot view&rdquo; of what&rsquo;s going on:</p>
+
+<ul>
+<li><strong>Lines 1-26:</strong> Nothing too fancy here. I should note that the script expects to be executed from your Drupal root directory. It grabs the path to the XML file from the command line and does some sanity checking.</li>
+<li><strong>Lines 28-30:</strong> Here we use PHP&rsquo;s <a href="http://php.net/manual/en/book.simplexml.php">SimpleXML API</a> to load the entire XML file into an object. If you have a huge XML file and/or small PHP memory limits, you will likely have to use XML Parser or another library. The power and convenience of SimpleXML is a pretty convincing argument to temporarily upping your memory limits in this case.</li>
+<li><strong>Lines 34-82:</strong> This is the main loop which iterates over each Article in the XML file. By looking at the content type in the XML record, we determine what table and content type to use for Drupal. The first time a schema is loaded, we truncate the table in the database. Once we determine some metadata about the record, we call xml2object() on line 72 which does most of the work for us. Once we have an object, we store it to the database.</li>
+<li><strong>Lines 84-222:</strong> Here we have the xml2object() function, and yes, it&rsquo;s way too long and should be broken up. But hey, it&rsquo;s migration code, who else will ever see it??? We&rsquo;ll break it down more below.</li>
+<li><strong>Lines 89-182:</strong> This code runs a for loop around each column in the table. Since we&rsquo;re using the Schema API here, we can safely assume that the column order specified in our install file will be duplicated when we fetch it in our script. For each column type in the table, it attempts to pull the data needed from the XML record, transform it if necessary, and store it in our $obj object. Read the code for details on what is happening to each field on the way in.</li>
+<li><strong>Lines 184-218:</strong> Now that we have iterated over all the fields in the schema, we can use the data stored in $obj to calculate other fields we need. Again, read the code for details, but here we are setting taxonomy terms, URLs for use with path_redirect, and filling in other data that may have been missing from the XML.</li>
+<li><strong>Lines 224-257:</strong> Is a simple example on how to statically map some data in the XML to return taxonomy terms in Drupal
+Now that we&rsquo;ve got that out of the way, let&rsquo;s create our module file.</li>
+</ul>
+
+
+<h2>Create my_import.module</h2>
+
+<p>Now, create a file in your module directory named my_import.module. This file
+will contain the actual module used by Drupal and will implement some of the
+migrate modules hooks. You might ask, why not deal with everything in the
+command line script? There are two primary reasons why:</p>
+
+<ol>
+<li>You may come across a condition where you need the nid of the node (i.e. create path redirects), or otherwise interact with the $node object. You can only get this information from implementing migrate&rsquo;s hooks.</li>
+<li>While I personally found it easier to manipulate taxonomy terms via the command line script and then rely upon the out-of-the-box code supplied with migrate to setup the node for me, this has a drawback. Any time you change the command line script, you must &ldquo;clear&rdquo; your imported data, re-run the command line script, and re-import your data using the migrate module. If you make changes to your module, you only have two steps to test (clear and re-import).
+Paste this code into my_import.module:</li>
+</ol>
+
+
+<div class="highlight"><pre><code class="language-php" data-lang="php"><span class="cp">&lt;?php</span>
+<span class="nb">define</span><span class="p">(</span><span class="nx">NUM_PARAGRAPHS_PER_PAGE</span><span class="p">,</span> <span class="mi">6</span><span class="p">);</span>
+
+<span class="k">function</span> <span class="nf">my_import_migrate_prepare_user</span><span class="p">(</span><span class="o">&amp;</span><span class="nv">$user</span><span class="p">,</span> <span class="nv">$tblinfo</span><span class="p">,</span> <span class="nv">$row</span><span class="p">)</span> <span class="p">{</span>
+  <span class="c1">// Randomly assign passwords to users, forcing them to reset their password</span>
+  <span class="nv">$errors</span> <span class="o">=</span> <span class="k">array</span><span class="p">();</span>
+  <span class="nv">$user</span><span class="p">[</span><span class="s1">&#39;pass&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">preg_replace</span><span class="p">(</span><span class="s2">&quot;/([0-9])/e&quot;</span><span class="p">,</span><span class="s2">&quot;chr((</span><span class="se">\\</span><span class="s2">1+112))&quot;</span><span class="p">,</span><span class="nb">rand</span><span class="p">(</span><span class="mi">100000</span><span class="p">,</span><span class="mi">999999</span><span class="p">));</span>
+  <span class="k">return</span> <span class="nv">$errors</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="k">function</span> <span class="nf">my_import_migrate_prepare_node</span><span class="p">(</span><span class="o">&amp;</span><span class="nv">$node</span><span class="p">,</span> <span class="nv">$tblinfo</span><span class="p">,</span> <span class="nv">$row</span><span class="p">)</span> <span class="p">{</span>
+  <span class="nv">$errors</span> <span class="o">=</span> <span class="k">array</span><span class="p">();</span>
+  <span class="c1">// In Clickability, there were multiple states that represented &quot;Published&quot;, here we map them.</span>
+  <span class="nv">$status</span> <span class="o">=</span> <span class="nv">$tblinfo</span><span class="o">-&gt;</span><span class="na">view_name</span> <span class="o">.</span><span class="s1">&#39;_status&#39;</span><span class="p">;</span>
+  <span class="k">switch</span><span class="p">(</span><span class="nv">$row</span><span class="o">-&gt;</span><span class="nv">$status</span><span class="p">)</span> <span class="p">{</span>
+    <span class="k">case</span> <span class="s1">&#39;live&#39;</span><span class="o">:</span>
+    <span class="k">case</span> <span class="s1">&#39;APPROVED&#39;</span><span class="o">:</span>
+      <span class="nv">$node</span><span class="o">-&gt;</span><span class="na">status</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span>
+      <span class="k">break</span><span class="p">;</span>
+    <span class="k">default</span><span class="o">:</span>
+      <span class="nv">$node</span><span class="o">-&gt;</span><span class="na">status</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+      <span class="k">break</span><span class="p">;</span>
+  <span class="p">}</span> 
+  
+  <span class="k">if</span> <span class="p">(</span><span class="nv">$node</span><span class="o">-&gt;</span><span class="na">type</span> <span class="o">==</span> <span class="s1">&#39;article&#39;</span><span class="p">)</span> <span class="p">{</span>
+    <span class="c1">// Paginate articles by inserting a pagebreak tag every 6th paragraph to emulate Clickability&#39;s pagination</span>
+    <span class="nv">$paragraphs</span> <span class="o">=</span> <span class="nb">preg_split</span><span class="p">(</span><span class="s1">&#39;#&lt;br /&gt;\s*&lt;br /&gt;#s&#39;</span><span class="p">,</span> <span class="nv">$node</span><span class="o">-&gt;</span><span class="na">body</span><span class="p">);</span>
+    <span class="k">if</span> <span class="p">(</span><span class="nb">count</span><span class="p">(</span><span class="nv">$paragraphs</span><span class="p">)</span> <span class="o">&gt;</span> <span class="nx">NUM_PARAGRAPHS_PER_PAGE</span><span class="p">)</span> <span class="p">{</span>
+      <span class="nv">$node</span><span class="o">-&gt;</span><span class="na">body</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span><span class="p">;</span>
+      <span class="nv">$i</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span>
+      <span class="k">foreach</span> <span class="p">(</span><span class="nv">$paragraphs</span> <span class="k">as</span> <span class="nv">$paragraph</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">if</span> <span class="p">((</span><span class="nv">$i</span> <span class="o">%</span> <span class="nx">NUM_PARAGRAPHS_PER_PAGE</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span> <span class="p">{</span>
+          <span class="nv">$node</span><span class="o">-&gt;</span><span class="na">body</span> <span class="o">.=</span> <span class="nv">$paragraph</span> <span class="o">.</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">[pagebreak]</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">;</span>
+        <span class="p">}</span>
+        <span class="k">else</span> <span class="p">{</span>
+          <span class="nv">$node</span><span class="o">-&gt;</span><span class="na">body</span> <span class="o">.=</span> <span class="nv">$paragraph</span> <span class="o">.</span><span class="s2">&quot;&lt;br /&gt;</span><span class="se">\n</span><span class="s2">&lt;br /&gt;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">;</span>
+        <span class="p">}</span>
+        <span class="nv">$i</span><span class="o">++</span><span class="p">;</span>
+      <span class="p">}</span>
+    <span class="p">}</span>
+    
+  <span class="p">}</span>
+  <span class="k">return</span> <span class="nv">$errors</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="k">function</span> <span class="nf">my_import_migrate_complete_node</span><span class="p">(</span><span class="o">&amp;</span><span class="nv">$node</span><span class="p">,</span> <span class="nv">$tblinfo</span><span class="p">,</span> <span class="nv">$row</span><span class="p">)</span> <span class="p">{</span>
+  <span class="nv">$errors</span> <span class="o">=</span> <span class="k">array</span><span class="p">();</span>
+  <span class="c1">// Create redirects for old URLs</span>
+  <span class="nv">$field</span> <span class="o">=</span> <span class="nv">$tblinfo</span><span class="o">-&gt;</span><span class="na">view_name</span> <span class="o">.</span><span class="s1">&#39;_websitePlacements&#39;</span><span class="p">;</span>
+  <span class="k">foreach</span><span class="p">(</span><span class="nb">explode</span><span class="p">(</span><span class="s1">&#39;,&#39;</span><span class="p">,</span> <span class="nv">$row</span><span class="o">-&gt;</span><span class="nv">$field</span><span class="p">)</span> <span class="k">as</span> <span class="nv">$oldurl</span><span class="p">)</span> <span class="p">{</span>
+    <span class="c1">// Delete any old redirects</span>
+    <span class="k">if</span> <span class="p">(</span><span class="nb">substr</span><span class="p">(</span><span class="nv">$oldurl</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span> <span class="o">==</span> <span class="s1">&#39;/&#39;</span><span class="p">)</span> <span class="p">{</span>
+      <span class="nv">$oldurl</span> <span class="o">=</span> <span class="nb">substr</span><span class="p">(</span><span class="nv">$oldurl</span><span class="p">,</span><span class="mi">1</span><span class="p">);</span>
+    <span class="p">}</span>
+    <span class="nx">path_redirect_delete</span><span class="p">(</span><span class="k">array</span><span class="p">(</span><span class="s1">&#39;source&#39;</span> <span class="o">=&gt;</span> <span class="nv">$oldurl</span><span class="p">));</span>
+    <span class="nv">$redirect</span> <span class="o">=</span> <span class="k">array</span><span class="p">(</span>
+      <span class="s1">&#39;source&#39;</span> <span class="o">=&gt;</span> <span class="nv">$oldurl</span><span class="p">,</span>
+      <span class="s1">&#39;redirect&#39;</span> <span class="o">=&gt;</span> <span class="s1">&#39;/node/&#39;</span><span class="o">.</span> <span class="nv">$node</span><span class="o">-&gt;</span><span class="na">nid</span><span class="p">,</span>
+      <span class="s1">&#39;type&#39;</span> <span class="o">=&gt;</span> <span class="mi">301</span><span class="p">,</span>
+    <span class="p">);</span>
+    <span class="nx">path_redirect_save</span><span class="p">(</span><span class="nv">$redirect</span><span class="p">);</span>
+  <span class="p">}</span>
+  <span class="k">return</span> <span class="nv">$errors</span><span class="p">;</span>
+<span class="p">}</span></code></pre></div>
+
+
+<p>Here&rsquo;s the high-level breakdown, check the code+comments for
+the details.</p>
+
+<ul>
+<li><strong>Lines 5-10:</strong> Just a quick example of how to set a random password on any user that is imported.</li>
+<li><strong>Lines 12-24:</strong> hook_migrate_prepare_node() is executed before the node has been saved to the database, and should be where the majority of your code is at. These lines set any article with a status of &lsquo;live&rsquo; or &lsquo;APPROVED&rsquo; to published in Drupal.</li>
+<li><strong>Lines 26-41:</strong> This code uses some regex magic to create a pagebreak every 6th paragraph. This is what Clickability did, and the client wanted to keep this on their migrated articles.</li>
+<li><strong>Lines 47-65:</strong> hook_migrate_complete_node() is called after the node has been saved to the database, and it has a nid at this point. The client wished to migrate their old URL&rsquo;s to Drupal &ndash; in order to do that we must have the nid to know where to redirect to.</li>
+</ul>
+
+
+<h2>Create sample XML</h2>
+
+<p>Finally, let&rsquo;s create some sample data so we can see how this all meshes
+together. Create the file content.xml in your module directory, and paste this
+in it:</p>
+
+<div class="highlight"><pre><code class="language-xml" data-lang="xml"><span class="cp">&lt;?xml version=&quot;1.0&quot; encoding=&quot;utf-8&quot;?&gt;</span>
+<span class="nt">&lt;cmPublishImport&gt;</span>
+  <span class="nt">&lt;content</span> <span class="na">type=</span><span class="s">&quot;Article&quot;</span> <span class="na">id=</span><span class="s">&quot;7241321&quot;</span><span class="nt">&gt;</span>
+    <span class="nt">&lt;field</span> <span class="na">name=</span><span class="s">&quot;title&quot;</span><span class="nt">&gt;</span><span class="cp">&lt;![CDATA[Donec risus purus]]&gt;</span><span class="nt">&lt;/field&gt;</span>
+    <span class="nt">&lt;field</span> <span class="na">name=</span><span class="s">&quot;author&quot;</span><span class="nt">&gt;</span>
+      <span class="nt">&lt;value&gt;</span><span class="cp">&lt;![CDATA[Me]]&gt;</span><span class="nt">&lt;/value&gt;</span>
+    <span class="nt">&lt;/field&gt;</span>
+    <span class="nt">&lt;field</span> <span class="na">name=</span><span class="s">&quot;articleauthor&quot;</span><span class="nt">&gt;</span><span class="cp">&lt;![CDATA[Me]]&gt;</span><span class="nt">&lt;/field&gt;</span>
+    <span class="nt">&lt;field</span> <span class="na">name=</span><span class="s">&quot;date&quot;</span><span class="nt">&gt;</span><span class="cp">&lt;![CDATA[2007-04-29]]&gt;</span><span class="nt">&lt;/field&gt;</span>
+    <span class="nt">&lt;field</span> <span class="na">name=</span><span class="s">&quot;summary&quot;</span><span class="nt">&gt;</span><span class="cp">&lt;![CDATA[Donec risus purus]]&gt;</span><span class="nt">&lt;/field&gt;</span>
+    <span class="nt">&lt;field</span> <span class="na">name=</span><span class="s">&quot;body&quot;</span><span class="nt">&gt;</span><span class="cp">&lt;![CDATA[Donec risus purus, euismod eu volutpat ac, pharetra non nulla. Vestibulum quis neque lacus. Donec sit amet tortor nisi. Nam et lectus nec turpis consequat rhoncus. Proin porttitor, quam nec faucibus pulvinar, arcu magna facilisis erat, eu imperdiet risus tortor ac quam. Praesent non justo ac nisl ultricies condimentum a eget arcu. Nam in mi est. Donec risus orci, imperdiet ut tempus et, pulvinar nec diam. Donec eleifend pulvinar aliquam. Nulla faucibus turpis nec neque scelerisque convallis. Fusce gravida pulvinar quam, sit amet faucibus risus sodales ornare. Nullam arcu risus, lacinia vel faucibus at, auctor eget diam. Quisque a neque ac tellus bibendum luctus fringilla in lacus. Praesent id nunc eu dolor adipiscing consequat vel eget leo. Donec velit mi, pharetra quis tincidunt id, laoreet et dolor. Vestibulum fringilla rutrum arcu at accumsan.&lt;br/&gt;</span>
+<span class="cp">&lt;br/&gt;  </span>
+<span class="cp">Cras pellentesque sagittis mi. Pellentesque cursus nisl id nunc suscipit luctus. Duis pellentesque rhoncus sodales. Nullam dictum augue ac diam fermentum vel feugiat mauris euismod. Mauris nec metus eu sem tristique euismod. Etiam lorem est, accumsan vitae bibendum sit amet, tempus sit amet urna. Nullam lobortis adipiscing convallis. Nullam scelerisque sagittis tellus vitae interdum. Integer eget interdum nunc. Nam ligula orci, bibendum ac mattis eget, mollis at massa.&lt;br/&gt;</span>
+<span class="cp">&lt;br/&gt;  </span>
+<span class="cp">Vestibulum sodales elit vel est feugiat vitae dapibus erat ultricies. Proin auctor quam sit amet nisi aliquet pharetra. Curabitur tristique quam vel tortor gravida scelerisque. Morbi laoreet aliquet mi, sed imperdiet mauris mattis et. Praesent non quam nec lorem dapibus semper. Quisque vulputate neque et turpis placerat bibendum. Phasellus suscipit urna eget augue ullamcorper ultricies. Curabitur hendrerit dui sit amet elit elementum nec venenatis orci tempor. Fusce semper vestibulum odio vitae porta. Mauris non tellus non mi hendrerit suscipit in sed ante. Donec arcu neque, tristique ut elementum sed, suscipit at leo. Curabitur eget enim quis leo scelerisque laoreet et eget augue. Fusce posuere est ac felis fringilla consectetur. Nulla elit magna, pharetra sit amet tincidunt sed, tristique sed mi. Nam iaculis, elit sit amet condimentum blandit, massa neque pharetra justo, non ornare ligula ante non leo. Praesent ullamcorper suscipit tempus. In varius, neque eget volutpat posuere, velit odio luctus turpis, ac varius nulla erat sit amet justo. Quisque convallis mollis pharetra. Aliquam porta dolor quis nunc tempor vitae pharetra lectus ultricies. Fusce egestas sagittis sapien, sit amet pharetra sem ullamcorper a.&lt;br/&gt;</span>
+<span class="cp">&lt;br/&gt;  </span>
+<span class="cp">Ut dui tortor, porta eu ultrices sed, interdum vitae lectus. Integer facilisis velit sit amet dui ultricies lobortis. Fusce ut malesuada tellus. Aenean in nibh at lorem iaculis dictum vitae in nulla. Etiam dapibus lacinia eleifend. Aliquam erat volutpat. Nullam sit amet sapien ut risus consequat posuere eu quis quam. In lobortis fringilla felis quis pretium. Suspendisse non nisl libero, non tempor justo. Nunc volutpat nulla vitae lacus tincidunt feugiat congue sapien commodo. Suspendisse venenatis aliquet ante in hendrerit. Sed lectus ligula, gravida id tincidunt et, feugiat non justo.&lt;br/&gt;</span>
+<span class="cp">&lt;br/&gt;  </span>
+<span class="cp">Sed metus tellus, vestibulum in mollis quis, imperdiet et velit. Praesent suscipit elit et mi rutrum sit amet gravida augue iaculis. Etiam nec tellus nec augue porttitor pharetra. Vivamus feugiat mollis est, eu aliquam neque tempus a. Ut magna mauris, sollicitudin in ornare non, lacinia a lacus. Aenean porttitor magna ac sem ornare pellentesque. Aliquam mattis dolor in metus molestie ut feugiat mi auctor. Etiam laoreet pulvinar ipsum id bibendum. Class aptent taciti sociosqu ad litora torquent per conubia nostra, per inceptos himenaeos. Quisque porttitor convallis lacus, nec pretium leo varius non. Morbi non dapibus diam. Sed nec venenatis diam. Cras mollis porta tempor.&lt;br/&gt;</span>
+<span class="cp">&lt;br/&gt;  </span>
+<span class="cp">Donec ornare mi sed tellus porta luctus. Nulla euismod venenatis ante, in rhoncus felis ornare non. Cras tempor venenatis est at gravida. Etiam imperdiet dolor vitae ipsum lacinia imperdiet. Maecenas purus lorem, rhoncus non porttitor in, semper nec quam. Integer ullamcorper facilisis ultrices. Vivamus porttitor lacinia augue in venenatis. Quisque interdum euismod tellus, et consectetur nunc dictum sit amet. Maecenas pulvinar placerat mauris, quis auctor purus pellentesque at. Vestibulum vulputate, tellus id eleifend posuere, ligula erat hendrerit orci, nec lobortis tortor sapien ut ligula. Donec id augue leo, non consectetur nisl. In viverra dictum lorem eget blandit. Etiam tempus nisl ac nibh viverra id cursus eros luctus. Duis ut tellus nisi.&lt;br/&gt;</span>
+<span class="cp">&lt;br/&gt;  </span>
+<span class="cp">Class aptent taciti sociosqu ad litora torquent per conubia nostra, per inceptos himenaeos. Aliquam quis justo risus, eget eleifend nibh. Morbi quis dolor nulla, sed cursus metus. Vestibulum vel ipsum non erat tincidunt luctus et eget sapien. Nunc vel justo ante, vel auctor purus. Proin vulputate bibendum placerat. Fusce vel tincidunt nunc. Praesent at eros in dolor faucibus blandit et vitae magna. Fusce arcu nisl, sollicitudin sed accumsan sed, rhoncus at tellus. Ut ut mauris vel ipsum bibendum ullamcorper eget sed neque. Class aptent taciti sociosqu ad litora torquent per conubia nostra, per inceptos himenaeos. Sed dui massa, imperdiet sit amet lacinia id, rutrum sed orci. Proin pharetra risus eu risus gravida convallis id ac mi. Etiam a neque ut lacus convallis accumsan non eget arcu. Sed blandit velit id lectus tincidunt ut aliquet mi egestas. Aliquam cursus odio vitae turpis suscipit mollis et aliquam purus. Suspendisse pretium tincidunt porttitor. Nunc vestibulum, lacus at auctor laoreet, orci lectus volutpat diam, ut mollis risus lectus a ligula.&lt;br/&gt;</span>
+<span class="cp">&lt;br/&gt;  </span>
+<span class="cp">Phasellus id urna sit amet elit pretium viverra sit amet eget felis. Maecenas sed arcu sed eros fringilla commodo id non magna. Maecenas urna mauris, cursus vel mattis et, volutpat in purus. Nulla sapien orci, faucibus sed tincidunt tincidunt, tristique id lacus. Nullam tortor libero, porttitor eget faucibus eget, vehicula a enim. Suspendisse malesuada consectetur mattis. Integer dapibus dignissim tempor. In viverra luctus orci sed placerat. Suspendisse aliquam mattis diam mattis dapibus. Aenean suscipit purus eu ipsum dignissim in aliquet urna mollis. Duis nibh magna, fringilla eu ultrices posuere, sodales sed felis. Proin varius dignissim sem a consequat. Pellentesque facilisis felis vel mi malesuada placerat. Curabitur gravida euismod mi in molestie. Vivamus sit amet dui leo. Praesent mi justo, bibendum at rutrum ac, bibendum ut felis. Nullam nec dolor dui, quis imperdiet nulla. Morbi semper pulvinar risus.]]&gt;</span><span class="nt">&lt;/field&gt;</span>
+    <span class="nt">&lt;mediaPlacement</span> <span class="na">name=</span><span class="s">&quot;image&quot;</span><span class="nt">&gt;</span>
+      <span class="nt">&lt;media</span> <span class="na">id=</span><span class="s">&quot;577286&quot;</span><span class="nt">&gt;</span>
+        <span class="nt">&lt;path&gt;</span>images/1.jpg<span class="nt">&lt;/path&gt;</span>
+        <span class="nt">&lt;caption&gt;</span><span class="cp">&lt;![CDATA[Cows at Three Mile Canyon provide resources such as methane and compost for on-farm operations.]]&gt;</span><span class="nt">&lt;/caption&gt;</span>
+      <span class="nt">&lt;/media&gt;</span>
+    <span class="nt">&lt;/mediaPlacement&gt;</span>
+    <span class="nt">&lt;status&gt;</span>live<span class="nt">&lt;/status&gt;</span>
+    <span class="nt">&lt;websitePlacement&gt;</span>
+      <span class="nt">&lt;domain&gt;</span>www.newdomain.com<span class="nt">&lt;/domain&gt;</span>
+      <span class="nt">&lt;section&gt;</span>/foodandfarms<span class="nt">&lt;/section&gt;</span>
+      <span class="nt">&lt;startDate</span> <span class="na">dateFormat=</span><span class="s">&quot;yyyy-MM-dd HH:mm:ss zzz&quot;</span><span class="nt">&gt;</span>2007-04-29 14:00:00 PDT<span class="nt">&lt;/startDate&gt;</span>
+    <span class="nt">&lt;/websitePlacement&gt;</span>
+    <span class="nt">&lt;websitePlacement&gt;</span>
+      <span class="nt">&lt;domain&gt;</span>www.olddomain.com<span class="nt">&lt;/domain&gt;</span>
+      <span class="nt">&lt;section&gt;</span>/greenmarketing<span class="nt">&lt;/section&gt;</span>
+      <span class="nt">&lt;startDate</span> <span class="na">dateFormat=</span><span class="s">&quot;yyyy-MM-dd HH:mm:ss zzz&quot;</span><span class="nt">&gt;</span>2007-04-29 14:00:00 PDT<span class="nt">&lt;/startDate&gt;</span>
+    <span class="nt">&lt;/websitePlacement&gt;</span>
+  <span class="nt">&lt;/content&gt;</span>
+<span class="nt">&lt;/cmPublishImport&gt;</span></code></pre></div>
+
+
+<h2>Enable the my_import Module and Run the Command Line Script</h2>
+
+<p>Now (finally), it&rsquo;s time for some action. Enable your newly created my_import
+module, and jump out to the shell. Assuming your Drupal root is at
+/var/www/drupal, cd into that directory. Create the new directory
+sites/default/files/migrated/images, and place a jpg named 1.jpg in that
+directory. Now run the import script:</p>
+
+<pre><code>php5 ./sites/all/modules/my_import/myimport.php  -f ./sites/all/modules/my_import/content.xml
+</code></pre>
+
+<p>With luck, the script will succeed, and you will have 1 row of data in your
+clickability_articles table! If not, fix the error (if you&rsquo;re using the sample
+data, let me know what went wrong and I&rsquo;ll fix it). Next up, Table Wizard
+configuration.</p>
+
+<h2>Expose the Table to Table Wizard</h2>
+
+<p>All the hard work is done now - we can use a web UI from here on out. Visit
+/admin/content/tw in your browser, and under the &ldquo;Add Existing Tables&rdquo;
+fieldset, and select the tables you imported with myimport.php. If your tables
+are huge (50K+ rows), you may want to select &ldquo;Skip full analysis&rdquo;. Click the
+&ldquo;Add tables&rdquo; button. At this point, that&rsquo;s all we need from Table Wizard, but
+I strongly encourage you click around a bit. The table analysis can tell you
+some handy things about your data.</p>
+
+<h2>Create the Migrate Content Set</h2>
+
+<p>In the previous step, we essentially built a view that we can provide to the
+Migrate module. Now we need to tell Migrate how to use the view. Visit the
+Migrate settings at /admin/content/migrate/settings. If you can, implement the
+changes it recommends to .htaccess as it will speed up the import
+considerably. Also, make sure to expand the &ldquo;Migration support implemented in
+the XYZ module&rdquo; fieldsets and enable the support you need for your import.
+Now, visit the dashboard at /admin/content/migrate. Expand the &ldquo;Add a content
+set&rdquo; fieldset, and fill in the values. When choosing the value for &ldquo;Source
+view from which to import content&rdquo;, scroll down towards the bottom of the
+list. All Table Wizard views are prefixed with &ldquo;tw: &rdquo;, so the one we&rsquo;re
+looking for here is &ldquo;tw: clickability_issues (clickability_issues)&rdquo;. You can
+leave &ldquo;View arguments&rdquo; and &ldquo;Weight&rdquo; to defaults. The next screen is where the
+real magic happens. By interrogating the view, Migrate presents you with a map
+fields form that allows us to select our source column from a dropdown to
+assign to various node elements. If you have a setting that should remain
+constant across all imported records (&ldquo;Node: Input format&rdquo; is usually a good
+example), you can type in a default value here. The rest should be fairly self
+explanatory. Click &ldquo;Submit changes&rdquo;, and you&rsquo;ll be taken back to the
+dashboard.</p>
+
+<h2>Run the Import, Clear the Import, Wash, Rinse, Repeat</h2>
+
+<p>Now, the way I did my testing was to choose one row from the source table to
+import. Grab its primary key and copy it to the clipboard. Check the box under
+&ldquo;Import&rdquo; for our content set, then expand the &ldquo;Execute&rdquo; fieldset. Paste the ID
+into the &ldquo;Source IDs:&rdquo; text field, and click the Run button. With any luck,
+you will be returned to the dashboard, but the content set will show 1
+imported. Hopefully there will be no errors, but if there are, find and fix
+the problem. You can view the old primary key mapping to the node ID by going
+back to /admin/content/tw and looking for a view named
+migrate_map_si_articles. This table is created by the Migrate module &ndash; it
+uses this table to track what has been imported, and what NID the imported
+nodes have. Grab that nid, and load up /node/[nid]. If it looks good, then we
+can to a bigger import. Go back to the Migrate dashboard, and this time click
+the &ldquo;Clear&rdquo; checkbox next to the content set. Expand &ldquo;Execute&rdquo;, make sure all
+fields are blank, and click the Run button. This process will &ldquo;unimport&rdquo; the
+row we just imported. Now, depending on your row count, you may want to import
+all rows and see what happens. Since I was dealing with thousands of nodes, I
+did an import of just 100 nodes to make sure things were okay. To do this,
+instead of specifying &ldquo;Source IDs&rdquo;, place the number 100 in &ldquo;Sample Size&rdquo;, and
+click Run. To import everything, leave all fields blank. The power to quickly
+and easily remove all changes made by the migrate module is huge. Because of
+this &ldquo;safety net&rdquo;, it lets you work on the import within the same development
+sandbox as your designers and themers. They&rsquo;ll appreciate having something
+other than &ldquo;Lorem Ipsum&rdquo; to look at!</p>
+
+<h2>Run to the Nearest Pub and Celebrate the Completion of Your Migration</h2>
+
+<p>If I have to explain this to you, you&rsquo;re in the wrong field of work!</p>
+
+<h2>Summary</h2>
+
+<p>This post is my longest to date, and there&rsquo;s a good chance I missed some
+things. By all means, let me know in the comments if you find any holes and
+I&rsquo;ll get it corrected. I hope this case study helps some other Drupalers out
+there - when I first started this project I couldn&rsquo;t find any examples on how
+to get XML into Drupal using the Migrate module. Now Google has some spider
+food :)</p>
+</div>
+  
+  
+
+
+    </article>
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/content/2010/04/23/my-thoughts-and-ramblings-drupalconsf-2010">My Thoughts and Ramblings on DrupalConSF 2010</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+<time class='entry-date' datetime='2010-04-23T00:00:00-05:00'><span class='date'><span class='date-month'>Apr</span> <span class='date-day'>23</span><span class='date-suffix'>rd</span>, <span class='date-year'>2010</span></span> <span class='time'>12:00 am</span></time>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>I had the great pleasure of attending my first
+<a href="http://sf2010.drupal.org">DrupalCon</a> this week. Held in downtown San
+Francisco at the Moscone Center, it was my opinion that this was Drupal&rsquo;s
+&ldquo;homecoming&rdquo;. While Drupal wasn&rsquo;t &ldquo;born&rdquo; in San Francisco, it seems to be the
+city that has the strongest following. The attendance numbers didn&rsquo;t lie - I&rsquo;m
+pretty sure they broke 3,000 <del>geeks</del> attendees. I made this trip solo
+&ndash; I only knew three people that were going, and those three were only
+acquaintances I&rsquo;d met via email/IM a few months before. When I left, I didn&rsquo;t
+come home with &ldquo;leads&rdquo; or &ldquo;contacts&rdquo;, I came home with friends and role
+models, many of whom I plan on staying in touch with. I met most of the
+authors of the Drupal books I&rsquo;ve read, associated faces to the podcasts and
+RSS feeds I subscribe to, and I even had the opportunity to quickly say thanks
+to Dries and shake his hand.</p>
+
+<p>For those who didn&rsquo;t know, archive.org has made the sessions <a href="http://www.archive.org/search.php?query=DrupalCon&amp;sort=-publicdate">available for
+download</a>,
+so be sure to check those out. Read on for my &ldquo;takeaways&rdquo; from DCSF2010.</p>
+
+<p>Please note that these are just what come to my mind, I&rsquo;m sure I&rsquo;m forgetting
+huge topics. Please forgive me in advance for those!</p>
+
+<h2>Larry Garfield is my favorite presenter of the conference</h2>
+
+<p><a href="http://drupal.org/user/26398">Larry Garfield</a> works for
+<a href="http://palantir.net/">Palantir.net</a>, and is one of the few people that I&rsquo;ve
+listened to that is immensely intelligent, yet speak well and even make a
+crowd genuinely laugh out loud. I attended his &ldquo;Objectifying PHP&rdquo; and &ldquo;Views
+for Developers&rdquo; sessions, and left feeling motivated and enlightened. My
+thanks go out to him, as he very obviously put a lot of preparation time into
+his presentations.</p>
+
+<h2>Drupal is methodically (pun intended) implementing OO</h2>
+
+<p>As evidenced by Larry Garfield&rsquo;s &ldquo;Objectfying PHP&rdquo; and John VanDyk&rsquo;s &ldquo;Batch vs
+Queue&rdquo; session, Drupal is refactoring portions of core into classes and
+methods where it fits. I&rsquo;m part of the camp that welcomes the change, and
+can&rsquo;t wait. I can&rsquo;t help but wonder if we&rsquo;ll alienate some contrib module
+authors in the process, but I&rsquo;m sure that it will bring the overall quality of
+contrib modules up a few notches.</p>
+
+<h2>David Strauss knows what he&rsquo;s talking about</h2>
+
+<p>I&rsquo;ve been in IT/Networking/Programming/etc for about 20 years now. While I
+don&rsquo;t claim to be the smartest person in the group at any point in time, I
+consider myself pretty well rounded. It&rsquo;s been a long time since someone was
+able to truly talk so far over my head that I couldn&rsquo;t keep up, but <a href="http://fourkitchens.com/bios/david-strauss">David
+Strauss</a> of <a href="http://fourkitchens.com/">Four
+Kitchens</a> did just that at the <a href="http://chapterthree.com">Chapter Three
+</a>open house party. We discussed HipHop PHP, operating
+systems, configuration management, and god knows what else. I had to look like
+a deer in headlights!</p>
+
+<h2>HipHop PHP will eventually run Drupal</h2>
+
+<p>I can say this because David Strauss is the one working on it. Enough said.</p>
+
+<h2>Microsoft is playing it smart</h2>
+
+<p>Instead of trying to compete with Drupal, they&rsquo;re finally trying to help
+Drupal. I&rsquo;m a hardcore anything-but-Microsoft OS kinda guy, but I can&rsquo;t
+dispute that there&rsquo;s a lot of shops out there that already have well versed
+SQL Server and IIS admins. Microsoft announced that they now have a native SQL
+Server driver for PHP, and that Drupal can now run on MS SQL Server. This will
+be a huge boon for getting Drupal into the Microsoft-centric enterprises -
+there&rsquo;s no longer a need to have a MySQL guy. Oh, and <a href="http://www.sysadminsjourney.com/content/2010/04/20/2010-what-year">giving away free
+alcohol</a>
+never hurt either :)</p>
+
+<h2>MongoDB will have a large impact on Drupal 7</h2>
+
+<p><a href="http://drupal.org/user/9446">Chx</a> gave an excellent presentation - &ldquo;<a href="http://sf2010.drupal.org/conference/sessions/mongodb-%0Ahumongous-drupal">MongoDB:
+Humongous Drupal</a>&rdquo;. He covered a lot about SQL, and how over the years it&rsquo;s
+become &ldquo;best practice&rdquo; to de-normalize tables to improve performance. We&rsquo;ve
+all done that, but have you ever pondered that you&rsquo;re breaking one of the
+fundamental rules of relational databases when you&rsquo;ve done that? While MongoDB
+is perfectly suited for logging and caching in Drupal, the biggest win is with
+Fields in Drupal 7. Each field you create results in a new table that must be
+added to a JOIN when building a node. Shops with a lot of fields on their
+nodes will likely see huge gains in performance by moving to MongoDB for those
+tables.</p>
+
+<h2>Big Drupal is Big</h2>
+
+<p>Hey, did you hear that Drupal powers whitehouse.gov? Seriously, there&rsquo;s been a
+lot of progress in the past year with regards to making Drupal scale. <a href="http://getpantheon.com/mercury/what-is-mercury">Project
+Mercury</a> from the great folks
+at <a href="http://www.chapterthree.com">Chapter Three</a> makes Big Drupal easy, and is
+now supported on Amazon&rsquo;s EC2, Rackspace, and
+<a href="http://www.linode.com/?r=c4f79463ba583ec1f15e3307190bda4bda9d65df">Linode</a>
+<shameless_plug>thanks to my
+<a href="http://www.sysadminsjourney.com/content/2010/04/12/new-linode-%0Astackscript-pantheon-mercury-high-performance-drupal-10-minutes-or-%0Aless">stackscript</a></shameless_plug>. There was a huge amount of interest in Mercury and how
+it all works at the conference. The BOF session was great - unfortunately I
+missed the sessions where it was discussed in more detail.</p>
+
+<h2>Chapter Three rocks</h2>
+
+<p>Two out of the three people I knew coming into DCSF currently work for Chapter
+Three, and the third person used to work for them. Special thanks to <a href="http://www.chapterthree.com/about_us/greg_coit">Greg
+Coit</a> and <a href="http://uptownalmanac.com/users/kmonty">Kevin
+Montgomery</a> for taking me under their
+wing and introducing me to all their colleagues. I also had the pleasure to
+meet <a href="http://www.chapterthree.com/blog/josh_koenig">Josh Koenig</a>, albeit
+briefly. Seems the partner/CTO of one of the leading Drupal shops is a little
+busy at a DrupalCon. I ended up meeting a few other guys that I clicked really
+well with and hope to keep tabs on: Jeff Graham of
+<a href="http://www.funnymonkey.com/">FunnyMonkey</a>, Rob Wohleb of
+<a href="http://www.xomba.com/">Xomba.com</a>, and Aaron Levy of <a href="http://www.chapterthree.com">Chapter
+Three</a> - thanks for the beer and discussion!</p>
+
+<h2>Git will change Drupal.org</h2>
+
+<p>The migration to Git can&rsquo;t happen fast enough for me. Aside from the ability
+to commit code on a plane, contrib modules will benefit greatly. When all is
+said and done, every new issue on drupal.org will have it&rsquo;s own repository
+that any user will be able to commit to. Once the issue is resolved, the fix
+will be merged back into the main module repo. That should break down even
+more barriers for new contrib authors getting into Drupal development.</p>
+
+<h2>Dries Buytaert is really tall</h2>
+
+<p>Yes, Dries is very tall - at least 6'4" if I had to guess, but this is
+actually just a way for me to remind you that I shook Dries' hand :) I was
+more than a little starstruck!</p>
+
+<p>Overall, I had a blast, and can&rsquo;t wait for the next DrupalCon in the states. I
+heard it&rsquo;s in Chicago &ndash; count me in! If you ever get the chance, I absolutely
+recommend that you attend.</p>
+</div>
+  
+  
+
+
+    </article>
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/content/2010/04/20/2010-what-year">2010: What a Year!</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+<time class='entry-date' datetime='2010-04-20T00:00:00-05:00'><span class='date'><span class='date-month'>Apr</span> <span class='date-day'>20</span><span class='date-suffix'>th</span>, <span class='date-year'>2010</span></span> <span class='time'>12:00 am</span></time>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>If you would have told me 5 years ago that:</p>
+
+<ol>
+<li>Sun would be gone</li>
+<li>I would take personal time off from work to attend DrupalCon (and not regret it)</li>
+<li>I would attend a Microsoft party
+I would have told you where to shove it. Well:
+<img src="http://lh3.ggpht.com/_FC5vt0s6_v8/S82311L-%0ATtI/AAAAAAAAMNw/ACAF0hhPT_s/s288/IMG_0272.JPG" alt="" /> For all those wondering, I went
+to the party as a saboteur on a mission: to drink as much as I could to try
+and directly impact their bottom line. Mission accomplished :) Good times @
+DCSF2010!</li>
+</ol>
+
+</div>
+  
+  
+
+
+    </article>
+  
+  <div class="pagination">
+    
+      <a class="prev" href="/posts/2">&larr; Older</a>
+    
+    <a href="/blog/archives">Blog Archives</a>
+    
+  </div>
+</div>
+<aside class="sidebar">
+  
+    <script async src="//pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
+<!-- Default -->
+<ins class="adsbygoogle"
+     style="display:block"
+     data-ad-client="ca-pub-9978053499043694"
+     data-ad-slot="5667084961"
+     data-ad-format="auto"></ins>
+<script>
+(adsbygoogle = window.adsbygoogle || []).push({});
+</script>
+<section>
+  <h1>Recent Posts</h1>
+  <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2015/10/30/replicating-hashicorp-vault-in-a-multi-datacenter-setup/">Replicating Hashicorp Vault in a Multi-DataCenter Setup</a>
+      </li>
+    
+      <li class="post">
+        <a href="/content/using-git-submodules-dynamic-puppet-environments">Using Git Submodules With Dynamic Puppet Environments</a>
+      </li>
+    
+      <li class="post">
+        <a href="/content/2011/11/14/vpsnet-review">VPS.net Review</a>
+      </li>
+    
+      <li class="post">
+        <a href="/content/2011/10/19/its-not-you-its-me-call-node-gallery-co-maintainers">It's Not You, It's Me: Call for Node Gallery Co-maintainers</a>
+      </li>
+    
+      <li class="post">
+        <a href="/content/2011/09/20/drupal-heroku">Drupal on Heroku</a>
+      </li>
+    
+  </ul>
+</section>
+
+<section>
+  <h1>GitHub Repos</h1>
+  <ul id="gh_repos">
+    <li class="loading">Status updating...</li>
+  </ul>
+  
+  <a href="https://github.com/justintime">@justintime</a> on GitHub
+  
+  <script type="text/javascript">
+    $(document).ready(function(){
+        if (!window.jXHR){
+            var jxhr = document.createElement('script');
+            jxhr.type = 'text/javascript';
+            jxhr.src = '/javascripts/libs/jXHR.js';
+            var s = document.getElementsByTagName('script')[0];
+            s.parentNode.insertBefore(jxhr, s);
+        }
+
+        github.showRepos({
+            user: 'justintime',
+            count: 0,
+            skip_forks: true,
+            target: '#gh_repos'
+        });
+    });
+  </script>
+  <script src="/javascripts/github.js" type="text/javascript"> </script>
+</section>
+
+
+<section>
+  <h1>Latest Tweets</h1>
+  <ul id="tweets">
+    <li class="loading">Status updating...</li>
+  </ul>
+  <script type="text/javascript">
+    $.domReady(function(){
+      getTwitterFeed("justinellison", 4, false);
+    });
+  </script>
+  <script src="/javascripts/twitter.js" type="text/javascript"> </script>
+  
+    <a href="http://twitter.com/justinellison" class="twitter-follow-button" data-show-count="false">Follow @justinellison</a>
+  
+</section>
+
+
+
+
+
+  
+</aside>
+
+    </div>
+  </div>
+  <footer role="contentinfo"><p>
+  Copyright &copy; 2017 - Justin Ellison -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+</p>
+
+</footer>
+  
+
+<script type="text/javascript">
+      var disqus_shortname = 'sysadminsjourney';
+      
+        
+        var disqus_script = 'count.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = '//' + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = '//platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+
+
+
+</body>
+</html>

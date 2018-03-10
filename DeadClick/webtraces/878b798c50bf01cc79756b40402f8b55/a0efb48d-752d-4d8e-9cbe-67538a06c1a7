@@ -1,0 +1,431 @@
+
+
+$(function () {
+
+
+     if ($("#ContentPlaceHolder1_hddf").val() == "df")
+        jQuery("html,body").animate({ scrollTop: 0 }, "fast");
+    
+    var width = $(window).width();
+
+    var maxSlidesAllwd = 5;
+    if (width > 1400) {
+        maxSlidesAllwd = 5;
+    }
+    else if (width < 1400 && width > 1120) {
+        maxSlidesAllwd = 4;
+    }
+    else if (width < 1120 && width > 850) {
+        maxSlidesAllwd = 3;
+    }
+
+    else {
+        maxSlidesAllwd = 1;
+    }
+
+
+
+
+
+
+
+    $('.bxslider').bxSlider({
+        minSlides: 1,
+        maxSlides: maxSlidesAllwd,
+        slideWidth: 200,
+        slideMargin: 30,
+        moveSlides: 1,
+        infiniteLoop: false,
+        pager: false,
+        captions: false,
+        hideControlOnEnd: true
+    });
+
+    var maxSlidesAllwdBrand = 5;
+    if (width > 1500) {
+        maxSlidesAllwdBrand = 5;
+    }
+    else if (width < 1500 && width > 1200) {
+        maxSlidesAllwdBrand = 4;
+    }
+    else if (width < 1200 && width > 1025) {
+        maxSlidesAllwdBrand = 3;
+    }
+    else if (width < 1025 && width > 850) {
+        maxSlidesAllwdBrand = 4;
+    }
+    else if (width < 850 && width > 620) {
+        maxSlidesAllwdBrand = 3;
+    }
+    else if (width < 620 && width > 410) {
+        maxSlidesAllwdBrand = 2;
+    }
+
+    else {
+        maxSlidesAllwdBrand = 1;
+    }
+
+    $('.bxslider2').bxSlider({
+        minSlides: 1,
+        maxSlides: maxSlidesAllwdBrand,
+        slideWidth: 150,
+        slideMargin: 23,
+        moveSlides: 1,
+        infiniteLoop: false,
+        pager: false,
+        captions: true,
+        hideControlOnEnd:true
+    });
+
+   
+    $(".PrimeAd").fancybox({
+        padding: 0,
+        helpers: {
+            overlay: {
+                locked: false
+            }
+
+        },
+        titleShow: true,
+        centerOnScroll: true,
+        nextEffect: 'fade',
+        prevEffect: 'fade',
+        showNavArrows: true
+    });
+
+    $(".pricelist").fancybox({
+        padding: 0,
+        helpers: {
+            overlay: {
+                locked: false
+            }
+
+        },
+        titleShow: true,
+        centerOnScroll: true,
+        nextEffect: 'fade',
+        prevEffect: 'fade',
+        showNavArrows: true
+    });
+
+
+    $(".directionlisting a").fancybox({
+        type: 'iframe'
+    });
+
+
+
+
+    var modal = document.getElementById('myModal');
+
+    // Get the button that opens the modal
+    var btn = document.getElementById("aviewLargeMap");
+
+    // Get the <span> element that closes the modal
+    var span = document.getElementsByClassName("close")[0];
+
+    // When the user clicks the button, open the modal
+    if (btn != null) {
+        btn.onclick = function () {
+            modal.style.display = "block";
+            markicons();
+        }
+    }
+    // When the user clicks on <span> (x), close the modal
+    span.onclick = function () {
+        modal.style.display = "none";
+    }
+
+    // When the user clicks anywhere outside of the modal, close it
+    window.onclick = function (event) {
+        if (event.target == modal) {
+            modal.style.display = "none";
+        }
+    }
+
+
+    // Home Float Menu
+    var nav = $('#divFloatMenu');
+    var navHomeY = 0 + 275;
+
+
+
+    var isFixed = false;
+    var $w = $(window);
+    $w.scroll(function () {
+        var scrollTop = $w.scrollTop();
+        var shouldBeFixed = scrollTop > navHomeY;
+        if (shouldBeFixed && !isFixed) {
+            nav.css({
+                position: 'fixed',
+                top: 0,
+                left: nav.offset().left,
+                opacity: '1',
+                transition: 'top 300ms cubic-bezier(0.17, 0.04, 0.03, 0.94)',
+                display: 'block'
+                //width: nav.width()
+            });
+            isFixed = true;
+            nav.addClass("slideDown");
+        }
+        else if (!shouldBeFixed && isFixed) {
+            nav.removeClass("slideDown");
+            nav.css({
+                opacity: '0',
+                transition: 'top 300ms ease-in(0.42,0,1,1)',
+                display: 'none'
+            });
+            isFixed = false;
+
+
+        }
+    });
+
+    // Home Background Banner
+    $(".responsive-image-listing").backstretch($("#BannerImage").attr("src"));
+
+
+
+});
+
+function initMap() {
+    var map = new google.maps.Map(document.getElementById('map'), {
+        zoom: 4,
+        center: { lat: -33, lng: 151 }
+    });
+
+    var image = 'https://developers.google.com/maps/documentation/javascript/examples/full/images/beachflag.png';
+    var beachMarker = new google.maps.Marker({
+        position: { lat: -33.890, lng: 151.274 },
+        map: map,
+        icon: image
+    });
+
+}
+
+
+$(".lnkDescMore").click(function () {
+    var thisele = $(this);
+    var el = $(this).parent(".prntDsc").find(".desc"), curHeight = el.height(), autoHeight = el.css('height', 'auto').height();
+
+    el.height(curHeight).animate({ height: autoHeight }, 1000, function () {
+        thisele.hide();
+    });
+});
+
+$(".lnkDescMore2").click(function () {
+    var thisele = $(this);
+    var el = $(this).parent(".parentDiv").find(".desc"), curHeight = el.height(), autoHeight = el.css('height', 'auto').height();
+
+    el.height(curHeight).animate({ height: autoHeight }, 500, function () {
+        thisele.hide();
+    });
+});
+
+
+$(".aVid").click(function () {
+    $(this).children(".vid1").css('width', '700px');
+    $(this).children(".vid1").css('height', '400px');
+    $(this).children(".vid1").play = true;
+
+});
+
+var CaptchaCallback = function () {
+    try {
+        if (document.getElementById("RecaptchaField1") != null) {
+            grecaptcha.render('RecaptchaField1', { 'sitekey': '6LebZgoUAAAAAFXvUuqu5tKBdIRXlwIVKth0WPiR' });
+        }
+        if (document.getElementById("RecaptchaField2") != null) {
+            grecaptcha.render('RecaptchaField2', { 'sitekey': '6LebZgoUAAAAAFXvUuqu5tKBdIRXlwIVKth0WPiR' });
+        }
+        if (document.getElementById("RecaptchaField3") != null) {
+            grecaptcha.render('RecaptchaField3', { 'sitekey': '6LebZgoUAAAAAFXvUuqu5tKBdIRXlwIVKth0WPiR', 'callback': verifyCallback });
+        }
+    }
+    catch (e) {
+        console.log(e);
+    }
+};
+
+var verifyCallback = function (response) {
+    //alert(response);
+    $("#hfCaptchaVerify").val(1);
+};
+
+function btnEmail_Click() {
+
+    var val = Page_ClientValidate();
+
+    var googleResponse = $('#g-recaptcha-response').val();
+
+   
+
+    var val = Page_ClientValidate();
+    if (!val) {
+        var i = 0;
+        var temp = 0;
+        var validate = false;
+        for (; i < Page_Validators.length; i++) {
+
+            if (Page_Validators[i].validationGroup == 'checkemail') {
+
+                if (Page_Validators[i].isvalid && temp == 0) {
+                    $("#" + Page_Validators[i].controltovalidate)
+                     .css("border", "0");
+                    $("#" + Page_Validators[i].controltovalidate)
+                     .css("border", "1px solid #dbdbdb");
+                    validate = true;
+
+                }
+                else {
+                    $("#" + Page_Validators[i].controltovalidate)
+                    .css("border", "1px solid red");
+                    validate = false;
+                    temp = 0;
+                }
+
+                if (Page_Validators[i].controltovalidate == "txtemailadres") {
+                    if (!Page_Validators[i].isvalid) {
+                        temp = 1;
+                    }
+                }
+
+                if (Page_Validators[i].controltovalidate == "txtmessage") {
+                    if (!Page_Validators[i].isvalid) {
+                        temp = 1;
+                    }
+                }
+
+
+            }
+
+        } // END For loop
+    }
+
+
+    $("#Emailcaptcha p").remove();
+    if (!googleResponse) {
+        $("#Emailcaptcha").append('<p style="color:red !important" class=error-captcha"><span class="glyphicon glyphicon-remove" ></span> Please fill up the captcha.</p>');
+
+        return false;
+    }
+
+    return validate;
+}
+
+function btnSend_Click() {
+
+    var val = Page_ClientValidate();
+
+    var googleResponse = $('#g-recaptcha-response').val();
+
+    
+
+    var val = Page_ClientValidate();
+    if (!val) {
+        var i = 0;
+        var temp = 0;
+        var validate = false;
+        for (; i < Page_Validators.length; i++) {
+
+            if (Page_Validators[i].validationGroup == 'checksndequry') {
+
+                if (Page_Validators[i].isvalid && temp == 0) {
+                    $("#" + Page_Validators[i].controltovalidate)
+                     .css("border", "0");
+                    $("#" + Page_Validators[i].controltovalidate)
+                     .css("border", "1px solid #dbdbdb");
+                    validate = true;
+                }
+                else {
+                    $("#" + Page_Validators[i].controltovalidate)
+                    .css("border", "1px solid red");
+                    validate = false;
+                    temp = 0;
+                }
+
+                if (Page_Validators[i].controltovalidate == "txtseeid") {
+                    if (!Page_Validators[i].isvalid) {
+                        temp = 1;
+                    }
+                }
+
+                if (Page_Validators[i].controltovalidate == "txtsemsg") {
+                    if (!Page_Validators[i].isvalid) {
+                        temp = 1;
+                    }
+                }
+
+
+            }
+
+        } // END For loop
+    }
+
+
+    $("#Sendcaptcha p").remove();
+    if (!googleResponse) {
+
+        $("#Sendcaptcha").append('<p style="color:red !important" class=error-captcha"><span class="glyphicon glyphicon-remove" ></span> Please fill up the captcha.</p>');
+        return false;
+    }
+
+    return validate;
+}
+
+function btnuplisting_Click() {
+
+    var val = Page_ClientValidate();
+
+    var googleResponse = $('#g-recaptcha-response').val();
+
+    
+
+    var val = Page_ClientValidate();
+    if (!val) {
+        var i = 0;
+        var temp = 0;
+        var validate = false;
+        for (; i < Page_Validators.length; i++) {
+
+            if (Page_Validators[i].validationGroup == 'checkuplisting') {
+
+                if (Page_Validators[i].isvalid && temp == 0) {
+                    $("#" + Page_Validators[i].controltovalidate)
+                     .css("border", "0");
+                    $("#" + Page_Validators[i].controltovalidate)
+                     .css("border", "1px solid #dbdbdb");
+                    validate = true;
+
+                }
+                else {
+                    $("#" + Page_Validators[i].controltovalidate)
+                    .css("border", "1px solid red");
+                    validate = false;
+                    temp = 0;
+                }
+
+
+
+                if (Page_Validators[i].controltovalidate == "txtremarkupl") {
+                    if (!Page_Validators[i].isvalid) {
+                        temp = 1;
+                    }
+                }
+
+
+            }
+
+        } // END For loop
+    }
+
+
+    $("#UpdateListingcaptcha p").remove();
+    if ($("#hfCaptchaVerify").val() != 1) {
+
+        $("#UpdateListingcaptcha").append('<p style="color:red !important" class=error-captcha"><span class="glyphicon glyphicon-remove" ></span> Please fill up the captcha.</p>');
+        return false;
+    }
+
+    return validate;
+}

@@ -1,0 +1,18 @@
+newsi.TabObject=function(o){
+this.arr=o.arr;
+this.target=o.target;
+this.linkIdBase=o.linkIdBase;
+this.contentIdBase=o.contentIdBase;
+this.doInit(this.arr);
+var i=0;
+while(this.arr[i]){
+	var ev=new newsi.Event();
+	ev.addListener("onclick",this.linkIdBase+i,this,"toggle",false,this.target[i]);
+	i++;
+	};
+};
+newsi.TabObject.prototype=new newsi.HTML.Stacker();
+newsi.TabObject.prototype.toggle=function(num){
+this.loopAndHide({linkId:this.linkIdBase+num[0],str:"contentId",showClass:"displayblock",hideClass:"displaynone"});
+this.changeStack({state:"show",linkId:this.linkIdBase+num[0],contentId:this.contentIdBase+num[0],showClass:"displayblock",hideClass:"displaynone"});
+};

@@ -1,0 +1,147 @@
+var articledata;
+var gptadslotsNew=[];
+var arrayAds = [];
+
+function gatherAd(pDivId, pSize, pSite, headerBid, type, article_size, previous_article_size){
+var obj = {
+        'pDivId': pDivId,
+        'pSite': pSite,
+        'pSize' : pSize,
+        'phb' : headerBid,
+        'pType' : type
+    }
+
+      if (article_size) obj['slots'] = article_size;
+      if (previous_article_size) obj['pslots'] = previous_article_size;
+
+  arrayAds.push(obj);
+      
+}
+
+var getURLQueryParameterByName = function(name) {
+    name = name.replace(/[\[]/, "\\\[").replace(/[\]]/, "\\\]");
+    var regex = new RegExp("[\\?&]" + name + "=([^&#]*)"),
+        results = regex.exec(location.search);
+    return results == null ? "" : decodeURIComponent(results[1].replace(/\+/g, " "));
+}
+
+adbundler = function(options){
+
+  var container_slot = options.pDivId;  
+  //var container_site = options.pSite;
+  var container_size = options.pSize;
+  var container_type = options.pType;
+  var container_headerbid = options.phb;
+  var article_size = options.article_size;
+  var previous_article_size = options.previous_article_size;
+
+        articledata= options.article;
+        var adParamsNew;
+        gatherAd(options.pDivId, options.pSize,articledata.dartZone, options.phb,options.pType, article_size, previous_article_size);
+
+        // console.log('declare: ' + container_slot);
+        
+ //Key-Value Parameters Begin
+
+       // unique divID
+
+       var arr1 =  container_slot;
+       var arr2 = arr1.split("_");
+       var arr3 = arr2[arr2.length-2];
+       adParamsNew= "divid=" + arr3 +";";
+
+      if (article_size) adParamsNew += "slots=" + article_size + ";";
+      if (previous_article_size) adParamsNew += "pslots=" + previous_article_size + ";";
+
+        // type
+       adParamsNew+= "type=" + container_type +";";
+      
+       // Admantx 
+  adParamsNew+="admant=" + TR3.data.admantx+";";
+
+        // adstest
+        var adTest = getURLQueryParameterByName("adstest");
+        if(typeof(adTest)!='undefined'){
+      adParamsNew+= "adstest=" + adTest +";";
+         }
+
+        // symbol
+        var adSymbol = getURLQueryParameterByName("smbl");
+        if(typeof(adSymbol)!='undefined'){
+      adParamsNew+= "smbl=" + adSymbol +";";
+         }
+
+         // template
+    var dzn = articledata.dartZone.split(";"); 
+    if (dzn[0] == 'us.reuters/home'){ adParamsNew+="template=home;" } 
+    else if (dzn[0].indexOf("article") > -1){ 
+                            if (dzn[0].indexOf("article_archive") == -1){
+                                        adParamsNew+="template=article;"; }
+                 }
+
+          // articleID & storychannel & story(count id)
+          if (articledata) {
+            if (typeof articledata.id == 'string' || typeof articledata.id == 'number') {
+              adParamsNew+= "articleID=" + articledata.id +";";
+            }
+            
+            if (typeof articledata.channel.text == 'string') {
+              adParamsNew+= "storychannel=" + articledata.channel.text +";";
+            }
+            
+            if (typeof articledata.article_index == 'string' || typeof articledata.article_index == 'number') {
+              adParamsNew+= "story=" + articledata.article_index +";";
+            }
+          }
+    
+//Key-Value Parameters End
+       
+  declare_ad = function(){
+
+// BidXC Targeting Parameter
+
+  if(container_type=="leaderboard"){
+       var bidxc = typeof window.advBidxc === "object" ? '1' : '0';
+        gptadslotsNew[container_slot]=googletag.defineSlot('/4735792/'+articledata.dartZone,container_size,container_slot).setTargeting('type',[container_type]).setTargeting('bidxc', [bidxc]).addService(googletag.pubads()); 
+    }
+
+else{
+          gptadslotsNew[container_slot]= googletag.defineSlot('/4735792/'+articledata.dartZone,container_size,container_slot).setTargeting('type',[container_type]).addService(googletag.pubads()); 
+
+}
+               
+          // append any targetting
+         if (!!adParamsNew) {
+        var t = adParamsNew.split(";");
+                     t.splice(-1,1);
+                   
+     for (var k = 0; k<t.length; k++){
+                               //console.log(t[k]);
+                                if (t[k].indexOf("=") > 0){
+                                      console.log(t[k].substr(0,t[k].indexOf("=")), t[k].substr(t[k].indexOf("=")+1));
+                                     gptadslotsNew[container_slot].setTargeting(t[k].substr(0,t[k].indexOf("=")), t[k].substr(t[k].indexOf("=")+1));  
+                                 }
+                                else{
+                                      console.error("Targeting string index of = "+ adParamsNew ); 
+        }               
+          }           
+     }
+
+console.log("Display Ad via GPT: Site2:" + articledata.dartZone + " Target: " + adParamsNew + " Div Slot: "+container_slot + " adbundler v1" ); 
+  } 
+
+  display_ad = function(){
+    //googletag.pubads().enableSingleRequest(); 
+    googletag.pubads().enableAsyncRendering(); 
+    googletag.pubads().collapseEmptyDivs(true); 
+    googletag.enableServices(); 
+    googletag.display(container_slot); 
+  }
+  
+  // declare ad slot
+  googletag.cmd.push(declare_ad);
+
+  // display ad
+  googletag.cmd.push(display_ad); 
+}
+

@@ -1,0 +1,382 @@
+(function($){
+  /**
+   * Creates a delayed hover event to ensure user's intent to hover on the target
+   * @param {Function|Object} f mouseover handler or cfg object
+   * @param [{Function}] g mouseout handler
+   */
+  $.fn.hoverIntent = function(f, g) {
+    // default configuration options
+    var cfg = {
+      sensitivity   : 7,    // number = sensitivity threshold (must be 1 or higher)
+      interval      : 500,  // number = milliseconds for onMouseOver polling interval
+      timeout       : 500   // number = milliseconds delay before onMouseOut
+    };
+
+    // override configuration options with user supplied object
+    cfg = $.extend(cfg, g ? { over: f, out: g } : f );
+
+    // instantiate variables
+    // cX, cY = current X and Y position of mouse, updated by mousemove event
+    // pX, pY = previous X and Y position of mouse, set by mouseover and polling interval
+    var cX, cY, pX, pY;
+
+    // A private function for getting mouse position
+    var track = function(ev) {
+      cX = ev.pageX;
+      cY = ev.pageY;
+    };
+
+    // A private function for comparing current and previous mouse position
+    var compare = function(ev,ob) {
+      ob.hoverIntent_t = clearTimeout(ob.hoverIntent_t);
+      // compare mouse positions to see if they've crossed the threshold
+      if ( ( Math.abs(pX-cX) + Math.abs(pY-cY) ) < cfg.sensitivity ) {
+        $(ob).unbind("mousemove.hoverIntent",track);
+        // set hoverIntent state to true (so mouseOut can be called)
+        ob.hoverIntent_s = 1;
+        return cfg.over.apply(ob,[ev]);
+      } else {
+        // set previous coordinates for next time
+        pX = cX; pY = cY;
+        // use self-calling timeout, guarantees intervals are spaced out properly (avoids JavaScript timer bugs)
+        ob.hoverIntent_t = setTimeout( function(){compare(ev, ob);} , cfg.interval );
+      }
+    };
+
+    // A private function for delaying the mouseOut function
+    var delay = function(ev,ob) {
+      ob.hoverIntent_t = clearTimeout(ob.hoverIntent_t);
+      ob.hoverIntent_s = 0;
+      return cfg.out.apply(ob,[ev]);
+    };
+
+    // A private function for handling mouse 'hovering'
+    var handleHover = function(e) {
+      // next three lines copied from jQuery.hover, ignore children onMouseOver/onMouseOut
+      var p = (e.type == "mouseover" ? e.fromElement : e.toElement) || e.relatedTarget;
+      while ( p && p != this ) { try { p = p.parentNode; } catch(e) { p = this; } }
+      if ( p == this ) { return false; }
+
+      // copy objects to be passed into t (required for event object to be passed in IE)
+      var ev = jQuery.extend({},e);
+      var ob = this;
+
+      // cancel hoverIntent timer if it exists
+      if (ob.hoverIntent_t) { ob.hoverIntent_t = clearTimeout(ob.hoverIntent_t); }
+
+      // else e.type == "onmouseover"
+      if (e.type == "mouseover") {
+        // set "previous" X and Y position based on initial entry point
+        pX = ev.pageX; pY = ev.pageY;
+        // update "current" X and Y position based on mousemove
+        $(ob).bind("mousemove.hoverIntent",track);
+        // start polling interval (self-calling timeout) to compare mouse coordinates over time
+        if (ob.hoverIntent_s != 1) { ob.hoverIntent_t = setTimeout( function(){compare(ev,ob);} , cfg.interval );}
+
+      // else e.type == "onmouseout"
+      } else {
+        // unbind expensive mousemove event
+        $(ob).unbind("mousemove",track);
+        // if hoverIntent state is true, then call the mouseOut function after the specified delay
+        if (ob.hoverIntent_s == 1) { ob.hoverIntent_t = setTimeout( function(){delay(ev,ob);} , cfg.timeout );}
+      }
+    };
+
+
+
+
+    // bind the function to the two event listeners
+    return this.bind("mouseover.hoverIntent mouseout.hoverIntent", handleHover);
+  };
+
+
+
+
+  // various static globals for valuemenu
+  var CONS          = window.console,
+      OPEN          = "open",
+      OPENING       = "opening",
+      CLOSED        = "closed",
+      OPEN_STATE    = { open : true, opening : true },
+      CLOSED_STATE  = { closed : true };
+
+  $.widget('bam.valuemenu', {
+    /**
+     * @param {String} classnames space-separated class names
+     * @return {String}
+     */
+    _widgetClass: function (classNames) {
+      var base = this.widgetBaseClass + '-';
+      return $.map($.trim(classNames).split(rwhite), function (className) {
+        return base + className;
+      }).join(' ');
+    },
+    /**
+     * handles the error-throwing portion of the widget
+     * @param {String} error string error; use $0, $1, $2... as placeholders for vars
+     * @param {String} method name of the method which is throwing the error
+     * @param {String} [args] additional values which to substitute
+     */
+    _error: function(error, method/* args... */) {
+      var args = Array.prototype.slice.call(arguments, 2);
+      if(args.length) {
+        error = error.replace(/\$(\d)/g, function($0, $1) {
+          return args[$1];
+        });
+      }
+      CONS.error(error);
+      throw new Error(this.widgetBaseClass + ": " + method + ": " + error);
+    },
+    /**
+     * internal logger
+     */
+    _log: function() {
+      if(this.debug === true && CONS && CONS.log) {
+        //CONS.log(this.widgetBaseClass, arguments);
+      }
+    },
+    /**
+     * default configuration object
+     */
+    options: {
+      selector      : {
+        menu          : ".value-menu-links",        // element that contains all menu links
+        menuItems     : ".value-menu-item",         // selector for menu tabs with content
+        menuLink      : ".value-menu-link",         // selector for menu tabs that are only links (no content)
+        drawer        : ".value-menu-panels",       // selector for the panel container
+        panel         : ".panel",                   // selector for individual panels
+        panelPrefix   : ".panel-",                  // prefix for the panel selector for specific sections, ie. panel-news
+        ad            : ".ad"                       // selector for ads
+      },
+      attr          : {
+        panelUrl      : "data-panel-url",           // attr with url to panel content
+        sectionName   : "data-section",             // attr with section name (must be same as panel name)
+        adSize        : "data-size",                // attr to determine ad size on the ad element
+        adSlot        : "data-slot"                 // attr to determine value to pass as customparams.slot to refreshable ad
+      },
+      hoverIntent   : {                             // overrides for the hoverIntent cfgs
+        timeout       : 500,                        // in ms
+        interval      : 300                         // in ms
+      }
+    },
+    /**
+     * widget constructor
+     */
+    _create: function() {
+      var elem                = this.element,
+          opts                = this.options,
+          that                = this;
+
+      this._menu            = elem.find(opts.selector.menu);                          // the menu bar
+      this._menuLinks       = this._menu.find(opts.selector.menuLink);                // all menu anchors
+      this._menuItems       = this._menuLinks.filter(opts.selector.menuItems);        // all actionable menu items
+      this._nonMenuItems    = this._menuLinks.not(this._menuItems);                   // all non-actionable menu items (aka staic links)
+
+      this._drawer          = elem.find(opts.selector.drawer);                        // drawer to display content
+      this._panels          = this._drawer.find(opts.selector.panel);                 // content panels
+      this._drawerState     = CLOSED;                                                 // state of the drawer (closed, opening, open)
+      this._ads             = $();                                                    // collection of ads in the drawer
+
+      // throw an error if something is missing
+      if(!(this._menu.length && this._menuItems.length && this._drawer.length && this._panels.length)) {
+        this._error("could not find some of the elements for construction", "_create");
+      }
+
+      if(bam.env.client.isIPad == false && bam.env.client.isAndroid == false) {
+        elem.addClass("no-touch");
+      }
+
+
+      // promise panel content per menu item
+      this._menuItems.each(function () {
+        var el = $(this),
+          url = el.attr(opts.attr.panelUrl),
+          section = el.attr(opts.attr.sectionName),
+          panel = that._panels.filter(opts.selector.panelPrefix + section),
+          ad, promise;
+
+
+        /**
+         * Create a loader function for this menu's contents
+         * @return {$.Deferred().promise()}
+         */
+        function load() {
+
+          if (!promise) {
+            promise = $.Deferred();
+            // Cache the outcome of the Ajax request AND the render
+            $.ajax(url, {
+              beforeSend: function () {
+                that._log("LOAD", url);
+              }
+            }).then(function (html) {
+              that._log("RENDER", url);
+              panel.html(html);                     // render panel content
+              ad = panel.find(opts.selector.ad);    // find all ads within that content
+              that._ads = that._ads.add(ad);        //   and append them to the ad collection
+
+              // augment the menu item with some meta data
+              el
+                .data(that.widgetBaseClass + "section", section)
+                .data(that.widgetBaseClass + "panel", panel)
+                .data(that.widgetBaseClass + "ad", ad);
+              promise.resolve(panel);
+            });
+          }
+
+          return promise;
+        };
+
+
+        /* TAKE CARE OF LOADING */
+        if(bam.env.client.isIPad == true || bam.env.client.isAndroid == true) {
+          el.one("click", load);
+          $(document).ready(function() {
+            load();
+            el.unbind("click", load);
+          })
+        } else {
+          // fire once if hovered before domready.
+          el.one("mouseover", load);
+          // Load content on page load
+          $(window).load(function(){
+            load();
+            el.unbind("mouseover", load);
+          });
+        }
+
+      })
+
+      this._trigger("created");
+    },
+    /**
+     * widget initializer
+     */
+    _init: function() {
+      var that        = this;
+
+      // for non-mousy environments
+      if(bam.env.client.isIPad == true || bam.env.client.isAndroid == true) {
+        this._menuItems
+          .on("click", "a.value-menu-section", function(e) {
+            e.preventDefault();
+          })
+          .on("click", function() {
+            if(that._selected === this && that._isFocused) {
+              that._selected = null;
+              that._isFocused = false;
+              that.closeDrawer.apply(that);
+              $(this).removeClass("active").find("a.value-menu-section").trigger("mouseleave");
+
+            } else {
+              that._selected = this;
+              that._isFocused = true;
+              that.openDrawer.apply(that);
+              that.showContentIfReady();
+            }
+          });
+      } else {
+        this.element.hoverIntent(
+          $.extend(that.options.hoverIntent, {
+            over        : function() {
+              that._isFocused = true;
+              that.openDrawer.apply(that);
+            },
+            out         : function() {
+              that._isFocused = false;
+              that.closeDrawer.apply(that);
+            }
+          })
+        );
+
+        this._menuItems
+          .on("mouseenter", function() {
+            that._selected = this;
+            that.showContentIfReady();
+            if(that._manuallyClosed || (that._isFocused && that._drawerState in CLOSED_STATE)) {
+              that.openDrawer();
+              that._manuallyClosed = false;
+            }
+          })
+          .on("mouseleave", function() {
+            that._selected = null;
+    //        that.closeDrawer();
+          });
+
+        this._nonMenuItems.on("mouseenter", function() {
+          that.selected = null;
+          if(that._isFocused) {
+            that.closeDrawer();
+            that._manuallyClosed = true;
+          }
+        });
+      }
+
+
+      this.debug = !!(~document.location.search.indexOf("debug=valuemenu") || ~document.location.search.indexOf("debug=all"));
+
+      this._trigger("init-done");
+    },
+    showContentIfReady: function() {
+      if((this._drawerState in OPEN_STATE) && this._selected) {
+        this._log("showing content", this._selected);
+        this._trigger("beforeshow", null, [this._selected]);
+        var $selected = $(this._selected),
+            section   = $selected.data(this.widgetBaseClass + "section"),
+            panel     = $selected.data(this.widgetBaseClass + "panel"),
+            ad        = $selected.data(this.widgetBaseClass + "ad"),
+            adIframe  = ad.find("iframe:eq(0)");
+
+        panel.find("img.no-src").each(function() {
+          this.src = $(this).attr("data-src");
+        }).removeClass("no-src");
+
+        $selected.addClass("active").siblings().removeClass("active");
+        this._panels.removeClass("visible").filter(panel).addClass("visible");
+
+        if(ad.length && !adIframe.length || adIframe.data("empty")) {
+          !ad.data("dcRefreshableAd") ? ad.dcRefreshableAd({size: ad.attr(this.options.attr.adSize), interval: 0, customparams: {"slot": ad.attr(this.options.attr.adSlot), "sid": window.sid}}) : ad.dcRefreshableAd("refresh");
+          adIframe.data("empty", false);
+          this._log("AD LOADED");
+        }
+        this._trigger("aftershow", null, [this._selected]);
+        this._log($selected);
+
+      }
+    },
+    openDrawer: function() {
+      if(this._drawerState in CLOSED_STATE && this._selected) {
+        this._drawer.trigger("beforeopen");
+        this._drawerState = OPENING;
+        this.showContentIfReady();
+        this._drawer.stop(true, true).slideDown("fast", function() {
+          $(this).trigger("afteropen");
+        });
+        this._drawerState = OPEN;
+        this._log(OPEN);
+
+
+        // hide auto-complete tray, if visible
+        $("#hdr_search .ui-autocomplete:visible").hide()
+      }
+    },
+    closeDrawer: function() {
+      if(!this._selected) {
+        this._menuItems.removeClass("active");
+        this._drawer.trigger("beforeclose");
+        this._drawer.stop(true, true).slideUp("fast", function() {
+          $(this).trigger("afterclose");
+        });
+
+        this._ads.find("iframe:eq(0)").attr("src", "about:blank").data("empty", true);          // clear out existing ads
+
+        this._log(CLOSED);
+        this._drawerState = CLOSED;
+      }
+    },
+    destroy: function() {
+      this.element.unbind("mouseover.hoverIntent mouseout.hoverIntent");
+    }
+  });
+
+}(jQuery));

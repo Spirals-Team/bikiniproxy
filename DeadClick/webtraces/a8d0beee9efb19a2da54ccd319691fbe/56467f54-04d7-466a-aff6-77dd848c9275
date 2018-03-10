@@ -1,0 +1,72 @@
+$(document).on('click', '.yamm .dropdown-menu', function(e) {  
+  e.stopPropagation()  
+})
+
+$(document).ready(function() {
+	// Carousel variables for animating captions
+	var $myCarousel = $('#carouselHero'),
+		$firstAnimatingElems = $myCarousel.find('.item:first').find("[data-animation ^= 'animated']");
+
+	// Slow Carousel Initialization
+	$myCarousel.carousel({
+		interval:8000
+	});
+
+	// Animate captions in first slide on page load 
+	doAnimations($firstAnimatingElems);
+
+	// Other slides to be animated on carousel slide event 
+	$myCarousel.on('slide.bs.carousel', function (e) {
+		var $animatingElems = $(e.relatedTarget).find("[data-animation ^= 'animated']");
+		doAnimations($animatingElems);
+	});
+
+	// Activate Product Page submenu
+    if( $('#prodNav').length ) { 
+    	$('body').attr("data-spy", "scroll");
+        $('body').attr("data-target", "#prodNav");
+	}
+
+	// Create fixed menubar when scrolling
+	setSkrollr();
+
+	// Enable Swiping
+	$(".carousel-inner").swipe( {
+		//Generic swipe handler for all directions
+		swipeRight:function(event, direction, distance, duration, fingerCount) {
+			$(this).parent().carousel('prev');
+		},
+		swipeLeft: function() {
+			$(this).parent().carousel('next');
+		},
+		//Default is 75px, set to 0 so any distance triggers swipe
+		threshold:0
+	});
+
+	// Set dropdown menu max-height
+	function menuResize() {
+		var viewportHeight = $(window).height();
+		var menuHeight = viewportHeight - 150;
+		$(this).css('max-height', menuHeight);
+	}
+	$('header[role="banner"] #mainMenu .dropdown-menu').each(menuResize);
+	$( window ).resize(function(){
+		$('header[role="banner"] #mainMenu .dropdown-menu').each(menuResize);
+	});
+	
+});
+
+if (navigator.userAgent.match(/IEMobile\/10\.0/)) {
+  var msViewportStyle = document.createElement('style')
+  msViewportStyle.appendChild(
+    document.createTextNode(
+      '@-ms-viewport{width:auto!important}'
+    )
+  )
+  document.querySelector('head').appendChild(msViewportStyle)
+}
+
+// open 3D spinner pop-up
+function open3dWindow(theURL,winName,features) { 
+  window.open(theURL,winName,features);
+}

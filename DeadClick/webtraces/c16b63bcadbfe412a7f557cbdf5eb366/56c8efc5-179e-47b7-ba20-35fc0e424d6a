@@ -1,0 +1,28 @@
+// Module that provides ability to add csrf header to each ajax post. Csrf token value is extracted from hidden input.
+
+var journalsCsrfHeaderModule = (function ($) {
+  
+  var setupCsrfHeader = function() {
+    
+    function csrfSafeMethod(method) {
+      // these HTTP methods do not require CSRF protection
+      return (/^(GET|HEAD|OPTIONS|TRACE)$/.test(method));
+    }
+    
+    var csrftoken = $('input[name="csrfmiddlewaretoken"]')[0].value;
+    
+    $.ajaxSetup({
+      beforeSend: function(xhr, settings) {
+        if (!csrfSafeMethod(settings.type) && !this.crossDomain) {
+            xhr.setRequestHeader("X-CSRFToken", csrftoken);
+        }
+      }
+    });
+    
+  };
+  return {
+    setupCsrfHeader: setupCsrfHeader
+  };
+})(jQuery);
+
+

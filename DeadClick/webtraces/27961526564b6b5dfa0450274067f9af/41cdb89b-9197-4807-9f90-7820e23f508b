@@ -1,0 +1,92 @@
+(function ($) {
+    'use strict';
+
+    var emailoctopus = {
+        isBotPost: function($form) {
+            return $form.find('.emailoctopus-form-row-hp input').val();
+        },
+        basicValidateEmail: function(email) {
+            var regex = /\S+@\S+\.\S+/;
+            return regex.test(email);
+        },
+        ajaxSuccess: function($form) {
+            $form.trigger('emailoctopus.success');
+
+            var $successRedirectUrl = $form.find('.emailoctopus-success-redirect-url').val();
+            if ($successRedirectUrl && $successRedirectUrl.trim()) {
+                // Redirect
+                window.location.href = $successRedirectUrl;
+            } else {
+                // Show confirmation
+                $form.siblings('.emailoctopus-success-message').text(
+                    emailoctopus_message.success
+                );
+                $form.hide();
+            }
+        },
+        ajaxError: function($form, textStatus) {
+            var response = $.parseJSON(textStatus.responseText);
+            var $errorMessage = $form.siblings('.emailoctopus-error-message');
+
+            if (response && response.error && response.error.code) {
+                switch(response.error.code) {
+                    case 'INVALID_PARAMETERS':
+                        $errorMessage.text(
+                            emailoctopus_message.invalid_parameters_error
+                        );
+                        return;
+                    case 'BOT_SUBMISSION':
+                        $errorMessage.text(
+                            emailoctopus_message.bot_submission_error
+                        );
+                        return;
+                }
+            }
+
+            $errorMessage.text(
+                emailoctopus_message.unknown_error
+            );
+        },
+        ajaxSubmit: function($form) {
+            $.ajax({
+                type: $form.attr('method'),
+                url: $form.attr('action'),
+                data: $form.serialize(),
+                success: function() {
+                    emailoctopus.ajaxSuccess($form);
+                },
+                error: function(textStatus) {
+                    emailoctopus.ajaxError($form, textStatus);
+                },
+            });
+        }
+    }
+
+    $(function() {
+        $('.emailoctopus-form').submit(function(e) {
+            var $form = $(this);
+            var $errorMessage = $form.siblings('.emailoctopus-error-message');
+            var emailAddress = $form.find('.emailoctopus-email-address').val();
+
+            $errorMessage.empty();
+
+            if (emailoctopus.isBotPost($form)) {
+                $errorMessage.text(
+                    emailoctopus_message.bot_submission_error
+                );
+            } else if (!$.trim(emailAddress)) {
+                $errorMessage.text(
+                    emailoctopus_message.missing_email_address_error
+                );
+            } else if (!emailoctopus.basicValidateEmail(emailAddress)) {
+                $errorMessage.text(
+                    emailoctopus_message.invalid_email_address_error
+                );
+            } else {
+                emailoctopus.ajaxSubmit($form);
+            }
+
+            return false;
+        });
+    });
+}(jQuery));

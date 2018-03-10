@@ -1,0 +1,87 @@
+var app = angular.module('controllers', []);
+
+app.controller('appCtrl', ['$scope', '$http', '$routeParams', function($scope, $http, $routeParams){
+	$scope.$on('$routeChangeSuccess', function(){
+		// if its type, personnel is not active. diplay typeID as active.
+		// if its pId, personnel is not active. display personnel name (if possible)
+		// if neither, personnel is active.
+		$scope.breadcrumbs = [];
+		var type_id = $routeParams.typeId;
+		var p_id = $routeParams.pId;
+		if(typeof(type_id) != 'undefined'){
+			$scope.breadcrumbs.push({
+				'display'	: 'Personnel',
+				'link'		: '#/'
+			});
+			$scope.breadcrumbs.push({
+				'display'	: 'Type',
+				'css_class'	: 'active',
+			});
+		} else if(typeof(p_id) !== 'undefined'){
+			$scope.breadcrumbs.push({
+				'display'	: 'Personnel',
+				'link'		: '#/'
+			});
+			$scope.breadcrumbs.push({
+				'display'	: 'View',
+				'css_class'	: 'active'
+			});
+		} else {
+			$scope.breadcrumbs.push({
+				'display'	: 'Personnel',
+				'css_class'	: 'active'
+			});
+		}
+	});
+}]);
+
+app.controller('indexCtrl', ['$scope', '$http', 'pluginurls', function($scope, $http, pluginurls){
+	$scope.loaded = false;
+	$http.get(pluginurls.ajaxurl, {
+		params: {
+			'action'	: 'sthm15personnel_getPersonnelByTax',
+			'tax_type'	: 'sthm15_personnel_tax',
+			'tax_slug[]': ['personnel-staff', 'personnel-faculty']
+		}
+	}).success(function(data){
+		$scope.loaded = true;
+		$scope.personnel = data;
+	});
+}]);
+
+app.controller('typeCtrl', ['$scope', '$http', '$routeParams', 'pluginurls', function($scope, $http, $routeParams, pluginurls){
+	$scope.loaded = false;
+	$scope.currentType = $routeParams.typeId.split('-')[1];
+	
+	$http.get(pluginurls.ajaxurl, {
+		params: {
+			'action'	: 'sthm15personnel_getPersonnelByTax',
+			'tax_type'	: 'sthm15_personnel_tax',
+			'tax_slug'	: $routeParams.typeId
+		}
+	}).success(function(data){
+		$scope.loaded = true;
+		$scope.personnel = data;
+	});
+}]);
+
+app.controller('viewCtrl', ['$scope', '$http', '$routeParams', '$anchorScroll', 'pluginurls', function($scope, $http, $routeParams, $anchorScroll, pluginurls){
+	$scope.loaded = false;
+	$http.get(pluginurls.ajaxurl, {
+		params: {
+			'action'	: 'sthm15personnel_getPersonnelByID',
+			'id'		: $routeParams.pId
+		}
+	}).success(function(data){
+		$scope.loaded = true;
+		$scope.item = data;
+		
+		// better check for cv in the case that an error is returned
+		if( $scope.item.hasOwnProperty( 'cv' ) && $scope.item.cv.hasOwnProperty( 'error' ) && $scope.item.cv.error ) {
+			delete $scope.item.cv;
+		}
+		
+		// bring the user back to the top in case they were scrolling beforehand
+		$anchorScroll( 'loading' );
+	});
+}]);

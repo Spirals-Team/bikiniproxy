@@ -1,0 +1,172 @@
+/*
+Script to build digitalData object for Adobe Analytics DTM tracking.
+Tracking is also fired at the very end of this script.
+
+Lesley 2015-07-02
+*/
+
+//$(document).ready(function(){
+
+    var digitalData = {};
+
+    var path = window.location.pathname.toLowerCase(); // Adobe props are case sensitive so we'll force everything to lower;
+    var querystring = window.location.search;
+
+
+
+    // .pageName... 
+    path = path.substr(1); // remove first slash
+    path = path.replace('.aspx', ''); // we don't need the file extension
+
+    if (path === '' || path === 'default') path = 'home';
+    var fwslash = new RegExp('\/', 'g');
+    digitalData.pageName = path.replace(fwslash, ': '); // replace slashes with colon-space according to Adobe convention
+
+    var pathElements = path.split('/');
+
+
+    // .channel...
+    digitalData.channel = pathElements[0];
+
+    // .section     
+    if (pathElements[1] !== undefined){
+        digitalData.section = pathElements[1];        
+    }
+    
+    // .subsection...
+    if (pathElements[2] !== undefined){
+        digitalData.subSection = pathElements[2];        
+    }
+        
+        
+    // .pagetype, .searchType...
+    // Current possible output: home, page, search, search results
+    // QUESTION FOR BUSINESS - What other page types are there?
+    var pageType, searchType, resultsCount;
+    var digitsRegex = /\d+/g;
+    if (path === 'search_results'){
+        pageType = 'search results';
+        resultsCount = getDigits($('#mainContent .grid_12:eq(1) p.pullOut'));
+        searchType = 'web';
+    }
+    else if (path === 'research/collection_online/search'){
+        if (querystring !== '') {
+            pageType = 'search results';
+            resultsCount = getDigits($('#searchResultsContainer .grid_7 p.pullOut'));
+        }
+        else pageType = 'search';
+        searchType = 'col';
+    }
+    else if (path === 'explore/highlights/highlights_search_results'){
+        if (querystring !== '') {
+            pageType = 'search results';
+            resultsCount = getDigits($('#mainContent .grid_8 p.pullOut'));
+        }
+        else pageType = 'search';
+        searchType = 'highlights';
+    }    
+    else if (path === 'home') pageType = 'home';
+    else if (pathElements[1] === undefined) pageType = 'section landing';
+    else pageType = 'page';
+
+
+    digitalData.pagetype = pageType;
+
+    if (searchType !== undefined)
+        digitalData.searchType = searchType;
+
+    // search terms and search results count... (if this is a search results page)
+    if (pageType === 'search results'){
+        digitalData.searchTerm = getQueryVariable('searchText');    
+        digitalData.searchResults = resultsCount;
+    }
+
+
+    // social share clicks...
+    $(document).on('click','ul.social-buttons li a',function(){
+        digitalData.socialShare = $(this).data('social');
+        console.log(digitalData);
+        _satellite.track('socialshare');
+    });
+
+
+    // social follow clicks...
+    $(document).on('click','#footer ul.bm-social li a',function(){
+        digitalData.socialLink = $(this).attr('title');
+        console.log(digitalData);
+        _satellite.track('sociallink');
+    });
+
+
+    // Book now CTA clicks...
+    $(document).on('click','a[href*="britishmuseumshoponline.org"]',function(){
+        var shopUrl = $(this).attr('href');
+        var invtIndex = shopUrl.indexOf('/invt/');
+        if (invtIndex !== -1) {
+            digitalData.ctabutton = 'Exhibition booking';
+            digitalData.ctatype = shopUrl.substr(invtIndex + 9, 6);  // exhib codes are 6 characters long (always?)
+        }        
+        console.log(digitalData);
+        _satellite.track('calltoaction');
+    });
+
+    // Membership CTA clicks...
+    $(document).on('click','a[href*="britishmuseumshoponline.org/icat"]',function(){
+        var shopUrl = $(this).attr('href');        
+        var icatIndex = shopUrl.indexOf('/icat/');
+        if (icatIndex !== -1){    
+            digitalData.ctabutton = 'Membership';
+            digitalData.ctatype = shopUrl.substr(icatIndex + 9, 5);  
+        }
+        console.log(digitalData);
+        _satellite.track('calltoaction');
+    });
+    
+    
+    
+    // Blog link clicks
+    $(document).on('click','a[href*="blog.britishmuseum.org"]',function(){
+        digitalData.blogclick = $(this).text();
+        console.log (digitalData);
+        _satellite.track('blogclick');
+    });
+
+
+
+
+
+    console.log (digitalData);
+
+    _satellite.pageBottom(); // fire the tracking!
+
+
+
+
+
+
+    function getQueryVariable(variable)
+    {
+        var query = window.location.search.substring(1);
+        var vars = query.split("&");
+        for (var i=0;i<vars.length;i++) {
+            var pair = vars[i].split("=");
+            if(pair[0] == variable){return pair[1];}
+        }
+        return(false);
+    }
+
+
+    function getDigits(element){
+        var digits = element.text().match(digitsRegex);
+        if (digits === null){  // we'll find no digits if text is "no results"
+            return 'zero';
+        }else if (digits[0] === 0 || digits[0] === '0'){
+            return 'zero'; // requirement of Adobe to set zero instead of digit 0.
+        }else 
+            return digits.join("");
+        
+    }
+
+
+//});
+

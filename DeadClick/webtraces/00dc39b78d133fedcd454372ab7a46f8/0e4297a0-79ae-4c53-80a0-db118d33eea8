@@ -1,0 +1,226 @@
+function windowAlignment(){
+  var maxScrollWidth = 1225;
+  var userWidth = document.body.clientWidth;
+  var stw = ((maxScrollWidth >= userWidth)?maxScrollWidth - userWidth:userWidth - maxScrollWidth)/2;
+  //scroll if necessary
+  if (maxScrollWidth >= userWidth) {
+    window.scrollTo(stw, 0);
+  }
+}
+
+function setUpHeader(){
+ jQuery(function (){
+   /*---------------------------- Config Section ----------------------------*/
+   menuFadeInSpeed = 100;
+   menuFadeOutSpeed = 25;
+   menuFadeOutDelay = 0; 
+   menuFadeInDelay = 200;
+   /*---------------------------- End Config ----------------------------*/
+   
+   //add background and over effect to to header on page load
+   var pathLocaiton = document.location.pathname.toString();
+
+   if(pathLocaiton.indexOf("/life/") != -1){
+     jQuery("#header #background").addClass('live_bg');
+     liveToggle();
+   }
+   else{
+     jQuery("#header #background").addClass('drive_bg');
+     driveToggle();
+   }
+   
+   //add over effct to drive toggle and show drive nav items
+   function driveToggle(){	   
+     jQuery(".Subnav ul.Drive ul").hide();  //ensure drop downs are closed on switch 
+     jQuery(".Subnav ul.Drive").show();
+     if(jQuery("#header #background").hasClass("live_bg")){
+       jQuery("#header #background").toggleClass("live_bg", false);
+       jQuery("#header #background").toggleClass("drive_bg", true);
+     }
+     jQuery(".Nav li.Drive a").addClass('On');
+     jQuery(".Subnav ul.Live").hide();             
+     jQuery(".Nav li.Live a").removeClass('On'); 
+   }
+
+   //add over effect to live toggle and show live nav items  
+   function liveToggle(){
+     jQuery(".Subnav ul.Live").show();
+     if(jQuery("#header #background").hasClass("drive_bg")){
+	 jQuery("#header #background").toggleClass("drive_bg", false);
+       jQuery("#header #background").toggleClass("live_bg", true);
+       
+     }
+     jQuery(".Nav li.Live a").addClass('On');
+     jQuery(".Subnav ul.Drive").hide();
+     jQuery(".Nav li.Drive a").removeClass('On');
+   }
+   
+   jQuery(".Nav li.Drive a").bind('mouseover',driveToggle);
+   jQuery(".Nav li.Drive a").bind('click',driveToggle);
+
+   jQuery(".Nav li.Live a").bind('mouseover',liveToggle);
+   jQuery(".Nav li.Live a").bind('click',liveToggle);
+   
+   
+   //change displayed model year in vehicle drop down
+   function showPrevModelYear(){
+   jQuery('#'+_vehicleValue).removeClass('On');
+       jQuery("li.model_cur").hide();
+       jQuery("#my_present").removeClass('On');
+       jQuery("#my_past").addClass('On');
+       jQuery("li.model_prev").show();
+       jQuery("li.model_prev a:first").addClass('On');
+       jQuery("li.model_prev ul:first").show();
+   }
+     
+   function showCurModelYear(){
+   jQuery('#'+_vehicleValue).removeClass('On');
+       jQuery("li.model_prev").hide();
+       jQuery("#my_present").addClass('On');
+       jQuery("#my_past").removeClass('On');
+       jQuery("li.model_cur").show();
+       jQuery("li.model_cur a:first").addClass('On');
+       jQuery("li.model_cur ul:first").show();
+   }
+   
+   jQuery("#my_past").bind('mouseover',showPrevModelYear);
+   jQuery("#my_past").bind('click',showPrevModelYear);
+   
+   jQuery("#my_present").bind('mouseover',showCurModelYear);
+   jQuery("#my_present").bind('click',showCurModelYear);
+   
+   //shopping tools and jeep capabilities drop down menu icon img over states.
+   jQuery(".Subnav .Drive li ul li.box").hover(
+       function(){
+         if(!(jQuery.browser.msie && jQuery.browser.version=="6.0")) {
+           var i = jQuery('img',this);
+           i.attr('src', i.attr('src').replace(/.png/,'-over.png'));
+         }
+         jQuery('a',this).css('color', '#FFB302');
+       },
+       function(){
+         if(!(jQuery.browser.msie && jQuery.browser.version=="6.0")) {
+           var i = jQuery('img',this);
+           i.attr('src', i.attr('src').replace(/-over/gi,''));
+          }
+         jQuery('a',this).css('color', '#CCCCCC');
+     });
+   
+   
+   //drop down menus
+   jQuery("#nav_drive ul").css({display: "none"}); // Opera Fix
+   
+   //add over effect to cur year model selecter on vehicle drop down on page load
+   jQuery("#my_present").addClass('On');
+   //show grand cherokee on page load
+   jQuery(".Subnav .Drive li ul li ul:first").show();
+       
+   jQuery(".Subnav .Drive li").hover(function(){
+     //(jQuery(this).find('a:first').addClass('On');
+     jQuery('#'+_vehicleValue).removeClass('On');
+     jQuery(this).find('ul:first').css({visibility: "visible",display: "none"}).fadeIn(menuFadeInSpeed);
+	 jQuery(".Hotspot").hide(); 
+
+   },function(){
+
+     //jQuery(this).find('a:first').removeClass('On');
+     jQuery(this).find('ul:first').fadeOut(menuFadeOutSpeed);
+   });
+  
+    jQuery(".Subnav .Drive li").mouseleave(function(){
+		jQuery(".Hotspot").show();   		
+	});
+
+   /*************************************************/
+   /* Mouse activity for the Vehicle specific CTA  - Ben Oliver*/
+   /*************************************************/
+   jQuery('#vehicles_nav li.model_cur').hover(function (){  
+     (jQuery(this).find('a:first').attr('id') != _vehicleValue)?jQuery('#'+_vehicleValue).removeClass('On'):'';
+     jQuery(this).find('a:first').addClass('On');
+	 
+   },function (){
+     setVehicleValue(jQuery(this).find('a:first').attr('id'));
+   });
+   
+   jQuery('#vehicles_nav li.model_prev').hover(function (){
+     (jQuery(this).find('a:first').attr('id') != _vehicleValue)?jQuery('#'+_vehicleValue).removeClass('On'):'';
+     jQuery(this).find('a:first').addClass('On');
+   },function (){
+     setVehicleValue(jQuery(this).find('a:first').attr('id'));
+   });
+
+     //.attr('id');
+//Toggle on and off the search form 
+	jQuery(".Nav .Right li.Search").click(function (){     
+	jQuery(this).find('a:first').addClass('On');
+	jQuery(this).find('ul:first').css({visibility: "visible",display: "block"});
+	});
+  });   
+ } 
+
+ 
+/*
+var _myValue = "my_present";
+function setMYValue(value)
+{
+ _myValue = value;
+}
+*/
+var _vehicleValue = "my_present";
+function setVehicleValue(value)
+{
+ _vehicleValue = value;
+}
+
+
+function showDisclaimersJeep(){  
+    jQuery("#disclaimers").toggle();
+    jQuery(".Trademark a").toggleClass('disclaimers_shown');
+}
+
+function submitSearchNewInventory(form){
+ var year = form.slice(0,4);
+ var family = form.substr(4);
+ _hbLink(form, "shopping_tools_SNI");
+ window.location = '/bridge/inventory.html?app=newinventory&family='+family+'&zipcode=&dealerid=&year='+year+''
+}
+
+function submitCapTour(form){
+ var year = form.slice(0,4);
+ var family = form.substr(4);
+ _hbLink(form, "shopping_tools_capability_tour");
+ window.location= '/en/'+year+'/'+family+'/capability/capability_tour/'
+}
+
+function submitSearch(argForm){ 
+ argForm.submit(); 
+}
+
+function submitIncentivesSearch(form){
+ if(validateZip(form)){
+   userData.zipcode = form.zipcode.value;
+   
+     if((hrefLocation.search("hostc") != -1) || (hrefLocation.search("hostd") != -1)){
+            ASC.Chrysler.setZipCode(form.zipcode.value);
+        }
+   
+   //Bake the userData cookie
+   Cookie.set('userdata', Json.toString(userData), {duration: 365, path: "/"});
+   _hbLink('current_incentives','shopping_tools_current_incentives')
+   wrap('daa', 'zipcode='+form.zipcode.value, '');
+ }
+}
+//the audio on /off link in Jeep header was removed.  This function ensures audio will be available, regardless of cookie value
+function check_audio() {
+ if (userData.audioPref == "on") {
+   return;
+ }
+ else {
+   userData.audioPref = "on";
+   Cookie.set('userdata', Json.toString(userData), {duration: 365, path: "/"});
+ }
+}
+
+onload_register('setUpHeader()');
+onload_register('windowAlignment();');
+onload_register('check_audio()');

@@ -1,0 +1,337 @@
+var injected_ads = 0;
+var lazy_loading_ad_queue = [];
+var lazy_loading_processed = [];
+var injected_ad_tags = []
+var timeout_inject;
+
+
+/**
+ * This will scan for sticky ads and activate them
+ */
+function activateSticky() {
+	var stickyAdsPlacements = jQuery(".mam-pub-ad-wrap-sticky");
+
+	var evaluatePlacement = function (adPlacement) {
+		var stickyHeight = jQuery(adPlacement).height();
+		var stickyTop = jQuery(adPlacement).offset().top; // returns number
+		var footerSelector = jQuery(adPlacement).attr("footer-selector");
+
+		jQuery(window).scroll(function(){ // scroll event
+			// Check if there is a footer to prevent flowing on top of it
+			var footerLimit = false;
+			if(footerSelector) {
+				footerLimit = jQuery(footerSelector).offset().top - stickyHeight - 20;
+			}
+
+			var windowTop = jQuery(window).scrollTop(); // returns number
+			if (stickyTop < windowTop){
+				jQuery(adPlacement).css({ position: 'fixed', top: 0 });
+			} else {
+				jQuery(adPlacement).css('position', 'static');
+			}
+
+			if (footerLimit && footerLimit < windowTop) {
+				var diff = footerLimit - windowTop;
+				jQuery(adPlacement).css({top: diff});
+			}
+		});
+	}
+
+	for(var x = 0; x < stickyAdsPlacements.length; x++) {
+		evaluatePlacement(stickyAdsPlacements[x]);
+	}
+}
+
+/**
+ * Scan for screen bottom ads and position them accordingly
+ */
+function centerScreenBottomAds() {
+	// Left position
+	jQuery('.screen-bottom-sticky.left').css({
+		'left': 0
+	})
+	// center position
+	jQuery('.screen-bottom-sticky.center').css({
+		'left': (jQuery("body").width()/2 - jQuery('.screen-bottom-sticky').width()/2) + "px"
+	})
+	// Left position
+	jQuery('.screen-bottom-sticky.right').css({
+		'left': 'initial',
+		'right': 0
+	})
+}
+
+/**
+ * Method to process the list of ads and display if the ads enter viewport
+ * If the processed list (lazy_loading_processed)
+ */
+function processLazyLoadingQueue () {
+	var windowCurrentScrollY = window.scrollY;
+	var activeYArea = windowCurrentScrollY + window.innerHeight;
+	console.info("Processing lazy loading ad queue...");
+	console.info("Window scroll Y position: " + windowCurrentScrollY + "; Window active Y area: " + activeYArea);
+
+	if(lazy_loading_ad_queue.length > 0 && lazy_loading_ad_queue.length > lazy_loading_processed.length) {
+		for (var i = 0; i < lazy_loading_ad_queue.length; i++) {
+			var adId = lazy_loading_ad_queue[i];
+			var domElement = document.getElementById(adId);
+			if(domElement && lazy_loading_processed.indexOf(adId) == -1) {
+				var adCoordinates = domElement.getBoundingClientRect();
+				console.log("Checking ad with ID " + adId + " current Y position: " + adCoordinates.top);
+				if(adCoordinates.top < activeYArea) {
+					for(var j = 0; j < mam_gpt_ad_slot_ids.length; j++) {
+						if(adId == mam_gpt_ad_slot_ids[j]) {
+							console.info("[Refreshing ad slot " + adId + "]");
+							window.googletag.pubads().refresh([mam_gpt_ad_slots[j]]);
+
+							lazy_loading_processed.push(adId);
+						} else {
+							console.info("Ad slot " + adId + " not in viewport. Skiping...");
+						}
+					}
+				}
+			}
+		}
+	} else {
+		window.removeEventListener("scroll", processLazyLoadingQueue);
+	}
+}
+
+(function( window, $ ) {
+	
+	timeout_inject = setInterval(function(){
+		refreshAds();
+	}, 400);
+
+	jQuery(window).load(function () {
+		clearInterval(timeout_inject);
+		refreshAds();
+	});
+
+    /**
+     * Ads sandbox
+     *
+     * Class responsible for showing the Ads
+     *
+     * @package    frontend-data.js
+     * @subpackage plugin-dir/public/js
+     * @author     Cez <ticiisonline@gmail.com>
+     */
+
+	// If no jQuery, bail!
+	if ( typeof $ === 'undefined' ) return;
+
+    function measure( elem, callback ) {
+        var clone = elem.clone(),
+        	result;
+
+        clone.css({
+            visibility : 'hidden',
+            position   : 'absolute'
+        });
+
+        clone.appendTo( document.body );
+
+        if ( typeof callback == 'function' ) {
+            result = callback.apply( clone );
+        }
+
+        clone.remove();
+        return result;
+	}
+
+	function getAction(type) {
+	  	var action;
+		var actions = {
+		    'before': function() {
+		      	action = 'insertBefore';
+		    },
+		    'after': function() {
+		    	action = 'insertAfter';
+		    },
+		    'prepend': function() {
+		    	action = 'prependTo';
+		    },
+			'append': function() {
+				action = 'appendTo';
+			},
+			'screen_bottom': function() {
+				action = 'appendTo'; //'stickyToBottom';
+			},
+		    'default': function() {
+		    	action = 'insertAfter';
+		    }
+		};
+		    
+		(actions[type] || actions['default'])();
+		    
+		return action;
+	}
+
+	function inject( ad ) {
+		// console.log("Injecting: " + ad.code);
+
+		// Check if ads have been already injected in the body
+		if($('body').html().indexOf(ad.code) !== -1
+			|| injected_ad_tags.indexOf(ad.code) !== -1) {
+			console.log("Ad already injected. Skipping..");
+			return;
+		}
+
+		var code   = $( ad.code );
+		var action = getAction( ad.placement.ad_position );
+		var target = $( ad.placement.target );
+
+		if(!target) return;
+
+		//if ( ad.type === 'static-fixed' || ad.type === 'native-fixed' || ad.type === 'scroller-fixed' ) {
+		if ( typeof ad.placement.ad_index != 'undefined') {
+			//target = $( target.children()[ad.placement.ad_index - 1] );
+			target = $(target).eq(ad.placement.ad_index-1);
+		}
+
+		measure( code, function() {
+			var width  = this.width() + 'px',
+				height = this.height() + 'px';
+
+			if ( ad.type === 'native' || ad.type === 'native-fixed' ) {
+				width  = '100%';
+				height = 'auto';
+			}
+
+			// var wrapper_css = {'height': height};
+			var wrapper_css = {};
+			var wrapper_css_class = 'mam-pub-ad-wrap';
+			var inner_css_class = 'mam-pub-ad-wrap--inner mam-pub-ad-wrap--inner-' + ad.placement.ad_alignment;
+
+			if ( ad.type === 'static-fixed' || ad.type === 'native-fixed' || ad.type === 'scroller-fixed' ) {
+				wrapper_css_class += ' mam-pub-ad-wrap-fixed';
+			}
+
+			if(ad.placement.sticky) {
+				inner_css_class += ' mam-pub-ad-wrap-sticky';
+			}
+
+			if(ad.placement.ad_position == 'screen_bottom') {
+				inner_css_class += ' screen-bottom-sticky ' + ad.placement.ad_alignment;
+			}
+
+			if ( typeof ad.css !== 'undefined' ) {
+				if ( 'margin-top' in ad.css )    wrapper_css['margin-top']    = ad.css['margin-top'] + 'px';
+				if ( 'margin-bottom' in ad.css ) wrapper_css['margin-bottom'] = ad.css['margin-bottom'] + 'px';
+				if ( 'margin-left' in ad.css )   wrapper_css['margin-left']   = ad.css['margin-left'] + 'px';
+				if ( 'margin-right' in ad.css )  wrapper_css['margin-right']  = ad.css['margin-right'] + 'px';
+			}
+
+			var wrapper = $('<div/>', {class: wrapper_css_class}).css(wrapper_css);
+			var inner   = $('<div/>', {class: inner_css_class});//.css('width', width);
+
+			if(ad.placement.sticky_footer_selector) {
+				$(inner).attr("footer-selector", ad.placement.sticky_footer_selector);
+			}
+
+			// If in preview mode, dont deliver ads. Instead, show them as placeholders
+			if ( typeof window.MAM_PREVIEW_MODE !== 'undefined' ) {
+				toPlaceholder( inner, code, { w: width, h: height } );
+			}
+
+			code.appendTo( inner );
+			inner.appendTo( wrapper );
+
+			wrapper[action]( target );
+			injected_ads++;
+			injected_ad_tags.push(ad.code);
+			// Store ID of the ad for lazy loading it later
+			lazy_loading_ad_queue.push($(code).attr('id'));
+		});
+	}
+
+	function toPlaceholder( ad_wrapper, ad_code, size ) {
+		var size_text = size.w.replace('px', '') + ' x ' + size.h.replace('px', '');
+		ad_wrapper.css( 'backgroundColor', '#333' );
+		ad_code.text( size_text );
+		ad_code.css({
+			'text-align'  : 'center',
+			'line-height' : size.h,
+			'font-size'   : '20px',
+			'font-weight' : 'bold',
+			'color'       : '#fff',
+		});
+	}
+
+	function refreshAds() {
+		console.info("refreshing ads..");
+		// Refresh Ads only if NOT in preview mode...
+		if ( typeof window.MAM_PREVIEW_MODE === 'undefined' ) {
+			// var interval = setInterval( function() {
+				// recursiveAdRefresh();
+				if ( typeof window.googletag !== 'undefined' && window.googletag.apiReady ) {
+					// clearInterval( interval );
+
+					$.each( window.MAM_FRONTEND_ADS, function( key, ad ) {
+						inject( ad );
+					});
+
+					//Refresh all container Ads and show them
+					if(typeof mam_gpt_ad_slots != 'undefined') {
+						// window.googletag.pubads().refresh( mam_gpt_ad_slots );
+						processLazyLoadingQueue();
+					}
+					
+					// Include GPT Light lib if the case
+					if(typeof MAM_GPT_LIGHT != 'undefined' && MAM_GPT_LIGHT) {
+						jQuery.ajax({
+							url: "https://securepubads.g.doubleclick.net/static/glade.js",
+							dataType: 'script',
+							async: true
+						});
+					}
+				}
+			// }, 500 );
+		}
+	}
+
+	/**
+	 * Used to prevent blank ads which might be caused by a incomplete load of Google lib
+	 */
+	function delayedAdsRefresh() {
+		// var timeout = window.setInterval(function () {
+		// 	refreshAds();
+		// 	clearInterval(timeout);
+		// }, 1000);
+		// refreshAds();
+	}
+
+	// Inject Ads
+	if ( window.MAM_FRONTEND_ADS ) {
+		//window.onload = delayedAdsRefresh;
+		// delayedAdsRefresh();
+		refreshAds();
+		//window.onload = onloadAction;
+		window.addEventListener("scroll", processLazyLoadingQueue);
+	}
+
+	/**
+	 * Actions to run after the page loads
+	 */
+	function onloadAction() {
+		var timeout2 = window.setInterval(function () {
+			// Run the code to activate sticky ads after page is loaded
+			activateSticky();
+
+			// If we have ads buut they were not inserted all we try again loading them
+			// Run the refresh action to make sure all ads have been injected
+			// if(injected_ads && window.MAM_FRONTEND_ADS && injected_ads.length != window.MAM_FRONTEND_ADS.length) {
+			// 	refreshAds();
+			// }
+
+			// Position ad according to the setup after DFP refreshes slots
+			centerScreenBottomAds();
+			clearInterval(timeout2);
+		}, 2000);
+	}
+	
+
+
+})( window, jQuery );
+

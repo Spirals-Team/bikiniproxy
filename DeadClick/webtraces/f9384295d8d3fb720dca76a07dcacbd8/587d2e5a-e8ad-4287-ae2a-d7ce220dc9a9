@@ -1,0 +1,165 @@
+/* Validate mailing list form */
+function validateMailinglist() {
+	var err=0;
+	var response="The were problems when trying to submit the form:\n";
+
+	var name=document.getElementById("ml_name");
+	if (name.value=="") {
+		err=1;
+		response+="- Please enter your name\n";
+	}
+
+	var email=document.getElementById("ml_email");
+	var emailRegExp="^[\\w-_\.]*[\\w-_\.]\@[\\w]\.+[\\w]+[\\w]$";
+	var regex=new RegExp(emailRegExp);
+	if (!regex.test(email.value)) {
+		err=1;
+		response+="- Please enter a valid email address\n";
+	}
+
+	if (err==1) {
+		alert(response);
+		return false;
+	} else {
+		return true;
+	}
+}
+
+var clicked = new Array();
+function doSection(divid) {
+    //var ThisAnswer = document.getElementById(divid);
+    if(clicked[0] == null) {
+        //ThisAnswer.style.display = 'block';
+        Effect.Appear(divid, {duration: 0.3});
+        clicked[0] = divid;
+    } 
+    else if(clicked[0] == divid) {
+        clicked[0] = null;
+        //ThisAnswer.style.display = 'none';
+        Effect.Fade(divid, {duration: 0.1});
+    } else {
+        //var OldAnswer = document.getElementById(clicked[0]);
+        //OldAnswer.style.display = 'none';
+        Effect.Fade(clicked[0], {duration: 0.1});
+        //ThisAnswer.style.display = 'block';
+        Effect.Appear(divid, {duration: 0.3});
+        clicked[0] = divid;
+    }
+}
+
+var sec2 = new Array();
+function doSection2(divid) {
+    if(sec2[divid] == 1) {
+        Effect.SlideUp(divid); // closing
+        sec2[divid] = 2;
+    } else {
+        Effect.SlideDown(divid); // oppening
+        sec2[divid] = 1;
+    }
+}
+function closeSection() {
+    if(clicked[0] == null) {
+        return false;
+    } else {
+        var ThisAnswer = document.getElementById(clicked[0]);
+        //ThisAnswer.style.display = 'none';
+        Effect.Fade(clicked[0]);
+    }
+}
+
+
+
+
+
+
+
+
+
+function externalLinks() {
+ if (!document.getElementsByTagName) return;
+ var anchors = document.getElementsByTagName("a");
+ for (var i=0; i<anchors.length; i++) {
+   var anchor = anchors[i];
+   if (anchor.getAttribute("href") &&
+       anchor.getAttribute("rel") == "external")
+     anchor.target = "_blank";
+ }
+}
+window.onload = externalLinks;
+
+
+
+
+
+
+
+var ScrollWin = {
+	w3c : document.getElementById,
+	iex : document.all,
+	scrollLoop : false, 
+	scrollInterval : null, // setInterval id
+	currentBlock : null,   // object reference
+	getWindowHeight : function(){
+		if(this.iex) return (document.documentElement.clientHeight) ? document.documentElement.clientHeight : document.body.clientHeight;
+		else return window.innerHeight;
+	},
+	getScrollLeft : function(){
+		if(this.iex) return (document.documentElement.scrollLeft) ? document.documentElement.scrollLeft : document.body.scrollLeft;
+		else return window.pageXOffset;
+	},
+	getScrollTop : function(){
+		if(this.iex) return (document.documentElement.scrollTop) ? document.documentElement.scrollTop : document.body.scrollTop;
+		else return window.pageYOffset;
+	},
+	getElementYpos : function(el){
+		var y = 0;
+		while(el.offsetParent){
+			y += el.offsetTop
+			el = el.offsetParent;
+		}
+		return y;
+	},
+	scroll : function(name){
+		if(!this.w3c){
+			location.href = "#"+name;
+			return;
+		}
+		if(this.scrollLoop){
+			clearInterval(this.scrollInterval);
+			this.scrollLoop = false;
+			this.scrollInterval = null;
+		}
+		if(this.currentBlock != null) this.currentBlock.className = this.offClassName;
+		this.currentBlock = document.getElementById(name);
+		this.currentBlock.className = this.onClassName;
+		var doc = document.getElementById(this.containerName);
+		var documentHeight = this.getElementYpos(doc) + doc.offsetHeight;
+		var windowHeight = this.getWindowHeight();
+		var ypos = this.getElementYpos(this.currentBlock);
+		if(ypos > documentHeight - windowHeight) ypos = documentHeight - windowHeight;
+		this.scrollTo(0,ypos);
+	},
+	scrollTo : function(x,y){
+		if(this.scrollLoop){
+			var left = this.getScrollLeft();
+			var top = this.getScrollTop();
+			if(Math.abs(left-x) <= 1 && Math.abs(top-y) <= 1){
+				window.scrollTo(x,y);
+				clearInterval(this.scrollInterval);
+				this.scrollLoop = false;
+				this.scrollInterval = null;
+			}else{
+				window.scrollTo(left+(x-left)/2, top+(y-top)/2);
+			}
+		}else{
+			this.scrollInterval = setInterval("ScrollWin.scrollTo("+x+","+y+")",50);
+			this.scrollLoop = true;
+		}
+	}
+};
+
+ScrollWin.containerName = "container"; 
+ScrollWin.anchorName    = "anchor";    
+ScrollWin.blockName     = "home";     
+ScrollWin.onClassName   = "active";   
+ScrollWin.offClassName  = "visited";  

@@ -1,0 +1,193 @@
+// JavaScript Document
+({
+	url: (function(){
+		var _self = {			
+			//Wrapper that extends functionality of browsers native location object
+			Location: function(loc) {
+				var thisLoc = {};
+				if(typeof(loc) === "object") {
+					var qs =  loc.search || "";
+					var kvp = qs.replace(/^\?/i,'').split('&');
+					var params = {};
+					if(bam.object.typeOf(kvp) === "array") {
+						kvp.reverse();
+						var vpl = kvp.length-1;
+						var vp, op;
+						do {
+							vp = kvp[vpl].split('=');
+							switch(bam.object.typeOf(params[vp[0]])) {
+								case "undefined" :
+									params[vp[0]] = vp[1];
+									break;
+								case "array" :
+									params[vp[0]].push(vp[1]);
+									break;
+								default :
+									params[vp[0]] = [params[vp[0]], vp[1]];
+								break;
+							}
+						} while(vpl--);
+						kvp = null;
+					}
+					//Returns a value of the querystring param by name
+					thisLoc.getParam = function(name) {
+						try {
+							return params[name];
+						} catch(e) { return null; }
+					};
+					//Returns an object with name/value properties
+					thisLoc.getParams = function() {
+						return params;
+					};
+					//Url check that detects if address is secure
+					thisLoc.isSecure = function() {
+						return (loc.protocol === "https:");
+					};
+					//Get domain name
+					thisLoc.getDomain = function() {
+						var dp = loc.hostname.split(".");
+						return (dp.length === 2)?dp[0]:(dp.length > 2)?dp[1]:"";
+					};
+				}
+				return thisLoc;
+			},
+			//Builds a Querystring from an object
+			buildSearch: function(qsObj) {
+				if(typeof(qsObj) === "object" && !!qsObj) {
+					var qs = [];
+					for(var param in qsObj) {
+						if (!qsObj.hasOwnProperty || qsObj.hasOwnProperty(param)) {
+							if(typeof(qsObj[param]) === "string" || typeof(qsObj[param]) === "number" || typeof(qsObj[param]) === "boolean") {
+								qs.push(param+"="+_self.encode(qsObj[param]+""));
+							} else if (bam.object.typeOf(qsObj[param]) === "array") {									
+								for(var p in qsObj[param]) {
+									if (!qsObj[param].hasOwnProperty || qsObj[param].hasOwnProperty(p)) {
+										qs.push(param+"="+_self.encode(String(qsObj[param][p])));
+									}
+								}
+							}
+						}
+					}
+					return "?" + qs.join('&');
+				} else { return "";}
+			},
+			//Url encode function
+			encode: function(url) {
+				if(typeof(url) === "string") {
+					return escape(url).replace(/\+/g, "%2b").replace(/ /g, "+");	
+				}
+			},
+			//Url decode
+			decode: function(url) {
+				if(typeof(url) === "string") {
+					return unescape(url.replace(/\+/g, " ").replace(/\%2[B,b]/g, "+"));
+				}
+			},
+			
+
+      /**
+       * The following code contains some redundancy to existing functionality
+       * @author David Furfero 
+       */
+      parseQueryParameters: function(/* url, typeVals */) {
+        var url = arguments[0] || window.location.search,
+            str = url.substring(url.indexOf('?') + 1);
+        return this.parseAmpersandDelimitedKeyValuePairs(str, arguments[1]);
+      },
+
+      parseFragmentIdentifiers: function(/* url, typeVals */) {
+        var url = arguments[0] || window.location.hash,
+            str = url.substring(url.indexOf('#') + 1);
+        return this.parseAmpersandDelimitedKeyValuePairs(str, arguments[1]);
+      },
+
+      /**
+       * @todo Finish parsing arrays and objects
+       */
+      parseAmpersandDelimitedKeyValuePairs: function(str /*, typeVals */) {
+
+        if (!str) {
+          return {};
+        }
+
+        var params   = {},
+            pairs    = str.split('&'),
+            typeVals = !!arguments[1],
+            pair,
+            key,
+            val,
+            num;
+
+        for (var i = 0, n = pairs.length; i < n; ++i) {
+
+          pair = pairs[i].split('=');
+          key  = pair[0];
+          val  = pair[1];
+
+          /**
+           * Clean value
+           */
+          if (typeof val === 'string') {
+            val = unescape(val);
+            if (val !== '') {
+
+              /**
+               * Convert string values to typed values
+               */
+              if (typeVals === true) {
+
+                // Boolean: true
+                if (val.toLowerCase() === 'true') {
+                  val = true;
+
+                // Boolean: false
+                } else if (val.toLowerCase() === 'false') {
+                  val = false;
+
+                // Number
+                } else if (!isNaN(val)) {
+                  val = parseInt(val, 10);
+                }
+
+              }
+            }          
+          }
+          // else = undefined
+
+          // Handle serialized arrays and objects
+          // var reStr = '^'+
+          //   '([^\\[]+)'+
+          //   '(?:\\['+         // begin optional brackets
+          //   '('+              // begin optional properties
+          //   '(?:[^\\]]*)'+
+          //   '(?:\\]\\[)*'+      // optional property splitter
+          //   ')*'+             // begin optional properties
+          //   '\\])?'+          // end optional brackets
+          // '$';
+          // 
+          // var re = new RegExp(reStr);
+          // key.replace(re, function() {
+          //   console.log(arguments);
+          // });
+
+          // New property
+          if (!(key in params)) {
+            params[key] = val;
+
+          // Existing parameter
+          } else {
+            if (!(params[key] instanceof Array)) {
+              params[key] = [params[key]];
+            }
+            params[key].push(val);
+          }
+        }
+
+        return params;
+      }
+			// End furf's additions
+			
+		};
+		return _self;
+   })()
+})

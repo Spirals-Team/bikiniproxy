@@ -1,0 +1,77 @@
+
+(function(qName, w, d, UNDEFINED){
+    var surls = ["//ib.adnxs.com/getuidnb?http%3A%2F%2Fp.crm4d.com%2Fsync%2Fappnexus%2Fs.gif%3Fbounce%3D1%26uid%3D%24UID","https://sync.smartadserver.com/getuid?url=http%3A%2F%2Fp.crm4d.com%2Fsync%2Fsas%2Fs.gif%3Fbounce%3D1%26uid%3D%5Bsas_uid%5D","//track.effitarget.com/cookie/get?pid=24","//dmp.email-reflex.com/tags/graphinium_match.php"];
+    var nill = function(){};
+
+    function toQueryString(obj) {
+        var parts = [];
+        for (var i in obj) {
+            if (obj.hasOwnProperty(i)) {
+                parts.push(encodeURIComponent(i) + "=" + encodeURIComponent(obj[i]));
+            }
+        }
+        return parts.join("&");
+    }
+
+    function loadJs(url, id){
+        var ec = d.createElement("script"); ec.type="text/javascript"; ec.async = true;
+        ec.src = url;
+        if(id){ec.id=id}
+        var h = d.getElementsByTagName("head")[0]; h.insertBefore(ec, h.firstChild);
+    }
+    var _jsonpSequence = 0;
+    function jsonp(action, params, callback) {
+        var cb = 'c4d_js_cb_' + (_jsonpSequence++);
+        params.cb=cb;
+        params.rnd=Math.random();
+        var path = '//p.crm4d.com/' + action + '?' + toQueryString(params);
+        w[cb] = callback || nill;
+        loadJs(path, cb);
+        return cb;
+    }
+
+    function send(url) {(new Image()).src = url;}
+
+    function handleCommand(o) {
+        var action = o[0];
+        var params = o.length == 1 ? {} : o[1];
+        var callback = o.length == 3 ? o[2] : nill;
+        switch(action){
+            case 'match' :
+                return cookieMatch(params);
+            default:
+                return false;
+        }
+    }
+
+    function bootstrap(){
+        var oldQ = w[qName];
+        w[qName] = {
+            'push' : function(o) {
+                if(o.length && o.length > 0) { handleCommand(o); }
+            }
+        };
+        for (var i in oldQ){
+            if(oldQ.hasOwnProperty(i))  w[qName].push(oldQ[i]);
+        }
+        for (var j = 0; j < surls.length; j++) {
+            send(surls[j]);
+        }
+        
+        w['eedmpst']={"dmp_id":"emdmpeasy"};loadJs('//asset.easydmp.net/js/dn_iframe.js');
+        
+    }
+    function cookieMatch(params) {
+        var attrs = {};
+        var pid=params.pid||'weborama';
+        if(params.email) attrs.eh = params.email;
+        var fields = ['uid','origin','nbh','nzh','nzbh','nth','nmh'];
+        for(var i = 0; i < fields.length; i++){
+            var f = fields[i];
+            if(params[f]) attrs[f] = params[f];
+        }
+        if(attrs.eh || attrs.uid) send('//p.crm4d.com/sync/'+pid+'/match?'+toQueryString(attrs));
+    }
+
+    bootstrap();
+})('_c4d', window, document);

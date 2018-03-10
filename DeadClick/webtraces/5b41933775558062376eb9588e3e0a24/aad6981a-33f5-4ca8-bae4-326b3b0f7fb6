@@ -1,0 +1,1 @@
+define([],function(){var a,b={protect:function(){a=window.exports,window.exports=undefined},reset:function(){window.exports=a}};return b.protect(),b})

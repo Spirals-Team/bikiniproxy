@@ -1,0 +1,33 @@
+$(document).ready(function() {
+	
+	var urlToShare = $(location).attr("href");
+	
+	// Facebook Shares Count
+	$.getJSON( 'http://graph.facebook.com/?id='+ urlToShare, function( fbdata ) {
+		if(fbdata.shares) {
+			$('#facebook-count').text(fbdata.shares)
+		} else { 
+			$('#facebook-count').text("0");
+		}
+	});
+
+	// Twitter Shares Count
+	$.getJSON( 'http://cdn.api.twitter.com/1/urls/count.json?url=' + urlToShare + '&callback=?', function( twitdata ) {
+		$('#twitter-count').text(twitdata.count);
+	});
+	
+	
+	//Google +
+	$.ajax({
+        type: "GET",
+        url: '/google/countplus',
+        dataType: 'json',
+        data: {"url":urlToShare},
+        success: function(result){
+            $('#google-count').text(result)
+        },
+        error: function(error){
+//            console.error(error);
+        }
+    });
+});

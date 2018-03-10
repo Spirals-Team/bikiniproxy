@@ -1,0 +1,61 @@
+<html>
+<body>
+<script type="text/javascript">
+function createCookie(name,value,days) {
+    if (days) {
+        var date = new Date();
+        date.setTime(date.getTime()+(30000));
+        var expires = "; expires="+date.toGMTString();
+    }
+    else var expires = "";
+    document.cookie = name+"="+value+expires+"; path=/";
+}
+
+function readCookie(name) {
+    var nameEQ = name + "=";
+    var ca = document.cookie.split(';');
+    for(var i=0;i < ca.length;i++) {
+        var c = ca[i];
+        while (c.charAt(0)==' ') c = c.substring(1,c.length);
+        if (c.indexOf(nameEQ) == 0) return c.substring(nameEQ.length,c.length);
+    }
+    return null;
+}
+
+function eraseCookie(name) {
+    createCookie(name,"",-1);
+}
+
+function gup( name )
+{
+  name = name.replace(/[\[]/,"\\\[").replace(/[\]]/,"\\\]");
+  var regexS = "[\\?&]"+name+"=([^&#]*)";
+  var regex = new RegExp( regexS );
+  var results = regex.exec( window.location.href );
+  if( results == null )
+    return "";
+  else
+    return results[1];
+}
+
+function readDelay()
+{
+  if(readCookie('cookie_3rdparty'))
+  {
+      ifrm = document.createElement("IFRAME");
+      var parenturl = gup("parent");
+      if(parenturl.indexOf("?")>=0)
+     	 parenturl = parenturl.split("?")[0];
+      parenturl = parenturl.substr(0, parenturl.lastIndexOf("/")+1);
+      ifrm.setAttribute("src", parenturl+"cookie_inneriframe.html");
+      document.body.appendChild(ifrm);
+  }
+}
+
+createCookie('cookie_3rdparty', 'enabled', 7);
+
+var t = setTimeout("readDelay()", 300);
+
+</script>
+</body>
+</html>

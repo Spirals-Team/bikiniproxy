@@ -1,0 +1,973 @@
+/**
+ * This is a heavily reworked version of DataGrid that leverages bam.data components to
+ * abstract out data from presentation.
+ * From now on, FlexGrid will only perform table rendering and not data processing
+ */
+
+define('shared/scripts/bam/flexgrid/0.1/flexgrid', function( require, exports, module ) {	
+	'use strict';
+
+	var NULL = null,
+		TRUE = !0,
+		FALSE = !TRUE,
+		STRING = "string",
+		OBJECT = "object",
+		FUNCTION = "function",
+		NUMBER = "number",
+		ACTIVE = 'active',
+		DISABLED = 'disabled',
+		SELECTED = 'selected',
+		CLICK = 'click',
+		MOUSEDOWN = 'mousedown',
+		EMPTY = '',
+		SPACE = ' ',
+		WSPACE = /\s+/,
+		NBSPACE = "&nbsp;",
+		APS = Array.prototype.slice,
+		undef,
+		sortOrder = {
+			Asc: 'asc',
+			Desc: 'desc'
+		},
+		HAS_RENDERED = false,
+		RX_AGGREGATES = /@@(\w+)(?:\((.+?)\))?/g,
+		RX_PS = /\W|\./g,
+
+		$doc = $(document),
+		domElements = "table tbody thead tfoot tr td th div span a caption".split(WSPACE),
+		domTemplates = {},
+		activeFilters = {}; //Keeps a map of active table data filters
+
+	//Create
+	for (var i = 0, l = domElements.length, elem; l > i; i++) {
+		elem = domElements[i];
+		domTemplates[elem] = document.createElement(elem);
+	}
+
+	//Load dependencies  
+    var datetimeModule = require('shared/scripts/bam/datetime/2.0/datetime');
+    var stringModule = require('shared/scripts/bam/string/1.0/string');
+    var jpathModule = require('shared/scripts/bam/jpath/2.0/jpath');
+    var dataModule = require('shared/scripts/bam/data/3.0/data');
+    
+
+    //In Array
+
+    function inArray(arr, value) {
+        var test = SPACE + value + SPACE,
+            testSrc;
+        if ($.isArray(arr) && value !== undef) {
+            testSrc = SPACE + arr.join(SPACE) + SPACE;
+            return testSrc.indexOf(test) !== -1;
+        }
+    }
+
+    //Adds css class to an element
+
+    function addClass(elem, newClass) {
+        if (elem !== undef && elem.nodeType === 1 && typeof(newClass) === STRING) {
+            var classNames = SPACE + (elem.className || "") + SPACE,
+                hasIt = classNames.indexOf(SPACE + newClass + SPACE) !== -1;
+
+            //If element does not have this class already, applend it to the end
+            if (!hasIt) {
+                classNames += newClass;
+            }
+            elem.className = $.trim(classNames);
+        }
+    }
+
+    //Indicates/sets current data filter
+
+    function isFilteredBy(expr) {
+        if (expr) {
+            if (expr in activeFilters) {
+                return true;
+            } else {
+                activeFilters[expr] = TRUE;
+                return false;
+            }
+        }
+    }
+    //Generates a table header (DOM), runs in a scope of a Grid instance
+
+    function tableHeaderToDom() {
+        var domTR = domTemplates.tr.cloneNode(FALSE),
+            buff = document.createDocumentFragment(),
+            domTH, column, cssPrefix = this.config.cssPrefix,
+            sortIcon;
+
+        for (var i = 0, len = this.columns.length; i < len; i++) {
+            column = this.columns[i];
+            if (typeof(column.dataField) === STRING) {
+                domTH = buff.appendChild(domTemplates.th.cloneNode(FALSE));
+                if (i === 0) {
+                    addClass(domTH, cssPrefix + "first");
+                }
+                if (i === (len - 1)) {
+                    addClass(domTH, cssPrefix + "last");
+                }
+                if (this.config.sortable && column.sortable) {
+                    addClass(domTH, cssPrefix + "sortable");
+                }
+                if (!column.visible) {
+                    addClass(domTH, cssPrefix + "hidden");
+                }
+                if (column.active) {
+                    addClass(domTH, ACTIVE);
+                    if (column.sortOrder === sortOrder.Asc) {
+                        domTH.setAttribute("data-sortorder", "asc");
+                        addClass(domTH, cssPrefix + "asc");
+                    } else if (column.sortOrder === sortOrder.Desc) {
+                        domTH.setAttribute("data-sortorder", "desc");
+                        addClass(domTH, cssPrefix + "desc");
+                    }
+                } else {
+                    domTH.removeAttribute("data-sortorder");
+                }
+
+                domTH.setAttribute("data-datafield", column.dataField);
+                domTH.innerHTML = column.title || NBSPACE;
+                if (this.config.sortable && column.sortable) {
+                    sortIcon = domTemplates.span.cloneNode(FALSE);
+                    addClass(sortIcon, cssPrefix + "sort-icon")
+                    domTH.appendChild(sortIcon);
+                }
+            }
+        }
+        domTR.appendChild(buff);
+
+        return domTR;
+    }
+
+    //Rendrs a single row of data
+
+    function dataRowToDom(idx, row, selected, isOdd, isLast) {
+        var domTR = domTemplates.tr.cloneNode(FALSE),
+            buff = document.createDocumentFragment(),
+            decorator, cellValue, domTD, cssPrefix = this.config.cssPrefix;
+
+        domTR.setAttribute("index", row.__rowIndex__);
+        if (!idx) {
+            addClass(domTR, cssPrefix + "first");
+        }
+        if (isLast) {
+            addClass(domTR, cssPrefix + "last");
+        }
+        if (isOdd) {
+            addClass(domTR, this.config.oddClass);
+        }
+        if (selected) {
+            addClass(domTR, SELECTED);
+            domTR.setAttribute("data-selected", TRUE);
+        }
+        for (var i = 0, len = this.columns.length, column; i < len; i++) {
+            column = this.columns[i];
+            domTD = buff.appendChild(domTemplates.td.cloneNode(FALSE));
+
+            if (typeof(column.dataField) === STRING) {
+                cellValue = jpathModule.filter(row, column.dataField)[0] || NBSPACE;
+                //Assign a class based on field
+                if (this.config.autoClassify) {
+                    addClass(domTD, this.config.cssPrefix + column.dataField.replace(RX_PS, EMPTY));
+                }
+                domTD.setAttribute("data-dataField", column.dataField);
+                if (column.type === "date" && $.type(cellValue) === "date" && column.dateFormat !== undef) {
+                    cellValue = datetimeModule.formatDate(cellValue, column.dateFormat);
+                }
+            }
+            //Decorator function
+            decorator = column.decorator || this.config.rowDecorator;
+            if (typeof(decorator) === FUNCTION) {
+                try {
+                    cellValue = decorator.apply(column, [cellValue, row, this.config.dataSource]);
+                } catch (e) { /* Failed to apply decorator */
+                    console.warn(stringModule.printf("Failed to apply decorator. Row:$0 Column:$1 Value:$2", row.__rowIndex__, i, cellValue));
+                }
+            }
+            domTD.innerHTML = cellValue || NBSPACE;
+            //CSS
+            if (!column.visible) {
+                addClass(domTD, cssPrefix + "hidden");
+            }
+            if (column.active) {
+                addClass(domTD, ACTIVE);
+            }
+
+            if (typeof(column.style) === STRING) {
+                addClass(domTD, column.style);
+            }
+            if (!idx && column.width) {
+                domTD.setAttribute("width", column.width);
+            }
+        }
+        domTR.appendChild(buff);
+
+        return domTR;
+    }
+
+    //Render misc. header/footer row
+
+    function renderMiscRow(rowObj) {
+        var domTR = domTemplates.tr.cloneNode(FALSE),
+            domTD, buff = document.createDocumentFragment(),
+            row = rowObj.row,
+            cellValue, that = this,
+            tmp;
+
+        if (rowObj.style) {
+            addClass(domTR, rowObj.style);
+        }
+        for (var i = 0, len = this.columns.length, column; len > i; i++) {
+            column = this.columns[i];
+            domTD = buff.appendChild(domTemplates.td.cloneNode(FALSE));
+            //@todo: - check the values of the row columns to see if agregate functions are required
+            if (typeof(column.dataField) === STRING) {
+                //Assign a class based on field
+                if (this.config.autoClassify) {
+                    addClass(domTD, this.config.cssPrefix + column.dataField.replace(RX_PS, EMPTY));
+                }
+            }
+            cellValue = rowObj.row[i];
+            if (cellValue) {
+                if (RX_AGGREGATES.test(cellValue)) {
+                    cellValue = cellValue.replace(RX_AGGREGATES, function($0, $agFnName, $field) {
+                        if ($agFnName in that.config.dataSource) {
+                            tmp = that.config.dataSource[$agFnName]($field || column.dataField);
+                            return tmp;
+                        }
+                    });
+                }
+                domTD.innerHTML = cellValue;
+            } else {
+                domTD.innerHTML = NBSPACE;
+            }
+        }
+        domTR.appendChild(buff);
+        return domTR;
+    }
+
+    //Renders navigation
+
+    function renderNavigation() {
+        var domTR = domTemplates.tr.cloneNode(FALSE),
+            domTD = domTemplates.td.cloneNode(FALSE),
+            //refreshPage   = domTemplates.div.cloneNode(FALSE),
+            nextPage = domTemplates.div.cloneNode(FALSE),
+            prevPage = domTemplates.div.cloneNode(FALSE),
+            pageStatus = domTemplates.span.cloneNode(FALSE),
+            paginationState = {
+                p: this.state.page,
+                t: this.state.pageCount
+            },
+            cssPrefix = this.config.cssPrefix;
+
+        //Determine if buttons should be disabled
+        switch (this.state.page) {
+        case 1:
+            addClass(prevPage, DISABLED);
+            if (this.state.pageCount === 1) {
+                addClass(nextPage, DISABLED);
+            }
+            break;
+        case this.state.pageCount:
+            addClass(nextPage, DISABLED);
+            break;
+        }
+
+        pageStatus.setAttribute("class", cssPrefix + "nav-page-status");
+        pageStatus.innerHTML = this.config.pageStatusFormat.replace(/%(\w)/g, function($0, $1) {
+            return ($1 in paginationState) ? paginationState[$1] || 1 : '';
+        });
+
+        addClass(nextPage, cssPrefix + "nav-button fg-next-page");
+        addClass(prevPage, cssPrefix + "nav-button fg-prev-page");
+
+        //refreshPage.setAttribute("class", cssPrefix + "nav-button fg-nav-page-refresh");
+        nextPage.innerHTML = "&raquo;";
+        prevPage.innerHTML = "&laquo;";
+        //refreshPage.innerHTML = "&#x00ae;";
+        domTD.setAttribute("colspan", this.columns.length);
+        domTD.setAttribute("class", cssPrefix + "navigation");
+
+        domTR.appendChild(domTD);
+
+        //domTD.appendChild(refreshPage);
+        //Display navigation only if pagination is enebled
+        if (this.config.paginate) {
+            domTD.appendChild(prevPage);
+            domTD.appendChild(nextPage);
+            domTD.appendChild(pageStatus);
+        }
+
+        return domTR;
+    }
+
+    //Displays a NO RECORDS message
+
+    function noRecordsToDom() {
+        var domTR = domTemplates.tr.cloneNode(FALSE),
+            domTD = domTemplates.td.cloneNode(FALSE),
+            cssPrefix = this.config.cssPrefix;
+
+        domTD.setAttribute("colspan", this.columns.length);
+        domTD.className = cssPrefix + "no-records";
+        domTD.innerHTML = this.config.noResultsMessage;
+        domTR.appendChild(domTD);
+
+        return domTR;
+    }
+
+    //Update selected list
+
+    function updateSelected(idx, selected) {
+        var rx = new RegExp(stringModule.printf("\\b$0\\b", idx)),
+            tmp = this.state.selectedRows.join(SPACE).replace(rx, SPACE);
+        if (this.config.multiSelect) {
+            if (selected) {
+                this.state.selectedRows.push(idx + EMPTY);
+            } else {
+                this.state.selectedRows = $.trim(tmp).split(WSPACE);
+            }
+        } else {
+            if (selected) {
+                this.state.selectedRows = [idx + EMPTY];
+            } else {
+                this.state.selectedRows.length = 0;
+            }
+        }
+    }
+
+    //Updates the state of sorted columns
+
+    function updateColumnSortState(cols, cb) {
+        if ($.isArray(cols) && cols.length) {
+            //Init Column states
+            this.state.sortedColumns.length = 0;
+            var cmax = this.columns.length,
+                c;
+            while (cmax--) {
+                c = this.columns[cmax];
+                c.active = FALSE;
+                c.sortOrder = sortOrder.Asc;
+            }
+            //Set current state
+            for (var i = 0, l = cols.length, col; l > i; i++) {
+                col = this.column(cols[i].column);
+                if (col) {
+                    col.active = TRUE;
+                    col.sortOrder = cols[i].order || sortOrder.Asc;
+                    this.state.sortedColumns.push(col);
+                }
+            }
+        }
+        if ($.isFunction(cb)) {
+            cb.apply(this);
+        }
+    }
+
+    //Progressive load of data rows
+
+    function progressiveLoad() {
+        var tbody = $(document.getElementById(this.uniqueId)).find("tbody"),
+            chunks = [],
+            windowLength = this.state.progressiveDataWindow.length,
+            chunkCount = Math.ceil(windowLength / this.config.chunkSize),
+            chunkData, start, end, isOdd, isLast, selected, dataRow, timer, c = 0;
+
+        for (var i = 0, idx = 0; i < chunkCount; i++) {
+            chunks[i] = document.createDocumentFragment();
+            start = i * this.config.chunkSize;
+            end = start + this.config.chunkSize;
+            chunkData = this.state.progressiveDataWindow.slice(start, end);
+            for (var r = 0, len = chunkData.length; r < len; r++) {
+                dataRow = chunkData[r];
+                isOdd = idx % 2 === 0;
+                isLast = (idx === (windowLength - 1));
+                selected = inArray(this.state.selectedRows, dataRow.__rowIndex__);
+                chunks[i].appendChild(dataRowToDom.apply(this, [idx, dataRow, selected, isOdd, isLast]));
+                idx++;
+            }
+        }
+
+        /* Set timer to output each chunk of rows */
+        timer = setInterval(function() {
+            tbody.append(chunks[c++]);
+            if (c > chunkCount) {
+                window.clearInterval(timer);
+                chunks.length = 0;
+            }
+        }, this.config.progressInterval);
+    }
+
+    //Register Events
+
+    function registerEvents(that) {
+        var //REFR_BUTTON = stringModule.printf('#$0 .fg-nav-page-refresh', that.uniqueId),
+        NEXT_BUTTON = stringModule.printf('#$0 .fg-next-page', that.uniqueId),
+            PREV_BUTTON = stringModule.printf('#$0 .fg-prev-page', that.uniqueId),
+            SORT_COLUMN = stringModule.printf('#$0 .fg-sortable:visible', that.uniqueId),
+            DATA_ROW = stringModule.printf('#$0 tbody tr', that.uniqueId),
+            DATA_CELL = stringModule.printf('#$0 tbody td[class!=fg-no-records]', that.uniqueId);
+
+        //Set events for navigation buttons
+        if (that.config.showFooter) {
+            //Refresh button
+            $doc
+            /*.delegate(REFR_BUTTON, CLICK, function() {
+                //Reset state on refresh
+                $.extend(that.state, {
+                    sortedColumns:[],
+                    selectedRows:[],
+                    page: 1
+                });
+                that.trigger("onBeforeRefresh");
+            })*/
+            //Next button
+            .delegate(NEXT_BUTTON, CLICK, function() {
+                if (that.state.page < that.state.pageCount) {
+                    that.setPage(that.state.page + 1);
+                }
+            })
+            //Prev button
+            .delegate(PREV_BUTTON, CLICK, function() {
+                if (that.state.page > 1) {
+                    that.setPage(that.state.page - 1);
+                }
+            });
+        }
+        //Bind data-source onSort
+        if (that.config.dataSource) {
+            that.config.dataSource.bind("onSort", function() {
+                if (HAS_RENDERED) that.refresh();
+            });
+        }
+        //Column Sort event binder
+        $doc.delegate(SORT_COLUMN, CLICK, function(e) {
+            var el = $(e.currentTarget),
+                datafield = el.data("datafield"),
+                order = el.data("sortorder"),
+                column = that.column(datafield),
+                opt = {
+                    column: datafield,
+                    type: column.type || 'text'
+                };
+
+            if (order) {
+                opt.order = (order === sortOrder.Asc) ? sortOrder.Desc : sortOrder.Asc;
+            } else {
+                opt.order = column.defaultOrder || sortOrder.Desc;
+            }
+            //Trigger an event
+            that.trigger("onBeforeSort", [column]);
+            //Reset active flag for all columns
+            $(that.columns).attr(ACTIVE, FALSE);
+            //Set current column properties
+            column.active = TRUE;
+            column.sortOrder = opt.order;
+            //Apply sort
+            that.sortColumn(opt);
+            that.refresh();
+        })
+        //Row events
+        .delegate(DATA_ROW, [MOUSEDOWN, "dblclick", "mouseover", "mouseout"].join(SPACE), function(e) {
+            var idx = +e.currentTarget.getAttribute("index"),
+                row = that.config.dataSource.getByRowIndex(idx),
+                args = [e.currentTarget, row];
+
+            switch (e.type) {
+            case MOUSEDOWN:
+                switch (e.button) {
+                case 0:
+                    that.trigger("onRowClick", args);
+                    break;
+                case 1:
+                    that.trigger("onRowClick", args);
+                    break;
+                case 2:
+                    that.trigger("onRowRightClick", args);
+                    break;
+                }
+                break;
+            case "dblclick":
+                that.trigger("onRowDblClick", args);
+                break;
+            case "mouseover":
+                that.trigger("onRowMouseOver", args);
+                break;
+            case "mouseout":
+                that.trigger("onRowMouseOut", args);
+                break;
+            }
+        })
+        //Cell Events
+        .delegate(DATA_CELL, [MOUSEDOWN, "dblclick", "mouseover", "mouseout"].join(SPACE), function(e) {
+            var idx = +e.currentTarget.parentNode.getAttribute("index"),
+                dataField = e.currentTarget.getAttribute("data-dataField"),
+                row = that.config.dataSource.getByRowIndex(idx),
+                cellValue = dataField ? row[dataField] : e.currentTarget.innerHTML,
+                args = [e.currentTarget, cellValue, row];
+
+            switch (e.type) {
+            case MOUSEDOWN:
+                switch (e.button) {
+                case 0:
+                    that.trigger("onCellClick", args);
+                    that.trigger("onCellClick:" + dataField, args);
+                    break;
+                case 1:
+                    that.trigger("onCellClick", args);
+                    that.trigger("onCellClick:" + dataField, args);
+                    break;
+                case 2:
+                    that.trigger("onCellRightClick", args);
+                    that.trigger("onCellRightClick:" + dataField, args);
+                    break;
+                }
+                break;
+            case "dblclick":
+                that.trigger("onCellDblClick", args);
+                that.trigger("onCellDblClick:" + dataField, args);
+                break;
+            case "mouseover":
+                that.trigger("onCellMouseOver", args);
+                that.trigger("onCellMouseOver:" + dataField, args);
+                break;
+            case "mouseout":
+                that.trigger("onCellMouseOut", args);
+                that.trigger("onCellMouseOut:" + dataField, args);
+                break;
+            }
+        });
+    }
+
+
+    //Flexgrid Implementation
+    var
+
+    Column = function(opt) {
+            this.index = NULL;
+            this.title = NBSPACE;
+            this.type = STRING;
+            this.dataField = NULL;
+            this.dateFormat = datetimeModule.DateFormats.ShortDate;
+            this.sortable = TRUE;
+            this.filterable = FALSE;
+            this.filters = {};
+            this.width = 0;
+            this.active = FALSE;
+            this.abbr = NULL;
+            this.visible = TRUE;
+            this.sortOrder = NULL;
+            this.defaultOrder = NULL;
+            this.style = NULL;
+            this.decorator = NULL;
+
+            if (opt !== undef) {
+                $.extend(this, opt);
+            }
+        },
+
+        Grid = function(opt) {
+            //Self-instantiate if used as a function
+            if (!(this instanceof Grid)) {
+                return new Grid(opt);
+            }
+
+            this.headers = [];
+            this.footers = [];
+            this.uniqueId = "_" + new Date().valueOf() * ~~ + (Math.random() * 100);
+            this.columns = [];
+            this.config = {
+                noResultsMessage: 'No records',
+                sortable: TRUE,
+                dataSource: NULL,
+                autoRefresh: FALSE,
+                //Will automaticall call refresh when dataSource is re-loaded
+                autoClassify: TRUE,
+                cssPrefix: 'fg-',
+                tableClass: NULL,
+                cellspacing: 0,
+                oddClass: 'odd',
+                showHeader: TRUE,
+                showFooter: FALSE,
+                summary: NULL,
+                caption: NULL,
+                rowDecorator: NULL,
+                progressiveLoad: FALSE,
+                paginate: FALSE,
+                pageSize: 25,
+                chunkSize: 75,
+                dataFilter: NULL,
+                progressInterval: 13,
+                progressiveLoadMin: 100,
+                //%p - page, %t - total
+                pageStatusFormat: 'page %p of %t',
+                multiSelect: TRUE,
+                topRows: 0,
+                //0 = unset - limits display to only top n rows
+                rowsRange: 0 //0 = unset, ex. [2,5] -  show rows from 2 to 5
+            };
+
+            this.state = {
+                sortedColumns: [],
+                selectedRows: [],
+                page: 1,
+                pageCount: 0,
+                isProgressiveLoad: FALSE,
+                progressiveDataWindow: null
+            };
+
+            //Set configuration
+            this.setup(opt);
+            //Bind all the events
+            registerEvents(this);
+        },
+
+        module = {
+            FlexGrid: Grid,
+            SortOrder: sortOrder
+        };
+
+    /* Behaviors/Prototypes */
+    Grid.prototype = {
+        //Initial table setup (this method is called when you initialize table with options)
+        setup: function(opt) {
+            var settings = ("columns noResultsMessage sortable dataSource autoRefresh autoClassify " + "cssPrefix tableClass cellspacing oddClass showHeader showFooter " + "summary caption rowDecorator progressiveLoad chunkSize dataFilter " + "progressInterval progressiveLoadMin paginate pageSize pageStatusFormat multiSelect " + "topRows rowsRange").split(WSPACE),
+                that = this;
+            if (opt !== undef && typeof(opt) === OBJECT) {
+                for (var i = 0, l = settings.length, setting; l > i; i++) {
+                    setting = settings[i];
+                    if (setting === "columns") {
+                        that.setColumns(opt[setting]);
+                    } else {
+                        if (opt[setting] !== undef) {
+                            that.config[setting] = opt[setting];
+                        }
+                    }
+                }
+                if (that.config.dataSource) {
+                    that.config.origDataSource = opt.dataSource;
+                    //code to handle autoRefresh
+                    if (that.config.autoRefresh) {
+                        that.config.dataSource.bind("onLoadSuccess", function() {
+                            //Point dataSource to original object in case reload occurs
+                            that.config.dataSource = that.config.origDataSource;
+                            //Reset filter status
+                            activeFilters = {};
+                            //Refresh grid
+                            that.refresh();
+                        });
+                    }
+                }
+            }
+            return this;
+        },
+        //Alternative method to set column definitions
+        setColumns: function(columns) {
+            var objColumn, that = this;
+            if ($.isArray(columns)) {
+                for (var i = 0, l = columns.length, column; l > i; i++) {
+                    column = columns[i];
+                    objColumn = new Column(column);
+                    objColumn.index = i;
+                    that.columns[i] = objColumn;
+                }
+            }
+            return this;
+        },
+        //Returns a reference to table column deifinition
+        column: function(c) {
+            var column, filter;
+            if ($.isArray(this.columns)) {
+                if (typeof(c) === NUMBER) {
+                    column = this.columns[c];
+                } else if (typeof(c) === STRING) {
+                    filter = jpathModule.filter(this.columns, "*[dataField=" + c + "]");
+                    column = filter.length ? filter[0] : null;
+                }
+            }
+            return column;
+        },
+        //Applies data filter (jPath expression). This method will apply pagination to the filtered subset.
+        //Ex.: fg.applyFilter("*[field == value]");
+        applyFilter: function(expr) {
+            activeFilters = {};
+            $.extend(this.state, {
+                selectedRows: [],
+                page: 1
+            });
+            this.config.dataFilter = expr;
+            this.trigger("onFilter", [expr]);
+            this.refresh();
+            return this;
+        },
+        //Clears data filter
+        clearFilter: function() {
+            activeFilters = {};
+            $.extend(this.state, {
+                selectedRows: [],
+                page: 1
+            });
+            delete this.config.dataFilter;
+            this.config.dataSource = this.config.origDataSource;
+            this.refresh();
+            return this;
+        },
+        //Returns HTML value of the grid
+        toHtmlString: function() {
+
+            var that = this,
+                buff = document.createDocumentFragment(),
+                tmp = buff.appendChild(domTemplates.div.cloneNode(FALSE)),
+                domTable = tmp.appendChild(domTemplates.table.cloneNode(FALSE)),
+                tHead = this.config.showHeader ? domTable.appendChild(domTemplates.thead.cloneNode(FALSE)) : null,
+                tBody = domTable.appendChild(domTemplates.tbody.cloneNode(FALSE)),
+                tFoot = this.config.showFooter ? domTable.appendChild(domTemplates.tfoot.cloneNode(FALSE)) : null,
+                selected = FALSE,
+                isOdd = FALSE,
+                isLast = FALSE,
+                rowsLimiter = this.config.topRows ? [0, this.config.topRows] : this.config.rowsRange ? this.config.rowsRange : [],
+                //todo: revise
+                dataRows, dataRow, len;
+
+            if (this.config.dataFilter && !isFilteredBy(this.config.dataFilter)) {
+                var tmpConf = $.extend({}, this.config.dataSource.config);
+                delete tmpConf.dataNode;
+                this.config.dataSource = new dataModule.DataStore(this.config.dataSource.filter(this.config.dataFilter), tmpConf);
+                this.config.dataSource.bind("onSort", function() {
+                    that.refresh();
+                });
+            }
+
+            if (typeof(this.config.dataSource) === OBJECT) {
+                if ("count" in this.config.dataSource) {
+                    this.state.pageCount = Math.ceil(this.config.dataSource.count() / this.config.pageSize);
+                }
+            }
+            //If actual dataset does not have as many pages as user requests, reset it (happens when dataSource is reloaded).
+            this.state.page = this.state.page > 0 && this.state.page <= this.config.dataSource.status.pageCount ? this.state.page : 1;
+            //Get data rows (paginated or all)
+            dataRows = (this.config.paginate) ? this.config.dataSource.getPage(this.state.page, this.config.pageSize) : this.config.dataSource.getRows.apply(this.config.dataSource, rowsLimiter);
+            len = dataRows && dataRows.length || 0;
+
+
+            //Set unique id for table
+            domTable.setAttribute("id", this.uniqueId);
+            //cellspacing
+            domTable.setAttribute("cellspacing", this.config.cellspacing || 0);
+            //tableClass
+            if (this.config.tableClass) {
+                domTable.setAttribute("class", this.config.tableClass);
+            }
+            //table summary
+            if (this.config.summary) {
+                domTable.setAttribute("summary", this.config.summary);
+            }
+            //table caption
+            if (this.config.caption) {
+                domTable.appendChild(domTemplates.caption.cloneNode(FALSE)).innerHTML = this.config.caption;
+            }
+            //show header
+            if (this.config.showHeader) {
+                tHead.appendChild(tableHeaderToDom.apply(this));
+                //Render header rows if any
+                if (len && this.headers.length) {
+                    for (var h = 0, hl = this.headers.length; hl > h; h++) {
+                        tHead.appendChild(renderMiscRow.apply(this, [this.headers[h]]));
+                    }
+                }
+            }
+            //Display data rows
+            if (len) {
+                if (len <= this.config.progressiveLoadMin) {
+                    this.state.isProgressiveLoad = FALSE;
+                    for (var idx = 0; len > idx; idx++) {
+                        dataRow = dataRows[idx];
+                        isOdd = idx % 2 === 1;
+                        isLast = (idx === (len - 1));
+                        selected = inArray(this.state.selectedRows, dataRow.__rowIndex__);
+                        tBody.appendChild(dataRowToDom.apply(this, [idx, dataRow, selected, isOdd, isLast]));
+                    }
+                } else {
+                    this.state.isProgressiveLoad = TRUE;
+                    this.state.progressiveDataWindow = dataRows;
+                }
+            } else {
+                //Reset flags and cached data
+                this.state.isProgressiveLoad = FALSE;
+                this.state.progressiveDataWindow = null;
+                //If there are no records, than display a message
+                tBody.appendChild(noRecordsToDom.apply(this));
+            }
+            //show footer
+            if (this.config.showFooter) {
+                //Render footer rows if any
+                if (len && this.footers.length) {
+                    for (var f = 0, fl = this.footers.length; fl > f; f++) {
+                        tFoot.appendChild(renderMiscRow.apply(this, [this.footers[f]]));
+                    }
+                }
+                tFoot.appendChild(renderNavigation.apply(this));
+            }
+
+            return tmp.innerHTML;
+        },
+        //This function resets statuses such as current page, selected rows, etc.
+        reset: function() {
+            $.extend(this.state, {
+                page: 1,
+                pageCount: 0,
+                selectedRows: [],
+                sortedColumns: []
+            });
+            return this;
+        },
+        //Draws grid on the page (called only once on initial load)
+        render: function(selector) {
+            HAS_RENDERED = false;
+            selector = typeof(selector) === STRING ? $(selector) : selector;
+            if (selector.length) {
+                this.reset();
+                selector.append(this.toHtmlString());
+                if (this.state.isProgressiveLoad) {
+                    //do lazy-loading of rows
+                    progressiveLoad.apply(this);
+                }
+                HAS_RENDERED = true;
+            }
+            return this;
+        },
+        //Refreshes grid content on the page
+        refresh: function() {
+            HAS_RENDERED = false;
+            var tbl = document.getElementById(this.uniqueId);
+            if (tbl) {
+                $(tbl).replaceWith(this.toHtmlString());
+                if (this.state.isProgressiveLoad) {
+                    //do lazy-loading of rows
+                    progressiveLoad.apply(this);
+                }
+
+                HAS_RENDERED = true;
+                this.trigger("onRefresh");
+            }
+            return this;
+        },
+        //Sorts table by one or more columns
+        // Ex.: fg.sortColumn({column: idx|name, order:"desc"} [, {column: idx|name, order:"desc"}]);
+        sortColumn: function(col) {
+            if (this.config.dataSource) {
+                var args = APS.apply(arguments);
+                updateColumnSortState.apply(this, [args, function() {
+                    this.config.dataSource.sort.apply(this.config.dataSource, args);
+                    this.trigger("onSort", this.state.sortedColumns);
+                }]);
+            }
+            return this;
+        },
+        //Jumps to a page (if paginated)
+        setPage: function(p) {
+            if (typeof(p) === NUMBER && this.config.paginate && (p > 0 && p <= this.state.pageCount) && (p !== this.state.page)) {
+                this.state.page = p;
+                this.refresh();
+                this.trigger("onPageChange", this.state.page);
+            }
+            return this;
+        },
+        //Toggles select state on the row
+        selectRow: function(r) {
+            var idx, $node, selected, prevState, row;
+            if (typeof(r) === NUMBER) {
+                idx = r;
+                $node = $(stringModule.printf("#$0 tr[index=$1]", this.uniqueId, idx)).first();
+            } else if (typeof(r) === OBJECT && r.nodeType) {
+                $node = $(r);
+                idx = +$node.attr("index");
+            }
+            row = this.config.dataSource.getByRowIndex(idx);
+            if (!this.config.multiSelect) {
+                //Remember and restore row state
+                prevState = $node.attr("data-" + SELECTED);
+                $(document.getElementById(this.uniqueId)).find("tr").removeAttr("data-" + SELECTED).removeClass(SELECTED);
+                if (prevState) {
+                    $node.attr("data-" + SELECTED, prevState);
+                }
+            }
+            if ($node.length) {
+                selected = $node.attr("data-" + SELECTED) || FALSE;
+                if (selected) {
+                    selected = FALSE;
+                    $node.removeClass(SELECTED).removeAttr("data-" + SELECTED);
+                    updateSelected.apply(this, [idx, selected]);
+                    this.trigger("onRowUnselect", [idx, row]);
+                } else {
+                    selected = TRUE;
+                    $node.addClass(SELECTED).attr("data-" + SELECTED, TRUE);
+                    updateSelected.apply(this, [idx, selected]);
+                    this.trigger("onRowSelect", [idx, row]);
+                }
+            }
+            return this;
+        },
+        unselectRow: function(r) {
+            var idx, $node, selected, prevState, row;
+            if (typeof(r) === NUMBER) {
+                idx = r;
+                $node = $(stringModule.printf("#$0 tr[index=$1]", this.uniqueId, idx)).first();
+            } else if (typeof(r) === OBJECT && r.nodeType) {
+                $node = $(r);
+                idx = +$node.attr("index");
+            }
+            row = this.config.dataSource.getByRowIndex(idx);
+            if ($node.length) {
+                selected = FALSE;
+                this.trigger("onRowUnselect", [idx, row]);
+                $node.removeClass(SELECTED).removeAttr("data-" + SELECTED);
+            }
+            updateSelected.apply(this, [idx, FALSE]);
+            return this;
+        },
+        //Inserts a header row (THEAD)
+        insertHeaderRow: function(row, style) {
+            if (typeof(row) === OBJECT || $.isArray(row)) {
+                this.headers.push({
+                    row: row,
+                    style: style
+                });
+            }
+            return this;
+        },
+        //Inserts a footer row (TFOOTER)(normally for aggregated functions)
+        insertFooterRow: function(row, style) {
+            if (typeof(row) === OBJECT || $.isArray(row)) {
+                this.footers.push({
+                    row: row,
+                    style: style
+                });
+            }
+            return this;
+        },
+        //Returns a reference to selected row(s)
+        selectedRows: function() {
+            var buff = [];
+            for (var i = 0, l = this.state.selectedRows.length, r; l > i; i++) {
+                r = +this.state.selectedRows[i];
+                buff[i] = this.config.dataSource.getByRowIndex(r);
+            }
+            return buff;
+        },
+        //Clears selected rows
+        clearSelected: function() {
+            this.state.selectedRows.length = 0;
+            this.refresh();
+            return this;
+        }
+    };
+
+    $.bindable(Grid, "onBeforeSort onSort onBeforeRefresh onRefresh onCellMouseOver onCellMouseOut onCellClick onCellDblClick onCellRightClick onRowMouseOver onRowMouseOut onRowClick onRowDblClick onRowRightClick onRowSelect onRowUnselect onPageChange");
+
+    jQuery.extend(exports, module);
+
+});
+

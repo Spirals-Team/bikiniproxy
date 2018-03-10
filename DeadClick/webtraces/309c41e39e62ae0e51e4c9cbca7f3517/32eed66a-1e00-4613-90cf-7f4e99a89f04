@@ -1,0 +1,60 @@
+// START: QUICK CART CONTROLLER
+app.controller('QuickCartCtrl', ['$scope', '$http', '$timeout', '$log', '$compile', 'httpRequest', 'pcService', function($scope, $http, $timeout, $log, $compile, httpRequest, pcService) {     
+
+    $scope.shoppingcart = [];
+    
+    $scope.$on('handleBroadcast', function(event, data){
+        $scope.shoppingcart = data;
+    });      
+    function init() {
+        if ($scope.shoppingcart == '') {
+            pcService.getShoppingCart('', false); 
+        }
+    };
+    //init();
+    
+    $scope.displayCartTotal = function (val) {
+        if ($scope.shoppingcart.totalQuantity > 0) {
+            return true;
+        } else {
+            return false;
+        }
+    };
+
+    $scope.IsEmpty = function (val) {
+        if (val) {
+            return false;
+        } else {
+            return true;
+        }
+    };
+
+    $scope.Evaluate = function (val) {
+        if (val == 'true' || val == true) {
+            return true;
+        } else {
+            return false;
+        }
+    };
+
+    $scope.viewCart = function () {
+        window.location = "viewcart.asp";
+    };
+
+}]);
+// END: QUICK CART CONTROLLER
+
+
+// SmallQuickCart.asp
+$pc(function () {
+
+    $pc('#quickCartContainer').hover(
+        function () {
+            $pc('#pcSmallQuickCartContent', this).stop().slideDown(100);
+        },
+        function () {
+            $pc('#pcSmallQuickCartContent', this).stop().slideUp(100);
+        }
+    );
+
+});

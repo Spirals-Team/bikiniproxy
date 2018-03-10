@@ -1,0 +1,1099 @@
+
+var responsive = {
+screen : {
+xs : {max: 767},
+sm : {min: 768, max: 991},
+md : {min: 992, max: 1199},
+lg : {min: 1200}
+}, 
+width: function() {
+return window.innerWidth || document.documentElement.clientWidth || document.body.clientWidth;
+},
+height: function() {
+return window.innerHeight || document.documentElement.clientHeight || document.body.clientHeight;
+},
+match: function(mediaQuery, fallback) {
+if (typeof window.matchMedia === 'function') {
+return window.matchMedia(mediaQuery);
+} else {
+
+ var mql = {
+matches: fallback(),
+update: function() {
+var was = this.matches;
+this.matches = fallback()
+if (was != this.matches) {
+for (var i = 0; i < this.listeners.length; i++) {
+this.listeners[i](this);
+}
+}
+},
+listeners: [],
+addListener: function(listener) {
+if (typeof listener === 'function') {
+this.listeners.push(listener);
+}
+}
+};
+window.addEventListener('resize', mql.update);
+return mql;
+}
+},
+max: function(max) {
+return this.match('(max-width: '+max+'px)', function() {
+return responsive.width() <= max;
+});
+},
+min: function(min) {
+return this.match('(min-width: '+min+'px)', function() {
+return responsive.width() >= min;
+});
+},
+between: function(min, max) {
+return this.match('(min-width: '+min+'px) and (max-width: '+max+'px)', function() {
+return responsive.width() >= min && responsive.width() <= max;
+});
+}
+}
+responsive.sml = responsive.max(responsive.screen.sm.max);
+responsive.mdg = responsive.min(responsive.screen.md.min);
+responsive.smg = responsive.min(responsive.screen.sm.min);
+responsive.xs = responsive.max(responsive.screen.xs.max);
+responsive.sm = responsive.between(responsive.screen.sm.min, responsive.screen.sm.max);
+responsive.md = responsive.between(responsive.screen.md.min, responsive.screen.md.max);
+responsive.lg = responsive.min(responsive.screen.lg.min);
+responsive.current = function() {
+if (responsive.xs.matches) {
+return 'xs';
+} else if (responsive.sm.matches) {
+return 'sm';
+} else if (responsive.md.matches) {
+return 'md';
+} else {
+return 'lg';
+}
+}();
+responsive.resized = function(to) {
+if (typeof window.trackEvent === 'function') {
+trackEvent('responsive', 'resize', this.current + '-to-' + to, null, true);
+}
+this.current = to;
+}
+
+responsive.xs.addListener(function(mql) {
+if (mql.matches) {
+responsive.resized('xs');
+}
+});
+responsive.sm.addListener(function(mql) {
+if (mql.matches) {
+responsive.resized('sm');
+}
+});
+responsive.md.addListener(function(mql) {
+if (mql.matches) {
+responsive.resized('md');
+}
+});
+responsive.lg.addListener(function(mql) {
+if (mql.matches) {
+responsive.resized('lg');
+}
+});
+
+function trackLinkClickPageview(evt){
+_trackLinkClick(evt, function(link){_gaq.push(['_trackPageview', '/outgoing/'+link])});
+}
+function trackLinkClickEvent(evt) {
+_trackLinkClick(evt, function(link){trackEvent("outgoing", link)})
+}
+function trackLinkClickDebug(evt) {
+_trackLinkClick(evt, function(link){console.debug("tracking: "+link)})
+}
+function _trackLinkClick(e, tracker) {
+var link;
+var label;
+if (!e) var e = window.event;
+if (e.target) link = e.target;
+else if (e.srcElement) link = e.srcElement;
+if (link.nodeType == 3) 
+ link = link.parentNode;
+while (link && link.nodeName != 'A') {
+
+ if (link.className && link.className.indexOf("trackLabel") > -1) {
+label = link.innerHTML;
+}
+link = link.parentNode;
+}
+if(!link || link.href.indexOf(location.host) > -1 || link.href.indexOf('javascript:') > -1) return
+if (link.className && link.className.indexOf("trackLabel") > -1) {
+label = link.innerHTML;
+}
+var toTrack = link.href.replace(/https?:\/\//g, "").replace(/\/$/g, "");
+if (toTrack.indexOf('/') < 0) {
+
+ toTrack = toTrack + '/'
+}
+if (label) {
+toTrack = toTrack + (toTrack.indexOf('?') > 0 ? '&' : '?') + "trackLabel=" + encodeURIComponent(label);
+}
+try{
+tracker(toTrack);
+} catch(err){
+if (window.console) window.console.debug("error: " + err)
+}
+}
+function buildCustomPath(path, params) {
+if (!params && !path) return;
+var cp = !path ? window.location.pathname : path;
+var search = window.location.search;
+if (search) cp = cp + search;
+if (params) cp = cp + (search ? '&' : '?') + params;
+
+
+return cp;
+}
+function createTransaction(orderId, storeName, priceTotal, tax, shipping, city, state, country) {
+_gaq.push(['_addTrans',
+orderId,
+storeName,
+priceTotal,
+tax,
+shipping,
+city,
+state,
+country
+]);
+}
+function addItem(orderId, asin, productName, category, unitPrice, quantity) {
+_gaq.push(['_addItem',
+orderId, 
+ asin, 
+ productName, 
+ category, 
+ unitPrice, 
+ quantity 
+ ]);
+}
+function submitTransaction() {
+_gaq.push(['_trackTrans']);
+}
+function trackEvent(category, action, label, value) {
+_gaq.push(['_trackEvent', category, action, label, value]);
+}
+
+
+if (typeof(Wicket) == "undefined")
+Wicket = { };
+Wicket.AutoCompleteSettings = {
+enterHidesWithNoSelection : false
+};
+Wicket.AutoComplete=function(elementId, callbackUrl, cfg, indicatorId){
+var KEY_TAB=9;
+var KEY_ENTER=13;
+var KEY_ESC=27;
+var KEY_LEFT=37;
+var KEY_UP=38;
+var KEY_RIGHT=39;
+var KEY_DOWN=40;
+var KEY_SHIFT=16;
+var KEY_CTRL=17;
+var KEY_ALT=18;
+var selected=-1; 
+ var elementCount=0; 
+ var visible=0; 
+ var mouseactive=0;	
+	var	hidingAutocomplete=0; 
+
+
+ var objonkeydown;
+var objonkeyup;
+var objonkeypress;
+var objonchange;
+var objonchangeoriginal;
+var objonfocus;
+var initialElement;
+
+	
+	var initialDelta = -1;
+
+	var usefulDimensionsInitialized = false;
+var containerBorderWidths = [0, 0];
+var scrollbarSize = 0;
+var selChSinceLastRender = false;
+
+ 
+ 
+ var lastStablePopupBounds = [0, 0, 0, 0];
+var ignoreOneFocusGain = false; 
+ 
+
+	
+	var localThrottler = new Wicket.Throttler(true);
+var throttleDelay = cfg.throttleDelay;
+function initialize(){
+var isShowing = false;
+
+ 
+ 
+ 
+ var choiceDiv=document.getElementById(getMenuId());
+if (choiceDiv != null) {
+isShowing = choiceDiv.showingAutocomplete;
+choiceDiv.parentNode.parentNode.removeChild(choiceDiv.parentNode);
+}
+var obj=wicketGet(elementId);
+initialElement = obj;
+objonkeydown=obj.onkeydown;
+objonkeyup=obj.onkeyup;
+objonkeypress=obj.onkeypress;
+objonfocus=obj.onfocus;
+
+ objonchangeoriginal=obj.onchange;
+obj.onchange=function(event){
+event = Wicket.fixEvent(event);
+if(mouseactive==1)return false;
+if(typeof objonchangeoriginal=="function") return objonchangeoriginal.apply(this,[event]);
+}
+objonchange=obj.onchange;
+Wicket.Event.add(obj,'blur',function(event){ 
+event = Wicket.fixEvent(event);
+if(mouseactive==1){
+ignoreOneFocusGain = true;
+Wicket.$(elementId).focus();
+return killEvent(event);
+}
+window.setTimeout( hideAutoComplete, 500);
+}); 
+obj.onfocus=function(event){
+event = Wicket.fixEvent(event);
+if (mouseactive==1) {
+ignoreOneFocusGain = false;
+return killEvent(event);
+}
+var input = event.target;
+if (!ignoreOneFocusGain && (cfg.showListOnFocusGain || (cfg.showListOnEmptyInput && (input.value==null || input.value==""))) && visible==0) {
+getAutocompleteMenu().showingAutocomplete = true;
+if (cfg.showCompleteListOnFocusGain) {
+updateChoices(true);
+} else {
+updateChoices();
+}
+}
+ignoreOneFocusGain = false;
+if(typeof objonfocus=="function") return objonfocus.apply(this,[event]);
+}
+obj.onkeydown=function(event){
+event = Wicket.fixEvent(event);
+switch(wicketKeyCode(event)){
+case KEY_UP:
+if(selected>-1) setSelected(selected-1);
+if(selected==-1){
+hideAutoComplete();
+} else {
+render(true, false);
+}
+if(Wicket.Browser.isSafari())return killEvent(event);
+break;
+case KEY_DOWN:
+if(selected<elementCount-1){
+setSelected(selected+1);
+}
+if(visible==0){
+updateChoices();
+} else {
+render(true, false);
+showAutoComplete();
+}
+if(Wicket.Browser.isSafari())return killEvent(event);
+break;
+case KEY_ESC:
+if (visible==1) {
+hideAutoComplete();
+return killEvent(event);
+}
+break;
+case KEY_TAB:
+case KEY_ENTER:
+if(selected > -1) {
+var value = getSelectedValue();
+value = handleSelection(value);
+hideAutoComplete();
+hidingAutocomplete = 1; 
+if(value) {
+obj.value = value;
+if(typeof objonchange=="function") objonchange.apply(this,[event]);
+}
+} else if (Wicket.AutoCompleteSettings.enterHidesWithNoSelection) {
+hideAutoComplete();
+hidingAutocomplete = 1;
+}
+mouseactive = 0;
+if (typeof objonkeydown=="function") return objonkeydown.apply(this,[event]);
+return true;
+break;
+default:
+}
+}
+obj.onkeyup=function(event){
+event = Wicket.fixEvent(event);
+switch(wicketKeyCode(event)){
+case KEY_TAB:
+case KEY_ENTER:
+return killEvent(event);
+case KEY_UP:
+case KEY_DOWN:
+case KEY_ESC:
+case KEY_RIGHT:
+case KEY_LEFT:
+case KEY_SHIFT:
+case KEY_ALT:
+case KEY_CTRL:
+break;
+default:
+updateChoices();
+}
+if(typeof objonkeyup=="function") return objonkeyup.apply(this,[event]);
+}
+obj.onkeypress=function(event){
+event = Wicket.fixEvent(event);
+if(wicketKeyCode(event)==KEY_ENTER){
+if(selected>-1 || hidingAutocomplete==1){
+hidingAutocomplete=0;
+return killEvent(event);
+}
+}
+if(typeof objonkeypress=="function") return objonkeypress.apply(this,[event]);
+}
+if (Wicket.Focus.getFocusedElement() === obj && isShowing == true)
+{
+
+ if (cfg.showListOnFocusGain) {
+if (cfg.showCompleteListOnFocusGain) {
+updateChoices(true);
+} else {
+updateChoices();
+}
+}
+}
+}
+function clearMenu()
+{
+
+ 
+ 
+ 
+ var choiceDiv=document.getElementById(getMenuId());
+if (choiceDiv != null) {
+choiceDiv.parentNode.parentNode.removeChild(choiceDiv.parentNode);
+}
+}
+function setSelected(newSelected) {
+if (newSelected != selected) {
+selected = newSelected;
+selChSinceLastRender = true;
+}
+}
+function handleSelection(input) {
+var attr = getSelectableElement(selected).attributes['onselect'];
+return attr ? eval(attr.value) : input;
+}
+function getSelectableElements() {
+var menu = getAutocompleteMenu();
+var firstChild = menu.firstChild;
+var selectableElements = [];
+if (firstChild.tagName.toLowerCase() == 'table') {
+var selectableInd=0;
+for (var i = 0; i < firstChild.childNodes.length; i++) {
+var tbody = firstChild.childNodes[i];
+for (var j = 0; j < tbody.childNodes.length; j++) {
+selectableElements[selectableInd++]=tbody.childNodes[j];
+}
+}
+return selectableElements;
+} else {
+return firstChild.childNodes;
+}
+}
+function getSelectableElement(selected) {
+var menu = getAutocompleteMenu();
+var firstChild = menu.firstChild;
+if (firstChild.tagName.toLowerCase() == 'table') {
+var selectableInd=0;
+for (var i = 0; i < firstChild.childNodes.length; i++) {
+var tbody = firstChild.childNodes[i];
+for (var j = 0; j < tbody.childNodes.length; j++) {
+if (selectableInd==selected) {
+return tbody.childNodes[j];
+}
+selectableInd++
+}
+}
+} else {
+return firstChild.childNodes[selected];
+}
+}
+function getMenuId() {
+return elementId+"-autocomplete";
+}
+function getAutocompleteMenu() {
+var choiceDiv=document.getElementById(getMenuId());
+if (choiceDiv==null) {
+var container = document.createElement("div");
+container.className ="wicket-aa-container";
+if(cfg.className)
+container.className += ' ' + cfg.className;
+document.body.appendChild(container);
+container.style.display="none";
+container.style.overflow="auto";
+container.style.position="absolute";
+container.style.margin="0px"; 
+ container.style.padding="0px"; 
+ container.id=getMenuId()+"-container";
+container.show = function() { wicketShow(this.id) };
+container.hide = function() { wicketHide(this.id) };
+choiceDiv=document.createElement("div");
+container.appendChild(choiceDiv);
+choiceDiv.id=getMenuId();
+choiceDiv.className="wicket-aa";
+
+ container.onmouseout=function() {mouseactive=0;};
+container.onmousemove=function() {mouseactive=1;};
+}
+return choiceDiv;
+}
+function getAutocompleteContainer() {
+var node=getAutocompleteMenu().parentNode;
+return node;
+}
+function killEvent(event){
+if(!event)event=window.event;
+if(!event)return false;
+if(event.cancelBubble!=null){
+event.cancelBubble=true;
+}
+if(event.returnValue){
+event.returnValue=false;
+}
+if(event.stopPropagation){
+event.stopPropagation();
+}
+if(event.preventDefault){
+event.preventDefault();
+}
+return false;
+}
+function updateChoices(showAll){
+setSelected(-1);
+if (showAll) {
+localThrottler.throttle(getMenuId(), throttleDelay, actualUpdateChoicesShowAll);
+} else {
+localThrottler.throttle(getMenuId(), throttleDelay, actualUpdateChoices);
+}
+}
+function actualUpdateChoicesShowAll()
+{
+showIndicator();
+var request = new Wicket.Ajax.Request(callbackUrl+"&q=", doUpdateAllChoices, false, true, false, "wicket-autocomplete|d");
+request.get();
+}
+function actualUpdateChoices()
+{
+showIndicator();
+var value = wicketGet(elementId).value;
+var request = new Wicket.Ajax.Request(callbackUrl+(callbackUrl.indexOf("?")>-1 ? "&" : "?") + "q="+processValue(value), doUpdateChoices, false, true, false, "wicket-autocomplete|d");
+request.get();
+}
+function showIndicator() {
+if (indicatorId!=null) {
+Wicket.$(indicatorId).style.display='';
+}
+}
+function hideIndicator() {
+if (indicatorId!=null) {
+Wicket.$(indicatorId).style.display='none';
+}
+}
+function processValue(param) {
+return (encodeURIComponent)?encodeURIComponent(param):escape(param);
+}
+function showAutoComplete(){
+var input = wicketGet(elementId);
+var container = getAutocompleteContainer();
+var index=getOffsetParentZIndex(elementId);
+container.show();
+if (!isNaN(new Number(index))) {
+container.style.zIndex=(new Number(index)+1);
+}
+if (!usefulDimensionsInitialized)
+{
+initializeUsefulDimensions(input, container);
+}
+if (cfg.adjustInputWidth) {
+var newW = input.offsetWidth-containerBorderWidths[0];
+container.style.width = (newW >= 0 ? newW : input.offsetWidth)+'px';
+}
+calculateAndSetPopupBounds(input, container);
+if (visible == 0) {
+visible = 1;
+hideShowCovered(true, lastStablePopupBounds[0], lastStablePopupBounds[1], lastStablePopupBounds[2], lastStablePopupBounds[3]);
+}
+}
+function initializeUsefulDimensions(input, container) {
+usefulDimensionsInitialized = true;
+
+ if (typeof (container.clientWidth) != "undefined" && typeof (container.clientHeight) != "undefined" && container.clientWidth > 0 && container.clientHeight > 0) {
+var tmp = container.style.overflow; 
+ container.style.overflow = "visible";
+containerBorderWidths[0] = container.offsetWidth - container.clientWidth;
+containerBorderWidths[1] = container.offsetHeight - container.clientHeight;
+if (cfg.useSmartPositioning) {
+container.style.overflow = "scroll";
+scrollbarSize = container.offsetWidth - container.clientWidth - containerBorderWidths[0];
+}
+container.style.overflow = tmp;
+}
+}
+function hideAutoComplete(){
+visible=0;
+setSelected(-1);
+mouseactive=0;
+var container = getAutocompleteContainer();
+if (container)
+{
+hideShowCovered(false, lastStablePopupBounds[0], lastStablePopupBounds[1], lastStablePopupBounds[2], lastStablePopupBounds[3]);
+container.hide();
+if (!cfg.adjustInputWidth && container.style.width != "auto") {
+container.style.width = "auto"; 
+ }
+}
+}
+function getWindowWidthAndHeigth() {
+var myWidth = 0, myHeight = 0;
+if( typeof( window.innerWidth ) == 'number' ) {
+
+ myWidth = window.innerWidth;
+myHeight = window.innerHeight;
+} else if( document.documentElement && ( document.documentElement.clientWidth || document.documentElement.clientHeight ) ) {
+
+ myWidth = document.documentElement.clientWidth;
+myHeight = document.documentElement.clientHeight;
+} else if( document.body && ( document.body.clientWidth || document.body.clientHeight ) ) {
+
+ myWidth = document.body.clientWidth;
+myHeight = document.body.clientHeight;
+}
+return [ myWidth, myHeight ];
+}
+function getWindowScrollXY() {
+var scrOfX = 0, scrOfY = 0;
+if( typeof( window.pageYOffset ) == 'number' ) {
+
+ scrOfY = window.pageYOffset;
+scrOfX = window.pageXOffset;
+} else if( document.body && ( document.body.scrollLeft || document.body.scrollTop ) ) {
+
+ scrOfY = document.body.scrollTop;
+scrOfX = document.body.scrollLeft;
+} else if( document.documentElement && ( document.documentElement.scrollLeft || document.documentElement.scrollTop ) ) {
+
+ scrOfY = document.documentElement.scrollTop;
+scrOfX = document.documentElement.scrollLeft;
+}
+return [ scrOfX, scrOfY ];
+}
+function calculateAndSetPopupBounds(input, popup)
+{
+var leftPosition=0;
+var topPosition=0;
+var inputPosition=getPosition(input);
+if (cfg.useSmartPositioning) {
+
+ 
+ if (popup.style.width == "auto") {
+popup.style.left = "0px"; 
+ popup.style.top = "0px";
+}
+var windowScrollXY = getWindowScrollXY();
+var windowWH = getWindowWidthAndHeigth();
+var windowScrollX = windowScrollXY[0];
+var windowScrollY = windowScrollXY[1];
+var windowWidth = windowWH[0];
+var windowHeight = windowWH[1];
+var dx1 = windowScrollX + windowWidth - inputPosition[0] - popup.offsetWidth;
+var dx2 = inputPosition[0] + input.offsetWidth - popup.offsetWidth - windowScrollX;
+if (popup.style.width == "auto" && dx1 < 0 && dx2 < 0) {
+
+ 
+ 
+ var newW = popup.offsetWidth + Math.max(dx1, dx2) - containerBorderWidths[0];
+popup.style.width = (newW >= 0 ? newW : popup.offsetWidth + Math.max(dx1, dx2))+'px';
+dx1 = windowScrollX + windowWidth - inputPosition[0] - popup.offsetWidth;
+dx2 = inputPosition[0] + input.offsetWidth - popup.offsetWidth - windowScrollX;
+}
+var dy1 = windowScrollY + windowHeight - inputPosition[1] - input.offsetHeight - popup.offsetHeight;
+var dy2 = inputPosition[1] - popup.offsetHeight - windowScrollY;
+if (dy1 < 0 && dy2 < 0) {
+
+ var newH = popup.offsetHeight + Math.max(dy1, dy2) - containerBorderWidths[1];
+popup.style.height = (newH >= 0 ? newH : popup.offsetHeight + Math.max(dy1, dy2))+'px';
+var dy1 = windowScrollY + windowHeight - inputPosition[1] - input.offsetHeight - popup.offsetHeight;
+var dy2 = inputPosition[1] - popup.offsetHeight - windowScrollY;
+}
+
+ if (dx1 < 0 && dx1 < dx2) {
+if (dy1 < 0 && dy1 < dy2) {
+
+ leftPosition = inputPosition[0] + input.offsetWidth - popup.offsetWidth;
+topPosition = inputPosition[1] - popup.offsetHeight;
+} else {
+
+ leftPosition = inputPosition[0] + input.offsetWidth - popup.offsetWidth;
+topPosition = inputPosition[1] + input.offsetHeight;
+}
+} else {
+if (dy1 < 0 && dy1 < dy2) {
+
+ leftPosition = inputPosition[0];
+topPosition = inputPosition[1] - popup.offsetHeight;
+} else {
+
+ leftPosition = inputPosition[0];
+topPosition = inputPosition[1] + input.offsetHeight;
+}
+}
+if (popup.style.width == "auto") {
+var newW = popup.offsetWidth - containerBorderWidths[0];
+popup.style.width = (newW >= 0 ? (newW + (popup.scrollWidth-popup.clientWidth)) : popup.offsetWidth)+'px';
+}
+} else {
+leftPosition = inputPosition[0];
+topPosition = inputPosition[1] + input.offsetHeight;
+}
+popup.style.left=leftPosition+'px';
+popup.style.top=topPosition+'px';
+if (visible == 1 &&
+(lastStablePopupBounds[0] != popup.offsetLeft ||
+lastStablePopupBounds[1] != popup.offsetTop ||
+lastStablePopupBounds[2] != popup.offsetWidth ||
+lastStablePopupBounds[3] != popup.offsetHeight)) {
+hideShowCovered(false, lastStablePopupBounds[0], lastStablePopupBounds[1], lastStablePopupBounds[2], lastStablePopupBounds[3]); 
+ hideShowCovered(true, popup.offsetLeft, popup.offsetTop, popup.offsetWidth, popup.offsetHeight); 
+ }
+lastStablePopupBounds = [popup.offsetLeft, popup.offsetTop, popup.offsetWidth, popup.offsetHeight];
+}
+function getPosition(obj) {
+var leftPosition = obj.offsetLeft || 0;
+var topPosition = obj.offsetTop || 0;
+obj = obj.offsetParent;
+while (obj && obj != document.documentElement && obj != document.body) {
+topPosition += obj.offsetTop || 0;
+topPosition -= obj.scrollTop || 0;
+leftPosition += obj.offsetLeft || 0;
+leftPosition -= obj.scrollLeft || 0;
+obj = obj.offsetParent;
+}
+return [leftPosition,topPosition];
+}
+function doUpdateAllChoices(resp) {
+doUpdateChoices(resp,-1);
+}
+function doUpdateChoices(resp, defaultSelection){
+getAutocompleteMenu().showingAutocomplete = false;
+
+ var input=wicketGet(elementId);
+if ((input != initialElement) || ((Wicket.Focus.getFocusedElement() != input) || !cfg.showListOnEmptyInput && (input.value==null || input.value==""))) {
+hideAutoComplete();
+Wicket.Ajax.invokePostCallHandlers();
+hideIndicator();
+if (input != initialElement)
+{
+clearMenu();
+}
+return;
+}
+var element = getAutocompleteMenu();
+if (!cfg.adjustInputWidth && element.parentNode && element.parentNode.style.width != "auto") {
+element.parentNode.style.width = "auto"; 
+ selChSinceLastRender = true; 
+ }
+element.innerHTML=resp;
+var selectableElements = getSelectableElements();
+if(selectableElements) {
+elementCount=selectableElements.length;
+var clickFunc = function(event) {
+event = Wicket.fixEvent(event);
+mouseactive = 0;
+var value = getSelectedValue();
+var input = wicketGet(elementId);
+if(value = handleSelection(value)) {
+input.value = value;
+if(typeof objonchange=="function") objonchange.apply(input,[event]);
+}
+hideAutoComplete();
+if (Wicket.Focus.getFocusedElement() != input) {
+ignoreOneFocusGain = true;
+input.focus();
+}
+};
+var mouseOverFunc = function(event) {
+event = Wicket.fixEvent(event);
+setSelected(getElementIndex(this));
+render(false, false); 
+ showAutoComplete();
+};
+for(var i = 0;i < elementCount; i++) {
+var node = selectableElements[i];
+node.onclick = clickFunc;
+node.onmouseover = mouseOverFunc;
+}
+} else {
+elementCount=0;
+}
+if(elementCount>0){
+if(cfg.preselect==true){
+var selectedIndex = defaultSelection?defaultSelection:0;
+for(var i = 0;i < elementCount; i++) {
+var node = selectableElements[i];
+var attr= node.attributes['textvalue'];
+var value;
+if (attr==undefined) {
+value=node.innerHTML;
+} else {
+value=attr.value;
+}
+if (stripHTML(value) == input.value)
+{
+selectedIndex = i;
+break;
+}
+}
+setSelected(selectedIndex);
+} 
+showAutoComplete();
+} else {
+hideAutoComplete();
+}
+render(false, true);
+scheduleEmptyCheck();
+Wicket.Log.info("Response processed successfully.");
+Wicket.Ajax.invokePostCallHandlers();
+hideIndicator();
+
+ if(Wicket.Browser.isIE()) {
+var range = document.selection.createRange();
+if (range != null)
+range.select();
+}
+}
+function scheduleEmptyCheck() {
+window.setTimeout(function() {
+var input=wicketGet(elementId);
+if (!cfg.showListOnEmptyInput && (input.value==null || input.value=="")) {
+hideAutoComplete();
+}
+}, 100);
+}
+function getSelectedValue(){
+var element=getAutocompleteMenu();
+var selectableElement = getSelectableElement(selected);
+var attr=selectableElement.attributes['textvalue'];
+var value;
+if (attr==undefined) {
+value=selectableElement.innerHTML;
+} else {
+value=attr.value;
+}
+return stripHTML(value);
+}
+function getElementIndex(element) {
+var selectableElements = getSelectableElements();
+for(var i=0;i<selectableElements.length;i++){
+var node=selectableElements[i];
+if(node==element)return i;
+}
+return -1;
+}
+function stripHTML(str) {
+return str.replace(/<[^>]+>/g,"");
+}
+function adjustScrollOffset(menu, item) { 
+ if (item.offsetTop + item.offsetHeight > menu.scrollTop + menu.offsetHeight) {
+menu.scrollTop = item.offsetTop + item.offsetHeight - menu.offsetHeight;
+} else
+
+ if (item.offsetTop < menu.scrollTop) {
+menu.scrollTop = item.offsetTop;
+}
+}
+function render(adjustScroll,adjustHeight){
+var menu=getAutocompleteMenu();
+var height=0;
+var node=getSelectableElement(0);
+var re = /\bselected\b/gi;
+var sizeAffected = false;
+for(var i=0;i<elementCount;i++)
+{
+var origClassNames = node.className;
+var classNames = origClassNames.replace(re, "");
+if(selected==i){
+classNames += " selected";
+if (adjustScroll) adjustScrollOffset(menu.parentNode, node);
+}
+if (classNames != origClassNames) {
+node.className = classNames;
+}
+if (cfg.maxHeight > -1)
+height+=node.offsetHeight;
+node = node.nextSibling;
+}
+if (cfg.maxHeight > -1) {
+if (initialDelta == -1)
+{
+
+ initialDelta = menu.parentNode.offsetHeight - height;
+}
+if (height + initialDelta > cfg.maxHeight) {
+var newH = cfg.maxHeight - containerBorderWidths[1];
+menu.parentNode.style.height = (newH >= 0 ? newH : cfg.maxHeight) + "px";
+sizeAffected = true;
+} else if (menu.parentNode.style.height != "auto") { 
+ 
+ if (adjustHeight)
+{
+menu.parentNode.style.height = "auto"; 
+ }
+sizeAffected = true;
+}
+}
+if (cfg.useSmartPositioning && !cfg.adjustInputWidth && menu.parentNode.style.width != "auto" && selChSinceLastRender) {
+
+ selChSinceLastRender = false;
+menu.parentNode.style.width = "auto";
+sizeAffected = true;
+}
+if (sizeAffected) calculateAndSetPopupBounds(wicketGet(elementId), menu.parentNode); 
+ }
+
+ function getStyle(obj,cssRule) {
+var cssRuleAlt = cssRule.replace(/\-(\w)/g,function(strMatch,p1){return p1.toUpperCase();});
+var value=obj.style[cssRuleAlt];
+if (!value) {
+if (document.defaultView && document.defaultView.getComputedStyle) {
+value = document.defaultView.getComputedStyle(obj,"").getPropertyValue(cssRule);
+}
+else if (obj.currentStyle)
+{
+value=obj.currentStyle[cssRuleAlt];
+}
+}
+return value;
+}
+function isVisible(obj) {
+return getStyle(obj,"visibility");
+}
+function getOffsetParentZIndex(obj) {
+obj=typeof obj=="string"?Wicket.$(obj):obj;
+obj=obj.offsetParent;
+var index="auto";
+do {
+var pos=getStyle(obj,"position"); 
+if(pos=="relative"||pos=="absolute"||pos=="fixed") {
+index=getStyle(obj,"z-index");
+}
+obj=obj.offsetParent; 
+} while (obj && index == "auto");
+return index;
+}
+function hideShowCovered(popupVisible, acLeftX, acTopY, acWidth, acHeight) {
+if (!cfg.useHideShowCoveredIEFix || (!/msie/i.test(navigator.userAgent) && !/opera/i.test(navigator.userAgent))) {
+return;
+}
+var hideTags=new Array("select","iframe","applet");
+var acRightX = acLeftX + acWidth;
+var acBottomY = acTopY + acHeight;
+for (var j=0;j<hideTags.length;j++) {
+var tagsFound=document.getElementsByTagName(hideTags[j]);
+for (var i=0; i<tagsFound.length; i++){
+var tag=tagsFound[i];
+var p=getPosition(tag); 
+ var leftX=p[0];
+var rightX=leftX+tag.offsetWidth;
+var topY=p[1];
+var bottomY=topY+tag.offsetHeight;
+if (!tag.wicket_element_visibility) {
+tag.wicket_element_visibility=isVisible(tag);
+}
+if (popupVisible==0 || (leftX>acRightX) || (rightX<acLeftX) || (topY>acBottomY) || (bottomY<acTopY)) {
+tag.style.visibility = tag.wicket_element_visibility;
+} else {
+tag.style.visibility = "hidden";
+}
+}
+}
+}
+initialize();
+}
+
+var baseRegion = null;
+var currRegion = null;
+var resetHandler = null;
+function drawRegion(region, zoom) {
+var data = new google.visualization.DataTable();
+data.addRows(region.points.length);
+for (i = 0; i < region.columns.length; i++) {
+var col = region.columns[i];
+data.addColumn(col.type, col.label);
+}
+for (i = 0; i < region.points.length; i++) {
+var point = region.points[i];
+for (j = 0; j < point.values.length; j++) {
+var val = point.values[j];
+data.setValue(i, j, val);
+}
+}
+var options = {};
+options['region'] = (undefined === zoom) ? region.region : zoom;
+options['dataMode'] = 'regions';
+options['width'] = '670px';
+options['height'] = '420px';
+options['showZoomOut'] = !(region.region == 'world' && undefined === zoom)
+var newCurrRegion = options['region'];
+if (newCurrRegion.length == 2) {
+document.getElementById('zoomSelect').selectedIndex = -1;
+}
+if (resetHandler != null && currRegion != null && currRegion.length == 2 && newCurrRegion.length > 2) {
+eval(resetHandler);
+}
+currRegion = newCurrRegion;
+var container = document.getElementById('map_canvas');
+var geomap = new google.visualization.GeoMap(container);
+geomap.draw(data, options); 
+google.visualization.events.addListener(geomap, 'regionClick', function(e) { eval(region.handler) });
+google.visualization.events.addListener(geomap, 'zoomOut', function(e) { drawRegion(baseRegion) });
+}
+function drawChartRegion(region, zoom) {
+var data = new google.visualization.DataTable();
+data.addRows(region.points.length);
+for (i = 0; i < region.columns.length; i++) {
+var col = region.columns[i];
+data.addColumn(col.type, col.label);
+}
+for (i = 0; i < region.points.length; i++) {
+var point = region.points[i];
+for (j = 0; j < point.values.length; j++) {
+var val = point.values[j];
+data.setValue(i, j, val);
+}
+}
+var options = {};
+options['region'] = (undefined === zoom) ? region.region : zoom;
+options['resolution'] = (undefined === region.resolution) ? 'countries' : region.resolution;
+options['dataMode'] = 'regions';
+options['width'] = '670px';
+options['height'] = '420px';
+options['showZoomOut'] = !(region.region == 'world' && undefined === zoom);
+var newCurrRegion = options['region'];
+if (newCurrRegion.length == 2) {
+document.getElementById('zoomSelect').selectedIndex = -1;
+}
+if (resetHandler != null && currRegion != null && currRegion.length == 2 && newCurrRegion.length > 2) {
+eval(resetHandler);
+}
+currRegion = newCurrRegion;
+var container = document.getElementById('map_canvas');
+var geomap = new google.visualization.GeoChart(container);
+var formatter = new google.visualization.PatternFormat('{1}'); 
+formatter.format(data, [0, 2]);
+var view = new google.visualization.DataView(data);
+view.setColumns([0, 1]);
+geomap.draw(view, options); 
+google.visualization.events.addListener(geomap, 'regionClick', function(e) { eval(region.handler) });
+google.visualization.events.addListener(geomap, 'zoomOut', function(e) { drawRegion(baseRegion) });
+}
+function initRegion(region, reset) {
+baseRegion = region;
+resetHandler = reset;
+
+	drawChartRegion(region);
+}
+function onCountryClick(clickedRegion, callbackURL) {
+if (!clickedRegion.region || clickedRegion.region.length <= 2) onRegionClick(clickedRegion, callbackURL)
+}
+function onRegionClick(clickedRegion, callbackURL) {
+var wcall = wicketAjaxGet(callbackURL + '&region=' + clickedRegion.region, function() { }, function() { });
+}
+ 
+function drawPieChart(eleId, chartData, options, callbackURL, errorHandler) {
+var data = new google.visualization.DataTable();
+data.addColumn('string', chartData.nameLabel);
+data.addColumn('number', chartData.numberLabel);
+data.addRows(chartData.values.length);
+for (i = 0; i < chartData.values.length; i++) {
+var val = chartData.values[i];
+data.setValue(i, 0, val.label);
+data.setValue(i, 1, val.value);
+}
+var chart = new google.visualization.PieChart(document.getElementById(eleId));
+applyChartData(chart, data, options, callbackURL, errorHandler);
+}
+function drawColumnChart(eleId, chartData, options, callbackURL, errorHandler) {
+var data = new google.visualization.DataTable();
+data.addColumn('string', chartData.vAxisColName);
+for (i = 0; i < chartData.hAxisColNames.length; i++) {
+var val = chartData.hAxisColNames[i];
+data.addColumn('number', val);
+}
+data.addRows(chartData.values.length);
+for (i = 0; i < chartData.values.length; i++) {
+var val = chartData.values[i];
+data.setValue(i, 0, val.label);
+for (j = 1; j <= val.values.length; j++) {
+var entry = val.values[j-1];
+data.setValue(i, j, entry);
+}
+}
+var chart = new google.visualization.ColumnChart(document.getElementById(eleId));
+applyChartData(chart, data, options, callbackURL, errorHandler);
+}
+function drawTimelineChart(eleId, chartData, options, callbackURL, errorHandler) {
+var container = document.getElementById(eleId);
+var chart = new google.visualization.Timeline(container);
+var dataTable = new google.visualization.DataTable();
+dataTable.addColumn({ type: 'string', id: chartData.positionLabel });
+dataTable.addColumn({ type: 'string', id: chartData.nameLabel });
+dataTable.addColumn({ type: 'date', id: chartData.startLabel });
+dataTable.addColumn({ type: 'date', id: chartData.endLabel });
+for (i = 0; i < chartData.values.length; i++) {
+var val = chartData.values[i];
+var s = val.start;
+var e = val.end;
+dataTable.addRow([val.rowLabel, val.barLabel, new Date(s.year, s.month, s.day), new Date(e.year, e.month, e.day)]);
+}
+applyChartData(chart, dataTable, options, callbackURL, errorHandler);
+}
+function applyChartData(chart, data, options, callbackURL, errorHandler) {
+if (errorHandler != null) {
+google.visualization.events.addListener(chart, "error", errorHandler);
+}
+chart.draw(data, options);
+if (callbackURL != null) {
+google.visualization.events.addListener(chart, "select", function() {
+var selection = chart.getSelection();
+if (selection.length > 0) {
+var row = selection[0].row;
+var wcall = wicketAjaxGet(callbackURL + '&selected=' + row, function() { }, function() { });
+}
+});
+}
+}
+
+function trackGooglePlusOne(gpovote) {
+if (typeof window.trackEvent === 'function') {
+var gpoaction = 'Google +1 Vote';
+if (gpovote.state=='off') {
+gpoaction = 'Google -1 Vote (Undo +1)';
+}
+trackEvent('Social Shares', gpoaction, gpovote.href, 0);
+}
+}

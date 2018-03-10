@@ -1,0 +1,32 @@
+_satellite.pushAsyncScript(function(event, target, $variables){
+  (function () {
+	function defer(method) {
+	  if (window.jQuery)
+	      method();
+	  else
+	      setTimeout(function() {
+	          defer(method)
+	      }, 300);
+	}
+	defer(function() {
+
+		var dataContent = JSON.parse($("[data-module=omniture]").attr('data-content'));
+
+		switch(digitalData.page.pageInfo.contentType) {
+		    case "hub":
+		        dataContent.events="event159="+$(".tile").not(".tile_ad").length+",event163,event160="+$("a.booking_button").length;
+		        break;
+		    case "feature":
+		        dataContent.events="event159="+$(".tiles .feature-item").length+",event163,event160="+$("a.btn").length;
+		        break;
+		    default:
+	        	if(digitalData.page.evfAttributes.onlineBookingAvailable) {
+			        dataContent.events="event161";
+	        	} else {
+			        dataContent.events="event162";
+	        	}
+			}
+		$("[data-module=omniture]").attr('data-content',JSON.stringify(dataContent)); 
+	    });
+})();
+});

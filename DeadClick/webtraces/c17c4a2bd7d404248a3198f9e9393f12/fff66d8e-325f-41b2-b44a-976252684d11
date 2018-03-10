@@ -1,0 +1,140 @@
+/* LCore.js
+ *
+ * Base Javascript class for Lulu-specific functionality.
+ * This file will eventually replace lulu/lulu.js.
+ */
+
+/** initialize LULU namespace **/
+if (typeof(LULU) == 'undefined') {
+	var LULU = {};
+	var $L = LULU;
+}
+
+if ((typeof __start != 'object') || (typeof __start.getTime != 'function')) {
+    var __start = new Date();
+}
+$L.__executionStart = __start;
+$L._getExecutionTime = function ( ) {
+    var end = new Date();
+    return time = (end.getTime() - $L.__executionStart.getTime()) / 1000;
+}
+
+$L.reportExecutionTime = function ( ) {
+    var stats = $jq('#lulu_site_query_stats');
+    if (stats.length == 1) {
+        stats.append($jq("<div>").text("Client load & execution: " + $L._getExecutionTime() + " seconds"));
+    }
+}
+
+
+/*
+ * provides a layer of prototypal abstraction for the instantiation of Objects
+ */
+$L.object = function ( o, hostObject ) {
+	if ( typeof hostObject == 'undefined' ) {
+		function F() {};
+		F.prototype = o;
+		that = new F();
+	} else {
+		that = hostObject;
+	}
+	if ( (typeof o.constructor == 'undefined') || (o.constructor == window) ) {
+	    throw $L.Error("!! LCore: The 'new' keyword was not used when instantiating this object", {obj: o});
+	} else {
+        if ( typeof o.constructor.name == 'undefined' ) {
+            var str = o.constructor.toString();
+            that.typeOf = str.substring( 0, str.indexOf( "(" ) ).replace( "function ", "" ).replace( " ", "" );
+        } else {
+            that.typeOf = o.constructor.name;
+        }
+    }
+	return that;
+};
+
+$L.isArray = function ( obj ) {
+	return ( ( obj instanceof Array ) || ( obj.constructor.toString().indexOf("Array") > -1 ) );
+};
+
+$L.add = function( name, object ) {
+	if ( typeof $L[name] != 'undefined') {
+		throw $L.Error( "!! LCore: Attempted to create duplicate member '"+name+"'; dumping original and duplicate", {original: $L[name], duplicate: object} );
+	} else {
+		$L[name] = object;
+	}
+}
+
+$L.addManager = function( name, manager ) {
+	$L.add( name, manager );
+};
+
+$L.Error = function( msg, details ) {
+	var err = new Error( msg );
+	if ( typeof details == 'object' ) {
+		for ( x in details ) {
+			err[x] = details[x];
+		}
+	}
+	return err;
+};
+
+$L.trace = function( traceKeyword, payload ) {
+	if ( $L._tracer instanceof LTracer ) {
+		return $L._tracer.trace( traceKeyword, payload );
+	} else {
+		return false;
+	}
+};
+
+function LTracer ( endpoint )
+{
+	var obj = $L.object(this);
+	
+	obj.trace = function( traceKeyword, payload ) {
+		if ( typeof payload == 'undefined' ) payload = {};
+		if ( obj._$isGetAvailable() ) {
+			obj._fire( obj._buildTrace( traceKeyword, payload ) );
+			while ( obj._missed.length > 0 ) {
+				var missed = obj._missed.pop();
+				obj._fire( obj._buildTrace( obj._missed[0], obj._missed[1] ) );
+			}
+		} else {
+			obj._store( traceKeyword, payload );
+		}
+		return obj;
+	};
+
+	obj._endpoint = endpoint;
+	obj._missed = [];
+	
+	obj._buildTrace = function ( k, p ) {
+		var data = [];
+		for ( x in p ) {
+			data.push( '&data['+x+']=' + p[x] );
+		}
+        return '?context=trace&event=' + k + data.join('');
+	}
+	
+	obj._fire = function( trace ) {
+		var url = obj._endpoint + trace;
+		obj._$get( url );
+	};
+	
+	obj._store = function( k, p ) {
+		obj._missed.push( [ k, p ] );
+	};
+	
+	obj._$get = function( url ) {
+		$jq.get( url );
+	};
+	
+	obj._$isGetAvailable = function() {
+		if ( typeof $jq == 'undefined' ) {
+			return false;
+		} else {
+			return true;
+		}
+	};
+	
+	return obj;
+}
+

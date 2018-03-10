@@ -1,0 +1,484 @@
+/*** purl ***/
+!function(t){"function"==typeof define&&define.amd?define(t):window.purl=t()}(function(){function t(t,e){for(var r=decodeURI(t),n=l[e?"strict":"loose"].exec(r),a={attr:{},param:{},seg:{}},i=14;i--;)a.attr[h[i]]=n[i]||"";return a.param.query=o(a.attr.query),a.param.fragment=o(a.attr.fragment),a.seg.path=a.attr.path.replace(/^\/+|\/+$/g,"").split("/"),a.seg.fragment=a.attr.fragment.replace(/^\/+|\/+$/g,"").split("/"),a.attr.base=a.attr.host?(a.attr.protocol?a.attr.protocol+"://"+a.attr.host:a.attr.host)+(a.attr.port?":"+a.attr.port:""):"",a}function e(t){var e=t.tagName;return"undefined"!=typeof e?p[e.toLowerCase()]:e}function r(t,e){if(0===t[e].length)return t[e]={};var r={};for(var n in t[e])r[n]=t[e][n];return t[e]=r,r}function n(t,e,a,o){var i=t.shift();if(i){var f=e[a]=e[a]||[];"]"==i?u(f)?""!==o&&f.push(o):"object"==typeof f?f[c(f).length]=o:f=e[a]=[e[a],o]:~i.indexOf("]")?(i=i.substr(0,i.length-1),!m.test(i)&&u(f)&&(f=r(e,a)),n(t,f,i,o)):(!m.test(i)&&u(f)&&(f=r(e,a)),n(t,f,i,o))}else u(e[a])?e[a].push(o):e[a]="object"==typeof e[a]?o:"undefined"==typeof e[a]?o:[e[a],o]}function a(t,e,r){if(~e.indexOf("]")){var a=e.split("[");n(a,t,"base",r)}else{if(!m.test(e)&&u(t.base)){var o={};for(var f in t.base)o[f]=t.base[f];t.base=o}""!==e&&i(t.base,e,r)}return t}function o(t){return s(String(t).split(/&|;/),function(t,e){try{e=decodeURIComponent(e.replace(/\+/g," "))}catch(r){}var n=e.indexOf("="),o=f(e),i=e.substr(0,o||n),s=e.substr(o||n,e.length);return s=s.substr(s.indexOf("=")+1,s.length),""===i&&(i=e,s=""),a(t,i,s)},{base:{}}).base}function i(t,e,r){var n=t[e];"undefined"==typeof n?t[e]=r:u(n)?n.push(r):t[e]=[n,r]}function f(t){for(var e,r,n=t.length,a=0;n>a;++a)if(r=t[a],"]"==r&&(e=!1),"["==r&&(e=!0),"="==r&&!e)return a}function s(t,e){for(var r=0,n=t.length>>0,a=arguments[2];n>r;)r in t&&(a=e.call(void 0,a,t[r],r,t)),++r;return a}function u(t){return"[object Array]"===Object.prototype.toString.call(t)}function c(t){var e=[];for(var r in t)t.hasOwnProperty(r)&&e.push(r);return e}function d(e,r){return 1===arguments.length&&e===!0&&(r=!0,e=void 0),r=r||!1,e=e||window.location.toString(),{data:t(e,r),attr:function(t){return t=g[t]||t,"undefined"!=typeof t?this.data.attr[t]:this.data.attr},param:function(t){return"undefined"!=typeof t?this.data.param.query[t]:this.data.param.query},fparam:function(t){return"undefined"!=typeof t?this.data.param.fragment[t]:this.data.param.fragment},segment:function(t){return"undefined"==typeof t?this.data.seg.path:(t=0>t?this.data.seg.path.length+t:t-1,this.data.seg.path[t])},fsegment:function(t){return"undefined"==typeof t?this.data.seg.fragment:(t=0>t?this.data.seg.fragment.length+t:t-1,this.data.seg.fragment[t])}}}var p={a:"href",img:"src",form:"action",base:"href",script:"src",iframe:"src",link:"href",embed:"src",object:"data"},h=["source","protocol","authority","userInfo","user","password","host","port","relative","path","directory","file","query","fragment"],g={anchor:"fragment"},l={strict:/^(?:([^:\/?#]+):)?(?:\/\/((?:(([^:@]*):?([^:@]*))?@)?([^:\/?#]*)(?::(\d*))?))?((((?:[^?#\/]*\/)*)([^?#]*))(?:\?([^#]*))?(?:#(.*))?)/,loose:/^(?:(?![^:@]+:[^:@\/]*@)([^:\/?#.]+):)?(?:\/\/)?((?:(([^:@]*):?([^:@]*))?@)?([^:\/?#]*)(?::(\d*))?)(((\/(?:[^?#](?![^?#\/]*\.[^?#\/.]+(?:[?#]|$)))*\/?)?([^?#\/]*))(?:\?([^#]*))?(?:#(.*))?)/},m=/^[0-9]+$/;return d.jQuery=function(t){null!=t&&(t.fn.url=function(r){var n="";return this.length&&(n=t(this).attr(e(this[0]))||""),d(n,r)},t.url=d)},d.jQuery(window.jQuery),d});
+
+var isMobile = {
+    Android: function() {
+        return navigator.userAgent.match(/Android/i);
+    },
+    BlackBerry: function() {
+        return navigator.userAgent.match(/BlackBerry/i);
+    },
+    iOS: function() {
+        return navigator.userAgent.match(/iPhone|iPad|iPod/i);
+    },
+    Opera: function() {
+        return navigator.userAgent.match(/Opera Mini/i);
+    },
+    Windows: function() {
+        return navigator.userAgent.match(/IEMobile/i) || navigator.userAgent.match(/WPDesktop/i);
+    },
+    any: function() {
+        return (isMobile.Android() || isMobile.BlackBerry() || isMobile.iOS() || isMobile.Opera() || isMobile.Windows());
+    }
+};
+
+var modelData = {
+    'wrangler': {
+        brand: 'jeep',
+        model: 'wrangler',
+        model_year: '',
+        model_code: '57664',
+        trim: ''
+    },
+    'wrangler_unlimited': {
+        brand: 'jeep',
+        model: 'wrangler-unlimited',
+        model_year: '',
+        model_code: '57665',
+        trim: ''
+    },
+    'grand_cherokee_2014': {
+        brand: 'jeep',
+        model: 'grand-cherokee',
+        model_year: '',
+        model_code: '576048',
+        trim: ''
+    },
+    'grand_cherokee_platinum_edition': {
+        brand: 'jeep',
+        model: 'grand-cherokee',
+        model_year: '',
+        model_code: '576048',
+        trim: ''
+    },
+    'cherokee-2014': {
+        brand: 'jeep',
+        model: 'cherokee',
+        model_year: '',
+        model_code: '57603',
+        trim: ''
+    },
+    'renegade_2015': {
+        brand: 'jeep',
+        model: 'renegade',
+        model_year: '',
+        model_code: '57609',
+        trim: ''
+    },
+    'compass_2014': {
+        brand: 'jeep',
+        model: 'compass',
+        model_year: '',
+        model_code: '57661',
+        trim: ''
+    },
+  	'reveal' : {
+  		brand			    : 'jeep',
+  		model 			  : 'reveal',
+  		model_year		: '',
+  		model_code		: '57674',
+  		trim			    : ''
+  	}
+};
+
+var url = purl();
+
+var xLayer =
+{
+    xDir 			: url.attr('directory'),
+    xPath			: url.attr('path'),
+    xFile 			: url.attr('file'),
+    platform		: '',
+    brand 	 		: 'jeep',
+    country  		: 'ru',
+    siteType  		: 'brand',
+    tier 			: 'tier-1',
+    section1		: '',
+    section2 		: '',
+    section3		: '',
+    pageType		: '',
+    pageStyle		: 'long',
+    link			:
+    {
+        linkName 		: '',
+        linkType 		: '',
+        linkSection		: ''
+    },
+    vehicle 		:
+    {
+        vehicleModel	: '',
+        vehicleYear		: '',
+        vehicleTrim		: '',
+        vehicleID		: ''
+    },
+    form 			:
+    {
+        formType		: '',
+        formName		: '',
+        formDetail		: ''
+    },
+    init 			: function($, cb) {
+        var self = xLayer;
+
+        var mm = (isMobile.any() == null ? 'desktop' : 'mobile');
+        self.updatePlatform(mm);
+
+        var xRoot = self.xDir.split('/');
+        var language = xRoot[1] || 'ru';
+        if(xRoot[1] === ''){
+            xRoot[2] = '';
+        }
+
+        $.extend(true, self, {
+            language: language,
+        });
+
+        var pageNameLocalization = {
+        };
+
+        switch (xRoot[2]) {
+            case '' :
+                if (self.xFile == 'prices.html') {
+                    $.extend(true, self, {
+                        section1 		: 'editorial',
+                        section2 		: 'pricelist',
+                        section3		: '',
+                        pageType		: 'editorial'
+                    });
+                }else if(self.xFile == 'home_config.html'){
+                    $.extend(true, self, {
+                        section1 		: 'shopping-tools',
+                        section2		: 'configurator',
+                        section3		: '',
+                        pageType		: 'configurator'
+                    });
+                }else if(self.xFile == 'company.html'){
+                    $.extend(true, self, {
+                        section1		: 'editorial',
+                        section2		: 'company_info',
+                        section3		: '',
+                        pageType		: 'editorial'
+                    });
+                }else if(self.xFile == 'about.html'){
+                    $.extend(true, self, {
+                        section1		: 'editorial',
+                        section2		: 'feedback',
+                        section3		: '',
+                        pageType		: 'editorial'
+                    });
+                }else if(self.xFile == 'test_drive.html'){
+                    $.extend(true, self, {
+                        section1		: 'editorial',
+                        section2		: 'test-drive',
+                        section3		: '',
+                        pageType		: 'editorial'
+                    });
+                }else if (self.xFile == 'life.html') {
+                    var _fragments = {
+                        'jeep_sponsorship'		: 'sponsorship',
+                        'jeep_owners_group'		: 'owners-group',
+                        'multimedia_gallery'	: 'gallery',
+                        'jeep_history'			: 'story'
+                    };
+                    //var _f = url.data.attr.fragment;
+                    var _f = location.hash.substr(1);
+                    $.extend(true, self, {
+                        section1 		: 'editorial',
+                        section2		: 'jeep-life',
+                        section3		: '',
+                        pageType		: 'editorial'
+                    });
+                    if (_f !== '' && _f !== undefined) {
+                        $.extend(true, self, {
+                            section3 : (_fragments[_f] !== undefined ? _fragments[_f] : _f)
+                        });
+                    }
+                    else {
+                        $.extend(true, self, {
+                            section3		: 'geneva'
+                        });
+                    }
+                }else {
+                    $.extend(true, self, {
+                        section1 		: 'homepage',
+                        section2		: '',
+                        section3		: '',
+                        pageType		: 'homepage'
+                    });
+                }
+                break;
+            case 'sponsorship' :
+                $.extend(true, self, {
+                    section1 		: 'editorial',
+                    section2 		: 'sponsorship',
+                    section3		: '',
+                    pageType 		: 'sponsorship'
+                });
+                if (self.xFile !== '' && self.xFile !== 'index.html') {
+                    $.extend(true, self, {
+                        section3 		: self.xFile.split('.')[0]
+                    });
+                }else{
+                    $.extend(true, self, {
+                        section3 		: (typeof xRoot[3] != "undefined")?xRoot[3]:''
+                    });
+                }
+                break;
+            case 'history' :
+                $.extend(true, self, {
+                    section1 		: 'editorial',
+                    section2 		: 'history',
+                    section3		: '',
+                    pageType 		: 'editorial'
+                });
+                if (self.xFile !== '' && self.xFile !== 'index.html') {
+                    $.extend(true, self, {
+                        section3 		: self.xFile.split('.')[0]
+                    });
+                }
+                break;
+            case 'dealer' :
+                $.extend(true, self, {
+                    section1		: 'shopping-tools',
+                    section2		: 'dealer-locator',
+                    section3		: '',
+                    pageType		: 'shopping-tools'
+                });
+                if (self.xFile == 'dealer_new.html') {
+                    $.extend(true, self, {
+                        section3		: 'dealer-new'
+                    });
+                }
+                break;
+            case 'commercial' :
+                $.extend(true, self, {
+                    section1		: 'shopping-tools',
+                    section2		: 'commercial',
+                    section3		: '',
+                    pageType		: 'shopping-tools'
+                });
+                break;
+            case 'cars_in_stock' :
+                $.extend(true, self, {
+                    section1		: 'contact',
+                    section2		: 'stock-request',
+                    section3		: '',
+                    pageType		: 'contact'
+                });
+                break;
+            case 'trade-in' :
+                $.extend(true, self, {
+                    section1		: 'promotions',
+                    section2		: 'trade-in',
+                    section3		: '',
+                    pageType		: 'promotions'
+                });
+                break;
+            case 'spring-promo' :
+                $.extend(true, self, {
+                    section1		: 'promotions',
+                    section2		: 'spring-promo',
+                    section3		: '',
+                    pageType		: 'promotions'
+                });
+                break;
+            case 'jeep_territory' :
+                $.extend(true, self, {
+                    section1		: 'editorial',
+                    section2		: 'jeep-territory',
+                    section3		: (typeof self.xFile != "undefined")? self.xFile.split('.')[0] :'',
+                    pageType		: 'jeep-territory'
+                });
+                break;
+            case 'chrysler_financial' :
+                $.extend(true, self, {
+                    section1		: 'editorial',
+                    section2		: 'jeep-credit',
+                    section3		: '',
+                    pageType		: 'editorial'
+                });
+                break;
+            case 'capability' :
+                $.extend(true, self, {
+                    section1		: 'editorial',
+                    section2		: 'capability',
+                    section3		: '',
+                    pageType		: 'editorial'
+                });
+                $.extend(true, self, {
+                    section3: self.xFile.split('.')[0]
+                });
+                break;
+				 case '75th_anniversary' :
+                $.extend(true, self, {
+                    section1		: 'editorial',
+                    section2		: '75th_anniversary',
+                    section3		: '',
+                    pageType		: '75th_anniversary'
+                });
+				$.extend(true, self, {
+                    section3: self.xFile.split('.')[0]
+                });
+                break;
+				case 'news_events' :
+               $.extend(true, self, {
+                    section1		: 'editorial',
+                    section2		: 'news',
+                    section3		:  '',
+                    pageType		: 'editorial'
+                });
+				$.extend(true, self, {
+                    section3: self.xFile.split('.')[0]
+                });
+                break;
+				case 'geneva_motorshow' :
+                $.extend(true, self, {
+                    section1		: 'editorial',
+                    section2		: 'geneva_motorshow',
+                    section3		: '',
+                    pageType		: 'geneva_motorshow'
+                });
+				$.extend(true, self, {
+                    section3: self.xFile.split('.')[0]
+                });
+                break;
+				case 'service' :
+                $.extend(true, self, {
+                    section1		: 'editorial',
+                    section2		: 'service-warranty',
+                    section3		: '',
+                    pageType		: 'service-warranty'
+                });
+				$.extend(true, self, {
+                    section3: self.xFile.split('.')[0]
+                });
+                break;
+				case 'privacy' :
+                $.extend(true, self, {
+                    section1		: 'editorial',
+                    section2		: 'privacy-policy',
+                    section3		: '',
+                    pageType		: 'editorial'
+                });
+                break;
+				case 'renegade_justice' :
+                $.extend(true, self, {
+                    section1		: 'showroom',
+                    section2		: 'renegade',
+                    section3		: 'justice',
+                    pageType		: 'showroom'
+                });
+                break;
+				case 'news_offers' :
+                $.extend(true, self, {
+                    section1		: 'editorial',
+                    section2		: 'news',
+                    section3		: '',
+                    pageType		: 'news'
+                });
+				$.extend(true, self, {
+                    section3: self.xFile.split('.')[0]
+                });
+                break;
+            default :
+                if(xRoot[2] == 'wrangler_x'){
+                    $.extend(true, self, {
+                        section3 : xRoot[2],
+                    });
+                    xRoot[2] = 'wrangler';
+                }else if(xRoot[2] == 'grand_cherokee_srt'){
+                    $.extend(true, self, {
+                        section3 : xRoot[2],
+                    });
+                    xRoot[2] = 'grand_cherokee_2014';
+                }
+                 if (modelData[xRoot[2]] !== undefined) {
+                    $.extend(true, self, {
+                        vehicle : {
+                            vehicleModel 	: modelData[xRoot[2]].model,
+                            vehicleYear 	: modelData[xRoot[2]].model_year,
+                            vehicleTrim		: modelData[xRoot[2]].trim,
+                            vehicleID		: modelData[xRoot[2]].model_code
+                        },
+                        section1 		: 'showroom',
+                        section2		: modelData[xRoot[2]].model,
+                        pageType 		: 'showroom'
+                    });
+                    /* model pages sections */
+                    if (xLayer.xFile !== 'index.html' && xLayer.xFile !== '' && xLayer.xFile !== undefined && xLayer.xFile !== null) {
+                        var _l = self.xFile.split('.')[0];
+                        $.extend(true, self, {
+                            section3 		: (pageNameLocalization[_l] !== undefined ? pageNameLocalization[_l] : _l)
+                        });
+                    }
+                }
+                break;
+        }
+        if (cb !== undefined) {
+            cb();
+        }
+    },
+    updatePlatform 		: function(mm) {
+        var self = xLayer;
+        self.platform = mm;
+        return;
+    },
+    mainNavClick 		: function($, linkType, linkName, cb) {
+        var self = xLayer;
+
+        $.extend(true, self, {
+            link 			: {
+                linkType		: linkType,
+                linkName		: linkName
+            }
+        });
+
+        if (cb !== undefined) {
+            cb();
+        }
+    },
+    mainNavDropdownClick	: function($, linkType, linkSection, linkName, cb) {
+        var self = xLayer;
+
+        $.extend(true, self, {
+            link 		: {
+                linkType 	: linkType,
+                linkSection	: linkSection,
+                linkName 	: linkName
+            }
+        });
+
+        if (cb !== undefined) {
+            cb();
+        }
+    },
+    footerLinkClick 	: function($, linkType, linkName, cb) {
+        var self = xLayer;
+
+        $.extend(true, self, {
+            link 		: {
+                linkType	: linkType,
+                linkName	: linkName
+            }
+        });
+
+        if (cb !== undefined) {
+            cb();
+        }
+    },
+    ctaClick			: function($, linkType, linkSection, linkName, cb) {
+        var self = xLayer;
+
+        $.extend(true, self, {
+            link 		: {
+                linkType 	: linkType,
+                linkSection : linkSection,
+                linkName 	: linkName
+            }
+        });
+
+        if (cb !== undefined) {
+            cb();
+        }
+    }
+};

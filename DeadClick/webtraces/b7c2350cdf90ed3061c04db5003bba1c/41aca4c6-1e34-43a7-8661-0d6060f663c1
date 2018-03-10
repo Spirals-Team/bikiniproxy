@@ -1,0 +1,187 @@
+/*
+ * Feedback button
+ * Depend on dynamicForms and magnificPopup
+ *
+ */
+$(document).ready(function () {
+    $.ajaxSetup({
+      cache: true
+    });
+    $('head').append('<link rel="stylesheet" href="//cds.cern.ch/img/overlay.css" type="text/css" />');
+    $('head').append('<link rel="stylesheet" href="//cds.cern.ch/css/dynamic-forms.css" type="text/css" />');
+    function build(){
+      $('<a>',{
+         'class': 'feedback',
+         'text': 'Feedback',
+         'href': '#',
+         'rel': 'feedback'
+       }).css({
+            'position': 'absolute',
+            'background': '#fff',
+            'right': '-40px',
+            'top': '115px',
+            'color': '#333',
+            'padding': '2px',
+            'text-decoration': 'none',
+            'font-size': '15px',
+            'transform': 'rotate(270deg)',
+            '-ms-transform': 'rotate(270deg)',
+            '-webkit-transform': 'rotate(270deg)',
+            'transform-origin': 'left top 0',
+            '-ms-transform-origin': 'left top 0',
+            '-webkit-transform-origin': 'left top 0',
+            'border': '1px solid #ccc',
+            'z-index': '9999999'
+        }).appendTo('body');
+        var data = {
+            url: "//cds.cern.ch/feedback",
+            content: [{
+                "type": "hidden",
+                    "name": "location",
+                    "value": _page_url()
+            }, {
+                "type": "textarea",
+                    "value": "",
+                    "label": "Your comment",
+                    "name": "description",
+            }, {
+                "type": "select",
+                  "label": "Did you find what you were looking for?",
+                  "name": "found",
+                  "values": [
+                    {
+                      "value": "yes",
+                      "option": "Yes"
+                    },
+                    {
+                      "value": "no",
+                      "option": "No"
+                    }, {
+                      "value": "none",
+                      "option": "Not relevant"
+                    }
+                ]
+            },{
+              "type": "select",
+              "label": "Did you encounter any technical or content issue?",
+              "name": "issue",
+              "values": [
+                {
+                  "value": "none",
+                  "option": "No"
+                },
+                {
+                  "value": "technical",
+                  "option": "Yes, technical issue"
+                },
+                {
+                  "value": "content",
+                  "option": "Yes, content issue"
+                }
+              ]
+            },
+            /* {
+              "type": "text",
+              "value": "By clicking `Send`, a snow ticket will be created."
+            }*/
+            ],
+            messages: {
+                success: "Thank you for your feedback.",
+                description: "Give us your feedback."
+            }
+    };
+    $('.feedback').magnificPopup({
+      items:{
+        src:'<div id="cds-feedback" class="form-apply overlay-white oc-content overlay-white-500"><div class="content-inside"></div></div>',
+        type: 'inline'
+      },
+      callbacks:{
+        open: function(){
+          // Add just 0 timeout
+          setTimeout(function(){
+            $('#cds-feedback').find('.content-inside').dynamicForms({
+              url: data.url,
+              data:{
+                content: data.content
+              },
+              messages: data.messages,
+              labels:{
+                submit: "Send",
+              },
+              callbacks:{
+                success: function(element, data, response, render){
+                  $(element).find('form').remove();
+                  $(element).find('.dynamicForms-description').remove();
+                },
+                error: function(element, error, render){
+                  var clean = $.parseJSON(error.responseText);
+                  $(element).find('.dynamicForms-message-error').text(clean.message);
+                  $('#cds-feedback').find('.dynamicForms-form').show();
+                  $('#cds-feedback').find('.dynamicForms-description').show();
+                },
+                rendered: function(element){
+                  console.log(element);
+                  $('#cds-feedback').find('.dynamicForms-form-submit').first().text('Send');
+                  $('#cds-feedback').find('.dynamicForms-form-submit').first().on('click', function(){
+                    $('#cds-feedback').find('.dynamicForms-form').hide();
+                    $('#cds-feedback').find('.dynamicForms-description').hide();
+                  });
+                }
+              }
+            });
+          }, 0);
+        }
+      }
+    });
+  }
+  function dependencies() {
+      $.when(
+        plugin('magnific'),
+        plugin('dynamic'),
+        plugin('handlebars')
+      ).done(function(){
+        build();
+      });
+  }
+  function plugin(name){
+      var def = $.Deferred();
+      if(name == "magnific"){
+        if ($.fn.magnificPopup === undefined){
+          $.getScript('//cds.cern.ch/js/overlay.min.js', function(){
+            return def.resolve();
+          });
+        }else{
+          return def.resolve();
+        }
+      }else if(name == "dynamic"){
+        if ($.fn.dynamicForms === undefined){
+          $.getScript('//cds.cern.ch/js/jquery.dynamic-forms.min.js', function(data){
+            return def.resolve();
+          });
+        }else{
+          return def.resolve();
+        }
+      }else{
+        try{
+          a = Handlebars;
+          return def.resolve();
+        }catch(error){
+          $.getScript('//cds.cern.ch/js/handlebars.js', function(data){
+            return def.resolve();
+          });
+        }
+      }
+    return def.promise();
+  }
+  function _page_url(){
+    try{
+      return window.location.href;
+    }catch(error){
+      return '';
+    }
+  }
+  // Check for dependencies and build
+  if($('.cern-signedin').find('.account').first().text()){
+    dependencies();
+  }
+});

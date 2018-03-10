@@ -1,0 +1,245 @@
+function getId()
+{
+  /* Replacement for document.getElementById() */
+  var elements = new Array();
+
+  for (var i = 0; i < arguments.length; i++) {
+    var element = arguments[i];
+    if (typeof element == 'string')
+      element = document.getElementById(element);
+
+    if (arguments.length == 1)
+      return element;
+
+    elements.push(element);
+  }
+
+  return elements;
+}
+
+/* Sets Image sizes for either 5 or 6 tabs */
+function getSmImages(imageType)
+{
+    getId('vit_overviewImage').src = imageServer + "/images" + imagesBrand + "/vit_overview_sm_off.gif"
+    getId('vit_overviewImage').style.width = "99px";
+    getId('vit_overdoseImage').style.height = "24px"; 	
+    getId('vit_usesImage').src = imageServer + "/images" + imagesBrand + "/vit_uses_sm_off.gif";
+    getId('vit_usesImage').style.width = "99px";
+    getId('vit_usesImage').style.height = "24px";
+    getId('vit_sideeffectsImage').src = imageServer + "/images" + imagesBrand + "/vit_sideeffects_sm_off.gif"
+    getId('vit_sideeffectsImage').style.width = "99px";
+    getId('vit_sideeffectsImage').style.height = "24px";
+    getId('vit_interactionsImage').src = imageServer + "/images" + imagesBrand + "/vit_interactions_sm_off.gif"
+    getId('vit_interactionsImage').style.width = "99px";
+    getId('vit_interactionsImage').style.height = "24px";
+    getId('vit_dosingImage').src = imageServer + "/images" + imagesBrand + "/vit_dosing_sm_off.gif"
+    getId('vit_dosingImage').style.width = "97px";
+    getId('vit_dosingImage').style.height = "24px";
+   
+}
+
+function getBrandImages(imageType)
+{
+    getId('vit_usesImage').src = imageServer + "images/vit_uses_off.gif";
+    getId('vit_usesImage').style.width = "124px";
+    getId('vit_usesImage').style.height = "24px";	
+    getId('vit_ingredImage').src = imageServer + "images/vit_ingred_off.gif";
+    getId('vit_ingredImage').style.width = "124px";
+    getId('vit_ingredImage').style.height = "24px";		
+    getId('vit_sideeffectsImage').src = imageServer + "images/vit_sideeffects_off.gif";
+    getId('vit_sideeffectsImage').style.width = "125px";
+    getId('vit_sideeffectsImage').style.height = "24px";		
+    getId('vit_interactionsImage').src = imageServer + "images/vit_interactions_off.gif";
+    getId('vit_interactionsImage').style.width = "125px";
+    getId('vit_interactionsImage').style.height = "24px";		
+    getId('vit_allImage').src = imageServer + "images/vit_all_off.gif";
+    getId('vit_allImage').style.width = "125px";
+    getId('vit_allImage').style.height = "24px";	
+    getId('vit_drugsImage').src = imageServer + "images/vit_drugs_off.gif";
+    getId('vit_drugsImage').style.width = "125px";
+    getId('vit_drugsImage').style.height = "24px";	
+	getId('vit_vitImage').src = imageServer + "images/vit_vit_off.gif";
+    getId('vit_vitImage').style.width = "125px";
+    getId('vit_vitImage').style.height = "24px";	
+}
+
+/* turns image to Off and hides active Tab */
+function turnOff(activeTab)
+{
+
+    if (getId(activeTab + 'Image'))
+    {   if (smImages)
+            { getId(activeTab + 'Image').src = imageServer + "/images" + imagesBrand + "/" + activeTab + "_sm_off.gif"; }
+        else { getId(activeTab + 'Image').src = imageServer + "/images" + imagesBrand + "/" + activeTab + "_off.gif"; }
+    }
+    
+    if (getId(activeTab + 'Content'))
+    { getId(activeTab + 'Content').style.display = "none"; }
+    
+    if (getId(activeTab + 'Head'))
+    { getId(activeTab + 'Head').style.display = "none"; }
+    
+    return false;
+}
+
+/* turns image to On and activates the current Tab */
+function turnOn(activeTab)
+{
+    if (getId(activeTab + 'Image'))
+    {
+        if (smImages)
+        { getId(activeTab + 'Image').src = imageServer + "/images" + imagesBrand + "/" + activeTab + "_sm_on.gif"; }
+        else { getId(activeTab + 'Image').src = imageServer + "/images" + imagesBrand + "/" + activeTab + "_on.gif";}
+    }
+    
+    if (getId(activeTab + 'Content'))
+    { getId(activeTab + 'Content').style.display = "block"; }
+
+	if (getId(activeTab + 'Head'))
+	{ getId(activeTab + 'Head').style.display = "block"; }
+    
+    return false;
+}
+
+function getTab(currentTab) {
+  try{
+    // refresh ads on page with tab change
+    webmd.metrics.dpv();
+  }
+  catch(e) {}
+
+  turnOff(activeTab);
+  activeTab = currentTab;
+  turnOn(activeTab);
+  return false;
+}
+
+
+function vit_setupPage()
+{
+    smImages = 0;
+    activeTab = "vit_uses";
+    activeTab = GetActiveTab(activeTab,false);
+
+    turnOff('vit_uses');
+    turnOff('vit_ingred');
+    turnOff('vit_sideeffects');
+    turnOff('vit_interactions');
+    
+
+    turnOn(activeTab);  	
+    //getId('monographContent').className = "";
+     getId('hideFromJS').style.display = "block";
+
+    return false;
+}
+
+function alt_setupPage()
+{
+    smImages = 0;
+    activeTab = "vit_overview";
+    activeTab = GetActiveTab(activeTab,false);
+
+    turnOff('vit_overview');
+    turnOff('vit_uses');
+    turnOff('vit_sideeffects');
+    turnOff('vit_interactions');
+    
+
+    turnOn(activeTab);  	
+    //getId('monographContent').className = "";
+     getId('hideFromJS').style.display = "block";
+
+    return false;
+}
+
+
+function actv_setupPage()
+{
+    smImages = 1;
+    activeTab = "vit_overview";
+    activeTab = GetActiveTab(activeTab,false);
+
+    turnOff('vit_overview');
+    turnOff('vit_uses');
+    turnOff('vit_sideeffects');
+    turnOff('vit_interactions');
+	turnOff('vit_dosing');
+    
+
+    turnOn(activeTab);  	
+    //getId('monographContent').className = "";
+     getId('hideFromJS').style.display = "block";
+
+    return false;
+}
+
+function search_setupPage()
+{
+    smImages = 0;
+    //activeTab = "vit_all";
+    
+    turnOff('vit_drugs');
+    turnOff('vit_vit');
+
+    turnOn(activeTab);  	
+    //getId('monographContent').className = "";
+    //getId('hideFromJS').style.display = "block";
+
+    return false;
+}
+
+function toggleUses(objectID) {
+
+  var object = document.getElementById("usebox" + objectID);  
+  state = document.getElementById("usebox" + objectID).style.display;
+
+  if (state == 'none') {
+    object.style.display  = 'block';
+	document.getElementById("uses" + objectID).className = "arrow_on";
+
+  }
+  else if (state != 'none') {
+    object.style.display  = 'none';
+	document.getElementById("uses" + objectID).className = "arrow_off";	
+  }  
+}
+
+function toggleSide(objectID) {
+
+  var object = document.getElementById("sidebox" + objectID);  
+  state = document.getElementById("sidebox" + objectID).style.display;
+
+  if (state == 'none') {
+    object.style.display  = 'block';
+	document.getElementById("side" + objectID).className = "arrow_on";
+
+  }
+  else if (state != 'none') {
+    object.style.display  = 'none';
+	document.getElementById("side" + objectID).className = "arrow_off";	
+  }  
+}
+
+function toggleInteractions(objectID) {
+
+  var object = document.getElementById("interbox" + objectID);  
+  state = document.getElementById("interbox" + objectID).style.display;
+
+  if (state == 'none') {
+    object.style.display  = 'block';
+	document.getElementById("inter" + objectID).className = "arrow_on";
+
+  }
+  else if (state != 'none') {
+    object.style.display  = 'none';
+	document.getElementById("inter" + objectID).className = "arrow_off";	
+  }  
+}
+
+function GetTransactionID()
+{
+    var transactionID = Math.round(99999999*Math.random());
+    //alert(transactionID);
+	return transactionID;
+}

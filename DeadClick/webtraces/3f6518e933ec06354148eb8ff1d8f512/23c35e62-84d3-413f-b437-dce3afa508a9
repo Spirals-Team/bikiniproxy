@@ -1,0 +1,674 @@
+var CENTRAL = (typeof CENTRAL !== "undefined" &&  typeof CENTRAL === "object" && CENTRAL !== null) ? CENTRAL : {};
+
+/* Error prevention for partners */
+var UnityUK = 'undefined' !== typeof UnityUK && 'object' === typeof UnityUK && null !== UnityUK ? UnityUK : {};
+/* - */
+
+/* Autocomplete Customisation by site - Julien/Lokesh */
+// Defaults
+UnityUK.EuAutoComplete = {
+	"element"   : document.getElementById("web-search-input"),
+	"options" : { 
+		searchType: "web",
+		className:  "cntrlAutoComp",
+		appendTo: document.getElementById("aol-header-web-search"),
+		cssProps: {
+			left: 0,
+			top: 34
+		},
+		numSuggestions: Site.isMobile ? 8 : 10
+	}
+};
+/* - */
+
+
+(function($) {
+	
+	// Locale and cookie domain set up
+	var cookieDomain = '.aol.co.uk', siteLocale = 'en_gb';
+	switch ( true ) {
+		case /aol\.de/i.test(location.hostname) || new RegExp("/de/", "i").test(location.pathname):
+			cookieDomain = '.aol.de';
+			siteLocale = 'de_de';
+		break;
+		case /aol\.fr/i.test(location.hostname) || new RegExp("/fr/", "i").test(location.pathname):
+			cookieDomain = '.aol.fr';
+			siteLocale = 'fr_fr';
+		break;
+	}
+	
+	// Elem has an attr
+	$.fn.hasAttr = function(src) {
+		return typeof this.attr(src) !== "undefined" && this.attr(src) !== false;
+	};
+
+	CENTRAL.getCobrand = function() {
+		return typeof io_c3sd !== 'undefined' && typeof io_c3sd.cobrand === 'string' && io_c3sd.cobrand || 'aoluk';
+	};
+	
+	CENTRAL.setAutoFocus = function($input) {
+
+		!$('body').hasClass('is-touch-screen') && $input.is(":not(:focus)") && $input.focus();
+	};
+	
+	/* Header set URLs from C3S and related ICIDs */
+	CENTRAL.SetC3SHeaderParams = function(){
+	
+		var $header        	= $('.m-cntrl-header'),
+			$navigation     = $header.find('.m-header-navigation'),
+			$logo     		= $header.find('.m-logo'),
+			$webSearch   	= $header.find('#aol-header-web-search'),
+			$webSearchSit   = $webSearch.find('#web-search-sit'),
+			$webSearchSchn  = $webSearch.find('#web-search-trac'),
+			$quickNav   	= $header.find('.m-quick-nav'),
+			c3sHeader		= typeof io_c3sd !== 'undefined' && typeof io_c3sd.header !== 'undefined' && io_c3sd.header || {},
+			hasKey			= 'hasOwnProperty',
+			cobrand 		= typeof io_c3sd !== 'undefined' && typeof io_c3sd.cobrand !== 'undefined' && io_c3sd.cobrand || 'aoluk',
+			temp,
+			quickNav_ICID 	= function(url) {
+
+				return c3sHeader[hasKey]("nav-icid") && (url.match(/\?/i) !== null && '&' || '?') + 'icid=qnav-' + c3sHeader["nav-icid"].split('nav-').pop() || '';
+			},
+			/* Homepage - Tracking query param to be appended to s_it */
+			mtmhpTrackingParam = (location.search||"").match(/mtmhp=([^&]+)/i);
+
+		mtmhpTrackingParam = Cookies.get('mtmhp') || ((mtmhpTrackingParam||[]).length >= 2 && mtmhpTrackingParam[1]) || "";
+		mtmhpTrackingParam = mtmhpTrackingParam !== "" && ("-" + mtmhpTrackingParam) || "";
+
+		c3sHeader[hasKey]("web-search-url") && $webSearch.attr('action', c3sHeader["web-search-url"].replace("http:","https:"));
+		c3sHeader[hasKey]("invocation-type") && $webSearchSit.val(c3sHeader["invocation-type"]+mtmhpTrackingParam);
+		c3sHeader[hasKey]("s_chn") && $webSearchSchn.val(c3sHeader["s_chn"]);
+		c3sHeader[hasKey]("amazon-url") && $quickNav.find('.m-item.amazon').attr('href', c3sHeader["amazon-url"]);
+		
+		if (c3sHeader[hasKey]("home-url")) {
+
+			temp = c3sHeader["home-url"];
+			$quickNav.find('.m-item.home').attr('href', temp + (cobrand !== 'bbclient' && quickNav_ICID(temp) || ''));
+
+			if (c3sHeader[hasKey]("aol-logo-icid")) {
+				temp += cobrand !== 'bbclient' && '?icid=' + c3sHeader["aol-logo-icid"] || '';
+			}
+			$logo.attr('href', temp.replace("http:","https:"));
+		}
+
+		if (c3sHeader[hasKey]("email-url")) {
+			$quickNav.find('.m-item.email').attr('href', c3sHeader["email-url"] + (cobrand !== 'bbclient' && quickNav_ICID(c3sHeader["email-url"]) || '' ));
+		}
+
+		if (c3sHeader[hasKey]("nav-icid")) {
+
+			$navigation.find('.m-entry:not(.m-widget):not([data-icid-exclude="true"]) > a[href^="http"]').each(function() {
+
+				temp = $(this).attr('href');
+				$(this).attr('href', temp + (temp.match(/\?/i) !== null && '&icid=' || '?icid=') + c3sHeader["nav-icid"]);
+			});
+		}
+	};
+
+	CENTRAL.WeatherWidget = function(params) {
+		var apiBaseURL		= /\.sandbox\./i.test(location.hostname) ? location.hostname : 'www.aol.co.uk',
+			protocol        = window.location.protocol,
+	        apiURL          = protocol + '//' + apiBaseURL + '/ukmedia/api/weather/observations/current.json',
+		  	$container 		= $('.m-cntrl-header .m-widget.weather'),
+		  	$place			= $container.find('.js-place'),
+		  	placeValue  	= $place.text(),
+		  	$degrees   		= $container.find('.js-degrees'),
+		  	$icon    		= $container.find('.js-w-icon'),
+		  	$wurl    		= $container.find('.js-weatherurl'),
+		  	$input   		= $container.find('.m-input'),
+		  	$btnConfirm 	= $container.find('.m-confirm'),
+		  	$separator		= $container.find('.m-separator'),
+		  	displayWeather  = function(data) {
+
+			  	if (data.cityName === null && data.cntryName === null) {
+
+		    		$place.text("Invalid Postcode! Pls try again.");
+					$degrees.add($separator).hide();
+		    	} else {
+
+			    	$place.text([(data.cityName||data.stateName||''), ', ', (data.cntryName||data.cntryCode||'')].join(''));
+					$degrees.html(data.tempC + '&deg;C').addClass('lg-weatherType-'+data.skyCode);
+					$degrees.add($separator).show();
+		    	}
+				$input.add($btnConfirm).addClass('is-hidden');
+				$place.removeClass('is-hidden');
+				$container.removeClass('is-hidden');
+				Cookies.set('aolweatherlocation', data.zipcode, {
+					'expires': 365,
+					'domain': cookieDomain
+				});
+			};
+
+		if ( params && params !== placeValue ) {
+
+			parmas = params.split(",");
+			var argument = parmas[0].replace(/^\s+|\s+$/, '');
+		
+			$.ajax({
+				url: apiURL,
+				dataType: 'jsonp',
+				data: { lookup: argument },
+				cache: true,
+				success: displayWeather,
+				jsonpCallback: 'displayWeather'
+			});
+		}
+		else {
+			$input.add($btnConfirm).addClass('is-hidden');
+			$place.removeClass('is-hidden');     
+		}
+	};
+
+	CENTRAL.getEmailCount = function(authToken, devID) {
+		
+		if (typeof authToken !== 'undefined' && authToken != '') {
+	
+			$.ajax({
+				url: "https://api.mail.aol.com/mail/newMailCount",
+				data: {
+					f: 'json',
+					a: authToken,
+					devId: devID || Site.DevID || 'xx'
+				},
+				dataType: 'jsonp',
+				success: displayEmailCount,
+				jsonp: 'c'
+			});
+		} else {
+			
+			displayEmailCount();
+		}
+
+		function displayEmailCount(data) {
+
+			var $elemEmail = $('#js-email-count');
+
+			if ($elemEmail.length) {
+
+				$elemEmail.css("display") !== 'none' && $elemEmail.css({'display': 'none'});
+
+				if ( typeof data !== 'undefined' && parseInt ( data.response.statusCode, 10 ) === 200 ) {
+				
+					$elemEmail.parent().addClass("is-auth");
+	
+					if ( data.response.data.mailFolderCount.mailFolderData.mailFolderType[0].count >= 1 ) {
+
+						$elemEmail.parent().addClass("has-new-emails");
+						$elemEmail.text(data.response.data.mailFolderCount.mailFolderData.mailFolderType[0].count).css({
+							'display': 'block'
+						});
+					}
+				}
+			}
+		};
+	};
+	
+	CENTRAL.searchGhostText = function($form, $searchInput) {
+
+		var isPlaceholder = $searchInput.hasAttr("placeholder"),
+			placeHolderText = $searchInput.attr("placeholder") || "";
+
+		$form.on("submit", function(e) {
+		
+			var searchTerm = $.trim($searchInput.val()||"");
+		
+			if ( searchTerm === "" || searchTerm === placeHolderText ) {
+
+				isPlaceholder && $searchInput.val(placeHolderText);
+				return false;
+			}
+		});
+
+		$searchInput.on({
+			"click": function() {
+
+				if ( $.trim($searchInput.val()||"") === placeHolderText ) {
+					$searchInput.val("");
+					isPlaceholder && $searchInput.removeClass("is-placeholder");
+				}
+			},
+			"blur": function() {
+		
+				if ( $.trim($searchInput.val()) === "" ) {
+					isPlaceholder && $searchInput.addClass("is-placeholder");
+					$searchInput.val(placeHolderText);
+				}
+			}
+		});
+	};
+	
+
+	$(function() {
+	
+		var $body 				= $('body'),
+			$header 			= $('.m-cntrl-header'),
+			$headerFixed 		= $header.find('.m-cntrl-header-inner'),
+			$headerSearchForm	= $('#aol-header-web-search'),
+			$headerSearchInput	= $('#web-search-input'),
+			$authInfo 			= $("#amp-auth-user-info"),
+			$authSignIn 		= $header.find(".js-aol-header-auth-signin"),
+			$authSignUp 		= $header.find(".js-aol-header-auth-signup"),
+			$aolLinks 			= $header.find('.js-aol-links'),
+			$navWrap 			= $header.find('.m-header-navigation'),
+			$topNavWrap 		= $navWrap.find('.nav-primary'),
+			$subNavWrap 		= $navWrap.find('.nav-secondary'),
+			$subNav 			= $subNavWrap.find('.m-header-mid-nav'),
+			$subNavActive 		= $subNavWrap.find('.m-header-mid-nav.is-visible'),
+			$selectedNavItem	= $navWrap.find('.m-header-top-nav > .is-selected'),
+			$mobileMenu 		= $body.find(" > .m-mobile-menu"),
+			$burgerIcon			= $header.find('.m-item.hamburger'),
+			$emailPreview 		= $header.find('.m-email-preview'),
+			authData 			= $authInfo.length && $authInfo.data("authUserInfo") || false,
+			$clonedElem			= {},
+			$this 				= null,
+			previousTop 		= 0,
+			dateNow 			= 0,
+			width 				= 0;
+
+
+		var Messages = {
+			"en-gb": {
+				"signin": "Sign in",
+				"signout": "Sign out",
+				"welcome": "Welcome"
+			},
+			"fr-fr": {
+				"signin": "s'identifier",
+				"signout": "Se Déconnecter",
+				"welcome": "Bienvenue"
+			},
+			"de-de": {
+				"signin": "Anmelden",
+				"signout": "Abmelden",
+				"welcome": "Willkommen"
+			}
+		}
+		Messages = Messages[Site.locale];
+		
+		
+		if (authData) {
+	
+		  	if ( Boolean(+authData.isLoggedIn) ) {
+		
+			  	$authSignIn.length && $authSignIn.attr({"href": "#"}).text(authData.userName);
+			 	$authSignUp.length && $authSignUp.attr({"href": authData.logoutUrl}).text(Messages.signout);
+			 	CENTRAL.getEmailCount(authData.authToken, Site.DevID);//to populate the email count;
+		  	} else {
+		
+			  	if ( $authSignIn.hasClass('is-external-auth') ) {
+
+				  	$authSignIn.attr({"href": "#"}).text(Messages.welcome);
+			  	} else {
+
+			  		$authSignIn.attr({"href": authData.loginUrl}).text(Messages.welcome+", "+Messages.signin);
+			  	}
+		  	}
+		  	$aolLinks.removeClass('is-hidden');
+		}
+
+		$(window).on("load resize", function() {
+			
+			$navWrap.add($topNavWrap).add($subNavWrap).css({"top": ""});
+
+			if ($headerFixed.css('position') === 'fixed') {
+
+				var headerFixedHeight 	= $headerFixed.outerHeight(),
+					topNavHeight 		= $topNavWrap.outerHeight();
+
+				if ( $body.hasClass('is-subnav-visible') ) {
+
+					parseInt($navWrap.css("top"), 10) !== headerFixedHeight && $navWrap.css({"top": headerFixedHeight});
+					parseInt($topNavWrap.css("top"), 10) !== headerFixedHeight && $topNavWrap.css({"top": headerFixedHeight});
+				}
+
+				parseInt($subNavWrap.css("top"), 10) !== topNavHeight && $subNavWrap.css({"top": topNavHeight});
+			}
+			
+			$subNavActive.width() > $subNavWrap.outerWidth() && $subNavWrap.addClass('nav-gradient');
+			
+
+		});
+		
+		$(window).on("scroll load", function(evt) {
+
+			if ($topNavWrap.css('position') === 'fixed') {
+
+				var currentScrollDistance = $(this).scrollTop();
+	
+				if (currentScrollDistance <= Math.round($topNavWrap.outerHeight()/2) && evt.type === "load") {
+	
+					$body.
+					removeClass("is-subnav-hidden").
+					addClass("is-subnav-visible");
+				}
+	
+				if (currentScrollDistance <= previousTop) {
+					//down
+					$body.
+					removeClass("is-subnav-hidden").
+					addClass("is-subnav-visible");
+					$headerFixed.removeClass("is-border");
+		        } else {
+					//up
+					if ( currentScrollDistance > Math.round($topNavWrap.outerHeight()*2) ) {
+						$body.
+						addClass("is-subnav-hidden").
+						removeClass("is-subnav-visible");
+						$headerFixed.addClass("is-border");
+					}
+		        }
+	
+				previousTop = currentScrollDistance;
+			}
+		});
+
+		$navWrap.find('.m-header-top-nav > .m-entry').length && $navWrap.find('.m-header-top-nav > .m-entry:not(.m-widget)').on({
+			"mouseenter": function() {
+				
+				$this = $(this);
+				$this.siblings().removeClass('is-selected').end().addClass('is-selected');
+				$subNav.
+				removeClass('is-visible').
+				filter('[data-subnav-for="'+ ($this.data('navItem')) +'"]').addClass('is-visible');
+			},
+			"mouseleave": subnavHover
+		});
+
+		function subnavHover() {
+
+			var $elem = $(this);
+			$navWrap.on({
+				"mouseleave": function(e) {
+
+					$elem.add($elem.siblings()).removeClass('is-selected');
+					$selectedNavItem.addClass('is-selected');
+					$subNav.
+					removeClass('is-visible').
+					filter('[data-subnav-for="'+($selectedNavItem.data('navItem'))+'"]').addClass('is-visible');
+				}
+			});
+		}
+
+		var $optionsBox = $header.find('.m-option-box'),
+			$optionsBoxArrow = $header.find('.m-usr-account .options');
+
+		$header.find('.m-usr-account .m-link.options').on('click', function(e) {
+			$optionsBox.toggleClass('is-visible');
+			$optionsBoxArrow.toggleClass('is-open');
+
+			$optionsBoxArrow.removeClass('core-icon-up-arrow core-icon-down-arrow') && (
+				$optionsBoxArrow.hasClass('is-open') && 
+				$optionsBoxArrow.addClass('core-icon-up-arrow') || 
+				$optionsBoxArrow.addClass('core-icon-down-arrow')
+			);
+		});
+
+
+		/* <Multiauth for partners only> */
+		/* Requires '/_uac/authReceiver.html' on the host */		
+		/* $header.hasClass('is-aol-partner') && (typeof Site !== 'undefined' && typeof Site.DevID === 'string') && $authSignIn.length && */
+		(!authData || $header.hasClass('is-aol-partner')) && (typeof Site !== 'undefined' && typeof Site.DevID === 'string') && $authSignIn.length &&
+		$authSignIn.multiAuth({
+		
+			devId: 				Site.DevID,
+			tabs: 				['aol', 'aim', 'facebook', 'yahoo', 'google', 'twitter'],
+			locale:				'gb',
+			lang: 				'en',
+			successUrl:			location.protocol + '//' + location.hostname + '/_uac/authReceiver.html',
+			getTokenCallback: 	function(authResp) {
+	
+				var $elem = $(this.authLink), encode = encodeURIComponent;
+				authData = {authToken: undefined};
+
+				if ( authResp.response.statusCode === 200 ) {
+					
+					$aolLinks.find('.js-auth-user-name').remove();
+					$aolLinks.prepend($authSignIn.parent().clone().addClass("js-auth-user-name").text(authResp.response.data.userData.attributes.displayName));
+					$authSignUp.parent().hide();
+
+
+
+					authData.authToken = authResp.response.data.token.a;
+					$elem.text(Messages.signout);
+		    
+					//Create auth cookie - pilot: games.aol.co.uk
+					var maUserID = authResp.response.data.luid || false,
+						maUserName = authResp.response.data.userData.attributes.displayName || false,
+						aliasDetails = [];
+	
+					if (maUserID || maUserName) {
+	
+						maUserID && aliasDetails.push("u=", encode(maUserID));
+						maUserName && aliasDetails.push("&n=", maUserName);
+					}
+	
+					if (aliasDetails.length >= 1) {
+					  Cookies.set('alias', aliasDetails.join(''), {
+						'expires': 30,
+						'domain': cookieDomain
+						});
+					}
+	
+				} else {
+	
+					$elem.text(Messages.welcome+", "+Messages.signin);
+					$aolLinks.find('.js-auth-user-name').remove();
+					$authSignUp.parent().show();
+
+					//delete auth cookie - to be used by games.aol.co.uk
+					if (/alias=u/i.test(document.cookie)) {
+						document.cookie = "alias=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; domain="+cookieDomain+"";
+					}
+				}
+				$aolLinks.removeClass('is-hidden');
+				CENTRAL.getEmailCount(authData.authToken, Site.DevID);//to populate the email count;
+			}
+		});
+		/* </Multiauth> */
+
+
+		$mobileMenu = $('<div class="m-mobile-menu"><nav class="navigation"></nav><div class="page-curtain"></div></div>');
+
+		$clonedElem["auth"] = $aolLinks.clone(true,true);
+		$clonedElem["auth"].
+		find('.m-entry:last-child').addClass('nav-close core-icon-cross').text('').end().
+		find('.m-entry:first-child > a').text(function() {
+			return $(this).text().replace(/welcome,\s+?/i, '')
+		});
+
+		$clonedElem["nav"] = $navWrap.find('.m-header-top-nav').clone();
+		$clonedElem["nav"].find('.m-entry.m-widget').remove();
+		$clonedElem["nav"] = $clonedElem["nav"].wrap($('<div/>', {'class': 'm-nav-wrapper'}).append($('<div/>', {'class': 'm-nav-wrapper-inner'}))).parent().parent();
+
+		$mobileMenu.find('.navigation').append($clonedElem["auth"].add($clonedElem["nav"]));
+
+		$body.prepend($mobileMenu);
+
+		$burgerIcon.on('click', function() {
+			
+			$mobileMenu.addClass('is-visible');
+			$body.add($('html')).addClass("is-mobile-menu-visible");
+		});
+
+		$mobileMenu.find(".navigation .nav-close").on("click", function() {
+
+			$mobileMenu.removeClass('is-visible');
+			$body.add($('html')).removeClass("is-mobile-menu-visible");
+		});
+
+		/* EMAIL PREVIEW */
+		var _e_timer;
+		$header.on({
+
+			"mouseenter": function() {
+
+				_e_timer && clearTimeout(_e_timer);
+				/* If not auth-ed or layout is tablet|below, no email preview */
+				/* if ( !authData.authToken || $(this).css('caption-side') !== 'left') { */
+				if ( $(this).css('caption-side') !== 'left' ) {
+					return false;
+				}
+
+				/* Keep showing the same data for 30 secs */
+				if ( dateNow && ((new Date().getTime() - dateNow)  < (30 * 1000)) ) {
+
+					displayEmailPreview({});
+					return false;
+				}
+				if( $emailPreview.find("footer.preview-footer").length ) {
+					$emailPreview.find(">ul").remove();
+				} else {
+					$emailPreview.empty();
+				}
+				$emailPreview.addClass('loading').show();
+				
+				/* Refresh email count */
+				CENTRAL.getEmailCount(authData.authToken, Site.DevID);//to populate the email count;
+				$.ajax({
+					url: "https://api.mail.aol.com/mail/newMailList",
+					data: {
+						f: 'json',
+						a: authData.authToken,
+						devId: Site.DevID,
+						locale: Site.locale.split("-")[1],
+						lang: Site.locale.split("-")[0],
+						digest: 'text/plain'
+					},
+					dataType: 'jsonp',
+					success: displayEmailPreview,
+					jsonp: 'c'
+				});
+
+				dateNow = new Date().getTime();
+			},
+			"mouseleave": function() {
+
+				$emailPreview.is(":visible") && $emailPreview.hide();
+			}
+		}, '.m-item.email.has-new-emails');
+		
+		$emailPreview.on({
+
+			"mouseenter": function() {
+				_e_timer && clearTimeout(_e_timer);
+				$emailPreview.is(":hidden") && $emailPreview.show();
+			},
+			"mouseleave": function() {
+				_e_timer = setTimeout(function() {
+					$emailPreview.is(":visible")  && $emailPreview.hide();
+					clearTimeout(_e_timer);
+				}, 250);
+			}
+		});
+
+		function displayEmailPreview(resp) {
+			var mailHostname = $header.find('.m-item.email').attr("href").replace(/^.*?\/\/(.*?)[\/\?].*$/,"$1") || false;
+			var has = 'hasOwnProperty';
+			if ( resp[has]('response') ) {
+
+				var $ul = $('<ul/>'),
+					item = [
+						'<li class="m-entry"><a href="{{email_link}}" title="{{subject}}">',
+						'<div class="email-date-time">{{date_time}}</div>',
+						'<div class="email-address">{{email_address}}</div>',
+						'<div class="email-subject">{{subject}}</div>',
+						'<div class="email-body-text">{{body_text}}</div>',
+						'</a></li>'
+					].join(''),
+					footer = [
+						'<footer class="preview-footer">',
+						'<a href="https://mail.aol.com/">View All Mail</a>',
+						'<a href="https://mail.aol.com/compose-message.aspx">Compose</a>',
+						'</footer>'
+					].join(''),
+
+					messages = resp.response[has]("data") && resp.response.data[has]("mailList") && resp.response.data.mailList[has]("messageList") && resp.response.data.mailList.messageList.length && resp.response.data.mailList.messageList[0][has]("messages") && resp.response.data.mailList.messageList[0].messages || [],
+					html = '';
+
+				if ( messages.length ) {
+
+					$.each(messages.slice(0,3), function(_, message) {
+	
+						var sentDate = new Date(message.sentOn).toString().match(/([^\d]+\d{2})\s+\d{4}\s+([^\s+]+)/i),
+							todayDate = new Date().toString().match(/([^\d]+\d{2})\s+\d{4}\s+([^\s+]+)/i),
+							displayDate = sentDate.length && todayDate.length && (sentDate[1] == todayDate[1] && sentDate[2].substring(0,5) || sentDate[1]),
+							sender = message.sender.match(/[a-z0-9-_.]+@[a-z0-9-_.]+/i);
+						if(mailHostname) {
+							message.messageLink=message.messageLink.replace(/\/\/.*?([\/\?])/,"//"+mailHostname+"$1");
+						}
+						html += item.
+								replace(new RegExp("{{email_link}}", "gi"), message.messageLink).
+								replace(new RegExp("{{date_time}}", "gi"), displayDate).
+								replace(new RegExp("{{email_address}}", "gi"), (sender !== null && sender[0] || message.sender)).
+								replace(new RegExp("{{subject}}", "gi"), message.subject).
+								replace(new RegExp("{{body_text}}", "gi"), message.digest);
+					});
+					$ul.append(html);
+					if($emailPreview.find("footer.preview-footer").length) {
+						$emailPreview.removeClass('loading').prepend($ul);
+					} else {
+						$emailPreview.removeClass('loading').append($ul).append(footer);
+					}
+				}
+			} else {
+				$emailPreview.is(":hidden") && $emailPreview.show();
+			}
+		}
+		/* WEATHER WIDGET */
+		var weather = {
+			location: 	Cookies.get('aolweatherlocation') || 'London,England',
+			$widget: 	$header.find('.m-widget.weather')
+		};
+		weather.$place		= weather.$widget.find('.js-place');
+		weather.$input		= weather.$widget.find('.m-input');
+		weather.$confirm	= weather.$widget.find('.m-confirm');
+
+		if( Site.locale=="en-gb" ) {
+			CENTRAL.WeatherWidget(weather.location);
+		}
+
+		weather.$place.on("click", function() {
+
+			weather.$input.val($(this).text());
+			weather.$place.addClass('is-hidden');
+			weather.$confirm.removeClass('is-hidden');
+			weather.$input.removeClass('is-hidden').select();
+		});
+
+		weather.$input.on("keypress", function(e) {
+			e.which === 13 && CENTRAL.WeatherWidget($(this).val()||'London,England');
+		});
+
+		weather.$confirm.click(function() {
+			CENTRAL.WeatherWidget(weather.$input.val()||'London,England');
+		});
+		/* END OF WEATHER WIDGET */  
+		
+		/* Set all URls and ICIDs */
+		CENTRAL.SetC3SHeaderParams();
+
+		/* Ghost Text for Web search */
+		CENTRAL.searchGhostText($headerSearchForm, $headerSearchInput);
+
+		/* Set foucs on the header search box */		
+		CENTRAL.setAutoFocus($headerSearchInput);
+
+		/* AOL WEB SEARCH AUTOCOMPLETE  */
+		if ( 'undefined' !== typeof AOL && 'object' === typeof AOL &&
+		'undefined' !== typeof AOL.Search && 'object' === typeof AOL.Search &&
+		'undefined' !== typeof AOL.Search.AutoComplete && 'object' === typeof AOL.Search.AutoComplete &&
+		'undefined' !== typeof AOL.Search.AutoComplete.Construct && 'function' === typeof AOL.Search.AutoComplete.Construct &&
+		null !== UnityUK.EuAutoComplete["element"] ) {
+			var WebSearchAutocomplete = new AOL.Search.AutoComplete.Construct( UnityUK.EuAutoComplete["element"], UnityUK.EuAutoComplete["options"] );
+		}
+
+		// WebSearch Submit - iOS devices.
+		$(UnityUK.EuAutoComplete["element"]).length && $(UnityUK.EuAutoComplete["element"]).keyup(function(e) {
+			e.which === 13 && $headerSearchForm.submit();
+		});
+		
+		if (typeof Site === "object" && typeof Site.PartnerID !== "undefined" && Site.PartnerID !== "") {
+			$body.addClass('aol-'+Site.PartnerID);
+		}
+	});
+})(jQuery);

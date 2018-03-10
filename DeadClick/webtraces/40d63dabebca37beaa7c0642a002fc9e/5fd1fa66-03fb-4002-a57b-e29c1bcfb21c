@@ -1,0 +1,53 @@
+_satellite.pushAsyncScript(function(event, target, $variables){
+  if (typeof digitalData.user != "undefined") {
+    var loggedIn = digitalData.user[0].profile[0].loginStatus;
+}
+
+function isFacebookApp() {
+    var ua = navigator.userAgent || navigator.vendor || window.opera;
+    return (ua.indexOf("FBAN") > -1) || (ua.indexOf("FBAV") > -1);
+}
+
+var gigyaCookie = _satellite.readCookie('_gig_llu');
+var toAuthCookie = _satellite.readCookie('_TO_Auth');
+
+if ((!(loggedIn || gigyaCookie || toAuthCookie)) && !isFacebookApp()) {
+
+    adobe.target.getOffer({
+        "mbox": "loggedIn",
+        "params": {
+            "status": "false"
+        },
+        "success": function(response) {
+            adobe.target.applyOffer({
+                "offer": response
+            });
+
+        },
+        "error": function(status, error) {
+
+        },
+        "timeout": 5000
+    });
+
+} else {
+
+    adobe.target.getOffer({
+        "mbox": "loggedIn",
+        "params": {
+            "status": "true"
+        },
+        "success": function(response) {
+            adobe.target.applyOffer({
+                "offer": response
+            });
+
+        },
+        "error": function(status, error) {
+
+        },
+        "timeout": 5000
+    });
+
+}
+});

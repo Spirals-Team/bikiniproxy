@@ -1,0 +1,164 @@
+define("scripts/responsive/bg_rails", function(require) {
+
+    var _setRails = function() {
+
+      var CLUB_PROPS,
+          bgColor,
+          defaultRail,
+          multipleRails = [],
+          railImage,
+          timedRail,
+          appearsVal,
+          expiresVal,
+          appears,
+          expires,
+          center = "center",
+          date = window.sysdate,
+          team_code   = window.club,
+          club_lang   = window.dc_lang,
+          section = window.section,
+          pageid = window.page_id,
+          loc = location.protocol,
+          team_class = (club_lang == "es") ? ".team_es" : ".team",
+          $banner_ad = $("#banner_ad").length,
+          $ad_top = $("#ad-top").length,
+          $teambody = $("body"+team_class+""),
+          $teammast = $("body"+team_class+" #masthead").find(".logobar-container");
+
+      (function(){
+        // run js if Chrome is being used
+        if(navigator.userAgent.toLowerCase().indexOf('chrome') > -1) {
+          center = "49.99%";
+        }
+      }())
+
+      var randomIt = function ( array ){
+        var count = array.length,
+            randomnumber,
+            temp;
+        while( count ){
+            randomnumber = Math.random() * count-- | 0;
+            temp = array[count];
+            array[count] = array[randomnumber];
+            array[randomnumber] = temp;
+        }
+        return temp
+      }
+
+      var sanitizeVal = function (val) {
+        var shows = val.replace(/[-:T]/g,'');
+        return shows
+      }
+
+      var bodyTeam = function (position,color) {
+        var bg = {
+          'background-position': position,
+          'background-color': color,
+          'background-repeat': 'no-repeat'
+        };
+        return bg
+      }
+
+      var bodyMasthead = function (railimage, position) {
+        var bg = {
+          'background-image': 'url(' + railImage + ')',
+          'background-position': position
+        };
+        return bg
+      }
+      
+      //CLUB_PROPS = '/test/navigation/includes/data/' + team_code +'.json';
+      CLUB_PROPS = (club_lang == "es") ? '/shared/properties/style/' + team_code +'_es.json' : '/shared/properties/style/' + team_code +'.json';
+
+      $.getJSON(CLUB_PROPS)
+        .done(function(data) { 
+
+          $.each( data, function( key, val ) {
+              if (!key.indexOf("timed_rails")) {
+                appearsVal = val.appears;
+                appears = sanitizeVal(appearsVal);
+                expiresVal = val.expires;
+                expires = sanitizeVal(expiresVal);
+                if (appears && expires) {
+                  if ((appears <=  date) && (expires >=  date)) {
+                    timedRail = val.image;
+                  } 
+                };
+              } else if (!key.indexOf("wired_rails") && key !== "wired_rails") {
+                appearsVal = val.appears;
+                appears = sanitizeVal(appearsVal);
+                expiresVal = val.expires;
+                expires = sanitizeVal(expiresVal);
+
+                if (appears && expires) {
+                  if ((appears <=  date) && (expires >=  date)) {
+                    multipleRails.push( val.image );
+                  } 
+                } else {
+                  multipleRails.push( val.image );
+                };
+              } else if (key == "wired_rails") {
+                  defaultRail = data.wired_rails.image;
+                  railImage = defaultRail;
+              } else if (key == "style") {
+                  bgColor = data.style.dark_theme.background;
+              };
+          });
+
+          if (team_code === "mlb") {
+
+            $("body.mlb").css('background-image', 'url(' + railImage + ')');
+
+          } else {
+
+            $teammast  // add rail image to masthead
+              .css(bodyMasthead(railImage, 'center top'));
+
+            if (section === "homepage" || section === "pagina_central") { 
+              if (timedRail) { // check for timed single rail
+                railImage = timedRail;
+                $teammast  // update rail image in masthead
+                  .css(bodyMasthead(railImage, 'center top'));
+              } else {   // check for multiple rails
+                railImage = (multipleRails.length >= 3) ? randomIt(multipleRails) : railImage;
+                $teammast  // update rail image in masthead
+                  .css(bodyMasthead(railImage, 'center top'));
+              }
+              if ($('body').css('background-image') == 'none') { // check for an existing sponsor image on page to add rail
+                $teambody
+                  .css('background-image', 'url(' + railImage + ')');
+                $teambody
+                  .css(bodyTeam(center + ' 32px', bgColor));
+              }
+            } else {              
+              if ($('body').css('background-image') == 'none') { // check for an existing sponsor image on page to add rail
+                $teambody
+                  .css('background-image', 'url(' + railImage + ')');
+                
+                if ((loc === 'https:') || (!$banner_ad)) {  // if secure or no banner ad, position bg for no banner ad
+                  $teambody
+                    .css(bodyTeam(center + ' 32px', bgColor));
+                } else { 
+                  $teambody
+                    .css(bodyTeam(center + ' 122px', bgColor));
+                }
+                
+              } 
+            }
+          }
+
+        })
+        .fail(function() { 
+          console.error( "AJAX Error" ); 
+        });
+    };
+
+    var init = function( config ) {
+        _setRails();
+    };
+
+    return {
+        init : init
+    };
+
+});

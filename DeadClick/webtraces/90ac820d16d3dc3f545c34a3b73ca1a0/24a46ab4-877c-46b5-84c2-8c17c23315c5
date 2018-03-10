@@ -1,0 +1,70 @@
+/*
+ * =========================================
+ * Common scripts for ECI Public.
+ * =========================================
+ */
+
+/**
+ * Adds an "onload" action to the existing list of onload
+ * actions for this window.
+ * @param f the onload action to add (a parameterless function)
+ */
+function com_addOnload(f) {
+	if (typeof(f) != 'function') {
+		throw 'Function expected; got: ' + f; 
+	}
+	
+	if (typeof(window.onload) != 'function') {
+		window.onload = f;
+	} else {
+		var oldOnload = window.onload;
+		window.onload = function() {
+			oldOnload();
+			f();
+		};
+	}
+}
+
+/**
+ * Creates a tooltip for the specified element, which will
+ * display a message in a box next to the hook element
+ * @param elementId
+ * @param hookId
+ * @param message
+ * @param limited (optional) whether the tooltip should be limited
+ * in width according to some whacky heuristics; default is <code>false</code>
+ * @param showOn (optional) the DOM event on which to show the tooltip;
+ * default is <code>focus</code>
+ * @param hideOn (optional) the DOM event on which to hide the tooltip;
+ * default is <code>blur</code>
+ */
+function com_createTooltip(elementId, hookId, message, limited, showOn, hideOn, tipPosition, tipAlign) {
+	if (!limited) limited = false;
+	if (!showOn) showOn = 'focus';
+	if (!hideOn) hideOn = 'blur';
+	
+	// some heuristics to limit the width of the tooltips
+	var width = null;
+	if (limited) {
+		var viewportWidth = document.viewport.getWidth();
+		if (viewportWidth < 1000) width = 90;
+		else if (viewportWidth < 1200) width = 190;
+	}
+	
+	var wrappedMessage = !width ? message :
+			'<div style="width:'+width+'px;">'+message+'<\/div>';	
+	
+	tipPosition = tipPosition == null? 'left' : tipPosition;
+	tipAlign = tipAlign == null? 'middle' : tipAlign;
+	
+	//Opentip.defaultStyle = 'rounded';
+	$(elementId).addTip(wrappedMessage, {
+		target: hookId,
+		showOn: showOn,
+		hideOn: hideOn,
+		tipJoint: [tipPosition, tipAlign],
+		stem: true,
+		offset: [10, 0],
+		className: 'eci-tooltip'
+	});
+}

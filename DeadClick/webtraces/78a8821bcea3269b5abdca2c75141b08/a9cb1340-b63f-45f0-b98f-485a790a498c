@@ -1,0 +1,94 @@
+_satellite.pushBlockingScript(function(event, target, $variables){
+  $('body').on('analyticsready', function() {
+  console.log('analytics ready');
+    try {
+    	var currentUrl = stb.digitalData.pageInfo.currentUrlHash,
+            currentScreen = stb.digitalData.pageInfo.currentActiveScreen,
+            bidType = stb.digitalData.registration.bidType || null,
+            registrationType = stb.digitalData.registration.registrationType || null,
+            formExpanded = stb.digitalData.registration.formExpanded || null;
+        if (currentUrl.indexOf('register-new-account.html') > -1) { // Simple Registration
+            switch (currentScreen) {
+                case 'ConfirmationStep':
+                    //console.log('Simple Registration: Email Confirmation');
+                    _satellite.track('simple_confirm_analytics');
+                    _satellite.track('simple_acct_complete_3rd');
+                    break;
+            }
+        }
+        if (currentUrl.indexOf('transactional.html') > -1) { // Transactional Registration
+            switch (currentScreen) {
+                case 'VerifyIdentityStep':
+                    if (formExpanded === true && !_satellite.readCookie('TranRegStart')) {
+                        _satellite.track('transactional_accountsetup_analytics');
+                        _satellite.track('transactional_acct_start_3rd');
+                    }
+                    break;
+                case 'ConfirmEmailStep':
+                    //console.log('Transactional Registration: Confirm Email Address; events: e85');
+                    _satellite.track('transactional_confirm_analytics');
+                		_satellite.track('transactional_acct_emailsend_3rd');
+                
+                
+                	  break;
+            }
+        }
+        if (currentUrl.indexOf('attend-auction.html') > -1) { // Pick Bid Type. Only telephone and absentee have ajax steps.
+            switch (bidType) {
+                case 'telephone': // Telephone flow
+                    switch (currentScreen) {
+                        case 'SelectLots':
+                            console.log('Telephone Select: Select Lots; event: e54 call'); //fire direct call rule?
+                            _satellite.track('auction_telephone_selectlot_analytics');
+                        break;
+                        case 'ConfirmLotsSelection':
+                            console.log('Telephone Select: Confirm Lots Selection; events: e55 call'); //fire direct call rule?
+                            _satellite.track('auction_telephone_confirmlot_analytics');
+                        break;
+                    }
+                    break;
+                case 'absentee': // Absentee flow
+                    switch (currentScreen) {
+                        case 'SelectLots':
+                            console.log('Absentee Select: Select Lots; events: e105'); //fire direct call rule?
+                            _satellite.track('auction_absentee_selectlot_analytics');
+                        break;
+                        case 'SetMaximumBid':
+                            console.log('Absentee Select: Set Maximum Bid; events: e106'); //fire direct call rule?
+                            _satellite.track('auction_absentee_setmaxbid_analytics');
+                        break;
+                        case 'ConfirmLotsSelection':
+                            console.log('Absentee Select: Confirm Lots Selection; events: e107'); //fire direct call rule?
+                            _satellite.track('auction_absentee_confirmlot_analytics');
+                        break;
+                    }
+                    break;
+            }
+        }
+            if (currentUrl.indexOf('invoice-payment.html') > -1) { // Invoice payemnt section for CC payment ajax steps.
+            switch (currentScreen) {
+                case 'CreditCard:InvoiceDetail': // CC flow
+                      console.log('ccInvoiceDetails events: exx call'); //fire direct call rule?
+                      _satellite.track('ccInvoiceDetails_analytics');
+                break;
+                case 'CreditCard:PaymentProcessing': // CC flow
+                      console.log('ccPaymentProcessing events: exx call'); //fire direct call rule?
+                      _satellite.track('ccPaymentProcessing_analytics');
+                break;                  
+                case 'CreditCard:PaymentConfirmation': // CC flow
+                      console.log('ccPaymentConfirmation events: exx call'); //fire direct call rule?
+                      _satellite.track('ccPaymentConfirmation_analytics');
+                break;      
+                  
+            }
+            }
+        if (currentUrl.indexOf('search-results.html') > -1) { // Search results pages.
+      //insert here
+      }
+
+      
+    } catch (e) {
+        console.log(e);
+    }
+});
+});

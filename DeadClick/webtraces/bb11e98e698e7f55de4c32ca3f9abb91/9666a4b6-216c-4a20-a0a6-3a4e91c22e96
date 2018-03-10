@@ -1,0 +1,154 @@
+(function($){
+var update_calendar_game=function(cal_id){
+	var cal = $("#"+cal_id);
+	var month = cal.attr("data-month");
+	var year = cal.attr("data-year");
+	var month_name = calendar_game[cal_id]["month_name"][month];
+	$("#"+cal_id+" span.cal-month").html(month_name+" "+year);
+	var end_day=new Date(year,month,0).getDate();
+	var weekday_first=new Date(year,parseInt(month)-1,1).getDay();
+	if(weekday_first<1) weekday_first=7;
+	$class_cal="";
+	$("#"+cal_id).removeClass("cal-next").removeClass("cal-prev");
+	if(parseInt(year)<parseInt(calendar_game[cal_id]["limit"]["max"]["year"])){
+		$("#"+cal_id).addClass("cal-next");
+	}else{
+		if(parseInt(year)==parseInt(calendar_game[cal_id]["limit"]["max"]["year"])){
+			if(parseInt(month)<parseInt(calendar_game[cal_id]["limit"]["max"]["month"])){
+				$("#"+cal_id).addClass("cal-next");
+			}
+		}
+	}
+	if(parseInt(year)>parseInt(calendar_game[cal_id]["limit"]["min"]["year"])){
+                $("#"+cal_id).addClass("cal-prev");
+        }else{
+                if(parseInt(year)==parseInt(calendar_game[cal_id]["limit"]["min"]["year"])){
+                        if(parseInt(month)>parseInt(calendar_game[cal_id]["limit"]["min"]["month"])){
+                                        $("#"+cal_id).addClass("cal-prev");
+                        }
+                }
+        }
+
+	var td=0;
+	var html="<tr>";
+	for(var i=0;i<weekday_first-1;i++){
+		html+="<td class='cal-off'>&nbsp;</td>";
+		td++;
+	}
+	for(var i=0;i<end_day;i++){
+		if(td>6){
+			html+="</tr><tr>";
+			td=0;
+		}
+		var d = (i+1).toString(); 
+		if(year in calendar_game[cal_id]["game"] && month in calendar_game[cal_id]["game"][year] && d in calendar_game[cal_id]["game"][year][month]){
+			if(calendar_game[cal_id]["game"][year][month][d]["home"]) var c='cal-home';
+			else var c='cal-out';
+			html+="<td class='"+c+"'>";
+			html+="<div class='cal-score'><a data-date='"+year+"_"+month+"_"+d+"' data-ref='"+cal_id+"' class='"+c+" cal-link-game' ><img src=\""+calendar_game[cal_id]["path"]+calendar_game[cal_id]["game"][year][month][d]["shortname"]+".png"+"\" /><span class='cal-score'>"+calendar_game[cal_id]["game"][year][month][d]["score"].replace(/:/,"<span>-</span>")+"</span></a></div>";
+			html+="</td>";
+		}else{ 
+			html+="<td class='cal-day'><span>"+d+"</span></td>";
+		}
+		td++;
+	}
+	for(var i=td;i<7;i++){
+		html+="<td class='cal-off'>&nbsp;</td>";
+	}
+	html+="</tr>";
+	$("#"+cal_id+" tbody").html(html);
+	$("#"+cal_id+" a.cal-link-game").click(function(){
+		var cal_id = $(this).attr("data-ref");
+		var date = $(this).attr("data-date");
+		var tmp=date.split("_");
+		var month=tmp[1];
+		var day=tmp[2];
+		var year=tmp[0];
+		var game = calendar_game[cal_id]["game"][year][month][day];
+		var tmp2 = game["time"].split(":");
+		var h =game["home"];
+		var content="";
+		content+="<div class='info-league'><h1>";
+		content+=game["league_name"];
+		content+="</h1></div>";
+		var dt =new Date(year,parseInt(month-1),day,tmp2[0],tmp2[1],tmp2[2]);
+		content+="<div class='info-date'>";
+		var d=dt.getDay();
+		if(d==0) var d=7;
+		d=d.toString();
+		content+=calendar_game[cal_id]["day_name"][d]+" ";
+		var d=dt.getDate();
+		content+=d
+		var d=(dt.getMonth()+1).toString();
+		content+=" "+calendar_game[cal_id]["month_name"][d];
+		content+=" "+dt.getUTCFullYear()+" ";
+		var d=dt.getHours();
+		if(parseInt(d)<10) content+="0";
+		content+=d;
+		content+=":";
+		var d=dt.getMinutes();
+		if(parseInt(d)<10) content+="0";
+		content+=d;
+		content+="</div>";
+		content+="<div class='info-table'>";
+		if(h){
+			content+="<div class='info-row'><div class='info-cell'>Amiens</div><div class='info-cell'>&nbsp;</div><div class='info-cell'>"+game["name"]+"</div></div>";
+			content+="<div class='info-row'>";
+			content+="<div class='info-cell'><img src=\""+calendar_game[cal_id]["path2"]+"AMI.png\" /></div>";
+			if(game["score"]) content+="<div class='info-cell score'>"+game["score"].replace(/:/,"<span>-</span>")+"</div>";
+			else content+="<div class='info-cell vs'>VS</div> ";
+			content+="<div class='info-cell'><img src=\""+calendar_game[cal_id]["path2"]+game["shortname"]+".png\" /></div>";
+			content+="</div>";
+		}else{
+			content+="<div class='info-row'><div class='info-cell'>"+game["name"]+"</div><div class='info-cell'>&nbsp;</div><div class='info-cell'>Amiens</div></div>";
+			content+="<div class='info-row'>";
+			content+="<div class='info-cell'><img src=\""+calendar_game[cal_id]["path2"]+game["shortname"]+".png\" /></div>";
+			if(game["score"]) content+="<div class='info-cell score'>"+game["score"].replace(/:/,"<span>-</span>")+"</div>";
+                        else content+="<div class='info-cell vs'>VS</div> ";
+			content+="<div class='info-cell'><img src=\""+calendar_game[cal_id]["path2"]+"AMI.png\" /></div>";
+			content+="</div>";
+		}
+		content+="</div>";
+		$("#"+cal_id+" div.cal-info>div.info").html(content);
+		$("#"+cal_id+" div.cal-info").addClass("on");
+	});
+		
+}
+if(calendar_game!==undefined){
+	$.each(calendar_game,function(index, value){
+		update_calendar_game(index);
+
+	});
+	$("a.cal-next").click(function(){
+		var cal_id = $(this).attr("data-ref");
+		var month = $("#"+cal_id).attr("data-month");
+		var year = $("#"+cal_id).attr("data-year");
+		if(month=="12"){
+			month="1";
+			year = (parseInt(year)+1).toString();
+		}else{
+			month=(parseInt(month)+1).toString();
+		}
+		$("#"+cal_id).attr("data-year",year).attr("data-month",month);
+		$("#"+cal_id+" div.cal-info").removeClass("on");
+		update_calendar_game(cal_id);
+	});
+	$("a.cal-prev").click(function(){
+                var cal_id = $(this).attr("data-ref");
+                var month = $("#"+cal_id).attr("data-month");
+                var year = $("#"+cal_id).attr("data-year");
+                if(month=="1"){
+                        month="12";
+                        year = (parseInt(year)-1).toString();
+                }else{  
+                        month=(parseInt(month)-1).toString();
+                }       
+                $("#"+cal_id).attr("data-year",year).attr("data-month",month);
+		$("#"+cal_id+" div.cal-info").removeClass("on");
+		update_calendar_game(cal_id);
+        });
+	$("div.cal-info").click(function(){
+		$(this).removeClass("on");
+	});
+}
+})(jQuery);

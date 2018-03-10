@@ -1,0 +1,19 @@
+
+function isEmail(entry){var rex=/^(([^<>()[\]\\.,;:\s@\"]+(\.[^<>()[\]\\.,;:\s@\"]+)*)|(\".+\"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;return rex.test(entry);}
+function rgbToHex(rgb){if(!/^rgb\(/.test(rgb))return rgb;var rgbvals=/rgb\((.+),(.+),(.+)\)/i.exec(rgb);var rval=parseInt(rgbvals[1]);var gval=parseInt(rgbvals[2]);var bval=parseInt(rgbvals[3]);return'#'+((rval<10?'0':'')+rval.toString(16)+
+(gval<10?'0':'')+gval.toString(16)+
+(bval<10?'0':'')+bval.toString(16)).toUpperCase();}
+var imageWin=null;function showImage(image_url,image_width,image_height){image_width=image_width==""?400:image_width;image_height=image_height==""?380:image_height;var w=screen.width;var h=screen.height;var ww=image_width*1+30;var wh=image_height*1+45;var wx=(w-ww)/2;var wy=(h-wh)/2;if(imageWin!=null){imageWin.close();}
+imageWin=null;imageWin=window.open("","ProductImageWindow","titlebar=yes, toolbar=no, menubar=no, status=no, directories=no, resizable=yes, scrollbars=yes, top="+wy.toString()+", left="+wx.toString()+", width="+ww.toString()+", height="+wh.toString()+"");while(imageWin==null);imageWin.focus();imageWin.document.body.innerHTML="";imageWin.document.write('<body style="padding:5px;margin:0px">');imageWin.document.write('<div align="center"><img hspace="0" vspace="0" src="'+image_url+'"></div><br/>');imageWin.document.write('<div align="center" style="font-family:arial;font-color:black;font-size:11px;"><a href="javascript:window.close();" style="color:#0000AA;">Close Window</a></div>');imageWin.document.write('</body>');imageWin.width=ww;imageWin.height=wh;}
+function showPrinterPage(url){var prWin=null;prWin=window.open(url,"PrintVer","titlebar=yes, toolbar=no, menubar=yes, status=yes, directories=no, resizable=yes, scrollbars=yes, top=20, left=20, width=810, height=600");while(prWin==null);prWin.focus();}
+function urldecode(str){var ret=str;if(ret==null)
+return'';ret=ret.replace(/\+/g,'%20');ret=decodeURIComponent(ret);ret=ret.toString();return ret;}
+function number_format(number,decimals,dec_point,thousands_sep)
+{number=(number+'').replace(',','').replace(' ','');var n=!isFinite(+number)?0:+number,prec=!isFinite(+decimals)?0:Math.abs(decimals),sep=(typeof thousands_sep==='undefined')?',':thousands_sep,dec=(typeof dec_point==='undefined')?'.':dec_point,s='',toFixedFix=function(n,prec){var k=Math.pow(10,prec);return''+Math.round(n*k)/k;};s=(prec?toFixedFix(n,prec):''+Math.round(n)).split('.');if(s[0].length>3){s[0]=s[0].replace(/\B(?=(?:\d{3})+(?!\d))/g,sep);}
+if((s[1]||'').length<prec){s[1]=s[1]||'';s[1]+=new Array(prec-s[1].length+1).join('0');}
+return s.join(dec);}
+function ShowPopup(src){var bWin=null;bWin=window.open(src,"PopupWind","titlebar=no, toolbar=no, menubar=no, status=no, directories=no, resizable=no, scrollbars=no, top=20, left=20, width=320, height=240");while(bWin==null);bWin.focus();}
+function ConfirmLogout(){if(typeof(ClearCartOnLogout)!='undefined'&&(orderItemsCount>0&&ClearCartOnLogout!=null&&ClearCartOnLogout)){if(confirm("You have items in your cart. Logging out will empty your cart\nAre you sure want to continue?")){document.location=urlLogout;}}
+else{if(confirm("Do you really want to logout?")){document.location=urlLogout;}}}
+function CartConfirmDeleteItem(ocid){if(confirm(msg.confirm_delete_item)){document.location=CartDeleteItemUrl+'&ocid='+ocid;}}
+function CartConfirmEmpty(){if(confirm(msg.confirm_empty_cart)){document.location=CartEmptyUrl;}}

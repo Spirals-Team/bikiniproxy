@@ -1,0 +1,120 @@
+/**
+ * Created by paul.didovici on 5/28/2015.
+ */
+
+// EWP-3266 & EWP-3048 Tracking video player loads in Adobe Analytics - Youtube added via EmbedTab & Preform tags
+function isMyScriptLoaded() {
+    if (!tag) {
+        var tag = document.createElement('script');
+        tag.setAttribute("src", "https://www.youtube.com/iframe_api");
+        var firstScriptTag = document.getElementsByTagName('script')[0];
+        firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+    }
+}
+isMyScriptLoaded();
+$(document).ready(function(){
+
+
+    onYouTubeIframeAPIReady();
+});
+
+function onYouTubeIframeAPIReady() {
+    var $ = jQuery;
+    var players = [];
+    var topPlayer;
+    $('p iframe').filter(function(){return this.src.indexOf('https://www.youtube.com/') == 0}).each(function () {
+        players.push(new YT.Player(this.id, {
+                events: {
+                    'onReady': onPlayerReady,
+                    'onStateChange': onPlayerStateChange
+                }
+            })
+        )
+    });
+    if ($("div.embedCode iframe").filter(function(){return this.src.indexOf('https://www.youtube.com/') == 0}).length > 0) {
+        topPlayer = new YT.Player('player', {
+            events: {
+                'onReady': onPlayerReady2,
+                'onStateChange': onPlayerStateChange
+            }
+        })
+    }
+}
+
+
+function onPlayerReady(event) {
+    _satellite.setVar("workflowtype", "YoutubePreformTag");
+    _satellite.track("YouTubeVideo");
+    event.target._mediastate = "close";
+}
+function onPlayerReady2(event) {
+    _satellite.setVar("workflowtype", "YoutubeEmbedTab");
+    _satellite.track("YouTubeVideo");
+    event.target._mediastate = "close";
+}
+var getTimePercent = function (event) {
+    return event.target.B.currentTime / event.target.B.duration;
+};
+
+function onPlayerStateChange(event) {
+
+
+    var title = event.target.B.videoData.title;
+    //Unplayed
+    if (event.data == -1 && event.data != 3) {
+
+        s_yt.Media.open(title, event.target.B.duration, "Youtube");
+        event.target._mediastate = "open";
+        s_yt.eVar70 = title;
+        //Clear event 75 after video ENDED and you play on another one.
+        s_yt.events = "";
+        s_yt.linkTrackVars = "eVar70, events";
+       // s_yt.linkTrackEvents = "event70";
+    }
+    //Paused
+    if(event.data == YT.PlayerState.PAUSED) {
+            s_yt.Media.stop(title, event.target.B.currentTime);
+            event.target._mediastate = "stop";
+    }
+
+    //Playing
+    if (event.data == YT.PlayerState.PLAYING) {
+
+
+        if (event.target._mediastate == "close") {
+            s_yt.Media.open(title, event.target.B.duration, "Youtube");
+            event.target._mediastate = "open";
+        //Clear event 75 after video ENDED
+            s_yt.events = "";
+        }
+
+        if(getTimePercent(event) > 0.00 && getTimePercent(event) < 0.25 && event.target._mediastate != "stop") {
+            s_yt.events = "event72";
+            s_yt.linkTrackVars = "eVar71,events";
+            s_yt.linkTrackEvents = "event72";
+            s_yt.tl(true,'o',"25% milestone");
+        }
+        if(getTimePercent(event) > 0.251 && getTimePercent(event) < 0.50 && event.target._mediastate != "stop") {
+            s_yt.events = "event73";
+            s_yt.linkTrackVars = "eVar71,events";
+            s_yt.linkTrackEvents = "event73";
+            s_yt.tl(true,'o',"50% milestone");
+        }
+        if(getTimePercent(event) > 0.50 && getTimePercent(event) < 0.75 && event.target._mediastate != "stop") {
+            s_yt.events = "event74";
+            s_yt.linkTrackVars = "eVar71,events";
+            s_yt.linkTrackEvents = "event74";
+            s_yt.tl(true,'o',"75% milestone");
+        }
+        s_yt.Media.play(title, event.target.B.currentTime);
+        event.target._mediastate = "play";
+    }
+    if (event.data == YT.PlayerState.ENDED) {
+        s_yt.Media.stop(title, event.target.B.currentTime);
+        s_yt.Media.close(title);
+        event.target._mediastate = "close";
+        s_yt.events = "event75";
+        s_yt.linkTrackEvents = "event75";
+    }
+
+}

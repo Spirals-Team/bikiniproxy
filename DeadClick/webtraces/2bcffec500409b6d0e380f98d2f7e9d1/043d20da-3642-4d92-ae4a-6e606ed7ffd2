@@ -1,0 +1,338 @@
+(function () {
+'use strict';
+
+TweenLite.lagSmoothing(0);
+
+var fetchTemplate = Adform['_production'].fetchTemplate;
+var feedImageIdentifier = Adform['_production'].feedImageIdentifier;
+var defaultImageLink = Adform['_production'].defaultImageLink;
+var introAnimation = Adform['_production'].introAnimation;
+
+var promiseAdMessage = Adform.production.promiseAdMessage;
+var utils = Adform.production.utils;
+var common = Adform.production.common;
+var ticker = Adform.production.ticker;
+var Carousel = Adform.production.Carousel;
+var feed = Adform.production.feed;
+var promiseCategory = Adform.production.promiseCategory;
+var CATEGORY = utils.getBannerParam('kw_value') || dhtml.getVar('category');
+var PRODUCT_ID = dhtml.getVar('product-id');
+var PRODUCT_LIMIT = parseInt(dhtml.getVar('product-limit', '3'));
+var INTRO_DELAY = parseInt(dhtml.getVar('intro-delay', '0'));
+var INTRO_DURATION = parseInt(dhtml.getVar('intro-duration', '3.25'));
+var URL_PREFIX = dhtml.getVar('url-prefix', '');
+var URL_SUFFIX = dhtml.getVar('url-suffix', '');
+
+var q = common.q;
+
+var visible = false;
+var clickTag = dhtml.getVar('clickTag', 'http://example.com/');
+var isDefault = false;
+var autoScrollIntervalId = null;
+
+var animate = utils.once(function (item) {
+    var INTRO_IMAGE = function () {
+        var imageFromFeed = item[feedImageIdentifier];
+        var imageFromAssets = dhtml.getAsset(1);
+        var imageDefault = dhtml.getVar('default-intro-image', defaultImageLink);
+
+        if (imageFromFeed !== '' && imageFromFeed !== '-' && imageFromFeed !== undefined) {
+            return imageFromFeed;
+        } else if (imageFromAssets) {
+            return imageFromAssets;
+        } else {
+            isDefault = true;
+            return imageDefault;
+        }
+    }();
+
+    var introUrl = false;
+
+    var INTRO_FRAME_URL = function () {
+        var urlFromFeed = item.f1custom_url;
+        var urlPrefix = URL_PREFIX || item.url_prefix || '';
+        var urlSuffix = URL_SUFFIX || item.url_suffix || '';
+
+        if (urlFromFeed !== '' && urlFromFeed !== '-' && urlFromFeed !== undefined) {
+            return item.$link + ';cpdir=' + urlPrefix + urlFromFeed + urlSuffix;
+        } else {
+            introUrl = true;
+            return item.$link + ';cpdir=' + urlPrefix + item.product_deeplink + urlSuffix;
+        }
+    }();
+
+    q('.intro-frame').onclick = function () {
+        window.open(INTRO_FRAME_URL, '_blank');
+        dhtml.sendEvent('201', 'User Clicked on Intro Image');
+        if (introUrl) {
+            dhtml.sendEvent('200', 'Product Clicked', {
+                bv1: item.product_id,
+                bv2: item.product_name
+            });
+        }
+    };
+
+    var introImage = new Image();
+
+    introImage.onload = function () {
+        introAnimation(isDefault, INTRO_IMAGE, INTRO_DELAY, INTRO_DURATION);
+    };
+
+    introImage.src = INTRO_IMAGE;
+});
+
+function renderProduct(item) {
+    var productElem = document.createElement('div');
+    productElem.className = 'products ' + item.categoryid1 + ' monoproduct';
+
+    productElem.innerHTML = fetchTemplate(item);
+
+    var urlPrefix = URL_PREFIX || item.url_prefix || '';
+    var urlSuffix = URL_SUFFIX || item.url_suffix || '';
+
+    productElem.onclick = function (e) {
+        var target = e.target || e.srcElement;
+
+        if (target.classList.contains('prevent-click')) return;
+
+        window.open(item.$link + ';cpdir=' + urlPrefix + item.product_deeplink + urlSuffix, '_blank');
+
+        target.classList.contains('button') ? dhtml.sendEvent('202', 'User Clicked on CTA') : dhtml.sendEvent('203', 'User Clicked on Other');
+        dhtml.sendEvent('200', 'Product Clicked', {
+            bv1: item.product_id,
+            bv2: item.product_name
+        });
+    };
+
+    productElem.querySelector('.intro-reload').addEventListener('click', function () {
+        ticker.cancelFrame(autoScrollIntervalId);
+        TweenLite.to('.arrow.left', 0.5, { x: '-100%', opacity: 0 });
+        TweenLite.to('.arrow.right', 0.5, { x: '100%', opacity: 0 });
+        TweenLite.fromTo('.intro-frame', 0.75, { x: '0%', y: '0%', autoAlpha: 0 }, { delay: INTRO_DELAY, x: '0%', y: '0%', autoAlpha: 1, onComplete: function onComplete() {
+                TweenLite.to('.intro-frame', 0.75, { delay: INTRO_DELAY + INTRO_DURATION, x: '0%', y: '0%', autoAlpha: 0 });
+                TweenLite.fromTo('.arrow.left', 0.5, { x: '-100%', opacity: 0 }, { delay: INTRO_DELAY + INTRO_DURATION, x: '0%', opacity: 1 });
+                TweenLite.fromTo('.arrow.right', 0.5, { x: '100%', opacity: 0 }, { delay: INTRO_DELAY + INTRO_DURATION, x: '0%', opacity: 1 });
+            } });
+        dhtml.sendEvent('5', 'Intro Reload');
+    });
+
+    q('.banner').insertBefore(productElem, q('.banner').firstChild);
+    animate(item);
+}
+
+function renderPromisedItem(itemPromise) {
+    var productElem = document.createElement('div');
+    productElem.className = 'product';
+
+    itemPromise.then(function (item) {
+        productElem.className += ' ' + item.categoryid1;
+        productElem.innerHTML = fetchTemplate(item);
+        animate(item);
+
+        var urlPrefix = URL_PREFIX || item.url_prefix || '';
+        var urlSuffix = URL_SUFFIX || item.url_suffix || '';
+
+        productElem.onclick = function (e) {
+            var target = e.target || e.srcElement;
+
+            if (target.classList.contains('prevent-click')) return;
+
+            window.open(item.$link + ';cpdir=' + urlPrefix + item.product_deeplink + urlSuffix, '_blank');
+
+            target.classList.contains('button') ? dhtml.sendEvent('202', 'User Clicked on CTA') : dhtml.sendEvent('203', 'User Clicked on Other');
+            dhtml.sendEvent('200', 'Product Clicked', {
+                bv1: item.product_id,
+                bv2: item.product_name
+            });
+        };
+
+        productElem.querySelector('.intro-reload').addEventListener('click', function () {
+            ticker.cancelFrame(autoScrollIntervalId);
+            TweenLite.to('.arrow.left', 0.5, { x: '-100%', opacity: 0 });
+            TweenLite.to('.arrow.right', 0.5, { x: '100%', opacity: 0 });
+            TweenLite.fromTo('.intro-frame', 0.75, { x: '0%', y: '0%', autoAlpha: 0 }, { delay: INTRO_DELAY, x: '0%', y: '0%', autoAlpha: 1, onComplete: function onComplete() {
+                    TweenLite.to('.intro-frame', 0.75, { delay: INTRO_DELAY + INTRO_DURATION, x: '0%', y: '0%', autoAlpha: 0 });
+                    TweenLite.fromTo('.arrow.left', 0.5, { x: '-100%', opacity: 0 }, { delay: INTRO_DELAY + INTRO_DURATION, x: '0%', opacity: 1 });
+                    TweenLite.fromTo('.arrow.right', 0.5, { x: '100%', opacity: 0 }, { delay: INTRO_DELAY + INTRO_DURATION, x: '0%', opacity: 1 });
+                } });
+            dhtml.sendEvent('5', 'Intro Reload');
+        });
+    });
+
+    return productElem;
+}
+
+function renderProducts(elem, adMessage) {
+    elem.innerHTML += '\n                <div class="arrow left"></div>\n                <div class="arrow right"></div>\n            ';
+
+    var itemWidth = dhtml.width || q('.banner').offsetWidth,
+        itemHeight = dhtml.height || q('.banner').offsetHeight,
+        carousel = new Carousel({
+        width: itemWidth,
+        height: itemHeight,
+        itemWidth: itemWidth,
+        itemHeight: itemHeight,
+        itemSpacing: 0,
+        itemCount: Infinity,
+        preloadBefore: 1,
+        preloadAfter: 1,
+        horizontal: true,
+        onSwipe: function onSwipe(direction) {
+            stopAutoScroll();
+
+            if (direction < 0) {
+                dhtml.sendEvent('4', 'Swiped to Previous Product');
+            } else if (direction > 0) {
+                dhtml.sendEvent('3', 'Swiped to Next Product');
+            }
+        },
+        createItemView: function createItemView(index) {
+            index = utils.wrapIndex(index, adMessage.size);
+
+            return {
+                render: function render() {
+                    return renderPromisedItem(adMessage.promiseItem(index));
+                },
+                onMoved: function onMoved(itemPosition, itemSize, containerSize) {
+                    if (itemPosition > -itemSize && itemPosition < containerSize) {
+                        adMessage.sendViewEvent(index);
+                    }
+                }
+            };
+        }
+    });
+
+    function stopAutoScroll() {
+        if (autoScrollIntervalId !== null) {
+            ticker.cancelFrame(autoScrollIntervalId);
+            autoScrollIntervalId = null;
+        }
+    }
+
+    (function () {})();
+
+    function autoScroll(delay, duration) {
+        stopAutoScroll();
+        var newAutoScrollIntervalId = ticker.setInterval(function () {
+            return carousel.scrollBy(1);
+        }, delay * 1000);
+
+        setTimeout(function () {
+            if (autoScrollIntervalId === newAutoScrollIntervalId) {
+                stopAutoScroll();
+            }
+        }, duration * 1000);
+        autoScrollIntervalId = newAutoScrollIntervalId;
+    }
+
+    carousel.element.className = 'products';
+
+    elem.insertBefore(carousel.element, elem.firstChild);
+
+    q('.arrow.left', elem).addEventListener('click', function (event) {
+        event.preventDefault();
+        event.stopPropagation();
+        carousel.scrollBy(-1, 500);
+        dhtml.sendEvent(1, 'Button Previous Pressed');
+        stopAutoScroll();
+    });
+
+    q('.arrow.right', elem).addEventListener('click', function (event) {
+        event.preventDefault();
+        event.stopPropagation();
+        carousel.scrollBy(1, 500);
+        dhtml.sendEvent(2, 'Button Next Pressed');
+        stopAutoScroll();
+    });
+
+    setTimeout(function () {
+        autoScroll(5, 5 * (PRODUCT_LIMIT + 1));
+    }, (INTRO_DELAY + INTRO_DURATION + 4) * 1000);
+}
+
+function createPromiseAdMessage() {
+    promiseAdMessage({
+        cid: dhtml.getVar('cid', common.DCO_CID),
+        tid: dhtml.getVar('tid', common.DCO_TID),
+        bn: dhtml.getVar('bn', 0),
+        dcoEngineId: dhtml.getVar('dcoEngineId', '2'),
+        domain: dhtml.getVar('domain', 'https://track.adform.net/'),
+        rotseqno: dhtml.getVar('rotseqno', 0),
+        smid: dhtml.getVar('smid', 0),
+        clickTAG: dhtml.getVar('clickTag', 'http://www.adform.com/'),
+        prefetch: 0,
+        limit: PRODUCT_LIMIT
+    }).then(function (adMessage) {
+        if (adMessage.size === 1) {
+            adMessage.promiseItem(0).then(function (item) {
+                feed.sendViewEvent(item, dhtml.getVar('tid', common.DCO_TID));
+                renderProduct(item);
+            });
+        } else {
+            renderProducts(q('.banner'), adMessage);
+        }
+    });
+}
+
+function init() {
+    if (PRODUCT_ID) {
+        feed.promiseItem({
+            cid: dhtml.getVar('cid', common.DCO_CID),
+            tid: dhtml.getVar('tid', common.DCO_TID),
+            ogid: PRODUCT_ID,
+            clickTAG: dhtml.getVar('clickTag', 'http://example.com/')
+        }).then(function (item) {
+            return renderProduct(item);
+        }).catch(function () {
+            return createPromiseAdMessage();
+        });
+    } else if (CATEGORY) {
+        promiseCategory({
+            cid: dhtml.getVar('cid', common.DCO_CID),
+            tid: dhtml.getVar('tid', common.DCO_TID),
+            category: CATEGORY,
+            clickTAG: dhtml.getVar('clickTag', 'http://example.com/'),
+            limit: PRODUCT_LIMIT
+        }).then(function (items) {
+            if (items.size) {
+                renderProducts(q('.banner'), items);
+            } else {
+                renderProduct(items);
+                feed.sendViewEvent(items, dhtml.getVar('tid', common.DCO_TID));
+            }
+        }).catch(function () {
+            return createPromiseAdMessage();
+        });
+    } else {
+        createPromiseAdMessage();
+    }
+}
+
+dhtml.inscreen.on('visible', onVisibilityChanged).on('percent', onVisibilityChanged);
+
+function onVisibilityChanged() {
+    var value = dhtml.inscreen.percent > 50;
+
+    if (visible !== value) {
+        visible = value;
+
+        if (visible) {
+            if (init) {
+                init();
+                init = null;
+            }
+        } else {
+            //pause
+        }
+    }
+}
+
+if (!Adform.getVar('bn')) {
+    dhtml.inscreen.percent = 100;
+}
+
+setTimeout(function () {
+    return onVisibilityChanged();
+}, 0);
+
+}());

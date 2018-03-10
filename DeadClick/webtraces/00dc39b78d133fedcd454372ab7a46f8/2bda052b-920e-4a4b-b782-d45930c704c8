@@ -1,0 +1,108 @@
+var form_elements_to_turn_on = [];
+
+window.addEvent('domready', function() {
+	$$(".menu_item").each(
+		function(menu_item, i) {
+			if(menu_item.getElement(".menu")) {
+				//instantiate the slide
+				
+				if(window.ie6){
+					var mySlide = new Fx.Slide(menu_item.getElement(".menu"), {
+						wait:false, 
+						duration: 300, 
+						fps:100, 
+						transition: Fx.Transitions.Quad.easeInOut,
+						onComplete:fIEfuncHide
+					}).hide();
+				}else{
+					var mySlide = new Fx.Slide(menu_item.getElement(".menu"), {
+						wait:false, 
+						duration: 300, 
+						fps:100, 
+						transition: Fx.Transitions.Quad.easeInOut
+					}).hide();
+					
+				}
+				
+				menu_item.getElements("ul").setStyle('visibility','visible');
+				
+				menu_item.getElements('li a').each(function(el) {
+					var width = menu_item.getSize().size.x-el.getStyle('padding-left').toInt()-el.getStyle('padding-right').toInt();
+					el.setStyle('width',width);
+				});
+				
+				menu_item.addEvent("mouseenter", function(e) {
+														  							  
+					mySlide.slideIn();
+					$E('a.brand_menu_link', menu_item).addClass('brand_menu_link_hovered');
+					if($E('span', $E('a.brand_menu_link', menu_item)))
+						$E('span', $E('a.brand_menu_link', menu_item)).addClass('arrow');
+				});
+				
+				
+				function fIEfuncHide(){
+					///////////////////
+						var menuHeight = menu_item.getSize().scrollSize.y;
+
+						var menuWidth = menu_item.getSize().scrollSize.x;
+
+						var menuX = menu_item.getPosition().x;
+
+						var menuY = menu_item.getPosition().y;
+					
+						if(window.ie6){
+							
+							$$('select').each(function(s) {
+					
+								if (s.className != "menu_select_field") {
+					
+									var elX = s.getPosition().x;
+					
+									var elY = s.getPosition().y;
+
+									//if ((element begins between the left and right edge of the menu) OR (element starts to the left of the menu, but extends into the area))
+					
+									if ((elX  > menuX && elX  < (menuX + menuWidth)) || ( ((elX + s.getSize().scrollSize.x) > menuX ) && (elX < menuX))) {
+					
+										// if (element is contained within the vertical space occupied by the menu)
+					
+										if (elY > menuY && elY < (menuY + menuHeight)) {
+					
+											s.setStyle('visibility', 'hidden');
+					
+											form_elements_to_turn_on.push(s);
+					
+										}
+					
+									}
+					
+								}
+					
+							});
+					
+						}
+					
+					///////////////////
+				}
+				
+				
+				//*mouseleaves wont fire until all children are left
+				menu_item.addEvent("mouseleave", function(e) {
+					if(window.ie6){	
+						//////////////////
+						for (var t = 0; t < form_elements_to_turn_on.length; t++) {
+							form_elements_to_turn_on[t].setStyle('visibility', 'visible');
+						}
+						//////////////////
+					}
+					mySlide.slideOut();
+					$E('a.brand_menu_link', menu_item).removeClass('brand_menu_link_hovered');
+					if($E('span', $E('a.brand_menu_link', menu_item)))
+						$E('span', $E('a.brand_menu_link', menu_item)).removeClass('arrow');
+				});
+			}
+		}
+	);
+	
+	
+});

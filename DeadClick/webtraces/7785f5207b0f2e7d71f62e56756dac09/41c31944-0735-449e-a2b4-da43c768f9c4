@@ -1,0 +1,58 @@
+/*===========================================================================
+  COOKIE object
+  (c) 2006, Inventive Labs
+
+  To init the cookie object:
+    var pref = new Cookie('pref', Cookie.days(30));
+
+  Set the cookie to some value:
+    pref.set(value);
+
+  Find out the cookie value:
+    pref.get();
+---------------------------------------------------------------------------*/
+function Cookie(key, expiry, domain, path, bSecure) {
+  this.key = key;
+  this.expiry = expiry;
+  this.domain = domain ? domain : '.' + location.hostname.replace(/^www\./,'');
+  this.path = path ? path : "/";
+  this.bSecure = bSecure;
+}
+
+/* sets the value of the cookie identified by key */
+Cookie.prototype.set = function (val) {
+  var dough = this.key + "=" + escape(val);
+  if (this.expiry){dough += "; expires="+ this.expiry.toGMTString();}
+  if (this.path){dough += "; path="+this.path;}
+  if (this.domain){dough += "; domain="+this.domain;}
+  if (this.bSecure){dough += "; secure";}
+
+  document.cookie = dough;
+  return val;
+}
+
+/* returns the value of the cookie identified by key */
+Cookie.prototype.get = function () {
+  var pairs = document.cookie.split(';');
+  for (var i=0;i<pairs.length;i++) {
+    var p = pairs[i].replace(/^\s+/g, '');
+    if (p && p.indexOf(this.key) == 0) {
+      return p.substring(this.key.length+1);
+    }
+  }
+}
+
+/* deletes the cookie identified by key */
+Cookie.prototype.nullify = function () {
+  this.expiry = new Date(0);
+  this.set("");
+}
+
+/* returns the date in so many days from now */ 
+Cookie.days = function (days) {
+  if (days) {
+    var d = new Date();
+    d.setTime(d.getTime() + (days * 24 * 60 * 60 * 1000));
+    return d;
+  }
+}

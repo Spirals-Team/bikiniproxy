@@ -1,0 +1,30 @@
+_satellite.pushAsyncScript(function(event, target, $variables){
+  var debug = true;
+var dtmCookieName = "dtm_pty_id";
+
+try{ 
+	if(_satellite.readCookie("pty_id")){ 
+		//set dtm cookie 
+		document.cookie = dtmCookieName + "=" + _satellite.readCookie("pty_id") + ";domain=.sothebys.com;path=/"; 
+		 
+	}else{
+		//no pty_id cookie but dtm cookie would be available on timed
+		if(location.origin.match("timed")){
+			//Timed site - good! 
+			
+		}else{
+			//Not Timed site - delete cookie if there is no pty_id cookie
+			//document.cookie = dtmCookieName + '=;expires=Thu, 01 Jan 1970 00:00:01 UTC;domain=.sothebys.com;path=/';  
+		} 
+	} 
+	if(debug){ 
+		console.debug("DTM:Cookies - _satellite.readCookie(pty_id)		:", _satellite.readCookie("pty_id"));  
+		console.debug("DTM:Cookies - _satellite.readCookie(dtm_pty_id)	:", _satellite.readCookie(dtmCookieName));  
+		if(typeof stb !== 'undefined'){
+			console.debug("DTM:Cookies - stb.digitalData.account.clientId 	:", stb.digitalData.account.clientId);  //just for reference
+		}
+	}
+}catch(err){
+	console.debug("DTM:Cookies error:", err); 
+}
+});

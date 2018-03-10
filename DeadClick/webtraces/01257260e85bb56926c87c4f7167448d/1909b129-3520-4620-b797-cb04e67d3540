@@ -1,0 +1,61 @@
+(function(d, w, c) {
+    w.ChatraID = 'MiQRx22dPAnLQYKaT';
+    var s = d.createElement('script');
+    w[c] = w[c] || function() {
+        (w[c].q = w[c].q || []).push(arguments);
+    };
+    s.async = true;
+    s.src = (d.location.protocol === 'https:' ? 'https:': 'http:')
+        + '//call.chatra.io/chatra.js';
+    if (d.head) d.head.appendChild(s);
+})(document, window, 'Chatra');
+(function() {
+    var cachedData = {};
+
+    function ajax(method, url, callback) {
+        var httpRequest = new XMLHttpRequest();
+
+        httpRequest.onreadystatechange = function() {
+            if (httpRequest.readyState === XMLHttpRequest.DONE) {
+                if (httpRequest.status === 200) {
+                    try {
+                        callback(JSON.parse(httpRequest.responseText));
+                    }
+                    catch(e) {}
+                }
+            }
+        };
+
+        httpRequest.open(method, url);
+        httpRequest.send();
+    }
+
+    function formatPrice(price) {
+        return (price / 100).toFixed(2);
+    }
+
+    function pollCart() {
+        ajax('GET', '/cart.js?chatra=1', function(cart) {
+            var cartArr = [];
+
+            for (var i = 0; i < cart.items.length; i++) {
+                var item = cart.items[i];
+
+                cartArr.push((item.quantity != 1? '['+item.quantity+'] ': '') + item.title + (item.price? ', ' + formatPrice(item.price):''));
+            }
+
+            var data = {
+                    'Cart': cartArr.join('\n') || 'empty',
+                    'Total': cart.total_price? formatPrice(cart.total_price): null
+                };
+
+            if (data['Cart'] != cachedData['Cart'] || data['Total'] != cachedData['Total']) {
+                Chatra('updateIntegrationData', data);
+                cachedData = data;
+            }
+        });
+    }
+
+    setInterval(pollCart, 15000);
+    pollCart();
+})();

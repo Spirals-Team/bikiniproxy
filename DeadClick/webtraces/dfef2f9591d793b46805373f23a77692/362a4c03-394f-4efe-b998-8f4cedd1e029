@@ -1,0 +1,131 @@
+<!-- Templage DBM -->
+
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+
+    <!-- 1. meta taille -->
+    <meta name="ad.size" content="width=160,height=600">
+
+   
+    <!-- 2. Script Adobe Edge -->
+
+    <!--Adobe Edge Runtime - Local -->
+    <script type="text/javascript" charset="utf-8" src="edge_includes/edge.6.0.0.min.js"></script>
+    <style>
+        .edgeLoad-EDGE-REMIND {
+            visibility: hidden;
+        }
+        .EDGE-REMIND {
+            -moz-box-sizing: border-box;
+            -webkit-box-sizing: border-box;
+            box-sizing: border-box;
+            display: block;
+            width: 1260px;
+            height: 600px;
+            
+        }
+    </style>
+    <script>
+        AdobeEdge.loadComposition('160x600_production', 'EDGE-REMIND', {
+            scaleToFit: "none",
+            centerStage: "none",
+            minW: "0px",
+            maxW: "undefined",
+            width: "160px",
+            height: "600px"
+        }, {
+            dom: []
+        }, {
+            dom: []
+        });
+
+    </script>
+    <!--Adobe Edge Runtime End-->
+
+    <script type="text/javascript">
+        var clickTag = "";
+
+    </script>
+
+
+    <!-- 4. Style du bouton "clicktag" -->
+    <style type="text/css">
+        html,
+        body {
+            width: 100%;
+            height: 100%;
+            margin: 0px;
+        }
+        
+    </style>
+
+
+
+
+
+<script type="text/javascript">
+    
+      (function() {
+        var relegateNavigation = '';
+        var handleClickTagMessage = function(e) {
+          try {
+            var eventData = JSON.parse(e.data);
+          } catch (err) {
+            return;
+          }
+          if (eventData.isInitClickTag) {
+            if (eventData.clickTags) {
+              for (var i = 0; i < eventData.clickTags.length; i++) {
+                var clkTag = eventData.clickTags[i];
+                window[clkTag.name] = clkTag.url;
+              }
+            } else if (eventData.clickTag) {
+              window.clickTag = eventData.clickTag;
+            }
+            relegateNavigation = eventData.relegateNavigation;
+          }
+        };
+
+        if (open.call) {
+          window.open = function(open) {
+            return function(url, name, features) {
+              if (relegateNavigation === 'parent') {
+                var message = {'clickTag': url, 'isPostClickTag': true};
+                parent.postMessage(JSON.stringify(message), '*');
+              } else {
+                var args = [url, name];
+                if (features) {
+                  args.push(features);
+                }
+                open.apply(window, args);
+              }
+            };
+          }(window.open);
+        }
+
+        if (window.addEventListener) {
+          window.addEventListener(
+              'message', handleClickTagMessage, false);
+        } else {
+          window.attachEvent('onmessage', handleClickTagMessage);
+        }
+      })();
+    
+  </script></head>
+
+<body style="margin:0;padding:0;">
+
+    <!-- 4. Lien à rajouter autour de l'animation" -->
+    <a href="javascript:window.open(window.clickTag)">
+        <div id="Stage" class="EDGE-REMIND"></div>
+    </a>
+
+
+
+</body>
+
+</html>

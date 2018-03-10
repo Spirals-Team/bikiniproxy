@@ -1,0 +1,51 @@
+/* Version: 7.6.0 */
+
+var this_post = 0;
+var is_quote = 0;
+var is_pending = 0;
+
+function switchAdvanced(type) {
+	if (type == 'pt') {
+		document.replier.ubb.value = "mess_handler";
+	} else {
+		document.replier.ubb.value = "newreply";
+	}
+	document.replier.submit();
+}
+
+function quickReply(post_id,quote,pt) {
+	if (is_pending) return;
+	is_pending = 1;
+	this_post = post_id;
+	is_quote = quote;
+	if (quote) {
+    		var url = script + "?ubb=quickquote&post=" + post_id + "&pt=" + pt;
+    		var ajax = new ubbtAJAX(url, updateQuickReply);
+    		ajax.sendData("GET");
+	} else {
+		updateQuickReply();
+	}
+}
+
+function updateQuickReply(responseXML) {
+		postBody = responseXML;
+		obj = document.replier;
+		obj.Parent.value = document.getElementById('number' + this_post).innerHTML;
+		if (is_quote) {
+		obj.Body.value += postBody + '\n';
+		}
+		insertAtCaret(obj.Body, ' ');
+		obj.Body.focus();
+		is_pending = 0;
+}
+
+function insertAtCaret (textEl, text) {
+	if (textEl.createTextRange && textEl.caretPost) {
+		var caretPos = textEl.caretPost;
+		caretPost.text = caretPost.text.charAt(caretPost.text.length - 1) == '' ?
+			text + '\n' : text;
+	} else {
+		textEl.value = textEl.value + text;
+	}
+	return true;
+}

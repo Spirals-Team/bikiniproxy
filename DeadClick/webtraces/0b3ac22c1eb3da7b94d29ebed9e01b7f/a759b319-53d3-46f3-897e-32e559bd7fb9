@@ -1,0 +1,78 @@
+
+(function () {
+	function getUrl()
+	{
+		var url = '';
+
+		try
+		{
+			if (window.top == window)
+			{
+				url = window.location.href;
+			}
+			else
+			{
+				try
+				{
+					url = window.top.location.href;
+				}
+				catch (e2)
+				{
+					url = document.referrer;
+				}
+			}
+		}
+		catch(e1) {}
+
+		return url;
+	}
+	var isWindowTop = false;
+	try{if(window.top == window)isWindowTop = true;}catch(e){}
+	if (isWindowTop || false)
+	{
+		var constructed = false;
+		var uniqueID = 'sekindoParent'+Math.round(Math.random()*1000);
+		window['construct'+uniqueID] = function (iframe)
+		{
+			if(constructed)return;
+			constructed = true;
+			var url = 'https://live.sekindo.com/live/liveView.php?s=82740&vid_viewAction=player&cbuster=[CACHE_BUSTER]&x=310&y=260&vid_sliderCbtn=1&vid_sliderOffset=100&vid_sliderDir=bl&vid_sliderAdGap=10&cbuster=1518714874' + '&pubUrlAuto=' + encodeURIComponent(getUrl());
+			var iFramewindow = iframe.contentWindow || iframe.contentDocument.defaultView;
+			var iFrameDoc = iFramewindow.document || iframe.contentDocument;
+			iFrameDoc.open();
+			iFrameDoc.write(unescape("%3Cscript src='") + url + unescape("' type='text/javascript'%3E%3C/script%3E"));
+			iFrameDoc.close();
+			iframe.width = 310;
+			iframe.height = 1;
+		}
+		var currentScript = document.currentScript;
+		if (currentScript && currentScript.async)
+		{
+			var iframe = document.createElement('iframe');
+			var div0 = document.createElement('div');
+			var div1 = document.createElement('div');
+
+			iframe.marginWidth = '0';
+			iframe.marginHeight = '0';
+			iframe.hspace = '0';
+			iframe.vspace = '0';
+			iframe.frameBorder = '0';
+			iframe.scrolling = 'no';
+			iframe.id = 'google_ads_iframe_dummy_'+uniqueID;
+			currentScript.parentNode.insertBefore(div0, currentScript);
+			div0.appendChild(div1);
+			div1.appendChild(iframe);
+			window['construct'+uniqueID](iframe);
+		}
+		else
+		{
+			var code = '<div><div><iframe width="310"  marginwidth="0" marginheight="0" hspace="0" vspace="0" frameborder="0" scrolling="no" onload="construct'+uniqueID+'(this)" id ="google_ads_iframe_dummy_'+uniqueID+'"></iframe></div></div>';
+			document.write(code);
+		}
+	}
+	else
+	{
+		var url = 'https://live.sekindo.com/live/liveView.php?s=82740&vid_viewAction=player&cbuster=[CACHE_BUSTER]&x=310&y=260&vid_sliderCbtn=1&vid_sliderOffset=100&vid_sliderDir=bl&vid_sliderAdGap=10&cbuster=1518714874' + '&pubUrlAuto=' + encodeURIComponent(getUrl());
+		document.write(unescape("%3Cscript src='") + url + unescape("' type='text/javascript'%3E%3C/script%3E"));
+	}
+})();

@@ -1,0 +1,95 @@
+var sTmpVarList;function checkQuantity(value1,StockQty,txtbox,frm,ItemMFGDesc,bHasVariants)
+{for(var intEleCount=0;intEleCount<frm.elements.length;intEleCount++)
+{if(frm.elements[intEleCount].name=="ProdQty")
+{value2=txtbox.value
+if(isNaN(value2))
+{alert("Please enter a valid quantity");return false}
+if(parseFloat(value2)!=parseInt(parseFloat(value2)))
+{alert("The quantity for this product should be a whole number")
+if(txtbox.type!='hidden')
+txtbox.focus();return false}
+if(!validate_DOUBLE(txtbox,"quantity"))return false;if(value1>value2)
+{alert("The minimum quantity for this product is "+value1)
+txtbox.value=value1
+if(txtbox.type!='hidden')
+txtbox.focus();return false;}
+if((frm.elements["ProductType"].value==1||frm.elements["ProductType"].value==4||frm.elements["ProductType"].value==5)&&(frm.elements["BackOrderOption"].value!=4))
+{sTmpVarList='';if(bHasVariants)
+StockQty=GetMaxStockQty(frm,StockQty)
+if(value2>StockQty&&StockQty!=-1)
+{if(sTmpVarList!='')
+ItemMFGDesc=ItemMFGDesc+'('+sTmpVarList+')';var ActualQty=parseFloat(StockQty)-parseFloat(value2);return RetDisplayOutOfStockMessageCommon(frm.elements["BackOrderOption"].value,ItemMFGDesc,ActualQty,value1,value2);}}
+if((frm.elements["ProductType"].value==5)&&(frm.elements["BackOrderOption"].value!=4))
+{sTmpVarList='';if(value2>StockQty&&StockQty!=-1)
+{if(sTmpVarList!='')
+ItemMFGDesc=ItemMFGDesc+'('+sTmpVarList+')';var ActualQty=parseFloat(StockQty)-parseFloat(value2);return RetDisplayOutOfStockMessageCommon(frm.elements["BackOrderOption"].value,ItemMFGDesc,ActualQty,value1,value2);}}}}
+return true;}
+function GetMaxStockQty(frm,vStockQty)
+{var tmpMaxValue
+var finalMaxValue
+sTmpVarList='';finalMaxValue=vStockQty
+var CounterValue=0;if(frm.GroupCounter!=null)
+CounterValue=frm.GroupCounter.value;for(i=1;i<=CounterValue;i++)
+{ind=frm.elements["VariantGroup"+i].selectedIndex
+tmpMaxValue=eval(frm.name+'_varMaxStock'+i+'['+ind+']');if(tmpMaxValue<finalMaxValue&&tmpMaxValue!=-1)
+finalMaxValue=tmpMaxValue;if(sTmpVarList!='')
+sTmpVarList=sTmpVarList+' - '
+sTmpVarList=sTmpVarList+(frm.elements["VariantGroup"+i].options[ind].text);}
+return finalMaxValue;}
+function checkQuantitySetPrice(value1,StockQty,txtbox,frm,ItemMFGDesc,strProdPrice)
+{if(checkQuantity(value1,StockQty,txtbox,frm,ItemMFGDesc,true))
+{total_price=0;for(i=1;i<=frm.GroupCounter.value;i++)
+{ind=frm.elements["VariantGroup"+i].selectedIndex;total_price+=parseFloat(frm.elements["variant"+i+"_"+(ind+1)].value);}
+frm.elements[strProdPrice].value=parseFloat(frm.elements[strProdPrice].value)+total_price
+return true;}
+else
+return false;}
+function checkQuantityFormat5(value1,StockQty,txtbox,frm,ItemMFGDesc,bHasVariants)
+{var ProductId=frm.ProdID.value;var QtyField=document.getElementById("ProductQuantity_"+ProductId);if(QtyField!=null)
+{if(!validate_DOUBLE(QtyField,"quantity"))return false;txtbox.value=QtyField.value;}
+for(var intEleCount=0;intEleCount<frm.elements.length;intEleCount++)
+{if(frm.elements[intEleCount].name=="ProdQty")
+{value2=txtbox.value
+if(isNaN(value2))
+{alert("Please enter a valid quantity");if(txtbox.type!='hidden')
+txtbox.focus();return false}
+if(parseFloat(value2)!=parseInt(parseFloat(value2)))
+{alert("The quantity for this product should be a whole number")
+if(txtbox.type!='hidden')
+txtbox.focus();return false}
+if(!validate_DOUBLE(txtbox,"quantity"))return false;if(value1>value2)
+{alert("The minimum quantity for this product is "+value1)
+txtbox.value=value1
+if(txtbox.type!='hidden')
+txtbox.focus();return false;}
+if((frm.elements["ProductType"].value==1||frm.elements["ProductType"].value==4||frm.elements["ProductType"].value==5)&&(frm.elements["BackOrderOption"].value!=4))
+{sTmpVarList='';if(bHasVariants)
+StockQty=GetMaxStockQty(frm,StockQty)
+if(value2>StockQty&&StockQty!=-1)
+{if(sTmpVarList!='')
+ItemMFGDesc=ItemMFGDesc+'('+sTmpVarList+')';var ActualQty=parseFloat(StockQty)-parseFloat(value2);if(!RetDisplayOutOfStockMessageCommon(frm.elements["BackOrderOption"].value,ItemMFGDesc,ActualQty,value1,value2)){return false;};}}
+if((frm.elements["ProductType"].value==5)&&(frm.elements["BackOrderOption"].value!=4))
+{sTmpVarList='';if(value2>StockQty&&StockQty!=-1)
+{if(sTmpVarList!='')
+ItemMFGDesc=ItemMFGDesc+'('+sTmpVarList+')';var ActualQty=parseFloat(StockQty)-parseFloat(value2);if(!RetDisplayOutOfStockMessageCommon(frm.elements["BackOrderOption"].value,ItemMFGDesc,ActualQty,value1,value2)){return false;};}}}}
+var datastring=$(frm).serialize();$.ajax({type:"POST",url:"/action_buybutton-ajax.asp",data:datastring,dataType:"xml",success:function(Xml){var CartItemCount='';var CartStatus='';var CartRedirect='';var FloatingCartData='';$(Xml).find("cartdata").each(function(){if($(this).find('cartstatus')!=null&&$(this).find('cartstatus').text()!=''){CartStatus=$(this).find('cartstatus').text();}
+if($(this).find('cartredirect')!=null&&$(this).find('cartredirect').text()!=''){CartRedirect=$(this).find('cartredirect').text();}
+if($(this).find('cartitemcount')!=null){CartItemCount=$(this).find('cartitemcount').text();if($(".emptycartlink").length>0){$(".emptycartlink").html('<div class="divcartcount">1</div> item in the Shopping Cart')}
+if(CartItemCount!=''){$(".divcartcount").html(CartItemCount);}}
+if($(this).find('cartfloat')!=null){FloatingCartData=$(this).find('cartfloat').text();if(FloatingCartData!=''&&document.getElementById("ShoppingCartFloat")!=null){document.getElementById("ShoppingCartFloat").innerHTML=FloatingCartData;}}
+if($(this).find('cartfloat1')!=null){FloatingCartData=$(this).find('cartfloat1').text();if(FloatingCartData!=''&&document.getElementById("ShoppingCartFloat1")!=null){document.getElementById("ShoppingCartFloat1").innerHTML=FloatingCartData;}}});if(CartRedirect=='REDIRECT'){location.href='/viewcart.asp';return false;}
+if(CartStatus=='OKALERT'){if(document.getElementById("ShoppingCartFloat")!=null){ShoppingCartFloatOpentip=new Opentip($jQCart("#ShoppingCartLink"),$jQCart("#ShoppingCartFloat").html(),{borderWidth:1,borderRadius:0,borderColor:"#c0c0c0",stemLength:10,target:"#ShoppingCartLink",hideOn:"mouseleave",showOn:"mouseover",tipJoint:'top',style:'glass',fixed:true,containInViewport:true,hideTriggers:["tip","trigger"]})
+ShoppingCartFloatOpentip.show();$jQCart("#lastprodadded").addClass("lastaddedprodcss").show("lastprodadded").css("opacity","1");}
+if(document.getElementById("ShoppingCartFloat1")!=null){ShoppingCartFloatOpentip1=new Opentip($jQCart("#ShoppingCartLink1"),$jQCart("#ShoppingCartFloat1").html(),{borderWidth:1,borderRadius:0,borderColor:"#c0c0c0",stemLength:10,target:"#ShoppingCartLink1",hideOn:"mouseleave",showOn:"mouseover",tipJoint:'top',style:'glass',fixed:true,containInViewport:true,hideTriggers:["tip","trigger"]})
+ShoppingCartFloatOpentip1.show();$jQCart("#lastprodadded").addClass("lastaddedprodcss").show("lastprodadded").css("opacity","1");}
+if(parseFloat(scrollTop())>=parseFloat(clientHeight())){alert('The item has been successfully added to your shopping cart. You can either continue shopping or click on the shopping cart link at the top right to checkout');}
+return false;}}});}
+function clientHeight(){return filterResults(window.innerHeight?window.innerHeight:0,document.documentElement?document.documentElement.clientHeight:0,document.body?document.body.clientHeight:0);}
+function scrollTop(){return filterResults(window.pageYOffset?window.pageYOffset:0,document.documentElement?document.documentElement.scrollTop:0,document.body?document.body.scrollTop:0);}
+function filterResults(n_win,n_docel,n_body){var n_result=n_win?n_win:0;if(n_docel&&(!n_result||(n_result>n_docel)))
+n_result=n_docel;return n_body&&(!n_result||(n_result>n_body))?n_body:n_result;}
+$(document).on("mouseover","img[data-hover]",function(){var src=$(this).attr("data-hover")
+$(this).attr("src",src);}).on('mouseout',"img[data-hover]",function(){var src=$(this).attr("data-image")
+$(this).attr("src",src);});function showVariantImage(prodGroupId,prodId,dataImage,dataHover,Price){if(dataImage.length>0){$("#prodImage-"+prodGroupId).attr("src",dataImage);if(dataHover.length>0){$("#prodImage-"+prodGroupId).attr("data-image",dataImage);$("#prodImage-"+prodGroupId).attr("data-hover",dataHover);}else{$("#prodImage-"+prodGroupId).removeAttr("data-image")
+$("#prodImage-"+prodGroupId).removeAttr("data-hover")}}
+$("#prodPrice-"+prodGroupId).html($('<div/>').html($("#txtProdPrice-"+prodGroupId+"-"+prodId).html()).text());}

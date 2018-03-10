@@ -1,0 +1,45 @@
+<!doctype html>
+<html>
+  <body>
+    <script>
+      (function(){
+        function escapeForHtml(str){
+          if (!str) return str
+          return str
+            .replace(/\&/g, '&amp;')
+            .replace(/\</g, '&lt;')
+            .replace(/\>/g, '&gt;')
+            .replace(/\"/g, '&quot;')
+            .replace(/\'/g, '&#x27;')
+            .replace(/\//g, '&#x2F;')
+        }
+
+        var regexChars = /[.*+?^${}()|[\]\\]/g;
+        function escapeForRegex(str) {
+          return str.replace(regexChars, "\\$&");
+        }
+
+        function parseQueryString(){
+          var ret = {}, parts = location.search.substring(1).split('&');
+          for (var i = parts.length; i--;) {
+            var vardef = parts[i].split('='), varname = vardef[0], value = vardef[1];
+            ret[varname] = unescape(value);
+          }
+          return ret;
+        }
+
+        var queryParams = parseQueryString();
+
+        var markup = "<meta name=\"com.silverpop.brandeddomains\" content=\"www.pages05.net,commercial.trane.com,info.ingersollrand.com,info.irtools.com,ir-craft.phase3mcdev.com,www.arozone.com,www.ingersollrandproducts.com,www.trane.com,www.tranesupply.com\" />\n\n<!-- Optionally uncomment the following code between your HTML document head tags if you use Engage Conversion Tracking (COT). -->\n<!--<meta name=\"com.silverpop.cothost\" content=\"pod5.ibmmarketingcloud.com\" />-->\n\n<script src=\"http://contentz.mkt51.net/lp/static/js/iMAWebCookie.js?37bdffcb-12ff937f04e-d7c8ec57ae636c7258d3eb0ef0e531f2&h=www.pages05.net\" type=\"text/javascript\"></scr"+"ipt>\n\n<!-- For external web sites running under SSL protocol (https://) please uncomment this block and comment out the non-secure (http://) implementation. -->\n<!--<script src=\"https://www.sc.pages05.net/lp/static/js/iMAWebCookie.js?37bdffcb-12ff937f04e-d7c8ec57ae636c7258d3eb0ef0e531f2&h=www.pages05.net\" type=\"text/javascript\"></scr"+"ipt>-->\n";
+
+        for (var name in queryParams){
+          var regex = new RegExp('%' + escapeForRegex(name) + '%', 'ig');
+          markup = markup.replace(regex, 
+            escapeForHtml(queryParams[name]));
+        }
+
+        document.write(markup)
+      })();
+    </script>
+  </body>
+</html>

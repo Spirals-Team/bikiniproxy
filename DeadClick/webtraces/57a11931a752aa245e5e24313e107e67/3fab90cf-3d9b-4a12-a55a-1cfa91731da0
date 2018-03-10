@@ -1,0 +1,778 @@
+/* global a2a*/
+(function (Drupal) {
+  'use strict';
+
+  Drupal.behaviors.addToAny = {
+    attach: function (context, settings) {
+      // If not the full document (it's probably AJAX), and window.a2a exists
+      if (context !== document && window.a2a) {
+        a2a.init_all('page'); // Init all uninitiated AddToAny instances
+      }
+    }
+  };
+
+})(Drupal);
+;
+/**
+ * @file
+ * Attaches several event listener to a web page.
+ */
+
+(function ($, Drupal, drupalSettings) {
+
+  "use strict";
+
+  Drupal.google_analytics = {};
+
+  $(document).ready(function () {
+
+    // Attach mousedown, keyup, touchstart events to document only and catch
+    // clicks on all elements.
+    $(document.body).on("mousedown keyup touchstart", function (event) {
+
+      // Catch the closest surrounding link of a clicked element.
+      $(event.target).closest("a,area").each(function () {
+
+        // Is the clicked URL internal?
+        if (Drupal.google_analytics.isInternal(this.href)) {
+          // Skip 'click' tracking, if custom tracking events are bound.
+          if ($(this).is('.colorbox') && (drupalSettings.google_analytics.trackColorbox)) {
+            // Do nothing here. The custom event will handle all tracking.
+            // console.info("Click on .colorbox item has been detected.");
+          }
+          // Is download tracking activated and the file extension configured
+          // for download tracking?
+          else if (drupalSettings.google_analytics.trackDownload && Drupal.google_analytics.isDownload(this.href)) {
+            // Download link clicked.
+            ga("send", {
+              "hitType": "event",
+              "eventCategory": "Downloads",
+              "eventAction": Drupal.google_analytics.getDownloadExtension(this.href).toUpperCase(),
+              "eventLabel": Drupal.google_analytics.getPageUrl(this.href),
+              "transport": "beacon"
+            });
+          }
+          else if (Drupal.google_analytics.isInternalSpecial(this.href)) {
+            // Keep the internal URL for Google Analytics website overlay intact.
+            ga("send", {
+              "hitType": "pageview",
+              "page": Drupal.google_analytics.getPageUrl(this.href),
+              "transport": "beacon"
+            });
+          }
+        }
+        else {
+          if (drupalSettings.google_analytics.trackMailto && $(this).is("a[href^='mailto:'],area[href^='mailto:']")) {
+            // Mailto link clicked.
+            ga("send", {
+              "hitType": "event",
+              "eventCategory": "Mails",
+              "eventAction": "Click",
+              "eventLabel": this.href.substring(7),
+              "transport": "beacon"
+            });
+          }
+          else if (drupalSettings.google_analytics.trackOutbound && this.href.match(/^\w+:\/\//i)) {
+            if (drupalSettings.google_analytics.trackDomainMode !== 2 || (drupalSettings.google_analytics.trackDomainMode === 2 && !Drupal.google_analytics.isCrossDomain(this.hostname, drupalSettings.google_analytics.trackCrossDomains))) {
+              // External link clicked / No top-level cross domain clicked.
+              ga("send", {
+                "hitType": "event",
+                "eventCategory": "Outbound links",
+                "eventAction": "Click",
+                "eventLabel": this.href,
+                "transport": "beacon"
+              });
+            }
+          }
+        }
+      });
+    });
+
+    // Track hash changes as unique pageviews, if this option has been enabled.
+    if (drupalSettings.google_analytics.trackUrlFragments) {
+      window.onhashchange = function () {
+        ga("send", {
+          "hitType": "pageview",
+          "page": location.pathname + location.search + location.hash
+        });
+      };
+    }
+
+    // Colorbox: This event triggers when the transition has completed and the
+    // newly loaded content has been revealed.
+    if (drupalSettings.google_analytics.trackColorbox) {
+      $(document).on("cbox_complete", function () {
+        var href = $.colorbox.element().attr("href");
+        if (href) {
+          ga("send", {
+            "hitType": "pageview",
+            "page": Drupal.google_analytics.getPageUrl(href)
+          });
+        }
+      });
+    }
+
+  });
+
+  /**
+   * Check whether the hostname is part of the cross domains or not.
+   *
+   * @param {string} hostname
+   *   The hostname of the clicked URL.
+   * @param {array} crossDomains
+   *   All cross domain hostnames as JS array.
+   *
+   * @return {boolean} isCrossDomain
+   */
+  Drupal.google_analytics.isCrossDomain = function (hostname, crossDomains) {
+    return $.inArray(hostname, crossDomains) > -1 ? true : false;
+  };
+
+  /**
+   * Check whether this is a download URL or not.
+   *
+   * @param {string} url
+   *   The web url to check.
+   *
+   * @return {boolean} isDownload
+   */
+  Drupal.google_analytics.isDownload = function (url) {
+    var isDownload = new RegExp("\\.(" + drupalSettings.google_analytics.trackDownloadExtensions + ")([\?#].*)?$", "i");
+    return isDownload.test(url);
+  };
+
+  /**
+   * Check whether this is an absolute internal URL or not.
+   *
+   * @param {string} url
+   *   The web url to check.
+   *
+   * @return {boolean} isInternal
+   */
+  Drupal.google_analytics.isInternal = function (url) {
+    var isInternal = new RegExp("^(https?):\/\/" + window.location.host, "i");
+    return isInternal.test(url);
+  };
+
+  /**
+   * Check whether this is a special URL or not.
+   *
+   * URL types:
+   *  - gotwo.module /go/* links.
+   *
+   * @param {string} url
+   *   The web url to check.
+   *
+   * @return {boolean} isInternalSpecial
+   */
+  Drupal.google_analytics.isInternalSpecial = function (url) {
+    var isInternalSpecial = new RegExp("(\/go\/.*)$", "i");
+    return isInternalSpecial.test(url);
+  };
+
+  /**
+   * Extract the relative internal URL from an absolute internal URL.
+   *
+   * Examples:
+   * - http://mydomain.com/node/1 -> /node/1
+   * - http://example.com/foo/bar -> http://example.com/foo/bar
+   *
+   * @param {string} url
+   *   The web url to check.
+   *
+   * @return {string} getPageUrl
+   *   Internal website URL.
+   */
+  Drupal.google_analytics.getPageUrl = function (url) {
+    var extractInternalUrl = new RegExp("^(https?):\/\/" + window.location.host, "i");
+    return url.replace(extractInternalUrl, '');
+  };
+
+  /**
+   * Extract the download file extension from the URL.
+   *
+   * @param {string} url
+   *   The web url to check.
+   *
+   * @return {string} getDownloadExtension
+   *   The file extension of the passed url. e.g. "zip", "txt"
+   */
+  Drupal.google_analytics.getDownloadExtension = function (url) {
+    var extractDownloadextension = new RegExp("\\.(" + drupalSettings.google_analytics.trackDownloadExtensions + ")([\?#].*)?$", "i");
+    var extension = extractDownloadextension.exec(url);
+    return (extension === null) ? '' : extension[1];
+  };
+
+})(jQuery, Drupal, drupalSettings);
+;
+/**
+ * @file
+ * Adapted from underscore.js with the addition Drupal namespace.
+ */
+
+/**
+ * Limits the invocations of a function in a given time frame.
+ *
+ * The debounce function wrapper should be used sparingly. One clear use case
+ * is limiting the invocation of a callback attached to the window resize event.
+ *
+ * Before using the debounce function wrapper, consider first whether the
+ * callback could be attached to an event that fires less frequently or if the
+ * function can be written in such a way that it is only invoked under specific
+ * conditions.
+ *
+ * @param {function} func
+ *   The function to be invoked.
+ * @param {number} wait
+ *   The time period within which the callback function should only be
+ *   invoked once. For example if the wait period is 250ms, then the callback
+ *   will only be called at most 4 times per second.
+ * @param {bool} immediate
+ *   Whether we wait at the beginning or end to execute the function.
+ *
+ * @return {function}
+ *   The debounced function.
+ */
+Drupal.debounce = function (func, wait, immediate) {
+
+  'use strict';
+
+  var timeout;
+  var result;
+  return function () {
+    var context = this;
+    var args = arguments;
+    var later = function () {
+      timeout = null;
+      if (!immediate) {
+        result = func.apply(context, args);
+      }
+    };
+    var callNow = immediate && !timeout;
+    clearTimeout(timeout);
+    timeout = setTimeout(later, wait);
+    if (callNow) {
+      result = func.apply(context, args);
+    }
+    return result;
+  };
+};
+;
+/**
+ * @file
+ * Adds an HTML element and method to trigger audio UAs to read system messages.
+ *
+ * Use {@link Drupal.announce} to indicate to screen reader users that an
+ * element on the page has changed state. For instance, if clicking a link
+ * loads 10 more items into a list, one might announce the change like this.
+ *
+ * @example
+ * $('#search-list')
+ *   .on('itemInsert', function (event, data) {
+ *     // Insert the new items.
+ *     $(data.container.el).append(data.items.el);
+ *     // Announce the change to the page contents.
+ *     Drupal.announce(Drupal.t('@count items added to @container',
+ *       {'@count': data.items.length, '@container': data.container.title}
+ *     ));
+ *   });
+ */
+
+(function (Drupal, debounce) {
+
+  'use strict';
+
+  var liveElement;
+  var announcements = [];
+
+  /**
+   * Builds a div element with the aria-live attribute and add it to the DOM.
+   *
+   * @type {Drupal~behavior}
+   *
+   * @prop {Drupal~behaviorAttach} attach
+   *   Attaches the behavior for drupalAnnouce.
+   */
+  Drupal.behaviors.drupalAnnounce = {
+    attach: function (context) {
+      // Create only one aria-live element.
+      if (!liveElement) {
+        liveElement = document.createElement('div');
+        liveElement.id = 'drupal-live-announce';
+        liveElement.className = 'visually-hidden';
+        liveElement.setAttribute('aria-live', 'polite');
+        liveElement.setAttribute('aria-busy', 'false');
+        document.body.appendChild(liveElement);
+      }
+    }
+  };
+
+  /**
+   * Concatenates announcements to a single string; appends to the live region.
+   */
+  function announce() {
+    var text = [];
+    var priority = 'polite';
+    var announcement;
+
+    // Create an array of announcement strings to be joined and appended to the
+    // aria live region.
+    var il = announcements.length;
+    for (var i = 0; i < il; i++) {
+      announcement = announcements.pop();
+      text.unshift(announcement.text);
+      // If any of the announcements has a priority of assertive then the group
+      // of joined announcements will have this priority.
+      if (announcement.priority === 'assertive') {
+        priority = 'assertive';
+      }
+    }
+
+    if (text.length) {
+      // Clear the liveElement so that repeated strings will be read.
+      liveElement.innerHTML = '';
+      // Set the busy state to true until the node changes are complete.
+      liveElement.setAttribute('aria-busy', 'true');
+      // Set the priority to assertive, or default to polite.
+      liveElement.setAttribute('aria-live', priority);
+      // Print the text to the live region. Text should be run through
+      // Drupal.t() before being passed to Drupal.announce().
+      liveElement.innerHTML = text.join('\n');
+      // The live text area is updated. Allow the AT to announce the text.
+      liveElement.setAttribute('aria-busy', 'false');
+    }
+  }
+
+  /**
+   * Triggers audio UAs to read the supplied text.
+   *
+   * The aria-live region will only read the text that currently populates its
+   * text node. Replacing text quickly in rapid calls to announce results in
+   * only the text from the most recent call to {@link Drupal.announce} being
+   * read. By wrapping the call to announce in a debounce function, we allow for
+   * time for multiple calls to {@link Drupal.announce} to queue up their
+   * messages. These messages are then joined and append to the aria-live region
+   * as one text node.
+   *
+   * @param {string} text
+   *   A string to be read by the UA.
+   * @param {string} [priority='polite']
+   *   A string to indicate the priority of the message. Can be either
+   *   'polite' or 'assertive'.
+   *
+   * @return {function}
+   *   The return of the call to debounce.
+   *
+   * @see http://www.w3.org/WAI/PF/aria-practices/#liveprops
+   */
+  Drupal.announce = function (text, priority) {
+    // Save the text and priority into a closure variable. Multiple simultaneous
+    // announcements will be concatenated and read in sequence.
+    announcements.push({
+      text: text,
+      priority: priority
+    });
+    // Immediately invoke the function that debounce returns. 200 ms is right at
+    // the cusp where humans notice a pause, so we will wait
+    // at most this much time before the set of queued announcements is read.
+    return (debounce(announce, 200)());
+  };
+}(Drupal, Drupal.debounce));
+;
+window.matchMedia||(window.matchMedia=function(){"use strict";var e=window.styleMedia||window.media;if(!e){var t=document.createElement("style"),i=document.getElementsByTagName("script")[0],n=null;t.type="text/css";t.id="matchmediajs-test";i.parentNode.insertBefore(t,i);n="getComputedStyle"in window&&window.getComputedStyle(t,null)||t.currentStyle;e={matchMedium:function(e){var i="@media "+e+"{ #matchmediajs-test { width: 1px; } }";if(t.styleSheet){t.styleSheet.cssText=i}else{t.textContent=i}return n.width==="1px"}}}return function(t){return{matches:e.matchMedium(t||"all"),media:t||"all"}}}());
+;
+/**
+ * @file
+ * Manages elements that can offset the size of the viewport.
+ *
+ * Measures and reports viewport offset dimensions from elements like the
+ * toolbar that can potentially displace the positioning of other elements.
+ */
+
+/**
+ * @typedef {object} Drupal~displaceOffset
+ *
+ * @prop {number} top
+ * @prop {number} left
+ * @prop {number} right
+ * @prop {number} bottom
+ */
+
+/**
+ * Triggers when layout of the page changes.
+ *
+ * This is used to position fixed element on the page during page resize and
+ * Toolbar toggling.
+ *
+ * @event drupalViewportOffsetChange
+ */
+
+(function ($, Drupal, debounce) {
+
+  'use strict';
+
+  /**
+   * @name Drupal.displace.offsets
+   *
+   * @type {Drupal~displaceOffset}
+   */
+  var offsets = {
+    top: 0,
+    right: 0,
+    bottom: 0,
+    left: 0
+  };
+
+  /**
+   * Registers a resize handler on the window.
+   *
+   * @type {Drupal~behavior}
+   */
+  Drupal.behaviors.drupalDisplace = {
+    attach: function () {
+      // Mark this behavior as processed on the first pass.
+      if (this.displaceProcessed) {
+        return;
+      }
+      this.displaceProcessed = true;
+
+      $(window).on('resize.drupalDisplace', debounce(displace, 200));
+    }
+  };
+
+  /**
+   * Informs listeners of the current offset dimensions.
+   *
+   * @function Drupal.displace
+   *
+   * @prop {Drupal~displaceOffset} offsets
+   *
+   * @param {bool} [broadcast]
+   *   When true or undefined, causes the recalculated offsets values to be
+   *   broadcast to listeners.
+   *
+   * @return {Drupal~displaceOffset}
+   *   An object whose keys are the for sides an element -- top, right, bottom
+   *   and left. The value of each key is the viewport displacement distance for
+   *   that edge.
+   *
+   * @fires event:drupalViewportOffsetChange
+   */
+  function displace(broadcast) {
+    offsets = Drupal.displace.offsets = calculateOffsets();
+    if (typeof broadcast === 'undefined' || broadcast) {
+      $(document).trigger('drupalViewportOffsetChange', offsets);
+    }
+    return offsets;
+  }
+
+  /**
+   * Determines the viewport offsets.
+   *
+   * @return {Drupal~displaceOffset}
+   *   An object whose keys are the for sides an element -- top, right, bottom
+   *   and left. The value of each key is the viewport displacement distance for
+   *   that edge.
+   */
+  function calculateOffsets() {
+    return {
+      top: calculateOffset('top'),
+      right: calculateOffset('right'),
+      bottom: calculateOffset('bottom'),
+      left: calculateOffset('left')
+    };
+  }
+
+  /**
+   * Gets a specific edge's offset.
+   *
+   * Any element with the attribute data-offset-{edge} e.g. data-offset-top will
+   * be considered in the viewport offset calculations. If the attribute has a
+   * numeric value, that value will be used. If no value is provided, one will
+   * be calculated using the element's dimensions and placement.
+   *
+   * @function Drupal.displace.calculateOffset
+   *
+   * @param {string} edge
+   *   The name of the edge to calculate. Can be 'top', 'right',
+   *   'bottom' or 'left'.
+   *
+   * @return {number}
+   *   The viewport displacement distance for the requested edge.
+   */
+  function calculateOffset(edge) {
+    var edgeOffset = 0;
+    var displacingElements = document.querySelectorAll('[data-offset-' + edge + ']');
+    var n = displacingElements.length;
+    for (var i = 0; i < n; i++) {
+      var el = displacingElements[i];
+      // If the element is not visible, do consider its dimensions.
+      if (el.style.display === 'none') {
+        continue;
+      }
+      // If the offset data attribute contains a displacing value, use it.
+      var displacement = parseInt(el.getAttribute('data-offset-' + edge), 10);
+      // If the element's offset data attribute exits
+      // but is not a valid number then get the displacement
+      // dimensions directly from the element.
+      if (isNaN(displacement)) {
+        displacement = getRawOffset(el, edge);
+      }
+      // If the displacement value is larger than the current value for this
+      // edge, use the displacement value.
+      edgeOffset = Math.max(edgeOffset, displacement);
+    }
+
+    return edgeOffset;
+  }
+
+  /**
+   * Calculates displacement for element based on its dimensions and placement.
+   *
+   * @param {HTMLElement} el
+   *   The jQuery element whose dimensions and placement will be measured.
+   *
+   * @param {string} edge
+   *   The name of the edge of the viewport that the element is associated
+   *   with.
+   *
+   * @return {number}
+   *   The viewport displacement distance for the requested edge.
+   */
+  function getRawOffset(el, edge) {
+    var $el = $(el);
+    var documentElement = document.documentElement;
+    var displacement = 0;
+    var horizontal = (edge === 'left' || edge === 'right');
+    // Get the offset of the element itself.
+    var placement = $el.offset()[horizontal ? 'left' : 'top'];
+    // Subtract scroll distance from placement to get the distance
+    // to the edge of the viewport.
+    placement -= window['scroll' + (horizontal ? 'X' : 'Y')] || document.documentElement['scroll' + (horizontal ? 'Left' : 'Top')] || 0;
+    // Find the displacement value according to the edge.
+    switch (edge) {
+      // Left and top elements displace as a sum of their own offset value
+      // plus their size.
+      case 'top':
+        // Total displacement is the sum of the elements placement and size.
+        displacement = placement + $el.outerHeight();
+        break;
+
+      case 'left':
+        // Total displacement is the sum of the elements placement and size.
+        displacement = placement + $el.outerWidth();
+        break;
+
+      // Right and bottom elements displace according to their left and
+      // top offset. Their size isn't important.
+      case 'bottom':
+        displacement = documentElement.clientHeight - placement;
+        break;
+
+      case 'right':
+        displacement = documentElement.clientWidth - placement;
+        break;
+
+      default:
+        displacement = 0;
+    }
+    return displacement;
+  }
+
+  /**
+   * Assign the displace function to a property of the Drupal global object.
+   *
+   * @ignore
+   */
+  Drupal.displace = displace;
+  $.extend(Drupal.displace, {
+
+    /**
+     * Expose offsets to other scripts to avoid having to recalculate offsets.
+     *
+     * @ignore
+     */
+    offsets: offsets,
+
+    /**
+     * Expose method to compute a single edge offsets.
+     *
+     * @ignore
+     */
+    calculateOffset: calculateOffset
+  });
+
+})(jQuery, Drupal, Drupal.debounce);
+;
+(function ($, Modernizr, Drupal, drupalSettings, window) {
+
+  "use strict";
+
+  drupalSettings.omega.currentBreakpoints = {
+    'All' : true
+  };
+  
+  
+  
+  var breakpoints;
+  var breakpointMatch;
+  
+  
+  Drupal.behaviors.omegaBreakpoint = {
+    attach: function (context, settings) {
+      // return if not viewing on screen
+      if (!window.matchMedia('only screen').matches) {
+        return;
+      }
+      
+      //console.log(drupalSettings.omega);
+      
+      breakpoints = drupalSettings.omega_breakpoints;
+      //console.log(breakpoints);
+      breakpointMatch = false;
+      //console.log(breakpoints);
+      
+      // Handle the intial load
+      $(window).on('load', function() {
+        //console.log(breakpoints);
+        $.each(breakpoints, function() {
+        	if (window.matchMedia(this.query).matches) {
+            breakpointMatch = true;
+            drupalSettings.omega.currentBreakpoints[this.name] = true;
+            $.event.trigger('breakpointAdded', {name: this.name, query: this.query});
+          }
+          else {
+            drupalSettings.omega.currentBreakpoints[this.name] = false;
+            // don't trigger the event since it is on page load, just rely on setting it to false above.
+            //$.event.trigger('breakpointRemoved', {breakpoint: this.name, query: this.query});
+          }
+        });
+      });
+      
+      // handle resize events
+      $(window).on('resize', function(){
+        //console.log(breakpoints);
+        $.each(breakpoints, function() {
+        	
+        	if (window.matchMedia(this.query).matches) {
+        	  breakpointMatch = true;
+            // if it wasn't already active
+            if (drupalSettings.omega.currentBreakpoints[this.name] != true) {
+              drupalSettings.omega.currentBreakpoints[this.name] = true;
+              $.event.trigger('breakpointAdded', {name: this.name, query: this.query});  
+            }
+          }
+          else {
+            // if it was already active
+            if (drupalSettings.omega.currentBreakpoints[this.name] == true) {
+              drupalSettings.omega.currentBreakpoints[this.name] = false;
+              $.event.trigger('breakpointRemoved', {name: this.name, query: this.query});
+            }
+            
+          }
+        });
+          
+        // must be mobile or something shitty like IE8
+        if (!breakpointMatch) {
+          breakpointMatch = false;
+          drupalSettings.omega.currentBreakpoints['all'] = true;
+        }
+      });
+      
+      
+      
+    }
+  };
+  
+  
+  // Drupal.behaviors attach: is NOT working in IOS under any circumstance I can find.
+  // the behaviors are ONLY not working if a user is anonymous. WTH
+  Drupal.behaviors.iostest = {
+    attach: function (context, settings) {
+      //alert('hello!!!!!');  
+      //$('body').html('<h1>WTF</h1>');
+    }
+  };
+  
+  // need to use some LocalStorage to keep the indicator open/closed based on last setting.
+  
+  Drupal.behaviors.indicatorToggle = {
+    attach: function (context, settings) {
+      
+      $('#indicator-toggle').on('click', function() {
+        if ($(this).hasClass('indicator-open')) {
+          $(this).removeClass('indicator-open').addClass('indicator-closed');
+          //$('#omega-screen--indicator').css('right', '-280px');
+          
+          $('#omega-screen--indicator').animate({
+            opacity: 0.25,
+            right: '-280',
+            //height: "toggle"
+          }, 500, function() {
+            // Animation complete.
+          });
+          
+        }
+        else {
+          $(this).removeClass('indicator-closed').addClass('indicator-open');
+          //$('#omega-screen--indicator').css('right', '0');
+          
+          $('#omega-screen--indicator').animate({
+            opacity: 1,
+            right: '0',
+            //height: "toggle"
+          }, 250, function() {
+            // Animation complete.
+          });
+          
+        }
+        return false;
+      });
+    }
+  };
+  
+  Drupal.behaviors.attachIndicatorData = {
+    attach: function (context, settings) {
+      // grab the wrapper element to manipulate
+      var oScreen = $('#omega-screen--indicator');
+      var screenWidth;
+      var breakpointText;
+      
+      $(window).on('load resize', function(){
+        screenWidth = $(this).width();
+        var layout = drupalSettings.omega.activeLayout;
+        oScreen.find('.screen-size .data').html(screenWidth + 'px');
+        oScreen.find('.screen-layout .data').html(layout);
+        oScreen.find('.theme-name .data').html(drupalSettings.omega.activeTheme);
+      });
+      
+      // if a breakpiont has been added or removed, change the text
+      $(window).on('breakpointAdded breakpointRemoved', function(e, b){
+        breakpointText = [];
+        $.each(breakpoints, function() {    
+          if (drupalSettings.omega.currentBreakpoints[this.name] == true) {
+            breakpointText.push(this.name);
+            var text = breakpointText.join(', ');
+            oScreen.find('.screen-query .data').html(text);  
+          }
+        });
+      });      
+    }
+  };
+  
+  /**
+   * Toolbar methods of Backbone objects.
+   */
+  Drupal.omega = {
+
+    // A hash of View instances.
+    views: {},
+
+    // A hash of Model instances.
+    models: {},
+    
+    
+  };
+  
+})(jQuery, Modernizr, Drupal, drupalSettings, window);
+;

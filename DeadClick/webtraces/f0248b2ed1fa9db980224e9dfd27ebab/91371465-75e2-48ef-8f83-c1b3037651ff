@@ -1,0 +1,510 @@
+
+(function($) {
+
+/**
+ * Drupal FieldGroup object.
+ */
+Drupal.FieldGroup = Drupal.FieldGroup || {};
+Drupal.FieldGroup.Effects = Drupal.FieldGroup.Effects || {};
+Drupal.FieldGroup.groupWithfocus = null;
+
+Drupal.FieldGroup.setGroupWithfocus = function(element) {
+  element.css({display: 'block'});
+  Drupal.FieldGroup.groupWithfocus = element;
+}
+
+/**
+ * Implements Drupal.FieldGroup.processHook().
+ */
+Drupal.FieldGroup.Effects.processFieldset = {
+  execute: function (context, settings, type) {
+    if (type == 'form') {
+      // Add required fields mark to any fieldsets containing required fields
+      $('fieldset.fieldset', context).once('fieldgroup-effects', function(i) {
+        if ($(this).is('.required-fields') && $(this).find('.form-required').length > 0) {
+          $('legend span.fieldset-legend', $(this)).eq(0).append(' ').append($('.form-required').eq(0).clone());
+        }
+        if ($('.error', $(this)).length) {
+          $('legend span.fieldset-legend', $(this)).eq(0).addClass('error');
+          Drupal.FieldGroup.setGroupWithfocus($(this));
+        }
+      });
+    }
+  }
+}
+
+/**
+ * Implements Drupal.FieldGroup.processHook().
+ */
+Drupal.FieldGroup.Effects.processAccordion = {
+  execute: function (context, settings, type) {
+    $('div.field-group-accordion-wrapper', context).once('fieldgroup-effects', function () {
+      var wrapper = $(this);
+
+      // Get the index to set active.
+      var active_index = false;
+      wrapper.find('.accordion-item').each(function(i) {
+        if ($(this).hasClass('field-group-accordion-active')) {
+          active_index = i;
+        }
+      });
+
+      wrapper.accordion({
+        heightStyle: "content",
+        active: active_index,
+        collapsible: true,
+        changestart: function(event, ui) {
+          if ($(this).hasClass('effect-none')) {
+            ui.options.animated = false;
+          }
+          else {
+            ui.options.animated = 'slide';
+          }
+        }
+      });
+
+      if (type == 'form') {
+
+        var $firstErrorItem = false;
+
+        // Add required fields mark to any element containing required fields
+        wrapper.find('div.field-group-accordion-item').each(function(i) {
+
+          if ($(this).is('.required-fields') && $(this).find('.form-required').length > 0) {
+            $('h3.ui-accordion-header a').eq(i).append(' ').append($('.form-required').eq(0).clone());
+          }
+          if ($('.error', $(this)).length) {
+            // Save first error item, for focussing it.
+            if (!$firstErrorItem) {
+              $firstErrorItem = $(this).parent().accordion("activate" , i);
+            }
+            $('h3.ui-accordion-header').eq(i).addClass('error');
+          }
+        });
+
+        // Save first error item, for focussing it.
+        if (!$firstErrorItem) {
+          $('.ui-accordion-content-active', $firstErrorItem).css({height: 'auto', width: 'auto', display: 'block'});
+        }
+
+      }
+    });
+  }
+}
+
+/**
+ * Implements Drupal.FieldGroup.processHook().
+ */
+Drupal.FieldGroup.Effects.processHtabs = {
+  execute: function (context, settings, type) {
+    if (type == 'form') {
+      // Add required fields mark to any element containing required fields
+      $('fieldset.horizontal-tabs-pane', context).once('fieldgroup-effects', function(i) {
+        if ($(this).is('.required-fields') && $(this).find('.form-required').length > 0) {
+          $(this).data('horizontalTab').link.find('strong:first').after($('.form-required').eq(0).clone()).after(' ');
+        }
+        if ($('.error', $(this)).length) {
+          $(this).data('horizontalTab').link.parent().addClass('error');
+          Drupal.FieldGroup.setGroupWithfocus($(this));
+          $(this).data('horizontalTab').focus();
+        }
+      });
+    }
+  }
+}
+
+/**
+ * Implements Drupal.FieldGroup.processHook().
+ */
+Drupal.FieldGroup.Effects.processTabs = {
+  execute: function (context, settings, type) {
+    if (type == 'form') {
+
+      var errorFocussed = false;
+
+      // Add required fields mark to any fieldsets containing required fields
+      $('fieldset.vertical-tabs-pane', context).once('fieldgroup-effects', function(i) {
+        if ($(this).is('.required-fields') && $(this).find('.form-required').length > 0) {
+          $(this).data('verticalTab').link.find('strong:first').after($('.form-required').eq(0).clone()).after(' ');
+        }
+        if ($('.error', $(this)).length) {
+          $(this).data('verticalTab').link.parent().addClass('error');
+          // Focus the first tab with error.
+          if (!errorFocussed) {
+            Drupal.FieldGroup.setGroupWithfocus($(this));
+            $(this).data('verticalTab').focus();
+            errorFocussed = true;
+          }
+        }
+      });
+    }
+  }
+}
+
+/**
+ * Implements Drupal.FieldGroup.processHook().
+ *
+ * TODO clean this up meaning check if this is really
+ *      necessary.
+ */
+Drupal.FieldGroup.Effects.processDiv = {
+  execute: function (context, settings, type) {
+
+    $('div.collapsible', context).once('fieldgroup-effects', function() {
+      var $wrapper = $(this);
+
+      // Turn the legend into a clickable link, but retain span.field-group-format-toggler
+      // for CSS positioning.
+
+      var $toggler = $('span.field-group-format-toggler:first', $wrapper);
+      var $link = $('<a class="field-group-format-title" href="#"></a>');
+      $link.prepend($toggler.contents());
+
+      // Add required field markers if needed
+      if ($(this).is('.required-fields') && $(this).find('.form-required').length > 0) {
+        $link.append(' ').append($('.form-required').eq(0).clone());
+      }
+
+      $link.appendTo($toggler);
+
+      // .wrapInner() does not retain bound events.
+      $link.click(function () {
+        var wrapper = $wrapper.get(0);
+        // Don't animate multiple times.
+        if (!wrapper.animating) {
+          wrapper.animating = true;
+          var speed = $wrapper.hasClass('speed-fast') ? 300 : 1000;
+          if ($wrapper.hasClass('effect-none') && $wrapper.hasClass('speed-none')) {
+            $('> .field-group-format-wrapper', wrapper).toggle();
+          }
+          else if ($wrapper.hasClass('effect-blind')) {
+            $('> .field-group-format-wrapper', wrapper).toggle('blind', {}, speed);
+          }
+          else {
+            $('> .field-group-format-wrapper', wrapper).toggle(speed);
+          }
+          wrapper.animating = false;
+        }
+        $wrapper.toggleClass('collapsed');
+        return false;
+      });
+
+    });
+  }
+};
+
+/**
+ * Behaviors.
+ */
+Drupal.behaviors.fieldGroup = {
+  attach: function (context, settings) {
+    settings.field_group = settings.field_group || Drupal.settings.field_group;
+    if (settings.field_group == undefined) {
+      return;
+    }
+
+    // Execute all of them.
+    $.each(Drupal.FieldGroup.Effects, function (func) {
+      // We check for a wrapper function in Drupal.field_group as
+      // alternative for dynamic string function calls.
+      var type = func.toLowerCase().replace("process", "");
+      if (settings.field_group[type] != undefined && $.isFunction(this.execute)) {
+        this.execute(context, settings, settings.field_group[type]);
+      }
+    });
+
+    // Fixes css for fieldgroups under vertical tabs.
+    $('.fieldset-wrapper .fieldset > legend').css({display: 'block'});
+    $('.vertical-tabs fieldset.fieldset').addClass('default-fallback');
+
+    // Add a new ID to each fieldset.
+    $('.group-wrapper .horizontal-tabs-panes > fieldset', context).once('group-wrapper-panes-processed', function() {
+      // Tats bad, but we have to keep the actual id to prevent layouts to break.
+      var fieldgroupID = 'field_group-' + $(this).attr('id');
+      $(this).attr('id', fieldgroupID);
+    });
+    // Set the hash in url to remember last userselection.
+    $('.group-wrapper ul li').once('group-wrapper-ul-processed', function() {
+      var fieldGroupNavigationListIndex = $(this).index();
+      $(this).children('a').click(function() {
+        var fieldset = $('.group-wrapper fieldset').get(fieldGroupNavigationListIndex);
+        // Grab the first id, holding the wanted hashurl.
+        var hashUrl = $(fieldset).attr('id').replace(/^field_group-/, '').split(' ')[0];
+        window.location.hash = hashUrl;
+      });
+    });
+
+  }
+};
+
+})(jQuery);
+;
+/*
+ * sf-Touchscreen v1.3b - Provides touchscreen compatibility for the jQuery Superfish plugin.
+ *
+ * Developer's note:
+ * Built as a part of the Superfish project for Drupal (http://drupal.org/project/superfish)
+ * Found any bug? have any cool ideas? contact me right away! http://drupal.org/user/619294/contact
+ *
+ * jQuery version: 1.3.x or higher.
+ *
+ * Dual licensed under the MIT and GPL licenses:
+ *  http://www.opensource.org/licenses/mit-license.php
+ *  http://www.gnu.org/licenses/gpl.html
+ */
+
+(function($){
+  $.fn.sftouchscreen = function(options){
+    options = $.extend({
+      mode: 'inactive',
+      breakpoint: 768,
+      useragent: '',
+      behaviour: 2
+    }, options);
+
+    function activate(menu){
+      // Select hyperlinks from parent menu items.
+      menu.find('li:has(ul)').children('a').each(function(){
+        var item = $(this),
+        parent = item.closest('li');
+        if (options.behaviour == 2){
+          if (parent.children('a.menuparent').length > 0 && parent.children('ul').children('.sf-clone-parent').length == 0){
+            var
+            // Cloning the hyperlink of the parent menu item.
+            cloneLink = parent.children('a.menuparent').clone(),
+            // Wrapping the hyerplinks in <li>.
+            cloneLink = $('<li class="sf-clone-parent" />').html(cloneLink);
+            // Removing unnecessary stuff.
+            cloneLink.find('.sf-sub-indicator').remove(),
+            // Adding a helper class and attaching them to the sub-menus.
+            parent.children('ul').addClass('sf-has-clone-parent').prepend(cloneLink);
+          }
+        }
+        // No .toggle() here as it's not possible to reset it.
+        item.click(function(event){
+          // Already clicked? proceed to the URL.
+          if (item.hasClass('sf-clicked')){
+            if (options.behaviour == 0){
+              window.location = item.attr('href');
+            }
+            else if (options.behaviour == 1 || options.behaviour == 2){
+              event.preventDefault();
+              item.removeClass('sf-clicked').parent('li').hideSuperfishUl();
+            }
+          }
+          // Prevent it otherwise.
+          else {
+            event.preventDefault();
+            item.addClass('sf-clicked').parent('li').showSuperfishUl();
+          }
+        }).closest('li').mouseleave(function(){
+          // Reset everything.
+          item.removeClass('sf-clicked');
+        });
+      });
+    }
+    // Return original object to support chaining.
+    // This is not necessary actually because of the way the module uses these plugins.
+    for (var b = 0; b < this.length; b++) {
+      var menu = $(this).eq(b),
+      mode = options.mode;
+      // The rest is crystal clear, isn't it? :)
+      if (mode == 'always_active'){
+        activate(menu);
+      }
+      else if (mode == 'window_width'){
+        if ($(window).width() < options.breakpoint){
+          activate(menu);
+        }
+        var timer;
+        $(window).resize(function(){
+          clearTimeout(timer);
+          timer = setTimeout(function(){
+            if ($(window).width() < options.breakpoint){
+              activate(menu);
+            }
+          }, 100);
+        });
+      }
+      else if (mode == 'useragent_custom'){
+        if (options.useragent != ''){
+          var ua = RegExp(options.useragent, 'i');
+          if (navigator.userAgent.match(ua)){
+            activate(menu);
+          }
+        }
+      }
+      else if (mode == 'useragent_predefined' && navigator.userAgent.match(/(android|bb\d+|meego)|avantgo|bada\/|blackberry|blazer|compal|elaine|fennec|hiptop|iemobile|ip(hone|od)|iris|kindle|lge |maemo|midp|mmp|netfront|opera m(ob|in)i|palm( os)?|phone|p(ixi|re)\/|plucker|pocket|psp|series(4|6)0|symbian|treo|up\.(browser|link)|vodafone|wap|windows (ce|phone)|xda|xiino/i)){
+        activate(menu);
+      }
+    }
+    return this;
+  };
+})(jQuery);;
+/*
+ * Superfish v1.4.8 - jQuery menu widget
+ * Copyright (c) 2008 Joel Birch
+ *
+ * Dual licensed under the MIT and GPL licenses:
+ *  http://www.opensource.org/licenses/mit-license.php
+ *  http://www.gnu.org/licenses/gpl.html
+ *
+ * CHANGELOG: http://users.tpg.com.au/j_birch/plugins/superfish/changelog.txt
+ */
+/*
+ * This is not the original jQuery Superfish plugin.
+ * Please refer to the README for more information.
+ */
+
+(function($){
+  $.fn.superfish = function(op){
+    var sf = $.fn.superfish,
+      c = sf.c,
+      $arrow = $(['<span class="',c.arrowClass,'"> &#187;</span>'].join('')),
+      over = function(){
+        var $$ = $(this), menu = getMenu($$);
+        clearTimeout(menu.sfTimer);
+        $$.showSuperfishUl().siblings().hideSuperfishUl();
+      },
+      out = function(){
+        var $$ = $(this), menu = getMenu($$), o = sf.op;
+        clearTimeout(menu.sfTimer);
+        menu.sfTimer=setTimeout(function(){
+          o.retainPath=($.inArray($$[0],o.$path)>-1);
+          $$.hideSuperfishUl();
+          if (o.$path.length && $$.parents(['li.',o.hoverClass].join('')).length<1){over.call(o.$path);}
+        },o.delay);
+      },
+      getMenu = function($menu){
+        var menu = $menu.parents(['ul.',c.menuClass,':first'].join(''))[0];
+        sf.op = sf.o[menu.serial];
+        return menu;
+      },
+      addArrow = function($a){ $a.addClass(c.anchorClass).append($arrow.clone()); };
+
+    return this.each(function() {
+      var s = this.serial = sf.o.length;
+      var o = $.extend({},sf.defaults,op);
+      o.$path = $('li.'+o.pathClass,this).slice(0,o.pathLevels),
+      p = o.$path;
+      for (var l = 0; l < p.length; l++){
+        p.eq(l).addClass([o.hoverClass,c.bcClass].join(' ')).filter('li:has(ul)').removeClass(o.pathClass);
+      }
+      sf.o[s] = sf.op = o;
+
+      $('li:has(ul)',this)[($.fn.hoverIntent && !o.disableHI) ? 'hoverIntent' : 'hover'](over,out).each(function() {
+        if (o.autoArrows) addArrow( $(this).children('a:first-child') );
+      })
+      .not('.'+c.bcClass)
+        .hideSuperfishUl();
+
+      var $a = $('a',this);
+      $a.each(function(i){
+        var $li = $a.eq(i).parents('li');
+        $a.eq(i).focus(function(){over.call($li);}).blur(function(){out.call($li);});
+      });
+      o.onInit.call(this);
+
+    }).each(function() {
+      var menuClasses = [c.menuClass];
+      if (sf.op.dropShadows  && !($.browser.msie && $.browser.version < 7)) menuClasses.push(c.shadowClass);
+      $(this).addClass(menuClasses.join(' '));
+    });
+  };
+
+  var sf = $.fn.superfish;
+  sf.o = [];
+  sf.op = {};
+  sf.IE7fix = function(){
+    var o = sf.op;
+    if ($.browser.msie && $.browser.version > 6 && o.dropShadows && o.animation.opacity!=undefined)
+      this.toggleClass(sf.c.shadowClass+'-off');
+    };
+  sf.c = {
+    bcClass: 'sf-breadcrumb',
+    menuClass: 'sf-js-enabled',
+    anchorClass: 'sf-with-ul',
+    arrowClass: 'sf-sub-indicator',
+    shadowClass: 'sf-shadow'
+  };
+  sf.defaults = {
+    hoverClass: 'sfHover',
+    pathClass: 'overideThisToUse',
+    pathLevels: 1,
+    delay: 800,
+    animation: {opacity:'show'},
+    speed: 'fast',
+    autoArrows: true,
+    dropShadows: true,
+    disableHI: false, // true disables hoverIntent detection
+    onInit: function(){}, // callback functions
+    onBeforeShow: function(){},
+    onShow: function(){},
+    onHide: function(){}
+  };
+  $.fn.extend({
+    hideSuperfishUl : function(){
+      var o = sf.op,
+        not = (o.retainPath===true) ? o.$path : '';
+      o.retainPath = false;
+      var $ul = $(['li.',o.hoverClass].join(''),this).add(this).not(not).removeClass(o.hoverClass)
+          .children('ul').addClass('sf-hidden');
+      o.onHide.call($ul);
+      return this;
+    },
+    showSuperfishUl : function(){
+      var o = sf.op,
+        sh = sf.c.shadowClass+'-off',
+        $ul = this.addClass(o.hoverClass)
+          .children('ul.sf-hidden').hide().removeClass('sf-hidden');
+      sf.IE7fix.call($ul);
+      o.onBeforeShow.call($ul);
+      $ul.animate(o.animation,o.speed,function(){ sf.IE7fix.call($ul); o.onShow.call($ul); });
+      return this;
+    }
+  });
+})(jQuery);;
+/**
+ * @file
+ * The Superfish Drupal Behavior to apply the Superfish jQuery plugin to lists.
+ */
+
+(function ($) {
+  Drupal.behaviors.superfish = {
+    attach: function (context, settings) {
+      // Take a look at each list to apply Superfish to.
+      $.each(settings.superfish || {}, function(index, options) {
+        // Process all Superfish lists.
+        $('#superfish-' + options.id, context).once('superfish', function() {
+          var list = $(this);
+
+          // Check if we are to apply the Supersubs plug-in to it.
+          if (options.plugins || false) {
+            if (options.plugins.supersubs || false) {
+              list.supersubs(options.plugins.supersubs);
+            }
+          }
+
+          // Apply Superfish to the list.
+          list.superfish(options.sf);
+
+          // Check if we are to apply any other plug-in to it.
+          if (options.plugins || false) {
+            if (options.plugins.touchscreen || false) {
+              list.sftouchscreen(options.plugins.touchscreen);
+            }
+            if (options.plugins.smallscreen || false) {
+              list.sfsmallscreen(options.plugins.smallscreen);
+            }
+            if (options.plugins.supposition || false) {
+              list.supposition();
+            }
+            if (options.plugins.bgiframe || false) {
+              list.find('ul').bgIframe({opacity:false});
+            }
+          }
+        });
+      });
+    }
+  };
+})(jQuery);;

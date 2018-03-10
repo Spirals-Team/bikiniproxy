@@ -1,0 +1,9 @@
+$(document).ready(function(){var prefixe=$("#prefixe").text();if(prefixe=='/fr/fr')
+prefixe='';$("#cacherIndispo").click(function(){$(".ligneIndispo").toggle();$(this).children(".btntoggle").toggle();$(this).children(".pictoSwitch").toggleClass("montrerIndispo");});$("#lienSocial").click(function(){$("#shareZone").toggle();});$('#othersbaskets .zone').click(function(){var id=$(this).parent().attr('rel');var nom=$("#nomArticle").html();var param="id="+id+"&nom_article="+nom;var pref;if($("#prefixe").text()=='/fr/fr')
+pref='';else
+pref=$("#prefixe").text();$.fancybox({'autoDimensions':false,'autoScale':false,'width':520,'href':pref+'/othersBaskets.html?'+param});});$(".fancytooltip").fancybox({'transitionIn':'elastic','transitionOut':'elastic'});$('#sendMailBtn').on('click',function(){$('#erreur').removeClass('errorMessage');var email=$("input[name='email']").val();var message=$("textarea[name='message']").val();var destinataire=$("#destinataire").val();var datas="action=SendMailDemandeConseil&email="+email+"&message="+message+"&idArticle="+articleId+"&destinataire="+destinataire;$.post(prefixe+"/AjaxCall.html",datas,function(reponse){$('#erreur').html('');if(reponse!=null){if('ok'==reponse.status){$("input[name='email']").val('');$("textarea[name='message']").val('');$('#formPopUp').hide();$('#erreur').addClass('success');$('#erreur').removeClass('hidden');if(reponse.message!='')
+$('#erreur').html(reponse.message);else
+$('#erreur').html('Votre message a été envoyé');}
+else{$('#erreur').removeClass('hidden');$('#erreur').addClass('errors');if(reponse.message!='')
+$('#erreur').html(reponse.message);else
+$('#erreur').html(ressources['ErrorPost']);}}},'json');});$("#cacherIndispo").click();});

@@ -1,0 +1,298 @@
+$(document).ready(function() {
+	var ac_handler = {
+		autocomplete_json_response : [],
+		merged_results : [],
+		player_lookup : function(first,last) {
+			var req = $.ajax({
+				url: (window.lookupBaseURL || '') + "/lookup/json/named.search_autocomplete_milb.bam",
+				data: {
+					start_name:"'"+first.toLowerCase()+"'",
+					end_name:"'"+last.toLowerCase()+"'"
+				},
+				dataType: "json"
+			});
+			return req;
+		},
+		team_lookup : function() {
+			var team_req = $.ajax({
+				// url: "/lookup/json/named.properties_nav.bam",
+				url: "/data/milb_global_nav_static.json",
+				data: {
+					league_id : ["117","112","125","113","111","109","110","122","123","116","118","120","121","124","126","127","128","130","134"],
+					all_star_sw:"'N'",
+					active_sw : "'Y'",
+					'team_all.col_in' : ["team_id","name","name_display_full","mlb_org_id","league_id","state","sport_code","sport_code_display","active_sw"],
+					'properties_league.col_in' : ["league_id","name_full","sport_code","sport_code_display","name_abbrev"]
+				},
+				dataType:"json"
+			});
+			return team_req;
+		},
+		resp : function(r_t) {
+			// escape regex characters
+        	var matcher = new RegExp($.ui.autocomplete.escapeRegex(r_t), "i");
+        	var primaryResults = [];
+        	var secondaryResults = [];
+			var tertiaryResults = [];
+
+            $.each( ac_handler.autocomplete_json_response, function(n, value) {
+            	if (matcher.test(value.value) && (value.player === true)) {
+               		primaryResults.push(value);
+                 } else if (value.alt && matcher.test(value.alt) && (value.player === true)) {
+                 	secondaryResults.push(value);
+                 } else if ((value.player === false) && matcher.test(value.value)) {
+				  	tertiaryResults.push(value);
+				}
+        	});
+
+			ac_handler.merged_results = $.merge(primaryResults,tertiaryResults);
+
+			//var first_merge = $.merge(primaryResults, secondaryResults);
+			//var second_merge = $.merge(first_merge,tertiaryResults);
+        	//ac_handler.merged_results = second_merge;
+		},
+
+		lookup : function(first,last,search_term,search_term_lower) {
+
+			var dfd_player = ac_handler.player_lookup(first,last);
+			var dfd_team = ac_handler.team_lookup();
+			var autocomp_players = [];
+			var autocomp_teams = [];
+			var results = [];
+			var dfd;
+			//req.done(function( jsonResponse ){
+		    dfd_player.done(function(jsonResponse) {
+					if (typeof(jsonResponse.search_autocomplete_milb) !== "undefined") {
+						if (jsonResponse.search_autocomplete_milb.queryResults.totalSize > 0) {
+							var active_players = $.ensureArray(jsonResponse.search_autocomplete_milb.queryResults.row);
+							autocomp_players = $.map(active_players,function(row) {
+                				var	n, p, t, t_short, pt, img, additional_data,src_str;
+								n = row.n;
+								p = row.p;
+								t_short = row.t_short;
+								pt = row.pt;
+								t = "<span class='auto_detail'>"+t_short + "&nbsp;("+pt+")</span>";
+								img = "<img src='/images/"+p+"/generic/90x135/"+p+".jpg' class='autocomplete_player_img' width='25' height='37'/>";
+              					additional_data = (t === "") ? "<br /><span class='auto_name'>Free Agent</span>" : "<br />"+t;
+
+								return {
+									label: "<div class='auto_result auto_player'>"+img+"<div class='auto_result_text'><span class='auto_name'>"+n+"</span>"+additional_data+"</div></div>",
+									value: n,
+									id :   p,
+									alt:   t,
+									player : true
+								};
+							});
+						}
+					}
+				});
+
+				dfd_team.done(function(jsonResponse) {
+					if (typeof(jsonResponse.properties_nav.team_all) !== "undefined") {
+						if (jsonResponse.properties_nav.team_all.queryResults.totalSize > 0) {
+							var teams = $.ensureArray(jsonResponse.properties_nav.team_all.queryResults.row);
+							autocomp_teams = $.map(teams,function(r) {
+								var n,img;
+								n = r.name_display_full;
+								var teamCode = r.team_id;
+								img = "<img width='24' height='24' src='/shared/images/logos/50x50/t"+teamCode+".png' />";
+								return {
+									label:  "<div class='auto_result auto_team'>"+img+"<div class='auto_result_text'>"+n+"</div></div>",
+									value:  n,
+									id:     teamCode,
+									sid:    't'+teamCode,
+									player: false
+								};
+							});
+						}
+					}
+					if (typeof(jsonResponse.properties_nav.properties_league) !== "undefined") {
+						if (jsonResponse.properties_nav.properties_league.queryResults.totalSize > 0) {
+							var leagues = $.ensureArray(jsonResponse.properties_nav.properties_league.queryResults.row);
+							autocomp_leagues = $.map(leagues,function(r) {
+								var n,img;
+								n = r.name_full;
+								var leagueCode = r.league_id;
+								img = "<img width='24' height='24' src='/shared/images/logos/50x50/l"+leagueCode+".png' />";
+								return {
+									label:  "<div class='auto_result auto_leagues'>"+img+"<div class='auto_result_text'>"+n+"</div></div>",
+									value:  n,
+									id:     leagueCode,
+									sid:    'l'+leagueCode,
+									player: false
+								};
+							});
+						}
+					}
+
+					//ac_handler.autocomplete_json_response = autocomp_players;
+			});
+			dfd = $.when(dfd_player,dfd_team).then(function() {
+				var firstMerge = $.merge(autocomp_players, autocomp_teams);
+				ac_handler.autocomplete_json_response = $.merge(firstMerge, autocomp_leagues);
+    			results = ac_handler.resp(search_term);
+			});
+			return dfd;
+		}
+	};
+
+	//if (!(/\/video\//.test(document.location.pathname))) {
+				$("#milb_search")
+						.one("focus", function() {
+							$(this).val("");
+						})
+						.autocomplete({
+							appendTo: "#prospectFormHdr",
+							html: true,
+							position: { collision: "flip" },
+							source: function( request, response ) {
+								var first,last,less,i,v_lower,bracket_lower,bracket_len,merged_dfd;
+								var v =  request.term;
+								v_lower = v.toLowerCase();
+								var bracket =["A",
+								"Adam",
+								"Alden",
+								"Almonte",
+								"Andrew",
+								"Aramis",
+								"Auty",
+								"Batista",
+								"Berroa",
+								"Bochy",
+								"Brandon",
+								"Brian",
+								"Buck",
+								"Cameron",
+								"Carlos",
+								"Castillo",
+								"Charles",
+								"Chris",
+								"Cochran",
+								"Copeland",
+								"Cruz",
+								"Daniel",
+								"David",
+								"DeWitt",
+								"Diaz",
+								"Drabek",
+								"Eddy",
+								"Elizalde",
+								"Erik",
+								"Farina",
+								"Fitzgerald",
+								"Franklin",
+								"Gamel",
+								"George",
+								"Gominsky",
+								"Greg",
+								"Hainley",
+								"Hector",
+								"Herrmann",
+								"Humberto",
+								"J.J.",
+								"James",
+								"Jay",
+								"Jeroen",
+								"Joan",
+								"Johnson",
+								"Jordan",
+								"Jose",
+								"Josh",
+								"Julio",
+								"Kellen",
+								"Kickham",
+								"Kyle",
+								"Lawrie",
+								"Lindstrom",
+								"Luciano",
+								"Luke",
+								"Marcos",
+								"Martinez",
+								"Matt",
+								"McCallum",
+								"Meneses",
+								"Michel",
+								"Minks",
+								"Moreland",
+								"Nate",
+								"Nick",
+								"Ogden",
+								"Oswaldo",
+								"Patterson",
+								"Pepe",
+								"Phippen",
+								"Quackenbush",
+								"Ramon",
+								"Reid",
+								"Rick",
+								"Roberto",
+								"Rodriguez",
+								"Rosin",
+								"Ryan",
+								"Sanchez",
+								"Schneider",
+								"Serrano",
+								"Simpson",
+								"Spears",
+								"Streich",
+								"Taylor",
+								"Timothy",
+								"Trayce",
+								"Ugueto",
+								"Velez",
+								"Wall",
+								"Wiedenbauer",
+								"Wise",
+								"Yonathan",
+								"Z"];
+                            	bracket_len = bracket.length;
+								for (i=0; i<bracket_len;i++) {
+    							bracket_lower = bracket[i].toLowerCase();
+    							if (v_lower <= bracket_lower) {
+         							less = i - 1;
+        							last = bracket[i];
+        							first = bracket[less];
+        							break;
+    							} else {
+    								first = "Z";
+    								last = "Z";
+    							}
+							}
+								ac_handler.autocomplete_json_response = [];
+								merged_dfd = ac_handler.lookup(first,last,v,v_lower);
+								merged_dfd.done(function() {
+									response(ac_handler.merged_results);
+									$("img.autocomplete_player_img").error(function () {
+  										$(this).unbind("error").attr("src", "/images/silhouette/25x37.jpg");
+									});
+								});
+        					},
+							minLength: 3,
+							select: function(event, ui) {
+								bam.tracking.track({
+              						async:{
+                    					isDynamic    : false,
+                     	   				compName     : "Site Search",
+                      	 				compActivity : "Site Search: Suggestion Click",
+                      	  				actionGen    : false,
+										queryText    : ui.item.value
+               						}
+								});
+
+								if (ui.item.label.indexOf('auto_player') !== -1) {
+									window.location="http://www.milb.com/player/index.jsp?sid=milb&player_id="+ui.item.id;
+								} else {
+									window.location="http://www.milb.com/index.jsp?sid="+ui.item.sid;
+								}
+							},
+							open: function() {
+								$(this).removeClass("ui-corner-all").addClass("ui-corner-top");
+							},
+							close: function() {
+								$(this).removeClass("ui-corner-top").addClass("ui-corner-all");
+							}
+						});
+	/*} else {
+		$("#milb_search").one("focus", function() { $(this).val("");  });
+	}*/
+});

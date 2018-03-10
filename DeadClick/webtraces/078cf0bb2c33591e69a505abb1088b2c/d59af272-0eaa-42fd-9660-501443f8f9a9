@@ -1,0 +1,1594 @@
+var adaptors;
+(function (adaptors) {
+    var AdApi = (function () {
+        function AdApi(adsrc, environment, adParameters, defaultResizeListener, actualSource) {
+            if (adParameters === void 0) { adParameters = {}; }
+            if (defaultResizeListener === void 0) { defaultResizeListener = true; }
+            if (actualSource === void 0) { actualSource = false; }
+            var _this = this;
+            this.adsrc = adsrc;
+            this.environment = environment;
+            this.adParameters = adParameters;
+            this.defaultResizeListener = defaultResizeListener;
+            this.actualSource = actualSource;
+            this.resizeHandler = function () {
+                var dim = _this.getDimensions(true);
+                _this.iframe.style.width = dim.width + 'px';
+                _this.iframe.style.height = dim.height + 'px';
+            };
+            AdApi.instances.push(this);
+            this.st = new adaptors.SumologicTracking(this);
+            this.startAd();
+        }
+        AdApi.prototype.iframeLoaded = function () {
+            var _this = this;
+            adaptors.logger.debug('adapi.iframeLoaded');
+            this.st.sumologic.track(adaptors.SumologicEvents.SDK);
+            this.adController = this.adContentWindow.adController;
+            this.adController.videoSlot = this.environment.videoSlot;
+            this.adController.videoSlotCanAutoPlay = this.environment.videoSlotCanAutoPlay;
+            if (this.delayedInitPromiseResolve) {
+                this.init(function () { return _this.delayedInitPromiseResolve(); });
+            }
+            this.setListeners();
+            if (this.onInit)
+                this.onInit();
+            this.st.init();
+        };
+        AdApi.prototype.setListeners = function () {
+        };
+        AdApi.prototype.writeAdContent = function () {
+            var _this = this;
+            this.iframe.contentDocument.open();
+            this.adContentWindow.onerror = function () {
+                var args = [];
+                for (var _i = 0; _i < arguments.length; _i++) {
+                    args[_i] = arguments[_i];
+                }
+                var _a = args, msg = _a[0], url = _a[1], line = _a[2], col = _a[3], error = _a[4];
+                _this.st.sumologic.error(adaptors.SumologicEvents.SCRIPT_ERROR, (error && error.stack) || msg);
+                adaptors.logger.error.apply(null, args);
+                return true;
+            };
+            this.adContentWindow.DeviceContext = adaptors.Context;
+            this.adContentWindow.bntIframeLoaded = function () {
+                _this.iframeLoaded();
+            };
+            this.adContentWindow.bntAd = typeof bntAd !== 'undefined' ? bntAd : null;
+            this.adContentWindow.adApi = this;
+            if (this.actualSource) {
+                this.iframe.contentDocument.write("<scr" + 'i' + "pt>" + this.adsrc + "</scr" + 'i' + "pt>");
+            }
+            else {
+                this.iframe.contentDocument.write("<scr" + 'i' + "pt src=\"" + this.adsrc + "\"></scr" + 'i' + "pt>");
+            }
+            this.iframe.contentDocument.write("\n        <scr" + 'i' + "pt>\n          function bntStart() {\n            bntIframeLoaded()\n          }\n          \n          var bntAdParameters = " + JSON.stringify(this.adParameters) + ";\n        </scr" + 'i' + "pt>\n      ");
+            this.iframe.contentDocument.close();
+        };
+        AdApi.prototype.getDimensions = function (recalculate) {
+            if (recalculate === void 0) { recalculate = false; }
+            return {
+                width: window.innerWidth,
+                height: window.innerHeight
+            };
+        };
+        AdApi.prototype.createIFrame = function () {
+            var _this = this;
+            var resize = function () {
+                _this.iframe.style.width = innerWidth + 'px';
+                _this.iframe.style.height = innerHeight + 'px';
+            };
+            adaptors.logger.debug('adapi.createIFrame()');
+            this.iframe = document.createElement('iframe');
+            this.iframe.frameBorder = "0";
+            this.iframe.setAttribute("scrolling", "no");
+            try {
+                var slotStylePosition = this.environment.slot.style.position;
+                switch (slotStylePosition) {
+                    case null:
+                    case undefined:
+                    case '':
+                        this.environment.slot.style.position = 'relative';
+                    case 'relative':
+                    case 'relative !important':
+                        this.iframe.style.position = "absolute";
+                        this.iframe.style.left = "0px";
+                        this.iframe.style.top = "0px";
+                        break;
+                    default:
+                        this.iframe.style.position = "inherit";
+                        adaptors.logger.log('the ad might look awful', slotStylePosition);
+                        break;
+                }
+            }
+            catch (er) {
+                adaptors.logger.error('adapi cant get slot computed style or can\'t modify slot style');
+            }
+            this.insertIframe(this.iframe);
+            if (this.defaultResizeListener) {
+                this.resizeHandler();
+                window.addEventListener("resize", this.resizeHandler);
+            }
+            else {
+                this.iframe.style.width = "100%";
+                this.iframe.style.height = "100%";
+            }
+            this.adContentWindow = this.iframe.contentWindow;
+        };
+        AdApi.prototype.insertIframe = function (iframe) {
+            this.environment.slot.appendChild(iframe);
+        };
+        AdApi.prototype.startAd = function () {
+            this.createIFrame();
+            this.writeAdContent();
+        };
+        AdApi.prototype.init = function (resolve) {
+            var _this = this;
+            if (this.adController) {
+                try {
+                    this.adController.init().map(function () {
+                        _this.st.sumologic.track(adaptors.SumologicEvents.LOAD_READY);
+                        resolve();
+                    });
+                }
+                catch (er) {
+                    adaptors.logger.log(er);
+                    adaptors.logger.log(er.stack);
+                }
+            }
+            else {
+                this.delayedInitPromiseResolve = resolve;
+            }
+        };
+        AdApi.prototype.reset = function () {
+            this.adController = null;
+        };
+        AdApi.prototype.getStageWidth = function () {
+            adaptors.logger.log('adapi.getStageWidth');
+            return this.adController.getStageWidth();
+        };
+        AdApi.prototype.getStageHeight = function () {
+            adaptors.logger.log('adapi.getStageHeight');
+            return this.adController.getStageHeight();
+        };
+        AdApi.prototype.getSkippable = function () {
+            adaptors.logger.log('adapi.getSkippable');
+            return this.adController.getSkippable();
+        };
+        AdApi.prototype.getRemainingTime = function () {
+            return this.adController.getRemainingTime();
+        };
+        AdApi.prototype.getDuration = function () {
+            return this.adController.getDuration();
+        };
+        AdApi.prototype.getVolume = function () {
+            return this.adController.getVolume();
+        };
+        AdApi.prototype.setVolume = function (value) {
+            this.adController.setVolume(value);
+        };
+        AdApi.prototype.setAutoResize = function (value) {
+            this.adController.setAutoResize(value);
+        };
+        AdApi.prototype.getTeadsApiProxy = function () {
+            return this.adContentWindow.bnt.TeadsPlayerAddons.apiProxy;
+        };
+        AdApi.prototype.getLoadedBytesMonitor = function () {
+            return this.adContentWindow.bnt.get(this.adContentWindow.bnt.net.Monitor);
+        };
+        AdApi.prototype.start = function () {
+            adaptors.logger.log('adapi.start');
+            this.st.sumologic.track(adaptors.SumologicEvents.START);
+            return this.adController.start();
+        };
+        AdApi.prototype.closeAd = function () {
+            adaptors.logger.log('adapi.closeAd');
+            return this.adController.closeAd();
+        };
+        AdApi.prototype.play = function () {
+            adaptors.logger.log('adapi.play');
+            return this.adController.play();
+        };
+        AdApi.prototype.pause_pause = function () {
+            adaptors.logger.log('adapi.pause');
+            return this.adController.pause_pause();
+        };
+        AdApi.prototype.pause = function () {
+            adaptors.logger.log('adapi.pause');
+            return this.adController.pause();
+        };
+        AdApi.prototype.resume = function () {
+            adaptors.logger.log('adapi.resume');
+            return this.adController.resume();
+        };
+        AdApi.prototype.suspend = function () {
+            adaptors.logger.log('adapi.suspend');
+            return this.adController.suspend();
+        };
+        AdApi.prototype.resize = function (size) {
+            adaptors.logger.log('adapi.resize', JSON.stringify(size));
+            if (size) {
+                this.adController.resize(size);
+                this.iframe.style.width = size.width + 'px';
+                this.iframe.style.height = size.height + 'px';
+            }
+        };
+        AdApi.prototype.collapse = function () {
+            return this.adController.collapse();
+        };
+        AdApi.prototype.expand = function () {
+            return this.adController.expand();
+        };
+        AdApi.prototype.expandPerformed = function (expanded) {
+            this.adController.expandPerformed(expanded);
+        };
+        Object.defineProperty(AdApi.prototype, "desiredExpandState", {
+            get: function () {
+                return this.adController.desiredExpandState;
+            },
+            enumerable: true,
+            configurable: true
+        });
+        Object.defineProperty(AdApi.prototype, "creativeOnmainscreen", {
+            get: function () {
+                return this.adController.creative.onmainscreen;
+            },
+            enumerable: true,
+            configurable: true
+        });
+        Object.defineProperty(AdApi.prototype, "creativeTimeMillisec", {
+            get: function () {
+                return this.adController.creative.timeMillisec;
+            },
+            enumerable: true,
+            configurable: true
+        });
+        Object.defineProperty(AdApi.prototype, "creativeDuration", {
+            get: function () {
+                return this.adController.creative.duration;
+            },
+            enumerable: true,
+            configurable: true
+        });
+        Object.defineProperty(AdApi.prototype, "creativeOnsuspend", {
+            get: function () {
+                return this.adController.onsuspend;
+            },
+            enumerable: true,
+            configurable: true
+        });
+        Object.defineProperty(AdApi.prototype, "creativeVolume", {
+            get: function () {
+                return this.adController.creative.volume;
+            },
+            enumerable: true,
+            configurable: true
+        });
+        Object.defineProperty(AdApi.prototype, "creativeRemainingTimeMillisec", {
+            get: function () {
+                return this.adController.creative.remainingTimeMillisec;
+            },
+            enumerable: true,
+            configurable: true
+        });
+        Object.defineProperty(AdApi.prototype, "creativeOnend", {
+            get: function () {
+                return this.adController.creative.onend;
+            },
+            enumerable: true,
+            configurable: true
+        });
+        Object.defineProperty(AdApi.prototype, "creativeOnresume", {
+            get: function () {
+                return this.adController.onresume;
+            },
+            enumerable: true,
+            configurable: true
+        });
+        Object.defineProperty(AdApi.prototype, "onclickthru", {
+            get: function () {
+                var _this = this;
+                return this.adController.onclickthru.map(function (url) { return _this.environment.clickTag ? _this.environment.clickTag + encodeURIComponent(url) : url; });
+            },
+            enumerable: true,
+            configurable: true
+        });
+        Object.defineProperty(AdApi.prototype, "oninteraction", {
+            get: function () {
+                return this.adController.interaction;
+            },
+            enumerable: true,
+            configurable: true
+        });
+        Object.defineProperty(AdApi.prototype, "ondestroy", {
+            get: function () {
+                return this.adController.ondestroy;
+            },
+            enumerable: true,
+            configurable: true
+        });
+        Object.defineProperty(AdApi.prototype, "onstart", {
+            get: function () {
+                return this.adController.onstart;
+            },
+            enumerable: true,
+            configurable: true
+        });
+        Object.defineProperty(AdApi.prototype, "onerror", {
+            get: function () {
+                return this.adController.onerror;
+            },
+            enumerable: true,
+            configurable: true
+        });
+        return AdApi;
+    }());
+    AdApi.instances = [];
+    adaptors.AdApi = AdApi;
+})(adaptors || (adaptors = {}));
+;
+var adaptors;
+(function (adaptors) {
+    var VpaidAd = (function () {
+        function VpaidAd() {
+            var _this = this;
+            this.listeners = {};
+            this.isPaused = false;
+            this.playerHandles = true;
+            this.skipped = false;
+            this.quartiles = [false, false, false, false, false];
+            this.handleTimeChange = function (time) {
+                if (_this.adApi.creativeOnmainscreen.value) {
+                    var duration = _this.adApi.creativeDuration.value;
+                    if (time <= 0 || duration <= 0)
+                        return;
+                    var p = time / duration;
+                    if (p >= .75 && !_this.quartiles[3]) {
+                        _this.quartiles[3] = true;
+                        _this.dispatchEvent(adaptors.VpaidEvent.AdVideoThirdQuartile);
+                    }
+                    if (p >= .50 && !_this.quartiles[2]) {
+                        _this.quartiles[2] = true;
+                        _this.dispatchEvent(adaptors.VpaidEvent.AdVideoMidpoint);
+                    }
+                    if (p >= .25 && !_this.quartiles[1]) {
+                        _this.quartiles[1] = true;
+                        _this.dispatchEvent(adaptors.VpaidEvent.AdVideoFirstQuartile);
+                    }
+                    if (!_this.quartiles[0]) {
+                        _this.quartiles[0] = true;
+                        _this.dispatchEvent(adaptors.VpaidEvent.AdVideoStart);
+                    }
+                }
+            };
+            this.handleTimelineEnd = function (time) {
+                if (_this.adApi.creativeOnmainscreen.value) {
+                    if (!_this.quartiles[4]) {
+                        _this.quartiles[4] = true;
+                        _this.dispatchEvent(adaptors.VpaidEvent.AdVideoComplete);
+                    }
+                }
+            };
+            this.removeBodyMargin();
+        }
+        VpaidAd.prototype.removeBodyMargin = function (fromEvent) {
+            var _this = this;
+            if (fromEvent === void 0) { fromEvent = false; }
+            if (document.body) {
+                document.body.style.margin = "0px";
+            }
+            else if (!fromEvent) {
+                document.addEventListener("DOMContentLoaded", function () {
+                    _this.removeBodyMargin(true);
+                });
+            }
+        };
+        VpaidAd.prototype.subscribe = function (fn, event, listenerScope) {
+            adaptors.logger.log('vpaid.subscribe', event);
+            if (this.listeners[event]) {
+                this.listeners[event].push({ callback: fn, scope: listenerScope });
+            }
+            else {
+                this.listeners[event] = [{ callback: fn, scope: listenerScope }];
+            }
+        };
+        VpaidAd.prototype.unsubscribe = function (fn, event) {
+            adaptors.logger.log('vpaid.unsubscribe', event, fn);
+            var eventListeners = this.listeners[event];
+            if (!fn || !event || !eventListeners)
+                return;
+            eventListeners.filter(function (listener) { return listener.callback == fn; })
+                .forEach(function (listener) {
+                eventListeners.splice(eventListeners.indexOf(listener), 1);
+            });
+        };
+        VpaidAd.prototype.setup = function (creativeCode) {
+            this.creativeCode = creativeCode;
+        };
+        VpaidAd.prototype.getVPAIDAd = function () {
+            adaptors.logger.log('vpaid.getVPAIDAd');
+            return this;
+        };
+        VpaidAd.prototype.getAdLinear = function () {
+            adaptors.logger.log('vpaid.getAdLinear', true);
+            return true;
+        };
+        VpaidAd.prototype.getAdWidth = function () {
+            adaptors.logger.log('vpaid.getAdWidth', this.adApi.getStageWidth());
+            return this.adApi.getStageWidth();
+        };
+        VpaidAd.prototype.getAdHeight = function () {
+            adaptors.logger.log('vpaid.getAdHeight', this.adApi.getStageHeight());
+            return this.adApi.getStageHeight();
+        };
+        VpaidAd.prototype.getAdExpanded = function () {
+            adaptors.logger.log('vpaid.getAdExpanded', false);
+            return false;
+        };
+        VpaidAd.prototype.getAdSkippableState = function () {
+            adaptors.logger.log('vpaid.getAdSkippableState', this.adApi.getSkippable());
+            return this.adApi.getSkippable();
+        };
+        VpaidAd.prototype.getAdRemainingTime = function () {
+            var value;
+            if (!this.adApi.creativeOnmainscreen.value) {
+                value = VpaidAd.DURATION_UNKNOWN;
+            }
+            else {
+                value = this.adApi.getRemainingTime() !== undefined ? this.adApi.getRemainingTime() : 30;
+            }
+            return value;
+        };
+        VpaidAd.prototype.getAdDuration = function () {
+            var value;
+            if (!this.adApi.creativeOnmainscreen.value) {
+                value = VpaidAd.DURATION_UNKNOWN;
+            }
+            else {
+                value = (this.adApi.getDuration() !== undefined ? this.adApi.getDuration() : 30);
+            }
+            return value;
+        };
+        VpaidAd.prototype.getAdVolume = function () {
+            return this.adApi.getVolume();
+        };
+        VpaidAd.prototype.setAdVolume = function (value) {
+            this.adApi.setVolume(value);
+        };
+        VpaidAd.prototype.getAdCompanions = function () {
+            adaptors.logger.log('vpaid.getAdCompanions', undefined);
+            return null;
+        };
+        VpaidAd.prototype.getAdIcons = function () {
+            adaptors.logger.log('vpaid.getAdIcons', undefined);
+            return false;
+        };
+        VpaidAd.prototype.handshakeVersion = function (playerVPAIDVersion) {
+            adaptors.logger.log('vpaid.handshakeVersion', '2.0');
+            return '2.0';
+        };
+        VpaidAd.prototype.initAd = function (width, height, viewMode, desiredBitrate, creativeData, environmentVars) {
+            var _this = this;
+            adaptors.logger.log('vpaid.initAd', width, height, viewMode, desiredBitrate, creativeData, environmentVars);
+            var adParameters = creativeData && creativeData["AdParameters"] ? JSON.parse(creativeData["AdParameters"]) : {};
+            this.adApi = new adaptors.AdApi(this.creativeCode, environmentVars, adParameters, false, true);
+            this.adApi.init(function () {
+                adaptors.logger.debug('vpaid adApi init resolved');
+                _this.adApi.setAutoResize(false);
+                _this.setVpaidObservers();
+                _this.adApi.resize({ width: width, height: height });
+                _this.dispatchEvent(adaptors.VpaidEvent.AdLoaded);
+            });
+        };
+        VpaidAd.prototype.resizeAd = function (width, height, viewMode) {
+            adaptors.logger.log('vpaid.resizeAd', width, height, viewMode);
+            this.adApi.resize({ width: width, height: height, viewMode: viewMode });
+            this.dispatchEvent(adaptors.VpaidEvent.AdSizeChange);
+        };
+        VpaidAd.prototype.startAd = function () {
+            var _this = this;
+            adaptors.logger.log('vpaid.startAd');
+            this.adApi.start().map(function () {
+                adaptors.logger.debug('vpaid adApi start resolved');
+                _this.adApi.creativeOnresume.addObserver(function () {
+                    adaptors.logger.log('vpaidad onplay observer');
+                    _this.dispatchEvent(adaptors.VpaidEvent.AdPlaying);
+                    _this.isPaused = false;
+                });
+            });
+        };
+        VpaidAd.prototype.stopAd = function () {
+            adaptors.logger.log('vpaid.stopAd');
+            this.adApi.closeAd();
+        };
+        VpaidAd.prototype.pauseAd = function () {
+            adaptors.logger.log('vpaid.pauseAd');
+            this.adApi.pause();
+        };
+        VpaidAd.prototype.resumeAd = function () {
+            adaptors.logger.log('vpaid.resumeAd');
+            this.adApi.resume();
+        };
+        VpaidAd.prototype.expandAd = function () {
+            adaptors.logger.log('vpaid.expandAd');
+        };
+        VpaidAd.prototype.collapseAd = function () {
+            adaptors.logger.log('vpaid.collapseAd');
+        };
+        VpaidAd.prototype.skipAd = function () {
+            adaptors.logger.log('vpaid.skipAd');
+            if (this.adApi.getSkippable()) {
+                this.skipped = true;
+                this.adApi.closeAd();
+            }
+        };
+        VpaidAd.prototype.dispatchEvent = function (event) {
+            var args = [];
+            for (var _i = 1; _i < arguments.length; _i++) {
+                args[_i - 1] = arguments[_i];
+            }
+            adaptors.logger.log('vpaid.dispatchEvent', event, args.length ? JSON.stringify(args) : '');
+            var registeredEvents;
+            if (registeredEvents = this.listeners[event]) {
+                if (event != adaptors.VpaidEvent.AdClickThru) {
+                    registeredEvents.forEach(function (listener) { setTimeout(function () { listener.callback.apply(listener.scope, args); }, 1); });
+                }
+                else {
+                    registeredEvents.forEach(function (listener) { listener.callback.apply(listener.scope, args); });
+                }
+            }
+        };
+        VpaidAd.prototype.setVpaidObservers = function () {
+            var _this = this;
+            this.adApi.creativeDuration.addObserver(function (number) {
+                _this.dispatchEvent(adaptors.VpaidEvent.AdDurationChange);
+            });
+            this.adApi.creativeTimeMillisec.addObserver(this.handleTimeChange);
+            this.adApi.creativeOnend.addObserver(this.handleTimelineEnd);
+            this.adApi.creativeRemainingTimeMillisec.addObserver(function (number) { return _this.dispatchEvent(adaptors.VpaidEvent.AdRemainingTimeChange); });
+            this.adApi.creativeVolume.addObserver(function (number) { return _this.dispatchEvent(adaptors.VpaidEvent.AdVolumeChange); });
+            this.adApi.creativeOnsuspend.addObserver(function () {
+                _this.isPaused = true;
+                _this.dispatchEvent(adaptors.VpaidEvent.AdPaused);
+            });
+            this.adApi.onstart.addObserver(function () {
+                _this.dispatchEvent(adaptors.VpaidEvent.AdStarted);
+                _this.dispatchEvent(adaptors.VpaidEvent.AdImpression);
+            });
+            this.adApi.ondestroy.addObserver(function () {
+                setTimeout(function () {
+                    if (_this.skipped) {
+                        _this.dispatchEvent(adaptors.VpaidEvent.AdSkipped);
+                    }
+                    _this.dispatchEvent(adaptors.VpaidEvent.AdStopped);
+                }, 200);
+            });
+            this.adApi.onclickthru.addObserver(function (url) { return _this.dispatchEvent(adaptors.VpaidEvent.AdClickThru, url, new Date().getTime(), _this.playerHandles); });
+            this.adApi.oninteraction.addObserver(function (id) { return _this.dispatchEvent(adaptors.VpaidEvent.AdInteraction, id); });
+        };
+        return VpaidAd;
+    }());
+    VpaidAd.DURATION_UNKNOWN = -2;
+    adaptors.VpaidAd = VpaidAd;
+    adaptors.VpaidEvent = {
+        AdStarted: 'AdStarted',
+        AdStopped: 'AdStopped',
+        AdSkipped: 'AdSkipped',
+        AdLoaded: 'AdLoaded',
+        AdLinearChange: 'AdLinearChange',
+        AdSizeChange: 'AdSizeChange',
+        AdExpandedChange: 'AdExpandedChange',
+        AdSkippableStateChange: 'AdSkippableStateChange',
+        AdDurationChange: 'AdDurationChange',
+        AdRemainingTimeChange: 'AdRemainingTimeChange',
+        AdVolumeChange: 'AdVolumeChange',
+        AdImpression: 'AdImpression',
+        AdClickThru: 'AdClickThru',
+        AdInteraction: 'AdInteraction',
+        AdVideoStart: 'AdVideoStart',
+        AdVideoFirstQuartile: 'AdVideoFirstQuartile',
+        AdVideoMidpoint: 'AdVideoMidpoint',
+        AdVideoThirdQuartile: 'AdVideoThirdQuartile',
+        AdVideoComplete: 'AdVideoComplete',
+        AdUserAcceptInvitation: 'AdUserAcceptInvitation',
+        AdUserMinimize: 'AdUserMinimize',
+        AdUserClose: 'AdUserClose',
+        AdPaused: 'AdPaused',
+        AdPlaying: 'AdPlaying',
+        AdError: 'AdError',
+        AdLog: 'AdLog'
+    };
+})(adaptors || (adaptors = {}));
+;
+var adaptors;
+(function (adaptors) {
+    function prependOutput(logLevelAsString) {
+        return 'bnt.' + logLevelAsString.toLowerCase() + ': ';
+    }
+    function log_via_request(msg) {
+        try {
+            var url = 'http://bnt.adaptors.log/?'.concat(JSON.stringify(msg));
+            var img = new Image();
+            img.src = url;
+        }
+        catch (er) { }
+    }
+    function generateConsole(level, args) {
+        var logLevelAsString = LogLevel[level];
+        args[0] = prependOutput(logLevelAsString) + args[0] + ' ';
+        if (logLevelAsString && level <= adaptors.logger.LOG_LEVEL) {
+            if ((typeof (console) !== 'undefined') && (typeof (console[logLevelAsString]) !== 'undefined')) {
+                console[logLevelAsString].apply(console, args);
+            }
+            if (adaptors.logger.useLogRequest) {
+                log_via_request(args.join('_').replace(/\s/ig, '_'));
+            }
+        }
+    }
+    function log() {
+        var args = [];
+        for (var _i = 0; _i < arguments.length; _i++) {
+            args[_i] = arguments[_i];
+        }
+        generateConsole(LogLevel.debug, args);
+    }
+    function debug() {
+        var args = [];
+        for (var _i = 0; _i < arguments.length; _i++) {
+            args[_i] = arguments[_i];
+        }
+        generateConsole(LogLevel.debug, args);
+    }
+    function info() {
+        var args = [];
+        for (var _i = 0; _i < arguments.length; _i++) {
+            args[_i] = arguments[_i];
+        }
+        generateConsole(LogLevel.info, args);
+    }
+    function warn() {
+        var args = [];
+        for (var _i = 0; _i < arguments.length; _i++) {
+            args[_i] = arguments[_i];
+        }
+        generateConsole(LogLevel.warn, args);
+    }
+    function error() {
+        var args = [];
+        for (var _i = 0; _i < arguments.length; _i++) {
+            args[_i] = arguments[_i];
+        }
+        generateConsole(LogLevel.error, args);
+    }
+    var LogLevel;
+    (function (LogLevel) {
+        LogLevel[LogLevel["error"] = 0] = "error";
+        LogLevel[LogLevel["warn"] = 1] = "warn";
+        LogLevel[LogLevel["info"] = 2] = "info";
+        LogLevel[LogLevel["debug"] = 3] = "debug";
+    })(LogLevel = adaptors.LogLevel || (adaptors.LogLevel = {}));
+    adaptors.logger = {
+        LOG_LEVEL: LogLevel.error,
+        useLogRequest: false,
+        log: log,
+        info: info,
+        warn: warn,
+        debug: debug,
+        error: error,
+        log_via_request: log_via_request
+    };
+})(adaptors || (adaptors = {}));
+;
+var adaptors;
+(function (adaptors) {
+    var Ua = (function () {
+        function Ua() {
+        }
+        return Ua;
+    }());
+    Ua.MODEL = 'model';
+    Ua.NAME = 'name';
+    Ua.TYPE = 'type';
+    Ua.VENDOR = 'vendor';
+    Ua.VERSION = 'version';
+    Ua.CONSOLE = 'c';
+    Ua.MOBILE = 'm';
+    Ua.TABLET = 't';
+    Ua.SMARTTV = 'tv';
+    Ua.WEARABLE = 'w';
+    Ua.DESKTOP = 'd';
+    Ua.util = {
+        extend: function (regexes, extensions) {
+            for (var i in extensions) {
+                if ('browser device os'.indexOf(i) !== -1 && extensions[i].length % 2 === 0) {
+                    regexes[i] = extensions[i].concat(regexes[i]);
+                }
+            }
+            return regexes;
+        },
+        has: function (str1, str2) {
+            if (typeof str1 === 'string') {
+                return str2.toLowerCase().indexOf(str1.toLowerCase()) !== -1;
+            }
+            else {
+                return false;
+            }
+        },
+        lowerize: function (str) {
+            return str.toLowerCase();
+        },
+        trim: function (str) {
+            return str.replace(/^[\s\uFEFF\xA0]+|[\s\uFEFF\xA0]+$/g, '');
+        }
+    };
+    Ua.mapper = {
+        rgx: function () {
+            var result, i = 0, j = 0, k = 0, v = 0, p, q, matches, match, args = arguments;
+            while (i < args.length && !matches) {
+                var regex = args[i], props = args[i + 1];
+                if (typeof result === 'undefined') {
+                    result = {};
+                    for (p in props) {
+                        q = props[p];
+                        if (typeof q === 'object') {
+                            result[q[0]] = undefined;
+                        }
+                        else {
+                            result[q] = undefined;
+                        }
+                    }
+                }
+                j = k = 0;
+                while (j < regex.length && !matches) {
+                    matches = regex[j++].exec(adaptors.Context.getUA());
+                    if (!!matches) {
+                        for (v = 0; v < props.length; v++) {
+                            match = matches[++k];
+                            q = props[v];
+                            if (typeof q === 'object' && q.length > 0) {
+                                if (q.length == 2) {
+                                    if (typeof q[1] == 'function') {
+                                        result[q[0]] = q[1].call(this, match);
+                                    }
+                                    else {
+                                        result[q[0]] = q[1];
+                                    }
+                                }
+                                else if (q.length == 3) {
+                                    if (typeof q[1] === 'function' && !(q[1].exec && q[1].test)) {
+                                        result[q[0]] = match ? q[1].call(this, match, q[2]) : undefined;
+                                    }
+                                    else {
+                                        result[q[0]] = match ? match.replace(q[1], q[2]) : undefined;
+                                    }
+                                }
+                                else if (q.length == 4) {
+                                    result[q[0]] = match ? q[3].call(this, match.replace(q[1], q[2])) : undefined;
+                                }
+                            }
+                            else {
+                                result[q] = match ? match : undefined;
+                            }
+                        }
+                    }
+                }
+                i += 2;
+            }
+            return result;
+        },
+        str: function (str, map) {
+            for (var i in map) {
+                if (typeof map[i] === 'object' && map[i].length > 0) {
+                    for (var j = 0; j < map[i].length; j++) {
+                        if (Ua.util.has(map[i][j], str)) {
+                            return (i === '?') ? undefined : i;
+                        }
+                    }
+                }
+                else if (Ua.util.has(map[i], str)) {
+                    return (i === '?') ? undefined : i;
+                }
+            }
+            return str;
+        }
+    };
+    Ua.maps = {
+        browser: {
+            oldsafari: {
+                version: {
+                    '1.0': '/8',
+                    '1.2': '/1',
+                    '1.3': '/3',
+                    '2.0': '/412',
+                    '2.0.2': '/416',
+                    '2.0.3': '/417',
+                    '2.0.4': '/419',
+                    '?': '/'
+                }
+            }
+        },
+        device: {
+            amazon: {
+                model: {
+                    'Fire Phone': ['SD', 'KF']
+                }
+            },
+            sprint: {
+                model: {
+                    'Evo Shift 4G': '7373KT'
+                },
+                vendor: {
+                    'HTC': 'APA',
+                    'Sprint': 'Sprint'
+                }
+            }
+        },
+        os: {
+            windows: {
+                version: {
+                    'ME': '4.90',
+                    'NT 3.11': 'NT3.51',
+                    'NT 4.0': 'NT4.0',
+                    '2000': 'NT 5.0',
+                    'XP': ['NT 5.1', 'NT 5.2'],
+                    'Vista': 'NT 6.0',
+                    '7': 'NT 6.1',
+                    '8': 'NT 6.2',
+                    '8.1': 'NT 6.3',
+                    '10': ['NT 6.4', 'NT 10.0'],
+                    'RT': 'ARM'
+                }
+            }
+        }
+    };
+    Ua.regexes = {
+        browser: [[
+                /(opera\smini)\/([\w\.-]+)/i,
+                /(opera\s[mobiletab]+).+version\/([\w\.-]+)/i,
+                /(opera).+version\/([\w\.]+)/i,
+                /(opera)[\/\s]+([\w\.]+)/i
+            ], [Ua.NAME, Ua.VERSION], [
+                /(opios)[\/\s]+([\w\.]+)/i
+            ], [[Ua.NAME, 'Opera Mini'], Ua.VERSION], [
+                /\s(opr)\/([\w\.]+)/i
+            ], [[Ua.NAME, 'Opera'], Ua.VERSION], [
+                /(kindle)\/([\w\.]+)/i,
+                /(lunascape|maxthon|netfront|jasmine|blazer)[\/\s]?([\w\.]+)*/i,
+                /(avant\s|iemobile|slim|baidu)(?:browser)?[\/\s]?([\w\.]*)/i,
+                /(?:ms|\()(ie)\s([\w\.]+)/i,
+                /(rekonq)\/([\w\.]+)*/i,
+                /(chromium|flock|rockmelt|midori|epiphany|silk|skyfire|ovibrowser|bolt|iron|vivaldi|iridium|phantomjs)\/([\w\.-]+)/i
+            ], [Ua.NAME, Ua.VERSION], [
+                /(trident).+rv[:\s]([\w\.]+).+like\sgecko/i
+            ], [[Ua.NAME, 'IE'], Ua.VERSION], [
+                /(edge)\/((\d+)?[\w\.]+)/i
+            ], [Ua.NAME, Ua.VERSION], [
+                /(yabrowser)\/([\w\.]+)/i
+            ], [[Ua.NAME, 'Yandex'], Ua.VERSION], [
+                /(comodo_dragon)\/([\w\.]+)/i
+            ], [[Ua.NAME, /_/g, ' '], Ua.VERSION], [
+                /(micromessenger)\/([\w\.]+)/i
+            ], [[Ua.NAME, 'WeChat'], Ua.VERSION], [
+                /xiaomi\/miuibrowser\/([\w\.]+)/i,
+            ], [Ua.VERSION, [Ua.NAME, 'MIUI Browser']], [
+                /\swv\).+(chrome)\/([\w\.]+)/i
+            ], [[Ua.NAME, /(.+)/, '$1 WebView'], Ua.VERSION], [
+                /android.+samsungbrowser\/([\w\.]+)/i,
+                /android.+version\/([\w\.]+)\s+(?:mobile\s?safari|safari)/i
+            ], [Ua.VERSION, [Ua.NAME, 'Android Browser']], [
+                /(chrome|omniweb|arora|[tizenoka]{5}\s?browser)\/v?([\w\.]+)/i,
+                /(qqbrowser)[\/\s]?([\w\.]+)/i
+            ], [Ua.NAME, Ua.VERSION], [
+                /(dolfin)\/([\w\.]+)/i
+            ], [[Ua.NAME, 'Dolphin'], Ua.VERSION], [
+                /((?:android.+)crmo|crios)\/([\w\.]+)/i
+            ], [[Ua.NAME, 'Chrome'], Ua.VERSION], [
+                /;fbav\/([\w\.]+);/i
+            ], [Ua.VERSION, [Ua.NAME, 'Facebook']], [
+                /fxios\/([\w\.-]+)/i
+            ], [Ua.VERSION, [Ua.NAME, 'Firefox']], [
+                /version\/([\w\.]+).+?mobile\/\w+\s(safari)/i
+            ], [Ua.VERSION, [Ua.NAME, 'Mobile Safari']], [
+                /version\/([\w\.]+).+?(mobile\s?safari|safari)/i
+            ], [Ua.VERSION, Ua.NAME], [
+                /webkit.+?(mobile\s?safari|safari)(\/[\w\.]+)/i
+            ], [Ua.NAME, [Ua.VERSION, Ua.mapper.str, Ua.maps.browser.oldsafari.version]], [
+                /(konqueror)\/([\w\.]+)/i,
+                /(webkit|khtml)\/([\w\.]+)/i
+            ], [Ua.NAME, Ua.VERSION], [
+                /(navigator|netscape)\/([\w\.-]+)/i
+            ], [[Ua.NAME, 'Netscape'], Ua.VERSION], [
+                /(swiftfox)/i,
+                /(icedragon|iceweasel|camino|chimera|fennec|maemo\sbrowser|minimo|conkeror)[\/\s]?([\w\.\+]+)/i,
+                /(firefox|seamonkey|k-meleon|icecat|iceape|firebird|phoenix)\/([\w\.-]+)/i,
+                /(mozilla)\/([\w\.]+).+rv\:.+gecko\/\d+/i,
+                /(polaris|lynx|dillo|icab|doris|amaya|w3m|netsurf)[\/\s]?([\w\.]+)/i,
+                /(links)\s\(([\w\.]+)/i,
+                /(gobrowser)\/?([\w\.]+)*/i,
+                /(ice\s?browser)\/v?([\w\._]+)/i,
+                /(mosaic)[\/\s]([\w\.]+)/i
+            ], [Ua.NAME, Ua.VERSION]
+        ],
+        device: [[
+                /\((ipad|playbook);[\w\s\);-]+(rim|apple)/i
+            ], [Ua.MODEL, Ua.VENDOR, [Ua.TYPE, Ua.TABLET]], [
+                /applecoremedia\/[\w\.]+ \((ipad)/
+            ], [Ua.MODEL, [Ua.VENDOR, 'Apple'], [Ua.TYPE, Ua.TABLET]], [
+                /(apple\s{0,1}tv)/i
+            ], [[Ua.MODEL, 'Apple TV'], [Ua.VENDOR, 'Apple']], [
+                /(archos)\s(gamepad2?)/i,
+                /(hp).+(touchpad)/i,
+                /(hp).+(tablet)/i,
+                /(kindle)\/([\w\.]+)/i,
+                /\s(nook)[\w\s]+build\/(\w+)/i,
+                /(dell)\s(strea[kpr\s\d]*[\dko])/i
+            ], [Ua.VENDOR, Ua.MODEL, [Ua.TYPE, Ua.TABLET]], [
+                /(kf[A-z]+)\sbuild\/[\w\.]+.*silk\//i
+            ], [Ua.MODEL, [Ua.VENDOR, 'Amazon'], [Ua.TYPE, Ua.TABLET]], [
+                /(sd|kf)[0349hijorstuw]+\sbuild\/[\w\.]+.*silk\//i
+            ], [[Ua.MODEL, Ua.mapper.str, Ua.maps.device.amazon.model], [Ua.VENDOR, 'Amazon'], [Ua.TYPE, Ua.MOBILE]], [
+                /\((ip[honed|\s\w*]+);.+(apple)/i
+            ], [Ua.MODEL, Ua.VENDOR, [Ua.TYPE, Ua.MOBILE]], [
+                /\((ip[honed|\s\w*]+);/i
+            ], [Ua.MODEL, [Ua.VENDOR, 'Apple'], [Ua.TYPE, Ua.MOBILE]], [
+                /(blackberry)[\s-]?(\w+)/i,
+                /(blackberry|benq|palm(?=\-)|sonyericsson|acer|asus|dell|huawei|meizu|motorola|polytron)[\s_-]?([\w-]+)*/i,
+                /(hp)\s([\w\s]+\w)/i,
+                /(asus)-?(\w+)/i
+            ], [Ua.VENDOR, Ua.MODEL, [Ua.TYPE, Ua.MOBILE]], [
+                /\(bb10;\s(\w+)/i
+            ], [Ua.MODEL, [Ua.VENDOR, 'BlackBerry'], [Ua.TYPE, Ua.MOBILE]], [
+                /android.+(transfo[prime\s]{4,10}\s\w+|eeepc|slider\s\w+|nexus 7|padfone)/i
+            ], [Ua.MODEL, [Ua.VENDOR, 'Asus'], [Ua.TYPE, Ua.TABLET]], [
+                /(sony)\s(tablet\s[ps])\sbuild\//i,
+                /(sony)?(?:sgp.+)\sbuild\//i
+            ], [[Ua.VENDOR, 'Sony'], [Ua.MODEL, 'Xperia Tablet'], [Ua.TYPE, Ua.TABLET]], [
+                /(?:sony)?(?:(?:(?:c|d)\d{4})|(?:so[-l].+))\sbuild\//i
+            ], [[Ua.VENDOR, 'Sony'], [Ua.MODEL, 'Xperia Phone'], [Ua.TYPE, Ua.MOBILE]], [
+                /\s(ouya)\s/i,
+                /(nintendo)\s([wids3u]+)/i
+            ], [Ua.VENDOR, Ua.MODEL, [Ua.TYPE, Ua.CONSOLE]], [
+                /android.+;\s(shield)\sbuild/i
+            ], [Ua.MODEL, [Ua.VENDOR, 'Nvidia'], [Ua.TYPE, Ua.CONSOLE]], [
+                /(playstation\s[3portablevi]+)/i
+            ], [Ua.MODEL, [Ua.VENDOR, 'Sony'], [Ua.TYPE, Ua.CONSOLE]], [
+                /(sprint\s(\w+))/i
+            ], [[Ua.VENDOR, Ua.mapper.str, Ua.maps.device.sprint.vendor], [Ua.MODEL, Ua.mapper.str, Ua.maps.device.sprint.model], [Ua.TYPE, Ua.MOBILE]], [
+                /(lenovo)\s?(S(?:5000|6000)+(?:[-][\w+]))/i
+            ], [Ua.VENDOR, Ua.MODEL, [Ua.TYPE, Ua.TABLET]], [
+                /(htc)[;_\s-]+([\w\s]+(?=\))|\w+)*/i,
+                /(zte)-(\w+)*/i,
+                /(alcatel|geeksphone|huawei|lenovo|nexian|panasonic|(?=;\s)sony)[_\s-]?([\w-]+)*/i
+            ], [Ua.VENDOR, [Ua.MODEL, /_/g, ' '], [Ua.TYPE, Ua.MOBILE]], [
+                /(nexus\s9)/i
+            ], [Ua.MODEL, [Ua.VENDOR, 'HTC'], [Ua.TYPE, Ua.TABLET]], [
+                /(nexus\s6p)/i
+            ], [Ua.MODEL, [Ua.VENDOR, 'Huawei'], [Ua.TYPE, Ua.MOBILE]], [
+                /(microsoft);\s(lumia[\s\w]+)/i
+            ], [Ua.VENDOR, Ua.MODEL, [Ua.TYPE, Ua.MOBILE]], [
+                /[\s\(;](xbox(?:\sone)?)[\s\);]/i
+            ], [Ua.MODEL, [Ua.VENDOR, 'Microsoft'], [Ua.TYPE, Ua.CONSOLE]], [
+                /(kin\.[onetw]{3})/i
+            ], [[Ua.MODEL, /\./g, ' '], [Ua.VENDOR, 'Microsoft'], [Ua.TYPE, Ua.MOBILE]], [
+                /\s(milestone|droid(?:[2-4x]|\s(?:bionic|x2|pro|razr))?(:?\s4g)?)[\w\s]+build\//i,
+                /mot[\s-]?(\w+)*/i,
+                /(XT\d{3,4}) build\//i,
+                /(nexus\s6)/i
+            ], [Ua.MODEL, [Ua.VENDOR, 'Motorola'], [Ua.TYPE, Ua.MOBILE]], [
+                /android.+\s(mz60\d|xoom[\s2]{0,2})\sbuild\//i
+            ], [Ua.MODEL, [Ua.VENDOR, 'Motorola'], [Ua.TYPE, Ua.TABLET]], [
+                /hbbtv\/\d+\.\d+\.\d+\s+\([\w\s]*;\s*(\w[^;]*);([^;]*)/i
+            ], [[Ua.VENDOR, Ua.util.trim], [Ua.MODEL, Ua.util.trim], [Ua.TYPE, Ua.SMARTTV]], [
+                /hbbtv.+maple;(\d+)/i
+            ], [[Ua.MODEL, /^/, 'SmartTV'], [Ua.VENDOR, 'Samsung'], [Ua.TYPE, Ua.SMARTTV]], [
+                /\(dtv[\);].+(aquos)/i
+            ], [Ua.MODEL, [Ua.VENDOR, 'Sharp'], [Ua.TYPE, Ua.SMARTTV]], [
+                /android.+((sch-i[89]0\d|shw-m380s|gt-p\d{4}|gt-n\d+|sgh-t8[56]9|nexus 10))/i,
+                /((SM-T\w+))/i
+            ], [[Ua.VENDOR, 'Samsung'], Ua.MODEL, [Ua.TYPE, Ua.TABLET]], [
+                /((s[cgp]h-\w+|gt-\w+|galaxy\snexus|sm-\w[\w\d]+))/i,
+                /(sam[sung]*)[\s-]*(\w+-?[\w-]*)*/i,
+                /sec-((sgh\w+))/i
+            ], [[Ua.VENDOR, 'Samsung'], Ua.MODEL, [Ua.TYPE, Ua.MOBILE]], [
+                /smart-tv.+(samsung)/i
+            ], [Ua.VENDOR, Ua.MODEL, [Ua.TYPE, Ua.SMARTTV]], [
+                /sie-(\w+)*/i
+            ], [Ua.MODEL, [Ua.VENDOR, 'Siemens'], [Ua.TYPE, Ua.MOBILE]], [
+                /(maemo|nokia).*(n900|lumia\s\d+)/i,
+                /(nokia)[\s_-]?([\w-]+)*/i
+            ], [[Ua.VENDOR, 'Nokia'], Ua.MODEL, [Ua.TYPE, Ua.MOBILE]], [
+                /android\s3\.[\s\w;-]{10}(a\d{3})/i
+            ], [Ua.MODEL, [Ua.VENDOR, 'Acer'], [Ua.TYPE, Ua.TABLET]], [
+                /android\s3\.[\s\w;-]{10}(lg?)-([06cv9]{3,4})/i
+            ], [[Ua.VENDOR, 'LG'], Ua.MODEL, [Ua.TYPE, Ua.TABLET]], [
+                /(lg) netcast\.tv/i
+            ], [Ua.VENDOR, Ua.MODEL, [Ua.TYPE, Ua.SMARTTV]], [
+                /(nexus\s[45])/i,
+                /lg[e;\s\/-]+(\w+)*/i
+            ], [Ua.MODEL, [Ua.VENDOR, 'LG'], [Ua.TYPE, Ua.MOBILE]], [
+                /android.+(ideatab[a-z0-9\-\s]+)/i
+            ], [Ua.MODEL, [Ua.VENDOR, 'Lenovo'], [Ua.TYPE, Ua.TABLET]], [
+                /linux;.+((jolla));/i
+            ], [Ua.VENDOR, Ua.MODEL, [Ua.TYPE, Ua.MOBILE]], [
+                /((pebble))app\/[\d\.]+\s/i
+            ], [Ua.VENDOR, Ua.MODEL, [Ua.TYPE, Ua.WEARABLE]], [
+                /android.+;\s(glass)\s\d/i
+            ], [Ua.MODEL, [Ua.VENDOR, 'Google'], [Ua.TYPE, Ua.WEARABLE]], [
+                /android.+;\s(pixel c)\s/i
+            ], [Ua.MODEL, [Ua.VENDOR, 'Google'], [Ua.TYPE, Ua.TABLET]], [
+                /android.+;\s(pixel xl|pixel)\s/i
+            ], [Ua.MODEL, [Ua.VENDOR, 'Google'], [Ua.TYPE, Ua.MOBILE]], [
+                /android.+(\w+)\s+build\/hm\1/i,
+                /android.+(hm[\s\-_]*note?[\s_]*(?:\d\w)?)\s+build/i,
+                /android.+(mi[\s\-_]*(?:one|one[\s_]plus|note lte)?[\s_]*(?:\d\w)?)\s+build/i
+            ], [[Ua.MODEL, /_/g, ' '], [Ua.VENDOR, 'Xiaomi'], [Ua.TYPE, Ua.MOBILE]], [
+                /android.+a000(1)\s+build/i
+            ], [Ua.MODEL, [Ua.VENDOR, 'OnePlus'], [Ua.TYPE, Ua.MOBILE]], [
+                /\s(tablet)[;\/]/i,
+                /\s(mobile)(?:[;\/]|\ssafari)/i
+            ], [[Ua.TYPE, Ua.util.lowerize], Ua.VENDOR, Ua.MODEL]
+        ],
+        os: [[
+                /microsoft\s(windows)\s(vista|xp)/i
+            ], [Ua.NAME, Ua.VERSION], [
+                /(windows)\snt\s6\.2;\s(arm)/i,
+                /(windows\sphone(?:\sos)*)[\s\/]?([\d\.\s]+\w)*/i,
+                /(windows\smobile|windows)[\s\/]?([ntce\d\.\s]+\w)/i
+            ], [Ua.NAME, [Ua.VERSION, Ua.mapper.str, Ua.maps.os.windows.version]], [
+                /(win(?=3|9|n)|win\s9x\s)([nt\d\.]+)/i
+            ], [[Ua.NAME, 'Windows'], [Ua.VERSION, Ua.mapper.str, Ua.maps.os.windows.version]], [
+                /\((bb)(10);/i
+            ], [[Ua.NAME, 'BlackBerry'], Ua.VERSION], [
+                /(blackberry)\w*\/?([\w\.]+)*/i,
+                /(tizen)[\/\s]([\w\.]+)/i,
+                /(android|webos|palm\sos|qnx|bada|rim\stablet\sos|meego|contiki)[\/\s-]?([\w\.]+)*/i,
+                /linux;.+(sailfish);/i
+            ], [Ua.NAME, Ua.VERSION], [
+                /(symbian\s?os|symbos|s60(?=;))[\/\s-]?([\w\.]+)*/i
+            ], [[Ua.NAME, 'Symbian'], Ua.VERSION], [
+                /\((series40);/i
+            ], [Ua.NAME], [
+                /mozilla.+\(mobile;.+gecko.+firefox/i
+            ], [[Ua.NAME, 'Firefox OS'], Ua.VERSION], [
+                /(nintendo|playstation)\s([wids34portablevu]+)/i,
+                /(mint)[\/\s\(]?(\w+)*/i,
+                /(mageia|vectorlinux)[;\s]/i,
+                /(joli|[kxln]?ubuntu|debian|[open]*suse|gentoo|arch|slackware|fedora|mandriva|centos|pclinuxos|redhat|zenwalk|linpus)[\/\s-]?([\w\.-]+)*/i,
+                /(hurd|linux)\s?([\w\.]+)*/i,
+                /(gnu)\s?([\w\.]+)*/i
+            ], [Ua.NAME, Ua.VERSION], [
+                /(cros)\s[\w]+\s([\w\.]+\w)/i
+            ], [[Ua.NAME, 'Chromium OS'], Ua.VERSION], [
+                /(sunos)\s?([\w\.]+\d)*/i
+            ], [[Ua.NAME, 'Solaris'], Ua.VERSION], [
+                /\s([frentopc-]{0,4}bsd|dragonfly)\s?([\w\.]+)*/i
+            ], [Ua.NAME, Ua.VERSION], [
+                /(ip[honead]+)(?:.*os\s*([\w]+)*\slike\smac|;\sopera)/i
+            ], [[Ua.NAME, 'iOS'], [Ua.VERSION, /_/g, '.']], [
+                /(mac\sos\sx)\s?([\w\s\.]+\w)*/i,
+                /(macintosh|mac(?=_powerpc)\s)/i
+            ], [[Ua.NAME, 'Mac OS'], [Ua.VERSION, /_/g, '.']], [
+                /((?:open)?solaris)[\/\s-]?([\w\.]+)*/i,
+                /(haiku)\s(\w+)/i,
+                /(aix)\s((\d)(?=\.|\)|\s)[\w\.]*)*/i,
+                /(plan\s9|minix|beos|os\/2|amigaos|morphos|risc\sos|openvms)/i,
+                /(unix)\s?([\w\.]+)*/i
+            ], [Ua.NAME, Ua.VERSION]
+        ]
+    };
+    adaptors.Ua = Ua;
+})(adaptors || (adaptors = {}));
+(function (adaptors) {
+    var UABrowser = (function () {
+        function UABrowser(browser) {
+            this.name = browser.name || '';
+            this.version = browser.version || '';
+            this.major = typeof this.version === 'string' ? this.version.split('.')[0] : '';
+        }
+        UABrowser.prototype.toString = function () {
+            return [this.name, this.version].join('|').toLowerCase();
+        };
+        return UABrowser;
+    }());
+    adaptors.UABrowser = UABrowser;
+    var UAOs = (function () {
+        function UAOs(os) {
+            this.name = os.name || '';
+            this.version = os.version || '';
+            var vsplited = this.version.split('.');
+            this.vmajor = vsplited[0] || '0';
+            this.vminor = vsplited[1] || '0';
+            this.vpatch = vsplited[2] || '0';
+        }
+        UAOs.prototype.toString = function () {
+            return [this.name, this.version].join('|').toLowerCase();
+        };
+        return UAOs;
+    }());
+    adaptors.UAOs = UAOs;
+    var UADevice = (function () {
+        function UADevice(device) {
+            this.model = device.model || '';
+            this.type = device.type || (UADevice.typeRegExp.test(Context.getOS().name) ? adaptors.Ua.DESKTOP : '');
+            this.vendor = device.vendor || '';
+        }
+        UADevice.prototype.toString = function () {
+            return [this.model, this.type, this.vendor].join('|').toLowerCase();
+        };
+        return UADevice;
+    }());
+    UADevice.typeRegExp = /^windows|mac\s+os|linux|bsd|dragonfly|chromium\s+os|haiku|ubuntu|slackware|gentoo|solaris|debian|fedora|arch|beos|mint|gnu|os\/2$/i;
+    adaptors.UADevice = UADevice;
+    var Context = (function () {
+        function Context() {
+        }
+        Context.isDesktop = function () {
+            return !Context.isMobile() && !Context.isTablet();
+        };
+        Context.isIpad = function () {
+            return Context.getDevice().model === 'iPad' || /iPad/i.test(Context.getUA());
+        };
+        Context.isTablet = function () {
+            return Context.getDevice().type === 'tablet' || Context.isIpad() || (Context.isAndroid() && !/(m|M)obile/.test(Context.getUA()));
+        };
+        Context.isMobile = function () {
+            return Context.getDevice().type === 'mobile' || (Context.isIos() && !Context.isIpad()) || (Context.isAndroid() && /(m|M)obile/.test(Context.getUA()));
+        };
+        Context.isChromeIos = function () {
+            return /CriOS/i.test(Context.getUA());
+        };
+        Context.isFacebookWebview = function () {
+            return Context.getBrowser().name === 'Facebook' || /FBAN|FBIOS|FBAV|FBBV|FBDV|FBMD|FBSN|FBSV|FBSS|FBCR|FBID|FBLC|FBOP/i.test(Context.getUA());
+        };
+        Context.isAndroidNative = function () {
+            return Context.getBrowser().name === 'Android Browser';
+        };
+        Context.isAndroid = function () {
+            return Context.getOS().name === 'Android' || /Android/i.test(Context.getUA());
+        };
+        Context.isIos = function () {
+            return Context.getOS().name === 'iOS' || Context.isIpad() || Context.isIphone();
+        };
+        Context.isIphone = function () {
+            return Context.getDevice().model === 'iPhone' || /iPhone/i.test(Context.getUA());
+        };
+        Context.isAndroidMobile = function () {
+            return Context.isAndroid() && Context.isMobile();
+        };
+        Context.isOldIE = function (maxVersion) {
+            if (maxVersion === void 0) { maxVersion = 9; }
+            return Context.isIE() && Context.getBrowser().major && parseInt(Context.getBrowser().major, 10) <= maxVersion;
+        };
+        Context.isIE = function () {
+            return Context.getBrowser().name === 'IE' || /MSIE|Trident/.test(Context.getUA());
+        };
+        Context.isChrome = function () {
+            return Context.getBrowser().name === 'Chrome' || !!window.chrome;
+        };
+        Context.isFirefox = function () {
+            return Context.getBrowser().name === 'Firefox' || /Firefox/i.test(Context.getUA());
+        };
+        Context.isAmpObserveIntersection = function () {
+            return !!(window.context && window.context.observeIntersection);
+        };
+        Context.getIEVersion = function () {
+            return Context.isIE() && Context.getBrowser().major ? parseInt(Context.getBrowser().major, 10) : null;
+        };
+        Context.getAndroidVersion = function () {
+            return Context.isAndroid() ? parseFloat(Context.getOS().vmajor + Context.getOS().vminor + '.' + Context.getOS().vpatch) : null;
+        };
+        Context.getIosVersion = function () {
+            return Context.isIos() ? parseFloat(Context.getOS().vmajor + Context.getOS().vminor + '.' + Context.getOS().vpatch) : null;
+        };
+        Context.isUIWebview = function () {
+            return (Context.isIphone() || Context.isIpad())
+                && !/Safari/i.test(Context.getUA())
+                && !window.navigator.standalone;
+        };
+        Context.isIos10Safari = function () {
+            return Context.getIosVersion() >= 100 && !Context.isUIWebview() && !Context.isChromeIos();
+        };
+        Context.videoSupport = function (context) {
+            return !!context.createElement('video').canPlayType;
+        };
+        Context.getLanguage = function () {
+            return (window.navigator.language || window.navigator['browserLanguage'] || window.navigator['userLanguage'] || 'en');
+        };
+        Context.getUA = function () {
+            return Context.userAgent;
+        };
+        Context.getDevice = function () {
+            if (!this.device) {
+                this.device = new UADevice(adaptors.Ua.mapper.rgx.apply(this, adaptors.Ua.regexes.device));
+            }
+            return this.device;
+        };
+        Context.getOS = function () {
+            if (!this.os) {
+                this.os = new UAOs(adaptors.Ua.mapper.rgx.apply(this, adaptors.Ua.regexes.os));
+            }
+            return this.os;
+        };
+        Context.getBrowser = function () {
+            if (!this.browser) {
+                this.browser = new UABrowser(adaptors.Ua.mapper.rgx.apply(this, adaptors.Ua.regexes.browser));
+            }
+            return this.browser;
+        };
+        return Context;
+    }());
+    Context.userAgent = navigator.userAgent;
+    adaptors.Context = Context;
+})(adaptors || (adaptors = {}));
+var DeviceContext = adaptors.Context;
+;
+var adaptors;
+(function (adaptors) {
+    var LogSender = (function () {
+        function LogSender(collectorUrl, formattingType) {
+            this.collectorUrl = collectorUrl;
+            this.collectorUrl += this.collectorUrl.indexOf('?') < 0 ? '?' : '&';
+            if (formattingType === LogSender.FORMATTING_TYPES.PIPE_SEPARATE) {
+                this.format = LogSender.pipeSeparateData;
+            }
+            else {
+                this.format = LogSender.stringifyData;
+            }
+        }
+        LogSender.stringify = function (obj) {
+            var str;
+            try {
+                str = JSON.stringify(obj);
+            }
+            catch (e) {
+                if (obj.toString) {
+                    str = obj.toString();
+                }
+            }
+            return str;
+        };
+        LogSender.stringifyData = function (data) {
+            if (data.length) {
+                for (var i in data) {
+                    if (typeof data[i] === 'function') {
+                        data[i] = data[i].toString();
+                    }
+                    else if (typeof data[i] === 'object') {
+                        data[i] = LogSender.stringify(data[i]);
+                    }
+                }
+            }
+            else {
+                data = LogSender.stringify(data);
+            }
+            return data.toString ? data.toString() : data;
+        };
+        LogSender.pipeSeparateData = function (data) {
+            var arr = [];
+            for (var key in data) {
+                if (data.hasOwnProperty(key)) {
+                    arr.push(data[key].toString());
+                }
+            }
+            return arr.join('|');
+        };
+        LogSender.prototype.track = function (data, prefix) {
+            if (prefix === void 0) { prefix = ''; }
+            try {
+                var url = this.collectorUrl + encodeURIComponent(prefix) + encodeURIComponent(data);
+                var img = new Image();
+                img.src = url;
+            }
+            catch (e) { }
+        };
+        return LogSender;
+    }());
+    LogSender.FORMATTING_TYPES = {
+        JSON: 'JSON',
+        PIPE_SEPARATE: 'PIPE_SEPARATE'
+    };
+    adaptors.LogSender = LogSender;
+})(adaptors || (adaptors = {}));
+(function (adaptors) {
+    var SumologicLogLevels = (function () {
+        function SumologicLogLevels() {
+        }
+        return SumologicLogLevels;
+    }());
+    SumologicLogLevels.INFO = 'info';
+    SumologicLogLevels.ERROR = 'error';
+    adaptors.SumologicLogLevels = SumologicLogLevels;
+    var SumologicCollectors = (function () {
+        function SumologicCollectors() {
+        }
+        return SumologicCollectors;
+    }());
+    SumologicCollectors.FORMAT = 'https://endpoint2.collection.sumologic.com/receiver/v1/http/ZaVnC4dhaV30C0O3cbMMJzpEllrmpJZp_EzPaV7VaQizHN3XMUS00p-nzp9slFjpr4TEA8mkY5dP9g2COKQFarvJscg1_XXivqu4-qcYnHQqHlkUk7qR0Q==';
+    adaptors.SumologicCollectors = SumologicCollectors;
+    var SumologicPrefixPatterns = (function () {
+        function SumologicPrefixPatterns() {
+        }
+        return SumologicPrefixPatterns;
+    }());
+    SumologicPrefixPatterns.CLASSIC = '[timestamp][sessionId][level] ';
+    SumologicPrefixPatterns.LIGHT = 'sessionId>type>subtype>level>pid ';
+    adaptors.SumologicPrefixPatterns = SumologicPrefixPatterns;
+    var Sumologic = (function () {
+        function Sumologic() {
+            this.epoch = Date.now();
+            this.logStorage = [];
+            this.initialized = false;
+        }
+        Sumologic.getLogPrefix = function (pattern, level, sessionId, macros) {
+            var defaultMacros = {
+                level: level,
+                timestamp: new Date().getTime(),
+                sessionId: sessionId
+            };
+            macros = adaptors.Ua.util.extend(defaultMacros, macros);
+            var logPrefix = pattern;
+            for (var key in macros) {
+                if (macros.hasOwnProperty(key)) {
+                    logPrefix = logPrefix.replace(key, macros[key]);
+                }
+            }
+            return logPrefix;
+        };
+        Sumologic.prototype.init = function (config, force) {
+            var _this = this;
+            if (force === void 0) { force = false; }
+            this.config = config;
+            this.canSend = Boolean(creativeId && (force || Math.random() <= Sumologic.SAMPLING_RATE));
+            adaptors.logger.debug("Sumologic init with sessionId=" + this.config.sessionId + ", canSend=" + this.canSend);
+            this.logStorage.forEach(function (args) {
+                var level = args[0];
+                var message = args[1];
+                _this[level].apply(_this, message);
+            });
+            this.logSender = new adaptors.LogSender(this.config.collectorUrl, adaptors.LogSender.FORMATTING_TYPES.JSON);
+            this.initialized = true;
+        };
+        Sumologic.prototype.isInitialized = function () {
+            return this.initialized;
+        };
+        Sumologic.prototype.getLog = function () {
+            var log = {
+                ci: creativeId,
+                a: this.config.adaptor,
+                t: Date.now() - this.epoch,
+                d: adaptors.Context.getDevice().type,
+                o: adaptors.Context.getOS().name,
+                ov: adaptors.Context.getOS().version,
+                b: adaptors.Context.getBrowser().name,
+                bv: adaptors.Context.getBrowser().version,
+                vs: this.config.videoTagName,
+                gv: gv
+            };
+            if (this.bytesMonitor) {
+                log.bl = this.bytesMonitor.totalbytes.value;
+                this.bytesMonitor.externalAssetsLoaded && (log.xa = this.bytesMonitor.externalAssetsLoaded);
+            }
+            this.playerSumologicSessionId && (log.pssi = this.playerSumologicSessionId);
+            return log;
+        };
+        Sumologic.prototype.track = function (e, em) {
+            var log = this.getLog();
+            log.e = e;
+            if (em)
+                log.em = em;
+            this.sendInfo(log);
+        };
+        Sumologic.prototype.error = function (e, em) {
+            var log = this.getLog();
+            log.e = e;
+            log.em = em;
+            this.sendError(log);
+        };
+        Sumologic.prototype.sendError = function (log, macros, force) {
+            if (macros === void 0) { macros = {}; }
+            if (force === void 0) { force = false; }
+            this.send(SumologicLogLevels.ERROR, log, macros, force);
+        };
+        Sumologic.prototype.sendInfo = function (log, macros, force) {
+            if (macros === void 0) { macros = {}; }
+            if (force === void 0) { force = false; }
+            this.send(SumologicLogLevels.INFO, log, macros, force);
+        };
+        Sumologic.prototype.send = function (level, log, macros, force) {
+            if (macros === void 0) { macros = {}; }
+            if (force === void 0) { force = false; }
+            if (this.initialized) {
+                var logPrefix = Sumologic.getLogPrefix(this.config.prefixPattern, level, this.config.sessionId, macros);
+                var formattedLog = this.logSender.format(log);
+                if (force || this.canSend) {
+                    adaptors.logger.debug('Send log to collector', logPrefix, log);
+                    this.logSender.track(formattedLog, logPrefix);
+                }
+                adaptors.logger.debug("bnt.track " + (log.e && log.e) + " " + (log.em && log.em) + " " + JSON.stringify(log));
+            }
+            else {
+                adaptors.logger.warn('Could not send logs, Sumologic service disaled');
+                this.logStorage.push(['send', arguments]);
+            }
+        };
+        return Sumologic;
+    }());
+    Sumologic.SAMPLING_RATE = 0.1;
+    adaptors.Sumologic = Sumologic;
+})(adaptors || (adaptors = {}));
+(function (adaptors) {
+    var SumologicEvents = (function () {
+        function SumologicEvents() {
+        }
+        return SumologicEvents;
+    }());
+    SumologicEvents.LOAD = 'load';
+    SumologicEvents.LOAD_READY = 'load-ready';
+    SumologicEvents.SDK = 'sdk-load';
+    SumologicEvents.SCRIPT_ERROR = 'js-error';
+    SumologicEvents.SDK_ERROR = 'sdk-error';
+    SumologicEvents.PAUSE = 'pause';
+    SumologicEvents.RESUME = 'resume';
+    SumologicEvents.MUTE = 'mute';
+    SumologicEvents.UNMUTE = 'unmute';
+    SumologicEvents.START = 'start';
+    SumologicEvents.START_READY = 'start-ready';
+    SumologicEvents.TIMELINE_START = 'q0';
+    SumologicEvents.FIRST_Q = 'q1';
+    SumologicEvents.MID_Q = 'q2';
+    SumologicEvents.THIRD_Q = 'q3';
+    SumologicEvents.COMPLETE = 'q4';
+    SumologicEvents.VIDEO_EVENT = 'debug.video';
+    SumologicEvents.VIDEO_EVENT_DURATIONCHANGE = 'durationchange';
+    SumologicEvents.VIDEO_EVENT_LOADSTART = 'loadstart';
+    SumologicEvents.VIDEO_EVENT_LOADEDDATA = 'loadedstart';
+    SumologicEvents.VIDEO_EVENT_LOADEDMETADATA = 'loadedmetadata';
+    SumologicEvents.VIDEO_EVENT_PLAYING = 'playing';
+    SumologicEvents.VIDEO_EVENT_PAUSE = 'pause';
+    SumologicEvents.VIDEO_EVENT_PLAY = 'play';
+    SumologicEvents.VIDEO_EVENT_ENDED = 'ended';
+    SumologicEvents.VIDEO_EVENT_TIMEUPDATE = 'timeupdate';
+    SumologicEvents.VIDEO_EVENT_VOLUMECHANGE = 'volumechange';
+    adaptors.SumologicEvents = SumologicEvents;
+    var AdaptorValues = (function () {
+        function AdaptorValues() {
+        }
+        return AdaptorValues;
+    }());
+    adaptors.AdaptorValues = AdaptorValues;
+    var SumologicTracking = (function () {
+        function SumologicTracking(adApi) {
+            var _this = this;
+            this.adApi = adApi;
+            this.muted = false;
+            this.trackTimelineQuartiles = function (duration, timeMillisec, creativeOnend, mainScreen) {
+                var onstart = false;
+                var onfirstq = false;
+                var onmidpoint = false;
+                var onthirdq = false;
+                var onend = false;
+                var updateQuartiles = function () {
+                    if (mainScreen.value) {
+                        if (duration.value <= 0 || timeMillisec.value <= 0) {
+                            return;
+                        }
+                        if (timeMillisec.value / duration.value >= .75 && !onthirdq) {
+                            onthirdq = true;
+                            _this.sumologic.track(SumologicEvents.THIRD_Q);
+                        }
+                        if (timeMillisec.value / duration.value >= .50 && !onmidpoint) {
+                            onmidpoint = true;
+                            _this.sumologic.track(SumologicEvents.MID_Q);
+                        }
+                        if (timeMillisec.value / duration.value >= .25 && !onfirstq) {
+                            onfirstq = true;
+                            _this.sumologic.track(SumologicEvents.FIRST_Q);
+                        }
+                        if (!onstart) {
+                            onstart = true;
+                            _this.sumologic.track(SumologicEvents.TIMELINE_START);
+                        }
+                    }
+                };
+                timeMillisec.addObserver(updateQuartiles);
+                creativeOnend.addObserver(function () {
+                    if (!onend && mainScreen.value) {
+                        onend = true;
+                        _this.sumologic.track(SumologicEvents.COMPLETE);
+                    }
+                });
+            };
+            this.sumologic = new adaptors.Sumologic();
+            this.sumologic.init({
+                adaptor: adaptor,
+                collectorUrl: adaptors.SumologicCollectors.FORMAT,
+                prefixPattern: adaptors.SumologicPrefixPatterns.CLASSIC,
+                formattingType: adaptors.LogSender.FORMATTING_TYPES.JSON,
+                sessionId: rand(10, false),
+                videoTagName: this.adApi.environment && this.adApi.environment.videoSlot
+                    ? this.adApi.environment.videoSlot.tagName
+                    : undefined
+            }, SumologicTracking.FORCE_SUMOLOGIC);
+            this.sumologic.track(SumologicEvents.LOAD);
+        }
+        SumologicTracking.prototype.init = function () {
+            var _this = this;
+            this.sumologic.bytesMonitor = this.adApi.getLoadedBytesMonitor();
+            this.adApi.getTeadsApiProxy().addObserver(function (teadsApi) {
+                if (teadsApi)
+                    teadsApi.getSumologicOption().map(function (sumologicOption) {
+                        _this.sumologic.playerSumologicSessionId = sumologicOption ? sumologicOption.sessionId : null;
+                    });
+            });
+            this.adApi.onstart.addObserver(function () {
+                _this.sumologic.track(SumologicEvents.START_READY);
+            });
+            this.adApi.onerror.addObserver(function (err) {
+                _this.sumologic.error(SumologicEvents.SDK_ERROR, err.toString());
+            });
+            this.adApi.creativeOnsuspend.addObserver(function () {
+                _this.sumologic.track(SumologicEvents.PAUSE);
+            });
+            this.adApi.creativeOnresume.addObserver(function () {
+                _this.sumologic.track(SumologicEvents.RESUME);
+            });
+            this.adApi.creativeVolume.addObserver(function (value) {
+                if (value == 0) {
+                    _this.muted = true;
+                    _this.sumologic.track(SumologicEvents.MUTE);
+                }
+                else if (_this.muted) {
+                    _this.muted = false;
+                    _this.sumologic.track(SumologicEvents.UNMUTE);
+                }
+            });
+            this.trackTimelineQuartiles(this.adApi.creativeDuration, this.adApi.creativeTimeMillisec, this.adApi.creativeOnend, this.adApi.creativeOnmainscreen);
+            if (this.adApi.environment.videoSlot)
+                this.trackVideo(this.adApi.environment.videoSlot);
+        };
+        SumologicTracking.prototype.trackVideo = function (video) {
+            var _this = this;
+            video.addEventListener("loadstart", function () { return _this.sumologic.track(SumologicEvents.VIDEO_EVENT, SumologicEvents.VIDEO_EVENT_LOADSTART); });
+            video.addEventListener("loadeddata", function () { return _this.sumologic.track(SumologicEvents.VIDEO_EVENT, SumologicEvents.VIDEO_EVENT_LOADEDDATA); });
+            video.addEventListener("loadedmetadata", function () { return _this.sumologic.track(SumologicEvents.VIDEO_EVENT, SumologicEvents.VIDEO_EVENT_LOADEDMETADATA); });
+            video.addEventListener("durationchange", function () { return _this.sumologic.track(SumologicEvents.VIDEO_EVENT, SumologicEvents.VIDEO_EVENT_DURATIONCHANGE + "." + video.duration); });
+            video.addEventListener("playing", function () { return _this.sumologic.track(SumologicEvents.VIDEO_EVENT, SumologicEvents.VIDEO_EVENT_PLAYING); });
+            video.addEventListener("pause", function () { return _this.sumologic.track(SumologicEvents.VIDEO_EVENT, SumologicEvents.VIDEO_EVENT_PAUSE); });
+            video.addEventListener("play", function () { return _this.sumologic.track(SumologicEvents.VIDEO_EVENT, SumologicEvents.VIDEO_EVENT_PLAY); });
+            video.addEventListener("ended", function () { return _this.sumologic.track(SumologicEvents.VIDEO_EVENT, SumologicEvents.VIDEO_EVENT_ENDED); });
+            var timeupdateCb;
+            video.addEventListener("timeupdate", timeupdateCb = function () {
+                _this.sumologic.track(SumologicEvents.VIDEO_EVENT, SumologicEvents.VIDEO_EVENT_TIMEUPDATE);
+                video.removeEventListener("timeupdate", timeupdateCb);
+            });
+        };
+        return SumologicTracking;
+    }());
+    SumologicTracking.FORCE_SUMOLOGIC = false;
+    adaptors.SumologicTracking = SumologicTracking;
+    function rand(length, digitsOnly) {
+        if (digitsOnly === void 0) { digitsOnly = true; }
+        var chars = digitsOnly ? '0123456789' : 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+        var str = '';
+        for (var i = 0; i < length; i++) {
+            str += chars.charAt(Math.floor(Math.random() * chars.length));
+        }
+        return str;
+    }
+})(adaptors || (adaptors = {}));
+
+
+var gv = "1.18.0";
+var creativeId = 5647516788326400;
+var adaptor = 'v';
+
+adaptors.logger.LOG_LEVEL = 0;
+adaptors.logger.useLogRequest = false;
+adaptors.SumologicTracking.FORCE_SUMOLOGIC = false;
+  
+var adsrc = "var sdkScript = document.createElement('script');\nsdkScript.onload = function() {\n  if (typeof bntInit == 'function') bntInit(); else console.error(\"bnt: no bntInit()\");\n  if (typeof bntStart == 'function') bntStart(); else console.warn(\"bnt: no bntStart()\");\n}\nsdkScript.onerror = function() {\n  throw new Error(\"bnt: sdk load error\");\n}\nsdkScript.src = 'https://studio8tags-a.akamaihd.net/sdk/1.18.0';\ndocument.documentElement.firstChild.appendChild(sdkScript);\nvar stylesNode = document.createElement('style');\nstylesNode.type = 'text/css';\nstylesNode.appendChild(document.createTextNode(\".slideFromRight {  -webkit-animation-name: slideFromRight;  animation-name: slideFromRight; }@-webkit-keyframes slideFromRight {  from {    -webkit-transform: translate3d(100%, 0, 0);    transform: translate3d(100%, 0, 0);    visibility: visible;    opacity: 0; }  to {    -webkit-transform: translate3d(0, 0, 0);    transform: translate3d(0, 0, 0);    opacity: 1; } }@keyframes slideFromRight {  from {    -webkit-transform: translate3d(100%, 0, 0);    transform: translate3d(100%, 0, 0);    visibility: visible;    opacity: 0; }  to {    -webkit-transform: translate3d(0, 0, 0);    transform: translate3d(0, 0, 0);    opacity: 1; } }.slideFromLeft {  -webkit-animation-name: slideFromLeft;  animation-name: slideFromLeft; }@-webkit-keyframes slideFromLeft {  from {    -webkit-transform: translate3d(-100%, 0, 0);    transform: translate3d(-100%, 0, 0);    visibility: visible;    opacity: 0; }  to {    -webkit-transform: translate3d(0, 0, 0);    transform: translate3d(0, 0, 0);    opacity: 1; } }@keyframes slideFromLeft {  from {    -webkit-transform: translate3d(-100%, 0, 0);    transform: translate3d(-100%, 0, 0);    visibility: visible;    opacity: 0; }  to {    -webkit-transform: translate3d(0, 0, 0);    transform: translate3d(0, 0, 0);    opacity: 1; } }.slideFromTop {  -webkit-animation-name: slideFromTop;  animation-name: slideFromTop; }@-webkit-keyframes slideFromTop {  from {    -webkit-transform: translate3d(0, -100%, 0);    transform: translate3d(0, -100%, 0);    visibility: visible;    opacity: 0; }  to {    -webkit-transform: translate3d(0, 0, 0);    transform: translate3d(0, 0, 0);    opacity: 1; } }@keyframes slideFromTop {  from {    -webkit-transform: translate3d(0, -100%, 0);    transform: translate3d(0, -100%, 0);    visibility: visible;    opacity: 0; }  to {    -webkit-transform: translate3d(0, 0, 0);    transform: translate3d(0, 0, 0);    opacity: 1; } }.slideFromBottom {  -webkit-animation-name: slideFromBottom;  animation-name: slideFromBottom; }@-webkit-keyframes slideFromBottom {  from {    -webkit-transform: translate3d(0, 100%, 0);    transform: translate3d(0, 100%, 0);    visibility: visible;    opacity: 0; }  to {    -webkit-transform: translate3d(0, 0, 0);    transform: translate3d(0, 0, 0);    opacity: 1; } }@keyframes slideFromBottom {  from {    -webkit-transform: translate3d(0, 100%, 0);    transform: translate3d(0, 100%, 0);    visibility: visible;    opacity: 0; }  to {    -webkit-transform: translate3d(0, 0, 0);    transform: translate3d(0, 0, 0);    opacity: 1; } }.horizontalFlipIn {  -webkit-animation-name: horizontalFlipIn;  animation-name: horizontalFlipIn; }@-webkit-keyframes horizontalFlipIn {  from {    -webkit-transform: perspective(500px) rotate3d(1, 0, 0, 90deg);    transform: perspective(500px) rotate3d(1, 0, 0, 90deg);    -webkit-animation-timing-function: ease-in;    animation-timing-function: ease-in;    opacity: 0; }  to {    -webkit-transform: perspective(500px);    transform: perspective(500px); } }@keyframes horizontalFlipIn {  from {    -webkit-transform: perspective(500px) rotate3d(1, 0, 0, 90deg);    transform: perspective(500px) rotate3d(1, 0, 0, 90deg);    -webkit-animation-timing-function: ease-in;    animation-timing-function: ease-in;    opacity: 0; }  to {    -webkit-transform: perspective(500px);    transform: perspective(500px); } }.verticalFlipIn {  -webkit-animation-name: verticalFlipIn;  animation-name: verticalFlipIn; }@-webkit-keyframes verticalFlipIn {  from {    -webkit-transform: perspective(500px) rotate3d(0, 1, 0, 90deg);    transform: perspective(500px) rotate3d(0, 1, 0, 90deg);    -webkit-animation-timing-function: ease-in;    animation-timing-function: ease-in;    opacity: 0; }  to {    -webkit-transform: perspective(500px);    transform: perspective(500px); } }@keyframes verticalFlipIn {  from {    -webkit-transform: perspective(500px) rotate3d(0, 1, 0, 90deg);    transform: perspective(500px) rotate3d(0, 1, 0, 90deg);    -webkit-animation-timing-function: ease-in;    animation-timing-function: ease-in;    opacity: 0; }  to {    -webkit-transform: perspective(500px);    transform: perspective(500px); } }.fadeIn {  -webkit-animation-name: fadeIn;  animation-name: fadeIn; }@-webkit-keyframes fadeIn {  from {    opacity: 0; }  to {    opacity: 1; } }@keyframes fadeIn {  from {    opacity: 0; }  to {    opacity: 1; } }.zoomIn {  -webkit-animation-name: zoomIn;  animation-name: zoomIn; }@-webkit-keyframes zoomIn {  from {    opacity: 0;    -webkit-transform: scale3d(0.3, 0.3, 0.3);    transform: scale3d(0.3, 0.3, 0.3); }  to {    opacity: 1; } }@keyframes zoomIn {  from {    opacity: 0;    -webkit-transform: scale3d(0.3, 0.3, 0.3);    transform: scale3d(0.3, 0.3, 0.3); }  to {    opacity: 1; } }.slideToRight {  -webkit-animation-name: slideToRight;  animation-name: slideToRight; }@-webkit-keyframes slideToRight {  from {    -webkit-transform: translate3d(0, 0, 0);    transform: translate3d(0, 0, 0);    opacity: 1; }  to {    -webkit-transform: translate3d(100%, 0, 0);    transform: translate3d(100%, 0, 0);    visibility: visible;    opacity: 0; } }@keyframes slideToRight {  from {    -webkit-transform: translate3d(0, 0, 0);    transform: translate3d(0, 0, 0);    opacity: 1; }  to {    -webkit-transform: translate3d(100%, 0, 0);    transform: translate3d(100%, 0, 0);    visibility: visible;    opacity: 0; } }.slideToLeft {  -webkit-animation-name: slideToLeft;  animation-name: slideToLeft; }@-webkit-keyframes slideToLeft {  from {    -webkit-transform: translate3d(0, 0, 0);    transform: translate3d(0, 0, 0);    opacity: 1; }  to {    -webkit-transform: translate3d(-100%, 0, 0);    transform: translate3d(-100%, 0, 0);    visibility: visible;    opacity: 0; } }@keyframes slideToLeft {  from {    -webkit-transform: translate3d(0, 0, 0);    transform: translate3d(0, 0, 0);    opacity: 1; }  to {    -webkit-transform: translate3d(-100%, 0, 0);    transform: translate3d(-100%, 0, 0);    visibility: visible;    opacity: 0; } }.slideToTop {  -webkit-animation-name: slideToTop;  animation-name: slideToTop; }@-webkit-keyframes slideToTop {  from {    -webkit-transform: translate3d(0, 0, 0);    transform: translate3d(0, 0, 0);    opacity: 1; }  to {    -webkit-transform: translate3d(0, -100%, 0);    transform: translate3d(0, -100%, 0);    visibility: visible;    opacity: 0; } }@keyframes slideToTop {  from {    -webkit-transform: translate3d(0, 0, 0);    transform: translate3d(0, 0, 0);    opacity: 1; }  to {    -webkit-transform: translate3d(0, -100%, 0);    transform: translate3d(0, -100%, 0);    visibility: visible;    opacity: 0; } }.slideToBottom {  -webkit-animation-name: slideToBottom;  animation-name: slideToBottom; }@-webkit-keyframes slideToBottom {  from {    -webkit-transform: translate3d(0, 0, 0);    transform: translate3d(0, 0, 0);    opacity: 1; }  to {    -webkit-transform: translate3d(0, 100%, 0);    transform: translate3d(0, 100%, 0);    visibility: visible;    opacity: 0; } }@keyframes slideToBottom {  from {    -webkit-transform: translate3d(0, 0, 0);    transform: translate3d(0, 0, 0);    opacity: 1; }  to {    -webkit-transform: translate3d(0, 100%, 0);    transform: translate3d(0, 100%, 0);    visibility: visible;    opacity: 0; } }.horizontalFlipOut {  -webkit-animation-name: horizontalFlipOut;  animation-name: horizontalFlipOut; }@-webkit-keyframes horizontalFlipOut {  from {    -webkit-transform: perspective(500px);    transform: perspective(500px); }  to {    -webkit-transform: perspective(500px) rotate3d(1, 0, 0, 90deg);    transform: perspective(500px) rotate3d(1, 0, 0, 90deg);    -webkit-animation-timing-function: ease-in;    animation-timing-function: ease-in;    opacity: 0; } }@keyframes horizontalFlipOut {  from {    -webkit-transform: perspective(500px);    transform: perspective(500px); }  to {    -webkit-transform: perspective(500px) rotate3d(1, 0, 0, 90deg);    transform: perspective(500px) rotate3d(1, 0, 0, 90deg);    -webkit-animation-timing-function: ease-in;    animation-timing-function: ease-in;    opacity: 0; } }.verticalFlipOut {  -webkit-animation-name: verticalFlipOut;  animation-name: verticalFlipOut; }@-webkit-keyframes verticalFlipOut {  from {    -webkit-transform: perspective(500px);    transform: perspective(500px); }  to {    -webkit-transform: perspective(500px) rotate3d(0, 1, 0, 90deg);    transform: perspective(500px) rotate3d(0, 1, 0, 90deg);    -webkit-animation-timing-function: ease-in;    animation-timing-function: ease-in;    opacity: 0; } }@keyframes verticalFlipOut {  from {    -webkit-transform: perspective(500px);    transform: perspective(500px); }  to {    -webkit-transform: perspective(500px) rotate3d(0, 1, 0, 90deg);    transform: perspective(500px) rotate3d(0, 1, 0, 90deg);    -webkit-animation-timing-function: ease-in;    animation-timing-function: ease-in;    opacity: 0; } }.fadeOut {  -webkit-animation-name: fadeOut;  animation-name: fadeOut; }@-webkit-keyframes fadeOut {  from {    opacity: 1; }  to {    opacity: 0; } }@keyframes fadeOut {  from {    opacity: 1; }  to {    opacity: 0; } }.zoomOut {  -webkit-animation-name: zoomOut;  animation-name: zoomOut; }@-webkit-keyframes zoomOut {  from {    opacity: 1; }  to {    opacity: 0;    -webkit-transform: scale3d(0.3, 0.3, 0.3);    transform: scale3d(0.3, 0.3, 0.3); } }@keyframes zoomOut {  from {    opacity: 1; }  to {    opacity: 0;    -webkit-transform: scale3d(0.3, 0.3, 0.3);    transform: scale3d(0.3, 0.3, 0.3); } }body {    background-color: #FFF;}\\n\"));\ndocument.documentElement.firstChild.appendChild(stylesNode);\nvar VAST_PLAYER = 'https://studio8tags-a.akamaihd.net/format/1.18.0'\nfunction bntInit() {\nbnt.LIBRARY._640x360_01_jpg = {\n  \"name\": \"640x360_01.jpg\",\n  \"filename\": \"640x360_01-1511980754622.jpg\",\n  \"link\": \"https://studiov8-a.akamaihd.net/creative-5647516788326400/640x360_01-1511980754622.jpg\",\n  \"created\": \"2017-11-29T18:39:17.120Z\",\n  \"updated\": \"2017-11-29T18:39:17.120Z\",\n  \"size\": 63509,\n  \"nature\": \"image\",\n  \"external\": false,\n  \"id\": \"_640x360_01_jpg\"\n};;\nbnt.LIBRARY.MARIAGE_mp4 = {\n  \"name\": \"MARIAGE.mp4\",\n  \"filename\": \"mariage-1512387842963.mp4\",\n  \"link\": \"https://studiov8-a.akamaihd.net/creative-5647516788326400/mariage-1512387842963.mp4\",\n  \"created\": \"2017-12-04T11:44:07.818Z\",\n  \"updated\": \"2017-12-04T11:44:07.818Z\",\n  \"size\": 3193810,\n  \"nature\": \"video\",\n  \"external\": false,\n  \"id\": \"MARIAGE_mp4\"\n};;\nbnt.ASSET_VERSIONS.MARIAGE_mp4 = {\n  \"mp4_768k\": \"https://studiov8-a.akamaihd.net/creative-5647516788326400/mariage-1512387842963.low.mp4\",\n  \"mp4_1536k\": \"https://studiov8-a.akamaihd.net/creative-5647516788326400/mariage-1512387842963.high.mp4\",\n  \"thumb\": \"https://studiov8-a.akamaihd.net/creative-5647516788326400/mariage-1512387842963_0000.jpg\"\n};\n\nuid = 2167;\ncid = \"5647516788326400\";\n\ncreative = bnt.unmarshall([{\"ctor\":\"Creative\",\"paths\":[[]],\"props\":{}},{\"ctor\":\"Array\",\"paths\":[[\"screens\"]],\"props\":{}},{\"ctor\":\"Screen\",\"paths\":[[\"screens\",\"0\"]],\"props\":{\"name\":\"Screen1\"}},{\"ctor\":\"Array\",\"paths\":[[\"screens\",\"0\",\"customLoads\"]],\"props\":{}},{\"ctor\":\"Array\",\"paths\":[[\"screens\",\"0\",\"eos\"]],\"props\":{}},{\"ctor\":\"ElementOnScreen\",\"paths\":[[\"screens\",\"0\",\"eos\",\"0\"]],\"props\":{}},{\"ctor\":\"Video\",\"paths\":[[\"screens\",\"0\",\"eos\",\"0\",\"element\"]],\"props\":{\"elementId\":\"Video\"}},{\"ctor\":\"Map\",\"paths\":[[\"screens\",\"0\",\"eos\",\"0\",\"element\",\"configs\"]],\"props\":{}},{\"ctor\":\"StateHash\",\"paths\":[[\"screens\",\"0\",\"eos\",\"0\",\"element\",\"configs\",\"hashFn\"]],\"props\":{}},{\"ctor\":\"Object\",\"paths\":[[\"screens\",\"0\",\"eos\",\"0\",\"element\",\"configs\",\"store\"]],\"props\":{}},{\"ctor\":\"Entry\",\"paths\":[[\"screens\",\"0\",\"eos\",\"0\",\"element\",\"configs\",\"store\",\"32b61379-a982-765b-5bd4-7ebedf32e017_85f29f9b-de8c-ff01-c8c2-8a8bce9d5272\"]],\"props\":{}},{\"ctor\":\"State\",\"paths\":[[\"screens\",\"0\",\"eos\",\"0\",\"element\",\"configs\",\"store\",\"32b61379-a982-765b-5bd4-7ebedf32e017_85f29f9b-de8c-ff01-c8c2-8a8bce9d5272\",\"k\"],[\"screens\",\"0\",\"eos\",\"0\",\"configs\",\"store\",\"32b61379-a982-765b-5bd4-7ebedf32e017_85f29f9b-de8c-ff01-c8c2-8a8bce9d5272\",\"k\"],[\"screens\",\"0\",\"interactions\",\"0\",\"_actionParameters\",\"0\",\"eos\",\"0\",\"element\",\"configs\",\"store\",\"32b61379-a982-765b-5bd4-7ebedf32e017_85f29f9b-de8c-ff01-c8c2-8a8bce9d5272\",\"k\"],[\"screens\",\"0\",\"interactions\",\"0\",\"_actionParameters\",\"0\",\"eos\",\"0\",\"configs\",\"store\",\"32b61379-a982-765b-5bd4-7ebedf32e017_85f29f9b-de8c-ff01-c8c2-8a8bce9d5272\",\"k\"]],\"props\":{}},{\"ctor\":\"Canvas\",\"paths\":[[\"screens\",\"0\",\"eos\",\"0\",\"element\",\"configs\",\"store\",\"32b61379-a982-765b-5bd4-7ebedf32e017_85f29f9b-de8c-ff01-c8c2-8a8bce9d5272\",\"k\",\"canvas\"],[\"canvases\",\"0\"]],\"props\":{\"uuid\":\"32b61379-a982-765b-5bd4-7ebedf32e017\"}},{\"ctor\":\"CanvasConfig\",\"paths\":[[\"screens\",\"0\",\"eos\",\"0\",\"element\",\"configs\",\"store\",\"32b61379-a982-765b-5bd4-7ebedf32e017_85f29f9b-de8c-ff01-c8c2-8a8bce9d5272\",\"k\",\"canvas\",\"config\"]],\"props\":{\"width\":640,\"height\":360,\"name\":\"Main canvas\"}},{\"ctor\":\"Segment\",\"paths\":[[\"screens\",\"0\",\"eos\",\"0\",\"element\",\"configs\",\"store\",\"32b61379-a982-765b-5bd4-7ebedf32e017_85f29f9b-de8c-ff01-c8c2-8a8bce9d5272\",\"k\",\"segment\"],[\"segments\",\"0\"]],\"props\":{\"uuid\":\"85f29f9b-de8c-ff01-c8c2-8a8bce9d5272\"}},{\"ctor\":\"Array\",\"paths\":[[\"screens\",\"0\",\"eos\",\"0\",\"element\",\"configs\",\"store\",\"32b61379-a982-765b-5bd4-7ebedf32e017_85f29f9b-de8c-ff01-c8c2-8a8bce9d5272\",\"k\",\"segment\",\"signalHolders\"]],\"props\":{}},{\"ctor\":\"SegmentConfig\",\"paths\":[[\"screens\",\"0\",\"eos\",\"0\",\"element\",\"configs\",\"store\",\"32b61379-a982-765b-5bd4-7ebedf32e017_85f29f9b-de8c-ff01-c8c2-8a8bce9d5272\",\"k\",\"segment\",\"config\"]],\"props\":{\"name\":\"Default segment\",\"readonly\":true}},{\"ctor\":\"VideoConfig\",\"paths\":[[\"screens\",\"0\",\"eos\",\"0\",\"element\",\"configs\",\"store\",\"32b61379-a982-765b-5bd4-7ebedf32e017_85f29f9b-de8c-ff01-c8c2-8a8bce9d5272\",\"v\"]],\"props\":{\"autoplay\":true,\"mute\":false,\"videoWidth\":640,\"videoHeight\":360,\"videoDuration\":23.832,\"coverWidth\":0,\"coverHeight\":0,\"src\":\"asset://MARIAGE_mp4\",\"width\":640,\"height\":360,\"preserveAspectRatio\":false,\"visible\":true,\"cover\":\"\",\"panActive\":false,\"useGyroscope\":true,\"usePointer\":true}},{\"ctor\":\"VideoConfig\",\"paths\":[[\"screens\",\"0\",\"eos\",\"0\",\"element\",\"baseConfig\"]],\"props\":{\"autoplay\":true,\"mute\":false,\"videoWidth\":0,\"videoHeight\":0,\"videoDuration\":0,\"coverWidth\":0,\"coverHeight\":0,\"src\":\"\",\"width\":320,\"height\":180,\"preserveAspectRatio\":false,\"visible\":true,\"cover\":\"\",\"panActive\":false,\"useGyroscope\":true,\"usePointer\":true}},{\"ctor\":\"Map\",\"paths\":[[\"screens\",\"0\",\"eos\",\"0\",\"configs\"]],\"props\":{}},{\"ctor\":\"StateHash\",\"paths\":[[\"screens\",\"0\",\"eos\",\"0\",\"configs\",\"hashFn\"]],\"props\":{}},{\"ctor\":\"Object\",\"paths\":[[\"screens\",\"0\",\"eos\",\"0\",\"configs\",\"store\"]],\"props\":{}},{\"ctor\":\"Entry\",\"paths\":[[\"screens\",\"0\",\"eos\",\"0\",\"configs\",\"store\",\"32b61379-a982-765b-5bd4-7ebedf32e017_85f29f9b-de8c-ff01-c8c2-8a8bce9d5272\"]],\"props\":{}},{\"ctor\":\"ElementOnScreenConfig\",\"paths\":[[\"screens\",\"0\",\"eos\",\"0\",\"configs\",\"store\",\"32b61379-a982-765b-5bd4-7ebedf32e017_85f29f9b-de8c-ff01-c8c2-8a8bce9d5272\",\"v\"]],\"props\":{\"zIndex\":0,\"x\":0,\"y\":0}},{\"ctor\":\"AnimationConfig\",\"paths\":[[\"screens\",\"0\",\"eos\",\"0\",\"configs\",\"store\",\"32b61379-a982-765b-5bd4-7ebedf32e017_85f29f9b-de8c-ff01-c8c2-8a8bce9d5272\",\"v\",\"onHide\"]],\"props\":{\"name\":\"\",\"delay\":0,\"_duration\":0.4,\"ease\":\"linear\",\"repeat\":1}},{\"ctor\":\"AnimationConfig\",\"paths\":[[\"screens\",\"0\",\"eos\",\"0\",\"configs\",\"store\",\"32b61379-a982-765b-5bd4-7ebedf32e017_85f29f9b-de8c-ff01-c8c2-8a8bce9d5272\",\"v\",\"onShow\"]],\"props\":{\"name\":\"\",\"delay\":0,\"_duration\":0.4,\"ease\":\"linear\",\"repeat\":1}},{\"ctor\":\"ElementOnScreenConfig\",\"paths\":[[\"screens\",\"0\",\"eos\",\"0\",\"baseConfig\"]],\"props\":{\"zIndex\":0,\"x\":0,\"y\":0}},{\"ctor\":\"AnimationConfig\",\"paths\":[[\"screens\",\"0\",\"eos\",\"0\",\"baseConfig\",\"onHide\"]],\"props\":{\"name\":\"\",\"delay\":0,\"_duration\":0.4,\"ease\":\"linear\",\"repeat\":1}},{\"ctor\":\"AnimationConfig\",\"paths\":[[\"screens\",\"0\",\"eos\",\"0\",\"baseConfig\",\"onShow\"]],\"props\":{\"name\":\"\",\"delay\":0,\"_duration\":0.4,\"ease\":\"linear\",\"repeat\":1}},{\"ctor\":\"Array\",\"paths\":[[\"screens\",\"0\",\"eos\",\"0\",\"interactions\"]],\"props\":{}},{\"ctor\":\"Interaction\",\"paths\":[[\"screens\",\"0\",\"eos\",\"0\",\"interactions\",\"0\"]],\"props\":{\"triggerName\":\"onclick\",\"triggerFilter\":\"\",\"fireOnce\":false,\"_action\":\"clickthru\"}},{\"ctor\":\"Array\",\"paths\":[[\"screens\",\"0\",\"eos\",\"0\",\"interactions\",\"0\",\"_actionParameters\"]],\"props\":{\"0\":\"https://bs.serving-sys.com/serving/adServer.bs?cn=trd&mc=click&pli=24040719&PluID=0&ord=[timestamp]\"}},{\"ctor\":\"Object\",\"paths\":[[\"screens\",\"0\",\"eos\",\"0\",\"interactions\",\"0\",\"transition\"]],\"props\":{\"name\":\"\",\"in\":\"\",\"out\":\"\"}},{\"ctor\":\"Map\",\"paths\":[[\"screens\",\"0\",\"indexMapping\"]],\"props\":{}},{\"ctor\":\"ElementHash\",\"paths\":[[\"screens\",\"0\",\"indexMapping\",\"hashFn\"]],\"props\":{}},{\"ctor\":\"Object\",\"paths\":[[\"screens\",\"0\",\"indexMapping\",\"store\"]],\"props\":{}},{\"ctor\":\"Array\",\"paths\":[[\"screens\",\"0\",\"interactions\"]],\"props\":{}},{\"ctor\":\"Interaction\",\"paths\":[[\"screens\",\"0\",\"interactions\",\"0\"]],\"props\":{\"triggerName\":\"onend\",\"triggerFilter\":\"\",\"fireOnce\":false,\"_action\":\"switchTo\"}},{\"ctor\":\"Array\",\"paths\":[[\"screens\",\"0\",\"interactions\",\"0\",\"_actionParameters\"]],\"props\":{}},{\"ctor\":\"Screen\",\"paths\":[[\"screens\",\"0\",\"interactions\",\"0\",\"_actionParameters\",\"0\"],[\"screens\",\"1\"]],\"props\":{\"name\":\"Screen2\"}},{\"ctor\":\"Array\",\"paths\":[[\"screens\",\"0\",\"interactions\",\"0\",\"_actionParameters\",\"0\",\"customLoads\"]],\"props\":{}},{\"ctor\":\"Array\",\"paths\":[[\"screens\",\"0\",\"interactions\",\"0\",\"_actionParameters\",\"0\",\"eos\"]],\"props\":{}},{\"ctor\":\"ElementOnScreen\",\"paths\":[[\"screens\",\"0\",\"interactions\",\"0\",\"_actionParameters\",\"0\",\"eos\",\"0\"]],\"props\":{}},{\"ctor\":\"Image\",\"paths\":[[\"screens\",\"0\",\"interactions\",\"0\",\"_actionParameters\",\"0\",\"eos\",\"0\",\"element\"]],\"props\":{\"elementId\":\"endscreen\"}},{\"ctor\":\"Map\",\"paths\":[[\"screens\",\"0\",\"interactions\",\"0\",\"_actionParameters\",\"0\",\"eos\",\"0\",\"element\",\"configs\"]],\"props\":{}},{\"ctor\":\"StateHash\",\"paths\":[[\"screens\",\"0\",\"interactions\",\"0\",\"_actionParameters\",\"0\",\"eos\",\"0\",\"element\",\"configs\",\"hashFn\"]],\"props\":{}},{\"ctor\":\"Object\",\"paths\":[[\"screens\",\"0\",\"interactions\",\"0\",\"_actionParameters\",\"0\",\"eos\",\"0\",\"element\",\"configs\",\"store\"]],\"props\":{}},{\"ctor\":\"Entry\",\"paths\":[[\"screens\",\"0\",\"interactions\",\"0\",\"_actionParameters\",\"0\",\"eos\",\"0\",\"element\",\"configs\",\"store\",\"32b61379-a982-765b-5bd4-7ebedf32e017_85f29f9b-de8c-ff01-c8c2-8a8bce9d5272\"]],\"props\":{}},{\"ctor\":\"ImageConfig\",\"paths\":[[\"screens\",\"0\",\"interactions\",\"0\",\"_actionParameters\",\"0\",\"eos\",\"0\",\"element\",\"configs\",\"store\",\"32b61379-a982-765b-5bd4-7ebedf32e017_85f29f9b-de8c-ff01-c8c2-8a8bce9d5272\",\"v\"]],\"props\":{\"imageWidth\":640,\"imageHeight\":360,\"hoverImage\":\"\",\"src\":\"asset://_640x360_01_jpg\",\"width\":640,\"height\":360,\"preserveAspectRatio\":false,\"angle\":0,\"visible\":true,\"panActive\":false,\"useGyroscope\":true,\"usePointer\":true}},{\"ctor\":\"ImageConfig\",\"paths\":[[\"screens\",\"0\",\"interactions\",\"0\",\"_actionParameters\",\"0\",\"eos\",\"0\",\"element\",\"baseConfig\"]],\"props\":{\"imageWidth\":0,\"imageHeight\":0,\"hoverImage\":\"\",\"src\":\"\",\"width\":100,\"height\":100,\"preserveAspectRatio\":false,\"angle\":0,\"visible\":true,\"panActive\":false,\"useGyroscope\":true,\"usePointer\":true}},{\"ctor\":\"Map\",\"paths\":[[\"screens\",\"0\",\"interactions\",\"0\",\"_actionParameters\",\"0\",\"eos\",\"0\",\"configs\"]],\"props\":{}},{\"ctor\":\"StateHash\",\"paths\":[[\"screens\",\"0\",\"interactions\",\"0\",\"_actionParameters\",\"0\",\"eos\",\"0\",\"configs\",\"hashFn\"]],\"props\":{}},{\"ctor\":\"Object\",\"paths\":[[\"screens\",\"0\",\"interactions\",\"0\",\"_actionParameters\",\"0\",\"eos\",\"0\",\"configs\",\"store\"]],\"props\":{}},{\"ctor\":\"Entry\",\"paths\":[[\"screens\",\"0\",\"interactions\",\"0\",\"_actionParameters\",\"0\",\"eos\",\"0\",\"configs\",\"store\",\"32b61379-a982-765b-5bd4-7ebedf32e017_85f29f9b-de8c-ff01-c8c2-8a8bce9d5272\"]],\"props\":{}},{\"ctor\":\"ElementOnScreenConfig\",\"paths\":[[\"screens\",\"0\",\"interactions\",\"0\",\"_actionParameters\",\"0\",\"eos\",\"0\",\"configs\",\"store\",\"32b61379-a982-765b-5bd4-7ebedf32e017_85f29f9b-de8c-ff01-c8c2-8a8bce9d5272\",\"v\"]],\"props\":{\"zIndex\":0,\"x\":0,\"y\":0}},{\"ctor\":\"AnimationConfig\",\"paths\":[[\"screens\",\"0\",\"interactions\",\"0\",\"_actionParameters\",\"0\",\"eos\",\"0\",\"configs\",\"store\",\"32b61379-a982-765b-5bd4-7ebedf32e017_85f29f9b-de8c-ff01-c8c2-8a8bce9d5272\",\"v\",\"onHide\"]],\"props\":{\"name\":\"\",\"delay\":0,\"_duration\":0.4,\"ease\":\"linear\",\"repeat\":1}},{\"ctor\":\"AnimationConfig\",\"paths\":[[\"screens\",\"0\",\"interactions\",\"0\",\"_actionParameters\",\"0\",\"eos\",\"0\",\"configs\",\"store\",\"32b61379-a982-765b-5bd4-7ebedf32e017_85f29f9b-de8c-ff01-c8c2-8a8bce9d5272\",\"v\",\"onShow\"]],\"props\":{\"name\":\"\",\"delay\":0,\"_duration\":0.4,\"ease\":\"linear\",\"repeat\":1}},{\"ctor\":\"ElementOnScreenConfig\",\"paths\":[[\"screens\",\"0\",\"interactions\",\"0\",\"_actionParameters\",\"0\",\"eos\",\"0\",\"baseConfig\"]],\"props\":{\"zIndex\":0,\"x\":0,\"y\":0}},{\"ctor\":\"AnimationConfig\",\"paths\":[[\"screens\",\"0\",\"interactions\",\"0\",\"_actionParameters\",\"0\",\"eos\",\"0\",\"baseConfig\",\"onHide\"]],\"props\":{\"name\":\"\",\"delay\":0,\"_duration\":0.4,\"ease\":\"linear\",\"repeat\":1}},{\"ctor\":\"AnimationConfig\",\"paths\":[[\"screens\",\"0\",\"interactions\",\"0\",\"_actionParameters\",\"0\",\"eos\",\"0\",\"baseConfig\",\"onShow\"]],\"props\":{\"name\":\"\",\"delay\":0,\"_duration\":0.4,\"ease\":\"linear\",\"repeat\":1}},{\"ctor\":\"Array\",\"paths\":[[\"screens\",\"0\",\"interactions\",\"0\",\"_actionParameters\",\"0\",\"eos\",\"0\",\"interactions\"]],\"props\":{}},{\"ctor\":\"Interaction\",\"paths\":[[\"screens\",\"0\",\"interactions\",\"0\",\"_actionParameters\",\"0\",\"eos\",\"0\",\"interactions\",\"0\"]],\"props\":{\"triggerName\":\"onclick\",\"triggerFilter\":\"\",\"fireOnce\":false,\"_action\":\"clickthru\"}},{\"ctor\":\"Array\",\"paths\":[[\"screens\",\"0\",\"interactions\",\"0\",\"_actionParameters\",\"0\",\"eos\",\"0\",\"interactions\",\"0\",\"_actionParameters\"]],\"props\":{\"0\":\"https://bs.serving-sys.com/serving/adServer.bs?cn=trd&mc=click&pli=24040719&PluID=0&ord=[timestamp]\"}},{\"ctor\":\"Object\",\"paths\":[[\"screens\",\"0\",\"interactions\",\"0\",\"_actionParameters\",\"0\",\"eos\",\"0\",\"interactions\",\"0\",\"transition\"]],\"props\":{\"name\":\"\",\"in\":\"\",\"out\":\"\"}},{\"ctor\":\"Map\",\"paths\":[[\"screens\",\"0\",\"interactions\",\"0\",\"_actionParameters\",\"0\",\"indexMapping\"]],\"props\":{}},{\"ctor\":\"ElementHash\",\"paths\":[[\"screens\",\"0\",\"interactions\",\"0\",\"_actionParameters\",\"0\",\"indexMapping\",\"hashFn\"]],\"props\":{}},{\"ctor\":\"Object\",\"paths\":[[\"screens\",\"0\",\"interactions\",\"0\",\"_actionParameters\",\"0\",\"indexMapping\",\"store\"]],\"props\":{}},{\"ctor\":\"Array\",\"paths\":[[\"screens\",\"0\",\"interactions\",\"0\",\"_actionParameters\",\"0\",\"interactions\"]],\"props\":{}},{\"ctor\":\"ScreenConfig\",\"paths\":[[\"screens\",\"0\",\"interactions\",\"0\",\"_actionParameters\",\"0\",\"config\"]],\"props\":{\"duration\":0}},{\"ctor\":\"AnimationConfig\",\"paths\":[[\"screens\",\"0\",\"interactions\",\"0\",\"_actionParameters\",\"0\",\"config\",\"onHide\"]],\"props\":{\"name\":\"\",\"delay\":0,\"_duration\":0.4,\"ease\":\"linear\",\"repeat\":1}},{\"ctor\":\"AnimationConfig\",\"paths\":[[\"screens\",\"0\",\"interactions\",\"0\",\"_actionParameters\",\"0\",\"config\",\"onShow\"]],\"props\":{\"name\":\"\",\"delay\":0,\"_duration\":0.4,\"ease\":\"linear\",\"repeat\":1}},{\"ctor\":\"Object\",\"paths\":[[\"screens\",\"0\",\"interactions\",\"0\",\"transition\"]],\"props\":{\"name\":\"fade\",\"in\":\"fadeIn\",\"out\":\"fadeOut\",\"duration\":0.6}},{\"ctor\":\"ScreenConfig\",\"paths\":[[\"screens\",\"0\",\"config\"]],\"props\":{\"duration\":0}},{\"ctor\":\"AnimationConfig\",\"paths\":[[\"screens\",\"0\",\"config\",\"onHide\"]],\"props\":{\"name\":\"\",\"delay\":0,\"_duration\":0.4,\"ease\":\"linear\",\"repeat\":1}},{\"ctor\":\"AnimationConfig\",\"paths\":[[\"screens\",\"0\",\"config\",\"onShow\"]],\"props\":{\"name\":\"\",\"delay\":0,\"_duration\":0.4,\"ease\":\"linear\",\"repeat\":1}},{\"ctor\":\"Array\",\"paths\":[[\"canvases\"]],\"props\":{}},{\"ctor\":\"Array\",\"paths\":[[\"segments\"]],\"props\":{}},{\"ctor\":\"Map\",\"paths\":[[\"screensToPreload\"]],\"props\":{}},{\"ctor\":\"ScreenHash\",\"paths\":[[\"screensToPreload\",\"hashFn\"]],\"props\":{}},{\"ctor\":\"Object\",\"paths\":[[\"screensToPreload\",\"store\"]],\"props\":{}},{\"ctor\":\"CreativeConfig\",\"paths\":[[\"config\"]],\"props\":{\"skippable\":false,\"color\":\"#fff\",\"name\":\"inRead_EKO_Mariage\"}},{\"ctor\":\"Code\",\"paths\":[[\"code\"]],\"props\":{\"css\":\"body {\\n    background-color: #FFF;\\n}\",\"js\":\"\"}}]) ;\nbnt.QueryParams.params = {};\n\nadController = new bnt.AdController(creative);\n\nVideo = creative.elements.get(\"Video\");\nendscreen = creative.elements.get(\"endscreen\");\n\nVideo.onclick\n\t.addObserver(function () {\n\t\tcreative.getController().clickthru(\"https://bs.serving-sys.com/serving/adServer.bs?cn=trd&mc=click&pli=24040719&PluID=0&ord=[timestamp]\");\n\t\tbntTracking.trackEvent(\"Video: onclick\", null);\n\t});\nendscreen.onclick\n\t.addObserver(function () {\n\t\tcreative.getController().clickthru(\"https://bs.serving-sys.com/serving/adServer.bs?cn=trd&mc=click&pli=24040719&PluID=0&ord=[timestamp]\");\n\t\tbntTracking.trackEvent(\"endscreen: onclick\", null);\n\t});\n\nScreen1 = creative.screens[0];\nScreen2 = creative.screens[1];\n\nScreen1.onend\n\t.addObserver(function () {\n\t\tcreative.getController().renderer.switchTo(\"Screen2\", {\n  \"name\": \"fade\",\n  \"in\": \"fadeIn\",\n  \"out\": \"fadeOut\",\n  \"duration\": 0.6\n});\n\t});\n\n\ntrkConfig = { uid: uid, cid: cid };\nbntTracking = new bnt.TrackingUnit(trkConfig);\nbntTracking.trackCreative(creative);\nbntTracking.trackVideoQuartiles(Video, \"Video\");\n            \n\n\n\n\n}";
+
+var bntAd = new adaptors.VpaidAd();
+bntAd.setup(adsrc);
+
+function getVPAIDAd() {return bntAd;}

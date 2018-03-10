@@ -1,0 +1,92 @@
+(function ($) {
+    /* Automatically generate a link to this title's audiobook at libro.fm. */
+
+    $(document).ready(function() {
+        // Kill switch - uncomment if something is going wrong
+        // return;
+        // End kill switch
+
+        // If this isn't a '/book' page, don't attempt to retrieve book
+        // data from Libro (e.g. if the user is browsing search results).
+        if(!isBookPage()) {
+            return;
+        }
+
+        // Location of the libro.php CGI script relative to the root domain (e.g. "/cgi-bin")
+        var LIBRO_CGI_FOLDER = ""
+
+        // Text the audiobook link will display
+        var AUDIOBOOK_BUTTON_TEXT = "Get the audiobook"
+
+        // Get the title's ISBN and bookstore URL
+        var isbn = getBookIsbn();
+        var bookstoreUrl = getBookstoreUrl();
+
+        // This contains the domain of the expected Libro.fm link, used for validation
+        // against cross-site-scripting attacks. Note that the trailing slash is
+        // important so a link like https://libro.fm.othersite.com won't pass muster.
+
+        // Uncomment for testing
+        //var libroUrl = "https://test.libro.fm/"
+
+        // Uncomment for production
+        var libroUrl = "https://libro.fm/"
+
+        var cgiUrl = document.location.origin + LIBRO_CGI_FOLDER + "/libro.php"
+
+        $.getJSON( cgiUrl, { id: isbn, ref: bookstoreUrl, format: "json" }, function( data ) {
+            $.each( data, function( key, val ) {
+                // Sanitize the received URL to prevent dangerous behavior
+                var sanitizedUrl = val.replace(/[^\w\s\/\-_:\.?=]/gi,'');
+
+                //console.log( "Received: " + sanitizedUrl );
+
+                // Ensure received URL is pointing to the correct domain before displaying
+                if( (sanitizedUrl.substring(0, libroUrl.length) == libroUrl ) )
+                {
+                    //console.log( "Libro.fm URL is safe, publishing link" );
+
+                    // Link below button cover
+                    var targetDiv = $("div.abaproduct-content div.abaproduct-image, div.abaproduct-content div.abaproduct-large-image")
+                    targetDiv.first().append("<p><a href=\"" + sanitizedUrl + "\" class=\"librofm-link\" target=\"_blank\">Get the Digital Audiobook</a></p>");
+
+                    // Add link to 'related editions'
+                    var targetList = $("fieldset.abaproduct-related-editions");
+                    targetList.each(function(index) {
+                        var legendText = $(this).children("legend#relatededition").attr("id");
+                        //var legendText = $(this).children("legend").children("a").attr("name");
+                        // 'Related Editions' doesn't have a unique ID, so look for 
+                        // this text string in the legend's link attribute.
+                        if(legendText == "relatededition") {
+                            var editionsList = $(this).children("ul");
+                            editionsList.append("<li><a href=\"" + sanitizedUrl + "\">Digital Audiobook (Libro.fm)</a></li>");
+                        }
+                    });
+                }
+            });
+        });
+    });
+
+    // Gets this book's ISBN by reading from the site's URL
+    function getBookIsbn() {
+        // Get the URL's path, which will be of format '/book/ISBN'
+        var path = document.location.pathname;
+
+        // Return a substring that just includes the ISBN
+        // (Strips out everything except what's after the last '/')
+        return path.substr(path.lastIndexOf('/') +1);
+    }
+
+    // Gets this bookstore's URL by reading from the site's URL
+    function getBookstoreUrl() {
+        return document.location.hostname
+    }
+
+    // Returns true if we're on a '/book' page.
+    function isBookPage() {
+        var path = document.location.pathname;
+        bookPage = (path.match(/^\/book\/\d{13}/) !== null);
+        return bookPage;
+    }
+        
+})(jQuery);

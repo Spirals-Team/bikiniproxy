@@ -1,0 +1,101 @@
+/**
+ * Nwdthemes Productslider Extension
+ *
+ * @package     Productslider
+ * @author      Nwdthemes <mail@nwdthemes.com>
+ * @link        http://nwdthemes.com/
+ * @copyright   Copyright (c) 2014. Nwdthemes
+ * @license     http://themeforest.net/licenses/terms/regular
+ */
+
+(function(jQuery) {
+
+jQuery(function($) {
+
+    var pixelRatio = !!window.devicePixelRatio ? window.devicePixelRatio : 1;
+    if (pixelRatio > 1) {
+        $('.productslider-container .owl-carousel img[data-retina]').each(function(){
+            $(this).attr('src',$(this).attr('data-retina'));
+        });
+    }
+
+	var initSlider = function(sliderID) {
+
+		(function (sliderID) {
+
+			var carouselId = '#'+sliderID;
+			if ( !$(carouselId).length ) return;
+
+			function afterUpdateHandler(baseElement){
+				var pHeight = 0;
+
+				$('.product-information', baseElement).css('min-height', '');
+				$('.product-information', baseElement).each(function(){
+					pHeight = Math.max(pHeight, $(this).height() );
+				});
+
+				$('.product-information', baseElement).css('min-height', pHeight);
+			};
+
+			var owl = $(carouselId),
+				options = {
+					responsiveRefreshRate: 128,
+                    responsiveBaseWidth: $(carouselId).parent(),
+					responsiveClass:true,
+					responsive:{
+						0:{
+							items:1,
+							nav:true
+						},
+						600:{
+							items:3,
+							nav:false
+						},
+						1000:{
+							items:5,
+							nav:true,
+							loop:false
+						}
+					},
+					slideSpeed: 400,
+					stopOnHover: true,
+					navigation: true,
+					pagination: true,
+					paginationNumbers: true,
+					itemsScaleUp: false,
+					rewindNav: false,
+					afterUpdate: function(){
+						afterUpdateHandler(this.owl.baseElement);
+					},
+					afterInit: function(){
+						afterUpdateHandler(this.owl.baseElement);
+					}
+				};
+
+			options.itemsCustom = $(carouselId).data('items');
+			options.rewindNav = $(carouselId).data('rewind');
+			options.slideSpeed = $(carouselId).data('slidespeed');
+			options.stopOnHover = $(carouselId).data('stoponhover');
+			options.navigation = $(carouselId).data('navigation');
+			options.pagination = $(carouselId).data('pagination');
+			options.paginationNumbers = $(carouselId).data('paginationnumbers');
+			if ( $(carouselId).data('scroll') == 'page' ) {
+				options.scrollPerPage = true;
+			}
+			if ( $(carouselId).data('autoscroll') ) {
+				options.autoPlay = parseInt($(carouselId).data('autoscroll'));
+			}
+			if ( $(carouselId).data('rtl') ) {
+				options.direction = 'rtl';
+			}
+			owl.owlCarousel(options);
+		})(sliderID);
+	};
+
+	$('.productslider-container .owl-carousel').each(function(){
+		initSlider( $(this).attr('id') );
+	});
+});
+
+
+})($nwd_jQuery);

@@ -1,0 +1,102 @@
+jQuery( function($) {
+
+	$(".favorite-this").on('click', function() {
+		if( ! $(this).hasClass('working')) {
+			var $self = $(this),
+				post_id = $(this).attr("data-post_id"),
+				nonce = $(this).attr("data-nonce");
+				manage = $(this).attr("data-manage"),
+				type = $(this).attr("data-type");
+
+			$self.addClass('working');
+
+			if(manage == 'favorite') {
+				var reverse_manage = 'unfavorite';
+			} else {
+				var reverse_manage = 'favorite';
+			}
+
+			$self.attr('data-manage', reverse_manage);
+
+			$.ajax({
+				type : "post",
+				dataType : "json",
+				url : ajax_handler.ajaxurl,
+				data : {
+					action: "reset_favorite_handler",
+					post_id : post_id,
+					nonce: nonce,
+					manage: manage,
+					type: type
+				},
+				success: function(response) {
+					$self.removeClass('working');
+
+					if(response.type == "success") {
+						$self.parents('.can-favorite').find('.favorite-counter').text(response.favorite_count);
+					}
+					else {
+						alert("Unable to favorite. Please try again later.");
+					}
+				}
+			});
+		}
+
+		return false;
+	});
+
+	$('.utilities .vote a.ajaxit').on('click', function() {
+		if( ! $(this).hasClass('working')) {
+			var $self = $(this),
+				$vote_wrapper = $self.parents('.vote'),
+				entry_id = $self.data('entry_id'),
+				direction = $self.data('vote_direction'),
+				$upcount_holder = $vote_wrapper.find('.up .counter'),
+				$downcount_holder = $vote_wrapper.find('.down .counter');
+
+			if($vote_wrapper.hasClass('voted')) {
+				if(($vote_wrapper.hasClass('upvoted') && direction == 'up') || $vote_wrapper.hasClass('downvoted') && direction == 'down') {
+					direction = 'unvote';
+				}
+			} else {
+				$vote_wrapper.addClass('voted');
+			}
+
+			$self.addClass('working');
+
+			$.ajax({
+				type : "post",
+				dataType : "json",
+				url : ajax_handler.ajaxurl,
+				data : {
+					action: "reset_vote_entry",
+					post_id : entry_id,
+					direction: direction
+				},
+				success: function(response) {
+					$self.removeClass('working');
+					if(direction == 'unvote') {
+						$vote_wrapper.removeClass('voted');
+						$vote_wrapper.removeClass('upvoted');
+						$vote_wrapper.removeClass('downvoted');
+					} else {
+						$vote_wrapper.addClass('voted');
+						$vote_wrapper.removeClass('upvoted');
+						$vote_wrapper.removeClass('downvoted');
+						$vote_wrapper.addClass(direction + 'voted');
+					}
+
+					if(response.type == "success") {
+						$upcount_holder.text(response.data.upvoted);
+						$downcount_holder.text(response.data.downvoted);
+					}
+					else {
+						alert("Unable to process. Please try again later.");
+					}
+				}
+			});
+		}
+
+		return false;
+	});
+})

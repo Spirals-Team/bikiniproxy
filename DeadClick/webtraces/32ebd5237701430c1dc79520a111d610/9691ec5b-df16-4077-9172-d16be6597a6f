@@ -1,0 +1,42 @@
+
+function removeEmptyZones()
+{$("#left,#right").each(function(){if($(this).is("empty")||$.trim($(this).html())=="")
+{$(this).remove();}});}
+function setContentWidth()
+{if($("#content .panel").length>0)
+{if($("#content .wrap-panels").length<1)
+{$("#content .panel").wrapAll('<div class="wrap-panels"></div>');}}
+var width=$("#main").width();if($("#left:visible").length)
+{width-=$("#left").width();$("#content .wrap,#content .wrap-panels").addClass("padding-left");}
+else
+{$("#content .wrap, #content .wrap-panels").removeClass("padding-left");}
+if($("#right:visible").length>0)
+{width-=$("#right").width();$("#content .wrap,#content .wrap-panels").addClass("padding-right");}
+else
+{$("#content .wrap,#content .wrap-panels").removeClass("padding-right");}
+$("#content").width(width);}
+function setCatalogViewFlexible()
+{var top=null;var maxHeight=0;var itemsInRow=0;$(".catalog-view-flexible .catalog-product").each(function(){$(this).css("width","");$(this).css("height","");});$(".catalog-view-flexible .catalog-product").each(function(){var o=$(this).offset();if(top==null)
+{top=o.top;itemsInRow=0;}
+if(top==o.top)itemsInRow++;maxHeight=parseInt($(this).height()>maxHeight?$(this).height():maxHeight);});var width=parseInt(Math.floor($(".catalog-view-flexible").width()/itemsInRow));if(maxHeight<220)maxHeight=220;$(".catalog-view-flexible .catalog-product").each(function(){$(this).width(width+'px');$(this).height(maxHeight+'px');});}
+function setCountriesStates(countrySelector,currentCountry,stateSelector,currentState,provinceSelector,currentProvince,countriesStates){var countriesHTML='';jQuery.each(countriesStates,function(countryId,countryData){var _countryId=parseInt(countryId.substr(1,5),10);countriesHTML+='<option value="'+_countryId+'" '+(_countryId==currentCountry?'selected="selected"':'')+'>'+countryData.country_name+'</option>';});$(countrySelector+" select").html(countriesHTML);var currentCountry=$(countrySelector+" select option:selected").attr("value");var _currentCountry=currentCountry;for(i=1;i<=5;i++)
+{if(_currentCountry.length<5)_currentCountry='0'+_currentCountry;}
+_currentCountry='c'+_currentCountry;if(countriesStates[_currentCountry].states!=null&&countriesStates[_currentCountry].states!='undefined'&&countriesStates[_currentCountry].states)
+{var statesHTML='';statesHTML+='<option value="">'+msg.select_state_or_province+'</option>';jQuery.each(countriesStates[_currentCountry].states,function(stateId,stateName){var _stateId=parseInt(stateId.substr(1,5),10);statesHTML+='<option value="'+_stateId+'" '+(_stateId==currentState?'selected="selected"':'')+'>'+stateName+'</option>';});$(stateSelector+" select").html(statesHTML);$(provinceSelector).hide();$(stateSelector).show();}
+else
+{$(provinceSelector+" input[type='text']").val(currentProvince);$(stateSelector).hide();$(provinceSelector).show();}
+$(countrySelector+" select").change(function(){var currentCountry=$(countrySelector+" select option:selected").attr("value");var _currentCountry=currentCountry;for(i=1;i<=5;i++)
+{if(_currentCountry.length<5)_currentCountry='0'+_currentCountry;}
+_currentCountry='c'+_currentCountry;if(countriesStates[_currentCountry].states)
+{var statesHTML='';statesHTML+='<option value="">'+msg.select_state_or_province+'</option>';jQuery.each(countriesStates[_currentCountry].states,function(stateId,stateName){var _stateId=parseInt(stateId.substring(1),10);statesHTML+='<option value="'+_stateId+'" '+(_stateId==currentState?'selected="selected"':'')+'>'+stateName+'</option>';});$(stateSelector+" select").html(statesHTML);$(provinceSelector).hide();$(stateSelector).show();}
+else
+{$(stateSelector).hide();$(provinceSelector).show();}});}
+jQuery.fn.editableSelectSetValue=function(val)
+{$(this).val(val);$(this).prevAll("input[type='text']:first").val(val);}
+jQuery.fn.editableSelect=function()
+{if($(this).data('editable-select-options')!=null&&$(this).data('editable-select-options')!='undefined')return this;var edit=$('<input type="text" class="editable-select-text"/>').val($(this).find('option:selected').html()).click(function(){if($(this).nextAll('div.editable-select-options:first').is(":visible"))
+{$(this).nextAll('div.editable-select-options:first').slideUp("fast");}
+else
+{$('div.editable-select-options').slideUp("fast");var pos=$(this).position();var w=$(this).width()+parseInt($(this).css('padding-left'))+parseInt($(this).css('padding-right'));$(this).nextAll('div.editable-select-options:first').css({position:'absolute',top:$(this).height()+2+parseInt($(this).css('padding-top'))+parseInt($(this).css('padding-bottom')),left:0,width:w<180?180:w}).slideDown("fast");}}).change(function(){$(this).nextAll('input[type="hidden"]:first').val($(this).val()).trigger('change');$(this).nextAll('div.editable-select-options:first').slideUp("fast");});if($(this).attr("style")!="undefined"&&$(this).attr("style")!="")
+{$(edit).attr('style',$(this).attr("style"));}
+var hidden=$('<input type="hidden"/>').attr('name',$(this).attr("name")).attr('id',$(this).attr("id")).data('editable-select-options',true).val($(this).val());var options="";jQuery.each($(this).find("option"),function(optIndex,opt){t=$.trim($(opt).html());options=options+'<li><a href="#'+escape($(opt).attr('value'))+'"><div>'+(t==""?"&nbsp;":t)+'</div></a></li>'});var dropDown=$('<div class="editable-select-options" style="display:none;"><ul>'+options+'</ul></div>');$(edit).replaceAll(this);$(hidden).insertAfter(edit);$(dropDown).insertAfter(hidden);$(dropDown).find('ul li a').click(function(event){event.stopPropagation();var val=unescape($(this).attr('href').substring(1));var valCaption=unescape($(this).find('div').html());if(valCaption=="&nbsp;")valCaption="";$(hidden).val(valCaption).trigger('change');$(edit).val(valCaption);$(edit).nextAll('div.editable-select-options:first').slideUp("fast");return false;});$(this).data('editable-select-options',true);return this;}

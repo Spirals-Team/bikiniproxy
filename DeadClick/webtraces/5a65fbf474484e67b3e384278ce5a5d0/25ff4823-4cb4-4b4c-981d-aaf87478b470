@@ -1,0 +1,251 @@
+(function() {
+
+    var SP = SERVICE_PATTERN_CHAT_CONFIG || {};
+	var isOpera = !!window.opera || navigator.userAgent.indexOf(' OPR/') >= 0;
+		// Opera 8.0+ (UA detection to detect Blink/v8-powered Opera)
+	var isFirefox = typeof InstallTrigger !== 'undefined';   // Firefox 1.0+
+	var isSafari = Object.prototype.toString.call(window.HTMLElement).indexOf('Constructor') > 0;
+		// At least Safari 3+: "[object HTMLElementConstructor]"
+	var isChrome = !!window.chrome && !isOpera;              // Chrome 1+
+	var isIE = /*@cc_on!@*/false || !!document.documentMode; // At least IE6
+
+	var frame_height_value = "500px";
+	if (isChrome || isFirefox)
+	{ frame_height_value = "420px";
+	}
+    var openChat = function(open) {
+
+        $ = SP.$;
+
+        if(open) {
+            window.sessionStorage.setItem("sp-chat-snippet", "true");
+        } else {
+            window.sessionStorage.removeItem("sp-chat-snippet");
+        }
+
+        var fr = $('#sp-chat-frame');
+        var wi = $('#sp-chat-widget');
+
+        var fakeTo = open ? fr : wi;
+        var fakeFrom = open ? wi : fr;
+
+        if($('#sp-chat-iframe').length == 0) {
+
+            var url = SP.chatPath + "client-chat-page.html"
+                + "?openHours=" + (SP.isChatAvailable ? "1":"0")
+                + "&tenantUrl=" + encodeURIComponent(SP.tenantUrl)
+                + "&appId="     + SP.appId
+                + "&webServer=" + encodeURIComponent(SP.apiUrl)
+				+ "&originalCampaign="     + SP.originalCampaign
+				+ "&recentCampaign="     + SP.recentCampaign
+				+ "&leadSource="     + SP.leadSource
+				+ "&recordType="	+ SP.recordType
+				+ "&chatGroup="		+SP.chatGroup;
+
+            var html = "<iframe id=\"sp-chat-iframe\" frameborder=\"1\" scrolling=\"no\" src=" + url + "></iframe>";
+            $('#sp-iframe-container').append(html);
+
+            $("#sp-chat-frame").css("height", frame_height_value);
+
+            $("#sp-chat-frame").draggable({
+                handle: "#sp-drag-handle",
+                start: function( event, ui ) {
+                    $("#sp-drag-handle").height("100%");
+                },
+                drag: function(event, ui) {
+                    var maxTop = Math.min($(window).height() - 200, ui.position.top);
+                    var maxLeft = Math.min($(window).width() - SERVICE_PATTERN_CHAT_CONFIG.width - 50, ui.position.left);
+
+                    ui.position.top = Math.max(20, maxTop);
+                    ui.position.left = Math.max(20, maxLeft);
+
+                    document.getElementById('sp-chat-iframe').contentWindow.postMessage("sp-dragged", "*");
+                },
+                stop: function( event, ui ) {
+                    $("#sp-drag-handle").height("20px");
+                }
+            });
+        }
+
+        fakeTo.toggle();
+        var offset = fakeTo.offset();
+        var w = fakeTo.width();
+        var h = fakeTo.height();
+        fakeTo.toggle();
+
+        var fake = $('#sp-chat-fake');
+        fake.height(fakeFrom.height()).width(fakeFrom.width()).css(fakeFrom.offset());
+        fakeFrom.toggle();
+        fake.toggle();
+        fake.animate({
+            width: w,
+            height: h,
+            right: offset.right,
+            top: offset.top,
+            left: offset.left
+        }, 400, function() {
+            fakeTo.toggle();
+            fake.toggle();
+            document.getElementById('sp-chat-iframe').contentWindow.postMessage("sp-dragged", "*");
+        });
+    };
+
+    var onInitialize = function() {
+        var $ = SP.$;
+        $("head").append("<link href='" + SP.chatPath + "css/snippet.css" + "' type='text/css' rel='stylesheet' />");
+        $("body").append(
+            "<div id='sp-root-container'> " +
+                "<div id='sp-chat-widget' onclick='OpenChatDivOverlay()'> " +
+                "<div id='sp-chat-label-icon'></div>" +
+                "<div id='sp-chat-label-text'></div>" +
+                "</div>" +
+                "<div id='sp-chat-fake'></div>" +
+                "<div id='sp-chat-frame'>" +
+                "<div id='sp-drag-handle'></div>" +
+                "<div id='sp-side-bar'><div id='sp-close-frame'></div></div>" +
+                "<div id='sp-iframe-container'></div>" +
+                "</div>" +
+                "</div>");
+
+        var url = SERVICE_PATTERN_CHAT_CONFIG.apiUrl + '/availability?tenantUrl=' + encodeURIComponent(SERVICE_PATTERN_CHAT_CONFIG.tenantUrl);
+
+        var config = {
+            headers: {Authorization: 'MOBILE-API-140-327-PLAIN appId="' + SERVICE_PATTERN_CHAT_CONFIG.appId + '", clientId="' + SERVICE_PATTERN_CHAT_CONFIG.clientId + '"' },
+            contentType: 'application/json; charset=utf-8',
+            dataType: 'json',
+            type: 'GET',
+            url: url,
+            crossDomain: true,
+            withCredentials: true
+        };
+
+        $.ajax(config)
+            .done(function(e) {
+                SP.isChatAvailable = e.chat == 'available';
+                $('#sp-chat-label-text').text(e.chat ? "Chat with Sales" : "Sorry. We are offline.");
+                $('#sp-chat-widget').css("display", "block");
+
+                if(window.sessionStorage.getItem("sp-chat-snippet")) {
+                    openChat(true);
+                }
+            });
+
+        $('#sp1-chat-widget').bind('click', function() {
+            openChat(true);
+        });
+
+		$('#buttonChatWRTC').bind('click', function() {
+            openChat(true);
+        });
+
+		$('#buttonChatWRTC1').bind('click', function() {
+		            openChat(true);
+        });
+
+        $('#buttonChatWRTC2').bind('click', function() {
+		            openChat(true);
+        });
+
+        $('#sp-close-frame').bind('click', function() {
+            openChat(false);
+        });
+    };
+
+    var onCheckAvailability = function (r) {
+        var $ = SP.$;
+        SP.isChatAvailable = r.chat == 'available';
+        $('#sp-offline-label').css("display", SP.isChatAvailable ? "none" : "block");
+        $('#sp-online-label').css("display", SP.isChatAvailable ? "block" : "none");
+    };
+
+    window.addEventListener("message", function(event) {
+        var $ = SP.$;
+        if(event.data == 'sp-session-end') {
+            openChat(false);
+            window.setTimeout(function() {
+                $('#sp-chat-iframe').remove();
+            }, 1500);
+        } else if(event.data == 'sp-chat-init') {
+            $("#sp-drag-handle").height("0px");
+            //$("#sp-chat-frame").height("500px");
+            $("#sp-chat-frame").css("top","");
+        } else if(event.data == 'sp-chat-drag') {
+            $("#sp-drag-handle").height("20px");
+            $("#sp-chat-frame").css("height", "");
+            $("#sp-chat-frame").css("top", Math.max(0,$(window).height() - 420) + "px");
+        }
+    });
+
+    var loadScripts = function(scripts, onSuccess) {
+        var loaded = false;
+        var count = scripts.length;
+        var loadedCount = 0;
+        var firstScript = document.getElementsByTagName('script')[0];
+
+        var addElement = function(e) {
+            e.onload = e.onreadystatechange = function () {
+                if (e.readyState && e.readyState !== 'complete' && e.readyState !== 'loaded') {
+                    return false;
+                }
+                e.onload = e.onreadystatechange = null;
+                ++loadedCount;
+                if (count === loadedCount) {
+                    onSuccess();
+                }
+            };
+            firstScript.parentNode.insertBefore(e, firstScript);
+        };
+
+        var makeScript = function(url) {
+            var s = document.createElement('script');
+            s.async = true;
+            s.src = SP.chatPath + url;
+            addElement(s);
+        };
+
+        var i, n;
+        for (i = 0, n = scripts.length; i < n; ++i) makeScript(scripts[i]);
+    };
+
+    if (SP.tenantUrl && SP.appId) {
+        loadScripts(['js/json2.js', 'js/jquery-1.11.0.js'], function() {
+
+            loadScripts(['js/jQuery.XDomainRequest.js', 'js/jquery-ui-1.11.1.js'], function() {
+
+                SP.$ = jQuery.noConflict(true);
+
+                loadScripts(['js/chat-api-session.js'], function() {
+                    SP.cp = {
+                        url: SP.apiUrl,
+                        crossDomain: true,
+                        tenantUrl: SP.tenantUrl,
+                        appId: SP.appId,
+                        clientId: 'WebChat',
+                        phoneNumber: SP.phoneNumber,
+                        parameters: SP.parameters,
+                        onFormShow: SP.onFormShow,
+                        onAddStream: SP.onAddStream,
+                        onAddLocalStream: SP.onAddLocalStream
+                    };
+
+                    onInitialize();
+/*
+                    SP.$.chat.checkAvailability(SP.cp).done(function(r) {
+                        if (r.chat == 'available') {
+                            r.connect = function(chatData) {
+                                SP.cp.sessionData = chatData || {};
+                                return SP.$.chat.createSession(SP.cp).pipe(function(r) {
+                                    SP.session = r.session;
+                                    return r;
+                                });
+                            };
+                            r.cp = SP.cp;
+                        }
+                        onCheckAvailability(r);
+                    });
+*/
+                });
+            });
+        });
+    }
+})();

@@ -1,0 +1,36 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>XML Recieve</title>
+<script type="text/javascript" language="javascript">
+
+function getXmlHttpRequestObject() {
+	if (window.XMLHttpRequest) {
+		return new XMLHttpRequest(); //Not IE
+	} else if(window.ActiveXObject) {
+		return new ActiveXObject("Microsoft.XMLHTTP"); //IE
+	} else {
+		// Display your error message here and inform the user they might want to upgrade their browser.
+		alert("Your browser doesn't support the XMLHttpRequest object.");
+	}
+}
+
+//Get our browser specific XmlHttpRequest object.
+var receiveReq = getXmlHttpRequestObject();
+
+//Initiate the asyncronous request.
+function getFile(urlStr) {
+	var fileName = 'vptrack.wxml?' + urlStr+'?cachebust='+new Date().getTime();;
+	if (receiveReq.readyState == 4 || receiveReq.readyState == 0) {
+		receiveReq.open("GET", fileName, true);
+		receiveReq.send(null);
+	}	
+}
+</script>
+</head>
+
+<body>
+
+</body>
+</html>

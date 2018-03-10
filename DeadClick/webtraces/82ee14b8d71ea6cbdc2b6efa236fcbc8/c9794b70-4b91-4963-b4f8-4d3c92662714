@@ -1,0 +1,31 @@
+(function (window, bam, undef) {
+
+	bam.loadSync(bam.homePath + "bam.datetime.js", bam.homePath + "bam.cookies.js", bam.homePath + "bam.url.js");
+	
+	var 	
+		isIPhone = bam.env.client.isIPhone,
+		isAndroid = bam.env.client.isAndroid,
+		cookieName = "milb_2014_iphone",
+		cookie = bam.cookies.get(cookieName),
+		cookieObj = { name: cookieName, value: "Redirect", expires: bam.datetime.DateTime(new Date()).incrementDate(+30), path: "/", domain: domainGlobal},		
+		refParam = bam.url.Location( window.location ).getParam( "ref" ),
+		clubParam = bam.url.Location( window.location ).getParam( "sid" );
+	
+	if ( clubParam == undefined ) {
+		clubParam = '';
+	} else {
+		clubParam = '?sid=' + clubParam;
+	}
+
+
+	if(isIPhone && cookie === null && refParam !=="com.milb.iOS.Full"){
+		bam.cookies.set(cookieObj);		
+		document.location.href = prodCacheServerURLGlobal+"/choose_iphone.html"+clubParam;
+	}	
+	if(isAndroid && cookie === null && refParam !=="com.milb.iOS.Full"){
+		bam.cookies.set(cookieObj);		
+		document.location.href = prodCacheServerURLGlobal+"/choose_android.html"+clubParam;
+	}	
+
+}(this, this.bam, undefined));
+

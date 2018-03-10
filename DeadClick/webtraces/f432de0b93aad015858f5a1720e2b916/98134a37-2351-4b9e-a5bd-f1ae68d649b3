@@ -1,0 +1,3935 @@
+require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({68:[function(require,module,exports){
+(function (global){
+'use strict';
+
+// Global libraries
+global.jQuery = require('jquery'); // make jquery global object
+global.angular = require('angular'); // make angular a global object
+global._ = require('lodash'); // make lodash a global object
+require('angularAnimate');
+require('angularSanitize');
+require('angularCookies');
+
+// MCC Code
+var Polyfills = require('../modules/mcg/global/scripts/polyfills/main'),
+  Filters = require('../modules/mcg/global/scripts/filters/main'),
+  Services = require('../modules/mcg/global/scripts/services/main'),
+  Utils = require('../modules/mcg/global/scripts/utils/main'),
+  Header = require('../modules/mcg/header/scripts/main'),
+  Events = require('../modules/mcg/grid-items/scripts/events/main'),
+  Activities = require('../modules/mcg/grid-items/scripts/activities/main'),
+  News = require('../modules/mcg/grid-items/scripts/news/main'),
+  Newsletters = require('../modules/mcg/grid-items/scripts/newsletters/main'),
+  ContentPages = require('../modules/mcg/grid-items/scripts/content/main'),
+  Carousel = require('../modules/mcg/carousel/scripts/main'),
+  Search = require('../modules/mcg/search/scripts/main'),
+  Vote = require('../modules/mcg/vote/scripts/main'),
+  Blog = require('../modules/mcc/blog/scripts/main'),
+  Booking = require('../modules/mcc/functions/scripts/main'),
+  Faq = require('../modules/mcc/faq/scripts/main'),
+  Forms = require('../modules/mcg/forms/scripts/main'),
+  Vote = require('../modules/mcg/vote/scripts/main'),
+  Maps = require('../modules/mcg/map/scripts/main'),
+  Calendar = require('../modules/mcg/calendar/scripts/main');
+
+// global mcg angular app
+angular.module('mcg', [
+  'ngAnimate',
+  'ngSanitize',
+  'ngCookies',
+  Polyfills.name,
+  Filters.name,
+  Services.name,
+  Utils.name,
+  Header.name,
+  Events.name,
+  Activities.name,
+  News.name,
+  Newsletters.name,
+  ContentPages.name,
+  Carousel.name,
+  Search.name,
+  Vote.name,
+  Blog.name,
+  Booking.name,
+  Faq.name,
+  Forms.name,
+  Vote.name,
+  Maps.name,
+  Calendar.name
+]);
+
+// kick it!
+angular.bootstrap(document, ['mcg']);
+
+}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
+},{"../modules/mcc/blog/scripts/main":2,"../modules/mcc/faq/scripts/main":4,"../modules/mcc/functions/scripts/main":6,"../modules/mcg/calendar/scripts/main":8,"../modules/mcg/carousel/scripts/main":11,"../modules/mcg/forms/scripts/main":13,"../modules/mcg/global/scripts/filters/main":16,"../modules/mcg/global/scripts/polyfills/main":22,"../modules/mcg/global/scripts/services/main":36,"../modules/mcg/global/scripts/utils/main":38,"../modules/mcg/grid-items/scripts/activities/main":45,"../modules/mcg/grid-items/scripts/content/main":47,"../modules/mcg/grid-items/scripts/events/main":49,"../modules/mcg/grid-items/scripts/news/main":51,"../modules/mcg/grid-items/scripts/newsletters/main":53,"../modules/mcg/header/scripts/main":56,"../modules/mcg/map/scripts/main":63,"../modules/mcg/search/scripts/main":65,"../modules/mcg/vote/scripts/main":67,"angular":73,"angularAnimate":70,"angularCookies":71,"angularSanitize":72,"jquery":75,"lodash":76}],67:[function(require,module,exports){
+'use strict';
+
+var Vote = angular.module('Vote', []);
+require('./controllers/VoteCtrl');
+
+module.exports = Vote;
+},{"./controllers/VoteCtrl":66}],66:[function(require,module,exports){
+'use strict';
+
+/**
+ * Vote Controller
+ *  sets up scope model and methods to get and cast votes
+ */
+angular.module('Vote')
+  .controller('VoteCtrl', ['$scope', '$cookies', 'Vote', function ($scope, $cookies, Vote) {
+    var params = { // parameters used in xhr post
+      pollId: '',
+      optionId: ''
+    };
+    $scope.vote = {
+      init: false,
+      multi: {},
+      //cast a single vote for a binary option
+      castSingleVote: function (optionId) {
+        params.optionId = optionId;
+        Vote.castVote(params)
+          .success(function (results) {
+            $scope.vote.results = results;
+            $scope.vote.voted = true;
+          });
+      },
+      //cast multi vote option
+      castMultiVote: function () {
+        params.optionId = getMultiOptions();
+        Vote.castVote(params)
+          .success(function (results) {
+            $scope.vote.results = results;
+            $scope.vote.voted = true;
+          });
+      }
+    };
+
+    // check cookie for vote status and get results
+    function init() {
+      var mccpoll = $cookies.MCCPoll || '';
+      $scope.vote.voted = angular.isArray(mccpoll.match(params.pollId));
+      getResults();
+    }
+
+    // get the results of current vote
+    function getResults() {
+      var param;
+      if (params.pollId) {
+        param = 'pollId=' + params.pollId;
+        Vote.getResults(param)
+          .success(function (results) {
+            $scope.vote.results = results;
+          });
+      }
+    }
+    // on multi vote, gather all user choices
+    // format for easy xhr posting
+    function getMultiOptions() {
+      var votes = $scope.vote.multi,
+        query = [];
+
+      _.each(votes, function (vote, id) {
+        if (vote) {
+          query.push(id);
+        }
+      });
+      return query.toString();
+    }
+
+    // Initial call to get votes after pollId in scope
+    $scope.$watch('vote.pollId', function (current) {
+      if (current) {
+        params.pollId = current;
+        init();
+      }
+    });
+  }]);
+},{}],65:[function(require,module,exports){
+'use strict';
+
+var Search = angular.module('Search', []);
+require('./controllers/Search');
+
+module.exports = Search;
+},{"./controllers/Search":64}],64:[function(require,module,exports){
+'use strict';
+
+/**
+ * Search Controller
+ *  sets up scope model and api poll functions for searching
+ */
+angular.module('Search')
+  .controller('SearchCtrl', ['$scope', '$attrs', '$timeout', 'Search',
+    function ($scope, $attrs, $timeout, Search) {
+      var query, getPage;
+
+      // merg any extra api data we need
+      if($attrs.config) {
+        try {
+          _.extend(Search.params, angular.fromJson($attrs.config));
+        } catch (e) {
+          //silent fail
+        }
+      }
+
+      // query api for users input
+      query = function () {
+        if (Search.params.searchTerm) {
+          Search.getResults()
+            .success(function (response) {
+              $scope.search.results = response;
+            });
+        }
+      };
+
+      // get pagination results by page
+      getPage = function (page) {
+        Search.params.pageNo = page;
+        query();
+      };
+
+      // scope model
+      $scope.search = {
+        templateId: '',
+        getPage: getPage,
+        reset: function () {
+          $timeout(function () {
+            $scope.search.term = undefined;
+            $scope.search.results = undefined;
+          }, 1000);
+        }
+      };
+
+      // returns start number of current page
+      $scope.search.getShowingResultsStart = function(){
+        var startingTermCount = 1;
+
+        if ( typeof($scope.search.results) !== 'undefined' ) {
+          if ($scope.search.results.CurrentPage > 1) {
+            startingTermCount = ($scope.search.results.CurrentPage - 1) * $scope.search.results.PageSize;
+          }
+
+          return startingTermCount;
+        }
+
+      };
+
+      // returns last number of current page
+      $scope.search.getShowingResultsEnd = function(){
+        var endTermCount = 0;
+
+        if ( typeof($scope.search.results) !== 'undefined' ) {
+
+          // last page, just show the length
+          if ($scope.search.results.NumberOfPages === $scope.search.results.CurrentPage) {
+            endTermCount = $scope.search.results.TotalResult;
+
+          } else {
+            endTermCount = $scope.search.results.CurrentPage * $scope.search.results.PageSize;
+          }
+
+          return endTermCount;
+        }
+      };
+
+      // watch user inputs and query api
+      // but throttle query using lodash debounce
+      $scope.$watch('search.term', _.debounce(function (term) {
+        if (term) {
+          Search.params.searchTerm = term;
+          query();
+          $scope.$evalAsync();
+        }
+      }, 300));
+
+      // templateId are categories
+      // news, events, activities etc
+      $scope.$watch('search.templateId', function (id) {
+        if (id || id === '') {
+          Search.params.pageNo = 1;
+          Search.params.templateId = id;
+          query();
+          $scope.$evalAsync();
+        }
+      });
+    }
+  ]);
+
+},{}],63:[function(require,module,exports){
+'use strict';
+/*
+	Maps
+
+	common - makes map, markers etc
+	find seat - search for seat
+	find something -
+	get to the g -
+	transport -
+*/
+var Maps = angular.module('Maps', []);
+require('./controllers/MapCommonCtrl');
+require('./directives/MapAutocomplete');
+require('./controllers/MapFindSeatCtrl');
+require('./controllers/MapFindSomethingCtrl');
+require('./controllers/MapTransportCtrl');
+require('./controllers/MapGetDirectionsCtrl');
+
+module.exports = Maps;
+
+},{"./controllers/MapCommonCtrl":57,"./controllers/MapFindSeatCtrl":58,"./controllers/MapFindSomethingCtrl":59,"./controllers/MapGetDirectionsCtrl":60,"./controllers/MapTransportCtrl":61,"./directives/MapAutocomplete":62}],62:[function(require,module,exports){
+'use strict';
+
+angular.module('Maps')
+  .directive('mapAutocomplete', [function () {
+    return {
+      restrict: 'A',
+      link: function (scope, element) {
+        var elemWindow = angular.element(window);
+
+        // MCG-681: mobile needs to scroll down to see all address options
+        // scroll to top of field after selecting
+        scope.$on('MCGMap.autocompleteSelected', function(){
+          if (elemWindow.width() < 576 ) {
+            jQuery('body').animate({
+              scrollTop : element.offset().top - 85
+            }, 300);
+          }
+        });
+      }
+    };
+  }]);
+
+},{}],61:[function(require,module,exports){
+'use strict';
+
+/**
+ * Transport Options Controller
+ *  minimal content from API/CMS, markers and lines are drawn from static JSON
+ */
+angular.module('Maps')
+  .controller('MapTransportCtrl', ['$scope', '$filter', '$timeout', 'MapStaticTransport', 'MapTransportContent',
+    function ($scope, $filter, $timeout, MapStaticTransport, MapTransportContent) {
+
+    var self = this,
+      params = {};
+
+    // setup namespace so common map can work with it
+    $scope.MCGMap = {
+      type : 'transport',
+
+      // holds markers/paths as CMS doesn't store them
+      staticTransport : [],
+      results : {
+        data: []
+      },
+      isLoadfromQuery : false
+    };
+
+    $scope.MCGMap.setCategory = function (category, labelIndex ) {
+      $scope.MCGMap.currentCategory = category;
+      $scope.$broadcast('MCGMap.setMobileView', 'result');
+
+      $scope.MCGMap.mobileCategoryIndex = labelIndex;
+    };
+
+    self.getTransportContent = function() {
+      params.category = $scope.MCGMap.currentCategory;
+
+      MapTransportContent.getTransportContent(params)
+        .success(function (response){
+          $scope.MCGMap.results.data = response.Data;
+
+          // cyclical dependancy, combine then draw
+          mergeContent();
+          drawMarkers();
+
+        });
+    };
+
+    // transport data doesn't sync 1-1 with markers, find the matching ID
+    // in the markers and select first as we can only have one active
+    $scope.MCGMap.setActiveMarkerById = function(id){
+      var matchingIdx =  _.findIndex($scope.MCGMap.markers, { MapID : id });
+
+
+      $scope.$broadcast('MCGMap.setActiveMarker', matchingIdx);
+
+      $scope.mobileResult = $filter('filter')($scope.MCGMap.results.data, {
+          MapID : $scope.MCGMap.activeResult
+        });
+
+      $scope.mobileResult = $scope.mobileResult[0];
+
+      $scope.mobileResult.ShareURL = $scope.MCGMap.getInfoLinkURL($scope.mobileResult, matchingIdx);
+
+      $scope.$broadcast('MCGMap.setMobileView', 'detail');
+    };
+
+
+    $scope.$watch('MCGMap.currentCategory', function() {
+      if ($scope.MCGMap.currentCategory) {
+        // clear existing map info
+        $scope.$broadcast('MCGMap.removeMarkers');
+        $scope.$broadcast('MCGMap.removePaths');
+
+        // get the content for this tab
+        self.getTransportContent();
+      }
+    });
+
+
+    function getParams() {
+      $scope.$broadcast('MCGMap.getQuery');
+
+      if ($scope.MCGMap.params) {
+        var category = $scope.MCGMap.params.tab.toLowerCase().replace(/\+/g, ' ');
+        $scope.MCGMap.isLoadfromQuery = true;
+
+        // set tab, triggers draw so we need to check after draw we can active marker
+        $scope.MCGMap.setCategory(category);
+      }
+
+    }
+
+
+    // once the map is ready get the static info and set default
+    $scope.$on('MCGMap.mapReady', function(){
+
+      var elemWindow = angular.element(window);
+
+      // desky needs default category but mobile doesnt
+      if (elemWindow.width() > 576 ) {
+        $scope.MCGMap.setCategory('driving');
+      }
+
+      // get static data
+      MapStaticTransport.getStaticTransport()
+      .success(function (response) {
+
+        $scope.MCGMap.staticTransport = response.Data;
+
+        getParams();
+      });
+
+
+    });
+
+/*
+  Markers are expected to have content, but this control has static markers not managed in the CMS.
+  Once we have the CMS data, merge that with the static stuff
+*/
+    function mergeContent() {
+      // each static guy find my matching data and apply
+      _.each($scope.MCGMap.staticTransport, function (staticData){
+        var matchingDataIdx =  _.findIndex($scope.MCGMap.results.data, { MapID : staticData.MapID }),
+          matchedData = $scope.MCGMap.results.data[matchingDataIdx];
+
+        // in case there isn't a match
+        if (matchedData) {
+          // now our static has dynamic content from CMS, woot
+          staticData = _.merge(staticData, matchedData);
+
+          // gates also need the open/close status
+          if (matchedData.Status && matchedData.Status.toLowerCase() === 'closed') {
+            staticData.color  = 'red';
+          }
+
+          // font icon / map image icon
+          if (staticData.GateIconClass) {
+            // what icon font to use? note: the color of the SVG is lost when made monotone
+            // so open/closed doesn't matter, CSS sets color from Status
+            matchedData.GateIconClass = 'icon-' + staticData.GateIconClass + '-open';
+
+          // others dont use icons, use same image as the marker
+          } else {
+            matchedData.Icon = $scope.MCGMap.getMarkerImage(staticData.icon,staticData.color);
+          }
+
+
+// as we are going from static content to each CMS item, it can run multiple times per CMS
+// dont add the image if the image is already there. It will combine many markers to one map
+          if (!matchedData.staticMap) {
+            matchedData.staticMap = createStaticMap(staticData);
+          }
+
+        } else {
+          console.log('no match for ' + staticData.MapID);
+        }
+
+      });
+
+    }
+
+    // make a map centered on the MCG with the matching icon(s) on the map
+    function createStaticMap(matchedData){
+
+      var mapImage = 'https://maps.googleapis.com/maps/api/staticmap?',
+
+      // todo: add live MCG address, static map needs live reachable address
+        icon ='icon:http://mattycollins.com.au' + $scope.MCGMap.getMarkerImage(matchedData.icon,matchedData.color),
+        // icon = 'color:blue',
+        params = {
+          size : '320x320',
+          scale : 2,
+
+          // data has a 1:M relationship though so we need to loop through
+          markers : icon
+        };
+
+      // build all the markers for this CMS item
+      _.each($scope.MCGMap.staticTransport, function (marker){
+        if (marker.MapID === matchedData.MapID) {
+          params.markers += '|shadow:false|' + marker.Latitude + ',' + marker.Longitude;
+
+          // draw paths?
+          if (marker.pathColor) {
+            // 'ff' after regex is 100% opacity
+            params.path = 'color:' + marker.pathColor.replace(/\#/g, '0x') + 'ff|weight:6';
+
+            // draws each point of the path line
+            _.each(marker.paths, function(path){
+              params.path += '|' + path.lat + ',' + path.lng;
+            });
+          }
+        }
+      });
+
+
+      // console.log(mapImage + jQuery.param(params));
+
+      return mapImage + jQuery.param(params);
+    }
+
+/*
+  called last to make sure we have merged content
+  category changed > get data > merge data > draw markers
+*/
+
+    function drawMarkers() {
+      // only need my categories markers as JSON contains all marker info
+      var filteredStatic = $filter('filter')($scope.MCGMap.staticTransport, {
+        category: $scope.MCGMap.currentCategory
+      });
+
+      // draw paths for each item
+      _.each(filteredStatic, function(item, index) {
+        $scope.$broadcast('MCGMap.createMarker', item, index);
+        $scope.$broadcast('MCGMap.drawPaths', item);
+
+        $scope.$broadcast('MCGMap.fitMarkers');
+      });
+
+      if ($scope.MCGMap.isLoadfromQuery) {
+        var idx = parseInt($scope.MCGMap.params.markerIdx, 10);
+
+        // dont do it again
+        $scope.MCGMap.isLoadfromQuery = false;
+
+        $scope.$broadcast('MCGMap.setActiveMarker', idx );
+      }
+    }
+  }]);
+
+},{}],60:[function(require,module,exports){
+'use strict';
+
+/**
+ * Find My Seat Controller
+ *  calls Find My Seat API to display the bay information and marker on the map
+ *
+ *
+ * todo: locked location icon should be MCG favicon or one of the gates if selected?
+ */
+angular.module('Maps')
+  .controller('MapGetDirectionsCtrl', ['$scope',  function ($scope) {
+    $scope.MCGMap = {
+      type : 'directions',
+      currentTravel: '',
+
+      // origin/destination is set in getDirections() as they could be swapped.
+      // input updated from autocomplete
+      userInput : '',
+      lockedInput : [
+        {
+          label : 'The MCG',
+          Latitude: -37.819967,
+          Longitude: 144.983449
+        },
+        {
+          label : 'Gate 3, The MCG',
+          Latitude: -37.81678294,
+          Longitude: 144.98229951
+        },
+        {
+          label : 'Gate 5, The MCG',
+          Latitude : -37.82020856,
+          Longitude : 144.98941272
+        },
+        {
+          label : 'Gate 6, The MCG',
+          Latitude : -37.82141414,
+          Longitude : 144.98920351
+        },
+        {
+          label : 'Gate 7, The MCG',
+          Latitude : -37.82227805,
+          Longitude : 144.98544842
+        }
+      ],
+
+      // which restricted destination are they going to. changes on query string if selected
+      // from gate transport
+      lockedIdx : 0,
+
+      // we can only type in "from", when true the directions are reversed and we can type in "to"
+      isSwapped : false,
+
+      // google address lookup. formatted_address is the converted address we want
+      autocomplete : null,
+      userInputLabel : 'From',
+      lockedInputLabel : 'To',
+
+      // entering data or showing data?
+      hasResults : false,
+
+      // make sure we have the address before getting results
+      hasFormattedAddress : false
+    };
+
+    function getParamsFromQuery() {
+      $scope.$broadcast('MCGMap.getQuery');
+
+      if ($scope.MCGMap.params) {
+        // change locked input, make sure its an int
+        if ($scope.MCGMap.params.destination && !isNaN(parseInt($scope.MCGMap.params.destination,10))) {
+          $scope.MCGMap.lockedIdx = parseInt($scope.MCGMap.params.destination, 10);
+        }
+
+        // change mode if valid
+        if ($scope.MCGMap.params.travel) {
+          if ($scope.MCGMap.params.travel.toLowerCase() === 'driving' ||
+            $scope.MCGMap.params.travel.toLowerCase() === 'walking' ||
+            $scope.MCGMap.params.travel.toLowerCase() === 'bicycling') {
+            $scope.MCGMap.setTravel($scope.MCGMap.params.travel);
+          }
+        }
+
+        // toggled?
+        if ($scope.MCGMap.params.toggle && !isNaN(parseInt($scope.MCGMap.params.toggle,10))) {
+          if (!!parseInt($scope.MCGMap.params.toggle, 10)) {
+            $scope.MCGMap.toggleDirection();
+          }
+        }
+
+        // input
+        if ($scope.MCGMap.params.origin) {
+          var origin = $scope.MCGMap.params.origin;
+
+          // convert "%2C" commas
+          origin = origin.replace(/\%2C/g, ',');
+
+          // convert "+" to sapce
+          origin = origin.replace(/\+/g, ' ');
+
+          // so user can see input
+          $scope.MCGMap.userInput = origin;
+
+          // dont need an autocomplete as address _should_ be valid
+          // BUT we do need to set this flag
+          $scope.MCGMap.hasFormattedAddress = true;
+        }
+      }
+
+      // all is updated, get mah directions
+      $scope.MCGMap.getDirections();
+    }
+
+
+
+
+    // create direction dudes when we have the map
+    $scope.$on('MCGMap.mapReady', function(){
+      var input = document.getElementById('directionsUserInput');
+
+      // sets default
+      $scope.MCGMap.setTravel('driving');
+      $scope.MCGMap.isSwapped = false;
+
+      $scope.MCGMap.autocomplete = new google.maps.places.Autocomplete(input, {
+        componentRestrictions : {country: 'au'}
+      });
+
+      $scope.MCGMap.autocomplete.addListener('place_changed', onPlaceChanged);
+
+      // create the directions kajigger
+      // only need one service to handle the request
+      $scope.MCGMap.directionsService = new google.maps.DirectionsService();
+
+
+      // checks for query string so load map w values
+      getParamsFromQuery();
+    });
+
+    // we have autopopulate data
+    function onPlaceChanged() {
+
+      // moble needs to scroll into view
+      $scope.$emit('MCGMap.autocompleteSelected');
+
+      // we could type address and not select from autosuggest, giving us the results of the
+      // previous address
+      $scope.MCGMap.hasFormattedAddress = true;
+
+      if ($scope.MCGMap.hasResults) {
+        $scope.MCGMap.clearDirectionsMap();
+        $scope.MCGMap.getDirections();
+
+      }
+    }
+
+    // gets the entered data as a query string to share
+    // origin is always user input, toggle flag is used to swap
+    function getParamsFromData() {
+      var sharedURL = '',
+        origin = '?origin=',
+        toggle = '',
+        travel = '',
+        destination = '';
+
+      // doesn't exist if we came from a query
+      if ($scope.MCGMap.autocomplete.getPlace()) {
+        origin += $scope.MCGMap.autocomplete.getPlace().formatted_address;
+
+      // no autocomplete data, origin comes from query
+      } else {
+        origin += $scope.MCGMap.params.origin;
+      }
+
+      // encode comma
+      origin = origin.replace(/\,/g, '%2C');
+
+      // convert space to '+'
+      origin = origin.replace(/\s/g, '+');
+
+      // only include toggle if its there
+      if ($scope.MCGMap.isSwapped) {
+        toggle = '&toggle=1';
+      }
+
+      // travel mode if not driving
+      if ($scope.MCGMap.currentTravel.toLowerCase() !== 'driving' ) {
+        travel = '&travel=' + $scope.MCGMap.currentTravel;
+      }
+
+      // destination
+      if ($scope.MCGMap.lockedIdx !== 0) {
+        destination +=  '&destination=' + $scope.MCGMap.lockedIdx;
+      }
+
+      // assemble
+      sharedURL = origin + toggle + destination + travel;
+
+      return sharedURL;
+    }
+
+    // builds to 'mailto:...' href for the email link
+    function getShareMapUrl() {
+      var pageAddress = window.location.protocol + '//' + window.location.host + window.location.pathname,
+        prefix = 'mailto:',
+        directionText = ($scope.MCGMap.isSwapped) ? 'from' : 'to',
+        subject = '?subject=Get Directions ' + directionText + ' the MCG',
+        body = '&body=',
+        lineBreak = '%0A',
+        mapParams = getParamsFromData().replace(/\&/g, '%26'),
+        emailUrl = '';
+
+      // share URL only has params, needs current page url
+      body += 'See below for directions ' + directionText + ' the MCG.' + lineBreak +
+        lineBreak + pageAddress + mapParams;
+
+      emailUrl = prefix + subject + body ;
+
+      return emailUrl;
+    }
+
+    $scope.MCGMap.print = function() {
+      window.print();
+    };
+
+
+
+    $scope.MCGMap.setTravel = function(travelMode) {
+      $scope.MCGMap.currentTravel = travelMode;
+    };
+
+    // swap the field labels rather than the field position
+    $scope.MCGMap.toggleDirection = function() {
+      $scope.MCGMap.isSwapped = !$scope.MCGMap.isSwapped;
+
+      $scope.MCGMap.userInputLabel = ($scope.MCGMap.isSwapped) ? 'To' : 'From';
+      $scope.MCGMap.lockedInputLabel = ($scope.MCGMap.isSwapped) ? 'From' : 'To';
+    };
+
+
+    $scope.MCGMap.setActiveRoute = function(index){
+      $scope.MCGMap.directionsDisplay.setRouteIndex(index);
+      $scope.MCGMap.currentRoute = index;
+
+      // update the route render to not include the selected route
+      _.each($scope.MCGMap.routeOptionsDisplay, function (route, idx) {
+        if (idx === index) {
+          // remove current from preview, dont double up
+          route.setMap(null);
+
+        // restore any hidden routes
+        } else {
+          route.setMap($scope.MCGMap.map);
+        }
+      });
+
+      $scope.$evalAsync();
+    };
+
+
+    // unset the results if there is no input
+    $scope.$watch('MCGMap.userInput', function(){
+
+      if (!$scope.MCGMap.userInput) {
+        $scope.MCGMap.clearDirectionsMap();
+        $scope.MCGMap.hasFormattedAddress = false;
+
+        $scope.$broadcast('MCGMap.restore');
+
+      }
+    });
+
+
+
+    $scope.MCGMap.resetDirections = function (){
+      $scope.MCGMap.directionsDisplay.directions.routes = [];
+      $scope.MCGMap.hasResults = false;
+      $scope.MCGMap.userInput = null;
+      $scope.MCGMap.clearDirectionsMap();
+    };
+
+
+    // all renders need to be nuked so new layers dont get drawn on top
+    $scope.MCGMap.clearDirectionsMap = function () {
+      if ($scope.MCGMap.directionsDisplay) {
+        $scope.MCGMap.directionsDisplay.setMap(null);
+
+        // clear the routes too
+      }
+
+      _.each($scope.MCGMap.routeOptionsDisplay, function(routeOption){
+        routeOption.setMap(null);
+      });
+
+      // once cleared set blank array
+      $scope.MCGMap.routeOptionsDisplay = [];
+    };
+
+    $scope.$watchGroup(['MCGMap.isSwapped', 'MCGMap.currentTravel'], function(){
+      // have we hit 'get directions'?
+
+      if ($scope.MCGMap.hasResults) {
+        $scope.MCGMap.clearDirectionsMap();
+        $scope.MCGMap.getDirections();
+      }
+    });
+
+
+    /**
+    * getDirections
+    *
+    * takes the origin/destination from query/input and populates routes
+    * from the googles
+    *
+    * Populates the step data with the first returned route and draws the remaining
+    * routes in another layer
+    */
+    $scope.MCGMap.getDirections = function() {
+
+      if ($scope.MCGMap.hasFormattedAddress) {
+
+        var lat = $scope.MCGMap.lockedInput[$scope.MCGMap.lockedIdx].Latitude,
+          lng = $scope.MCGMap.lockedInput[$scope.MCGMap.lockedIdx].Longitude,
+          request = {
+            provideRouteAlternatives  : true,
+            durationInTraffic  : true,
+            travelMode: google.maps.TravelMode[$scope.MCGMap.currentTravel.toUpperCase()]
+          },
+          autocompleteAddress = null;
+
+        // while we have input, it is from autocomplete or query?
+        // user could have entered a dir different to that of the query after gettings dirs
+        if ($scope.MCGMap.autocomplete.getPlace()) {
+          autocompleteAddress = $scope.MCGMap.autocomplete.getPlace().formatted_address;
+
+        } else  {
+          autocompleteAddress = $scope.MCGMap.params.origin;
+        }
+
+
+        // are we going to or from the G?
+        if ($scope.MCGMap.isSwapped) {
+          request.origin = new google.maps.LatLng(lat, lng);
+          request.destination = autocompleteAddress;
+
+        } else {
+          request.origin = autocompleteAddress;
+          request.destination = new google.maps.LatLng(lat, lng);
+        }
+
+        $scope.MCGMap.directionsService.route(request, function(result, status) {
+          if (status === google.maps.DirectionsStatus.OK) {
+
+            $scope.MCGMap.hasResults = true;
+
+            // using directionsDisplay doesnt let you show multiple routes or
+            // attach events to the paths. Use a custom one with the data from results
+            _.each(result.routes, function(route, index){
+              var routePath = new google.maps.Polyline({
+                map : $scope.MCGMap.map,
+                path: route.overview_path,
+                strokeColor: '#333333',
+                strokeWeight: 6,
+                strokeOpacity: 0.5
+              });
+
+              $scope.MCGMap.routeOptionsDisplay.push(routePath);
+
+              // so we can click lines to select route
+              google.maps.event.addListener(routePath, 'click', function() {
+                $scope.MCGMap.setActiveRoute(index);
+              });
+            });
+
+            // still holds the routes, we set route index to update map and HTML
+            // step info
+            $scope.MCGMap.directionsDisplay = new google.maps.DirectionsRenderer({
+              map : $scope.MCGMap.map,
+              directions : result,
+              routeIndex : 0
+            });
+
+
+            // updated email URL
+            $scope.MCGMap.shareMapURL = getShareMapUrl();
+
+            $scope.MCGMap.setActiveRoute(0);
+
+            // view seems to lag behind. goooo ansync
+            $scope.$evalAsync();
+          }
+        });
+
+      } else  {
+        console.log('address not formatted');
+      }
+    };
+  }]);
+
+},{}],59:[function(require,module,exports){
+'use strict';
+
+/**
+ * Find My Seat Controller
+ *  calls Find My Seat API to display the bay information and marker on the map
+ */
+angular.module('Maps')
+  .controller('MapFindSomethingCtrl', ['$scope', 'MapFindSomething', function ($scope, MapFindSomething) {
+
+    $scope.MCGMap = {
+      type : 'findSomething',
+      term : '',
+
+      // 'result' or 'results'
+      resultPluralText : '',
+
+      // category | search
+      mode : 'category',
+      previousCategory : '',
+      results : {
+        data : []
+      }
+    };
+
+    // results filtered by current level so we can update the map w markers
+    $scope.filteredResults = null;
+
+    // get all results and filter client side, no sharing so dont need to update
+    // params
+    function getResults () {
+      MapFindSomething.getResults()
+        .success(function (response){
+          $scope.MCGMap.results.data = response.Data;
+
+          mapLevels();
+        });
+    }
+
+    /**
+    * angular cant separated "2" and "2A"
+    * also puts "B1" as last on search when we want it first
+    *
+    * map the levels to a new array so we can control the order by and also separate
+    * 2/2A
+    * cant use the true value for sort as we then can show all levels or all search terms
+    */
+    function mapLevels () {
+      _.each($scope.MCGMap.results.data, function (result) {
+        switch (result.LevelName.toLowerCase()) {
+        case 'b1':
+          result.sortLevel = 0;
+          break;
+
+        case '1':
+          result.sortLevel = 1;
+          break;
+
+        case '2':
+          result.sortLevel = 2;
+          break;
+
+        case '2a':
+          result.sortLevel = 3;
+          break;
+
+        case '3':
+          result.sortLevel = 4;
+          break;
+
+        case '4':
+          result.sortLevel = 5;
+          break;
+        }
+      });
+    }
+
+    $scope.MCGMap.closeSearch = function() {
+      $scope.MCGMap.setMode('category');
+      $scope.MCGMap.setCategory($scope.MCGMap.previousCategory);
+      $scope.MCGMap.clearSearch();
+    };
+
+
+    // remove the query term
+    $scope.MCGMap.clearSearch = function() {
+      $scope.MCGMap.term = '';
+
+      $scope.$broadcast('MCGMap.setMobileView', 'input');
+    };
+
+    $scope.MCGMap.setLevel = function(level) {
+      $scope.MCGMap.currentLevel = level;
+    };
+
+    $scope.MCGMap.setCategory = function(labelIndex) {
+      console.log(labelIndex, $scope.MCGMap.CMSCategories[labelIndex]);
+
+      // ALWAYS set to results so we can show the search input
+      // ALWAYS set category as null/undefined clears the filter
+      $scope.MCGMap.currentCategory = $scope.MCGMap.CMSCategories[labelIndex];
+      $scope.$broadcast('MCGMap.setMobileView', 'result');
+
+      // mobile needs to show the selected category instead of the page title when
+      // viewing results. view inits MCGMap.CMSCategories with CMS values
+      $scope.MCGMap.mobileCategoryIndex = labelIndex;
+
+    };
+
+    // toggles display of search field or category buttons
+    // this is binary
+    $scope.MCGMap.setMode = function(type) {
+      if (type === 'search') {
+        $scope.MCGMap.mode = 'search';
+        $scope.MCGMap.previousCategory = $scope.MCGMap.currentCategory;
+        $scope.MCGMap.setCategory();
+
+      } else {
+        $scope.MCGMap.mode = 'category';
+      }
+    };
+
+    // redraw markers on filtered results
+    $scope.$watch('filteredResults', function() {
+      $scope.MCGMap.clearActiveResult();
+
+
+      // ALWAYS update text and clear current markers
+      if ($scope.filteredResults !== null) {
+        if ($scope.filteredResults.length === 1) {
+          $scope.MCGMap.resultPluralText = 'result';
+
+        } else {
+          $scope.MCGMap.resultPluralText = 'results';
+        }
+
+        $scope.$broadcast('MCGMap.removeMarkers');
+
+        // only when we have results do we draw and fit them
+        if ($scope.filteredResults.length) {
+          _.each($scope.filteredResults, function (result, index) {
+            $scope.$broadcast('MCGMap.createMarker', result, index);
+          });
+        }
+      }
+    });
+
+    $scope.MCGMap.clearActiveResult = function() {
+      $scope.MCGMap.activeResult = null;
+    };
+
+
+    // clicked results item
+    $scope.MCGMap.setActiveMarkerFromResults = function(index) {
+      $scope.$broadcast('MCGMap.setMobileView', 'detail');
+      $scope.$broadcast('MCGMap.setActiveMarker', index);
+    };
+
+    $scope.$on('MCGMap.mapReady', function(){
+      var elemWindow = angular.element(window);
+
+      // desky needs default category but mobile doesnt
+      if (elemWindow.width() > 576 ) {
+
+        // values are driven from GUIDs, cant use strings anymore
+        $scope.MCGMap.setCategory(0);
+      }
+
+      getResults();
+    });
+  }]);
+
+},{}],58:[function(require,module,exports){
+'use strict';
+
+/**
+ * Find My Seat Controller
+ *  calls Find My Seat API to display the bay information and marker on the map
+ */
+angular.module('Maps')
+  .controller('MapFindSeatCtrl', ['$scope', 'MapFindSeat', '$timeout', function ($scope, MapFindSeat, $timeout) {
+    var params = {};
+
+    $scope.MCGMap = {
+      type : 'findSeat',
+      seats : {
+        data : []
+      },
+      hasResponse : false
+    };
+
+    $scope.mobileResult = {};
+
+    // calls the seat API when seat info is filled out
+    $scope.MCGMap.getSeat = function() {
+      params.bay = $scope.MCGMap.inputBay;
+      params.row = $scope.MCGMap.inputRow;
+      params.seat = $scope.MCGMap.inputSeat;
+
+      // can be called from button now so check values
+      if (params.bay && params.row && params.seat) {
+        $scope.MCGMap.hasResponse = false;
+
+        MapFindSeat.getSeat(params)
+        .success(function (response) {
+
+          // only expecting one seat in response so get first index
+          $scope.MCGMap.seats.data = response.Data;
+
+          if (response.Data.length) {
+            $scope.MCGMap.showSeat();
+          }
+
+          $scope.MCGMap.hasResponse = true;
+        });
+      }
+
+    };
+
+    function getParams() {
+      $scope.$broadcast('MCGMap.getQuery');
+
+      if ($scope.MCGMap.params) {
+        $scope.MCGMap.inputBay = $scope.MCGMap.params.bay;
+        $scope.MCGMap.inputRow = $scope.MCGMap.params.row;
+        $scope.MCGMap.inputSeat = $scope.MCGMap.params.seat;
+      }
+
+      // give the map some time to render before showing the item
+      // showing modal from QS seems to be sad
+      $timeout(function() {
+        $scope.MCGMap.getSeat();
+      }, 300);
+    }
+
+    $scope.$on('MCGMap.mapReady', function(){
+      getParams();
+    });
+
+
+    // draws the marker from results. expecting 1 result in data
+    $scope.MCGMap.showSeat = function() {
+      $scope.$broadcast('MCGMap.createMarker', $scope.MCGMap.seats.data[0], 0);
+
+      // make marker active
+      $scope.$broadcast('MCGMap.setActiveMarker', 0);
+
+      $scope.mobileResult.ShareURL = $scope.MCGMap.getInfoLinkURL($scope.MCGMap.seats.data[0], undefined);
+
+      $scope.$broadcast('MCGMap.setMobileView', 'detail');
+
+      // need to chuck this in a timeout as its not 'visible' before the animation and
+      // we need to make sure it is before it can be seen
+      $timeout(function() {
+        google.maps.event.trigger($scope.MCGMap.map, 'resize');
+      }, 300);
+    };
+
+
+    // clears data, closing view
+    $scope.MCGMap.clearMobileSeat = function () {
+      console.log('killing data');
+      $scope.MCGMap.seats.data = [];
+
+    };
+
+
+    // watch fields to remove seat modal if the text has been removed
+    $scope.$watchGroup(['MCGMap.inputBay', 'MCGMap.inputRow', 'MCGMap.inputSeat' ], _.debounce(
+      // note fields is an object, cant do if (fields)
+      function (fields) {
+
+        // remove marker on change so it updates if its redrawn
+        $scope.$broadcast('MCGMap.removeMarkers');
+
+        // check each field isn't empty
+        if (fields[0] && fields[1] && fields[2]) {
+          // button is always visible like get to the g so we don't need watch
+          // $scope.MCGMap.getSeat();
+          // $scope.$evalAsync();
+
+        } else {
+          $scope.MCGMap.clearMobileSeat();
+        }
+      }, 300));
+  }]);
+
+},{}],57:[function(require,module,exports){
+'use strict';
+
+/**
+ * Map Controller
+ *  agnostic stuff like draw marker and position map
+ */
+angular.module('Maps')
+  .controller('MapCommonCtrl', ['$scope', function ($scope) {
+
+    $scope.MCGMap.defaultState = {
+      center : new google.maps.LatLng(-37.819967, 144.983449),
+      zoom : 18
+    };
+
+    var self = this,
+      mapOptions = {
+
+      // nice zoom level and centered on MCG
+      // note, transport/directions will set bounds on change
+      zoom : $scope.MCGMap.defaultState.zoom,
+      center: $scope.MCGMap.defaultState.center,
+      mapTypeControl : false,
+      streetViewControl : false
+    };
+
+
+    // a marker is mapped to the results by index, will be a 1-1
+    $scope.MCGMap.markers = [];
+
+    // windows have a 1-1 for markers
+    $scope.MCGMap.infos = [];
+
+    // for directions
+    $scope.MCGMap.directionsService = undefined;
+
+    // only renders one route, the view will work with the current route index
+    // for steps etc
+    $scope.MCGMap.directionsDisplay = undefined;
+
+    // previews all routes, different color
+    $scope.MCGMap.routeOptionsDisplay = [];
+
+    $scope.MCGMap.activeResult = undefined;
+
+
+
+    // current mobile view. should
+    // input | results | detail
+    $scope.$on('MCGMap.setMobileView', function(event, view) {
+      $scope.MCGMap.mobileView = view;
+    });
+
+    /**
+    * Mobile 'back' navigation
+    * Moves the mobile view back based on the current view
+    */
+    $scope.MCGMap.findSomethingNavigateBack = function(isForceInput) {
+      // @todo: cleaner-er
+      if (isForceInput) {
+        $scope.$emit('MCGMap.setMobileView', 'input');
+      }
+
+      if ($scope.MCGMap.mobileView === 'detail') {
+        $scope.$emit('MCGMap.setMobileView', 'result');
+
+      } else {
+        $scope.$emit('MCGMap.setMobileView', 'input');
+
+        // clear the category too?
+        $scope.MCGMap.currentCategory = null;
+      }
+
+    };
+
+
+    $scope.$on('MCGMap.getQuery', function(){
+      if (document.location.search) {
+        $scope.MCGMap.params =  document.location.search.replace(/(^\?)/,'')
+          .split('&')
+          .map(function(n){
+            return n = n.split('='),this[n[0]] = n[1],this;
+          }.bind({}))[0];
+      }
+    });
+
+
+    // of the data, whom did we click?
+    // $scope.MCGMap.selectedIndex = -1;
+
+    // any paths drawn mapped 1-1 with markers
+    $scope.MCGMap.paths = [];
+
+    $scope.MCGMap.map = new google.maps.Map(document.getElementById('js-MCGMap'), mapOptions);
+
+    // which icon to use based on the marker type
+    $scope.MCGMap.getMarkerImage = function(type, color) {
+      var imagePath = '/assets/images/map/';
+
+      if (type) {
+        imagePath += type;
+
+      } else {
+        imagePath += 'marker';
+      }
+
+      if (color) {
+        imagePath += '-' + color;
+
+      // green by default
+      } else {
+        imagePath += '-green';
+      }
+
+      imagePath += '.png';
+
+      return imagePath;
+    };
+
+    // draws marker on map
+    // icon = string pin (default), gate (3, 5-7), bus, taxi, train, tram
+    $scope.$on('MCGMap.createMarker', function(event, data, index) {
+
+
+      var markerImage = {
+          url : $scope.MCGMap.getMarkerImage(data.icon, data.color)
+        },
+        hasLatLong = (!!data.Latitude && !!data.Longitude),
+        dataMarkerPostition = null,
+        marker = {};
+
+      // we COULD not have a lat long. still want to show results and modal info so
+      // position the marker at the MCG and make it invisible so it all still functions
+      if (hasLatLong) {
+        dataMarkerPostition = new google.maps.LatLng(data.Latitude, data.Longitude);
+
+      } else {
+        dataMarkerPostition = $scope.MCGMap.defaultState.center;
+      }
+
+      // transport icons are round, change the anhor
+      if (data.icon) {
+        markerImage.anchor = new google.maps.Point(16,16);
+      }
+
+      // build it now we have the anchor
+      marker = new google.maps.Marker({
+        icon : markerImage,
+        position: dataMarkerPostition,
+
+        // we _alawys_ draw the marker so be sure to hide the ones we have centered
+        visible : hasLatLong
+      });
+
+      // transport needs to know plain icon type before image is built
+      marker.type = data.icon;
+
+      // transport needs the ID from the map as there isn't a 1-1 connection for restults
+      marker.MapID = data.MapID;
+
+      // so we can restore after making active
+      marker.originalIcon = markerImage;
+
+      marker.addListener('click', function() {
+        $scope.$emit('MCGMap.setActiveMarker', index);
+      });
+
+      $scope.MCGMap.markers.push(marker);
+
+      createInfoWindow(data, index);
+
+      $scope.$emit('MCGMap.showMarker', index);
+    });
+
+    // restore the icon
+    self.deactivateMarkers = function() {
+      // console.log('deactivating markers & info');
+
+      // set all markers to their original one
+      _.each($scope.MCGMap.markers, function(marker, index) {
+        marker.setIcon(marker.originalIcon);
+
+        // close any open info
+        $scope.MCGMap.infos[index].close();
+      });
+
+      // close any infos
+    };
+
+    // draws paths if exists
+    $scope.$on('MCGMap.drawPaths', function(event, data) {
+      // todo: get hex color from the data
+
+      if (data.paths) {
+        var transportPath = new google.maps.Polyline({
+          path: data.paths,
+          strokeColor: data.pathColor,
+          strokeOpacity: 1,
+          strokeWeight: 6
+        });
+
+        transportPath.setMap($scope.MCGMap.map);
+        $scope.MCGMap.paths.push(transportPath);
+      }
+
+    });
+
+    // zooms the map to fit all the markers we have placed
+    $scope.$on('MCGMap.fitMarkers', function(){
+      var bounds = new google.maps.LatLngBounds();
+      _.each($scope.MCGMap.markers, function(marker){
+        bounds.extend(marker.getPosition());
+      });
+
+      $scope.MCGMap.map.fitBounds(bounds);
+    });
+
+
+    $scope.$on('MCGMap.setActiveMarker', function(event, index) {
+      // can only have one active
+      self.deactivateMarkers();
+
+      // change active icon
+      if ($scope.MCGMap.markers[index].type) {
+        $scope.MCGMap.markers[index].setIcon({
+          url: $scope.MCGMap.getMarkerImage($scope.MCGMap.markers[index].type, 'active'),
+          anchor : new google.maps.Point(16,16)
+        });
+
+      // default
+      } else {
+        $scope.MCGMap.markers[index].setIcon($scope.MCGMap.getMarkerImage(null, 'blue'));
+      }
+
+      // show info
+      showMarkerInfo(index);
+
+      if ($scope.MCGMap.type === 'transport') {
+        $scope.MCGMap.activeResult = $scope.MCGMap.markers[index].MapID;
+
+      } else {
+        $scope.MCGMap.activeResult = index;
+      }
+
+      // center yo
+      // $scope.MCGMap.map.setCenter($scope.MCGMap.markers[index].getPosition());
+
+      // doesn't always update result, trigger
+      $scope.$evalAsync();
+
+    });
+
+
+    function createInfoWindow (data, index) {
+      var width = 290,
+        iconGutter = 32,
+
+        // icons are centered so we need half the icon plus gutter, default is full height + gutter
+        yOffset = (data.icon) ? -16 - iconGutter : -55 - iconGutter,
+
+        // allows for richer HTML and styles
+        infoBox = new InfoBox({
+          // markup for content
+          content: createInfoMarkup(data, index),
+          maxWidth: width,
+          alignBottom : true,
+          boxClass :'map__modal',
+          pixelOffset : new google.maps.Size(width * -0.5, yOffset),
+          infoBoxClearance: new google.maps.Size(40, 40),
+          closeBoxURL : '/assets/images/map/close-icon.png'
+        });
+
+      $scope.MCGMap.infos.push(infoBox);
+    }
+
+    /*
+      builds HTML for maker info modal
+    */
+    function createInfoMarkup(data, index) {
+      var isRenderLink = true,
+        content = data.LongDescription || data.Summary,
+        linkClass = '',
+        imgClass = !!data.Picture ? '' : '-no-img',
+        html = '';
+
+      // dont render the link if the find something doesn't have link
+      if ($scope.MCGMap.type === 'findSomething' && !data.Url) {
+        isRenderLink = false;
+        linkClass = '-no-link';
+      }
+
+      html = '<div class="modal__content ' + linkClass + ' ' + imgClass + ' ">';
+
+      // add image
+      if (data.Picture) {
+        html += '<img class="content__image" src="' + data.Picture + '" />';
+      }
+
+      // so image and link are outside of padding
+      html += '<div class="content__copy">';
+
+
+      // header, seat info or title
+      if ($scope.MCGMap.type === 'findSeat') {
+        var bayText = data.BayName || data.Bay;
+
+        html += '<dl class="item__meta"><dt>Bay</dt>';
+        html += '<dd>' + bayText + '</dd>';
+        html += '<dt>Row</dt>';
+        html += '<dd>' + $scope.MCGMap.inputRow + '</dd>';
+        html += '<dt>Seat</dt>';
+        html += '<dd>' + $scope.MCGMap.inputSeat + '</dd></dl>';
+
+      // just the title
+      } else {
+        html += '<h2 class="item__title">' + data.Title + '</h2>';
+      }
+
+      // meta for find something
+      if ($scope.MCGMap.type === 'findSomething') {
+        html += '<div class="item__meta">Level ' + data.LevelName + ', ' + data.BayName + '</div>';
+      }
+
+      if (data.ShortDescription) {
+        html += '<div class="item__meta">' + data.ShortDescription + '</div>';
+      }
+
+      if (content) {
+        html += '<p>' + content + '</p>';
+      }
+
+
+      // close .content__copy
+      html += '</div>';
+
+      if (isRenderLink) {
+        // send to a friend, learn more, get directions
+        html += '<a class="modal__link" href="'+ $scope.MCGMap.getInfoLinkURL(data, index) + '">'+
+          $scope.MCGMap.getInfoLinkText(data) +'<i class="icon-utility-right-thick"></i></a>';
+      }
+
+      // close .map__modal
+      html += '</div>';
+
+      return html;
+    }
+
+    // links need to change based on map type and marker type
+    $scope.MCGMap.getInfoLinkURL = function (data, index) {
+
+      // cant use href as if takes any existing queries
+      var url = window.location.protocol + '//' + window.location.host + window.location.pathname + '?';
+
+      // driving needs get directions pre-filled with query
+      if  ($scope.MCGMap.type === 'transport' && $scope.MCGMap.currentCategory === 'driving') {
+
+        // gates go to the gates page, all others add QS to the current URL
+        url = window.location.protocol + '//' + window.location.host + '/getting-around/get-to-the-g?destination=';
+
+        switch (data.MapID) {
+        case '7':
+          url += '1';
+          break;
+        case '8':
+          url += '2';
+          break;
+        case '9':
+          url += '3';
+          break;
+        case '10':
+          url += '4';
+          break;
+        }
+
+      // transport (non-gate) needs to know maker ID and which tab for autoload
+      } else if ($scope.MCGMap.type === 'transport' && $scope.MCGMap.currentCategory !=='driving') {
+        url += 'tab=' + data.category +
+        '&markerID=' + data.MapID + '&markerIdx=' + index;
+
+        // build the email address with the current url
+        url = createShareEmail(url);
+
+      } else if ($scope.MCGMap.type === 'findSeat') {
+        url += 'bay=' + data.Bay +
+        '&row=' + $scope.MCGMap.inputRow +
+        '&seat=' + $scope.MCGMap.inputSeat;
+
+        // build the email address with the current url
+        url = createShareEmail(url);
+      }
+
+      if (data.Url) {
+        url = data.Url;
+      }
+
+
+      return url;
+    };
+
+    // transport/seat needs to send an email with the query string params
+    function createShareEmail(url) {
+
+      var prefix = 'mailto:',
+        subject = '?subject=',
+        body = '&body=',
+        lineBreak = '%0A',
+
+        // cant have raw '&'in email, need to encode (note: not &amp;)
+        builtUrl = url.replace(/(\&)/g, '%26'),
+        emailUrl = '';
+
+      // whitespace is breaking link even with encoded %20
+      builtUrl = builtUrl.replace(/\s/g, '+');
+
+      if ($scope.MCGMap.type === 'transport') {
+        subject += 'Transport options for The MCG';
+        body += 'Meet me here!' + lineBreak + lineBreak + builtUrl;
+
+
+      } else if ($scope.MCGMap.type === 'findSeat') {
+        subject += 'My seat at The MCG';
+        body += 'Great seats for the game!' + lineBreak + lineBreak + builtUrl;
+      }
+
+
+      emailUrl += prefix +subject + body;
+
+      return emailUrl;
+    }
+
+    // text is based on map type and marker type
+    $scope.MCGMap.getInfoLinkText = function(data) {
+      if (data) {
+        var linkText = '';
+
+        if ($scope.MCGMap.type === 'findSomething') {
+          linkText = 'Learn more';
+
+        } else if (data.Category && data.Category.toLowerCase() === 'driving') {
+          linkText = 'Get directions';
+
+        } else {
+          linkText = 'Send to a friend';
+        }
+
+        return linkText;
+      }
+    };
+
+    // show the marker for the current index
+    function showMarkerInfo(index) {
+      $scope.MCGMap.infos[index].open($scope.MCGMap.map, $scope.MCGMap.markers[index]);
+    }
+
+
+    // keeps marker in array
+    $scope.$on('MCGMap.hideMarker', function(event, index) {
+      // still in array, just not on this map
+      $scope.MCGMap.markers[index].setMap(null);
+    });
+
+    $scope.$on('MCGMap.showMarker', function(event, index) {
+      $scope.MCGMap.markers[index].setMap($scope.MCGMap.map);
+    });
+
+    // remove markers from the map
+    $scope.$on('MCGMap.removeMarkers', function() {
+
+      //deactivate incase they are open
+      self.deactivateMarkers();
+
+      // removes marker from map
+      _.each($scope.MCGMap.markers, function(marker) {
+        marker.setMap(null);
+      });
+
+      // clear the list
+      $scope.MCGMap.markers = [];
+      $scope.MCGMap.infos = [];
+    });
+
+    // restore original position and zoom to the G
+    $scope.$on('MCGMap.restore', function(){
+      $scope.MCGMap.map.setCenter($scope.MCGMap.defaultState.center);
+      $scope.MCGMap.map.setZoom($scope.MCGMap.defaultState.zoom);
+    });
+
+    $scope.$on('MCGMap.removePaths', function(){
+      if ($scope.MCGMap.paths.length) {
+        _.each($scope.MCGMap.paths, function(path) {
+          path.setMap(null);
+        });
+
+        $scope.MCGMap.paths = [];
+      }
+
+    });
+
+    // mobile is input by default
+    $scope.$emit('MCGMap.setMobileView', 'input');
+
+    // issues b/w communicating w controller, each ctrl needing commons has an
+    // emit listener to call any shared functions it needs on init
+    // add true to send dummy testing data on load
+    $scope.$emit('MCGMap.mapReady');
+
+  }]);
+
+},{}],56:[function(require,module,exports){
+'use strict';
+
+var Header = angular.module('Header', []);
+require('./controllers/HeaderCtrl');
+require('./directives/header');
+
+module.exports = Header;
+
+},{"./controllers/HeaderCtrl":54,"./directives/header":55}],55:[function(require,module,exports){
+'use strict';
+
+// plugin for semi persistent nav
+// following the reveal navigation pattern of medium.com
+require('unveiledNavigation');
+
+//TODO: This directive is doing too much, needs spliting
+angular.module('Header')
+  .directive('header', [function () {
+    return {
+      restrict: 'A',
+      link: function ($scope, element) {
+        var $body = angular.element('body'),
+          $searchInput = element.find('.search input');
+
+        // revealing header nav plugin
+        element.find('.header__wrapper').unveiledNavigation();
+
+        // adds a class to body after a delay
+        // this class is used by css for overflow:hidden
+        function clipBody(state) {
+          if (state) {
+            setTimeout(function () {
+              $body.addClass('-clip');
+            }, 500);
+          } else {
+            setTimeout(function () {
+              $body.removeClass('-clip');
+            }, 500);
+          }
+        }
+
+        // trigger focus on global search input
+        // when search modal is revealed
+        function focusSearchInput() {
+          setTimeout(function () {
+            $searchInput.focus();
+          }, 1000);
+        }
+
+        // if nav modal open, clip body
+        $scope.$watch('header.nav', function (current) {
+          clipBody(current);
+        });
+
+        // if search modal open, clip body
+        // and focus on input
+        $scope.$watch('header.search', function (current) {
+          clipBody(current);
+          if (current) {
+            focusSearchInput();
+          }
+        });
+      }
+    };
+  }]);
+
+},{"unveiledNavigation":74}],54:[function(require,module,exports){
+'use strict';
+
+// plugin for semi persistent nav
+// following the reveal navigation pattern of medium.com
+require('unveiledNavigation');
+
+//TODO: This directive is doing too much, needs spliting
+angular.module('Header')
+  .controller('HeaderCtrl', ['$scope', '$http', function ($scope, $http) {
+    $scope.header = {
+      links: true,
+      status: {}
+    };
+    // log a user out of the website
+    // result is stored on state for switching html view
+    $scope.header.logOut = function () {
+      $http.get('/mcgapi/services/public/Logout')
+        .then(function(result) {
+          $scope.header.status = result.data;
+        });
+    };
+  }]);
+
+},{"unveiledNavigation":74}],53:[function(require,module,exports){
+'use strict';
+
+var Newsletter = angular.module('Newsletter', []);
+require('./controllers/NewsletterCtrl');
+
+module.exports = Newsletter;
+
+},{"./controllers/NewsletterCtrl":52}],52:[function(require,module,exports){
+'use strict';
+
+/**
+ * Newsletters Controller
+ *  sets up scope model and methods to get newsletter
+ */
+angular.module('Newsletter')
+  .controller('NewsletterCtrl', ['$scope', 'Newsletters', 'Picturefill', function ($scope, Newsletters, Picturefill) {
+    $scope.newsletter = {
+      init: false,
+      results: {
+        Data: []
+      },
+      // limits the number of newsletter to show at any one time
+      limit: function () {
+        var length = $scope.newsletter.results.Data.length,
+          total = $scope.newsletter.results.TotalSquares || $scope.newsletter.results.Data.length;
+        return length < total ? length - 1 : total;
+      },
+      // loads more newsletter
+      loadMore: function () {
+        var lastEvent = _.takeRight($scope.newsletter.results.Data)[0];
+        Newsletters.params.lastIndex = lastEvent.Index;
+        getNewsletters();
+      }
+    };
+
+    // Gets newsletter and sets the api response on the scope
+    function getNewsletters() {
+      Newsletters.params.itemId = $scope.newsletter.itemId;
+      Newsletters.params.filterTypeId = $scope.newsletter.filterTypeId;
+      if($scope.newsletter.previous) {
+        Newsletters.getPreviousEditions()
+          .success(function (response) {
+            processResponse(response);
+          });
+      } else {
+        Newsletters.getNewsletters()
+          .success(function (response) {
+            processResponse(response);
+          });
+      }
+    }
+
+    function processResponse (response) {
+      if (!$scope.newsletter.init) {
+        $scope.newsletter.init = true;
+      }
+      // response.Data = $scope.newsletter.results.Data.concat(response.Data);
+      $scope.newsletter.results = response;
+      Picturefill.reEvaluate();
+    }
+
+    // Initial call to get newsletter after itemId in scope
+    $scope.$watch('newsletter.itemId', function (current) {
+      if (current) {
+        getNewsletters();
+      }
+    });
+
+    // Initial call to get newsletter after filterTypeId in scope
+    $scope.$watch('newsletter.filterTypeId', function (current) {
+      if (!angular.isUndefined(current) || current === '') {
+        getNewsletters();
+      }
+    });
+  }]);
+
+},{}],51:[function(require,module,exports){
+'use strict';
+
+var News = angular.module('News', []);
+require('./controllers/NewsCtrl');
+
+module.exports = News;
+},{"./controllers/NewsCtrl":50}],50:[function(require,module,exports){
+'use strict';
+
+/**
+ * News Controller
+ *  sets up scope model and methods to get news
+ */
+angular.module('News')
+  .controller('NewsCtrl', ['$scope','$attrs', 'News', 'Picturefill', function ($scope, $attrs, News, Picturefill) {
+    $scope.news = {
+      init: false,
+      results: {
+        Data: []
+      },
+      // limits the number of news to show at any one time
+      limit: function () {
+        var length = $scope.news.results.Data.length,
+          total = $scope.news.results.TotalSquares || $scope.news.results.Data.length;
+        return length < total ? length - 1 : total;
+      },
+      // loads more news
+      loadMore: function () {
+        var lastEvent = _.takeRight($scope.news.results.Data)[0];
+        News.params.lastIndex = lastEvent.Index;
+        getNews();
+      }
+    };
+
+    // merg any extra api data we need
+    if($attrs.config) {
+      try {
+        _.extend(News.params, angular.fromJson($attrs.config));
+      } catch (e) {
+        //silent fail
+      }
+    }
+
+    // Gets news and sets the api response on the scope
+    function getNews() {
+      News.params.itemId = $scope.news.itemId;
+      News.params.pageSize = $scope.news.pageSize;
+
+      News.getNews()
+        .success(function (response) {
+          if (!$scope.news.init) {
+            $scope.news.init = true;
+          }
+          response.Data = $scope.news.results.Data.concat(response.Data);
+          $scope.news.results = response;
+          Picturefill.reEvaluate();
+        });
+    }
+
+    // Initial call to get news after itemId in scope
+    $scope.$watch('news.itemId', function (current) {
+      if (current) {
+        getNews();
+      }
+    });
+
+  }]);
+
+},{}],49:[function(require,module,exports){
+'use strict';
+
+var Events = angular.module('Events', []);
+require('./controllers/EventsCtrl');
+
+module.exports = Events;
+},{"./controllers/EventsCtrl":48}],48:[function(require,module,exports){
+'use strict';
+
+/**
+ * Events Controller
+ *  sets up scope model and methods to get events from api
+ */
+angular.module('Events')
+// linters cracked the sads "line too long"
+  .controller('EventsCtrl', ['$scope', '$attrs', 'Events', 'Picturefill', function (
+      $scope,
+      $attrs,
+      Events,
+      Picturefill
+    ) {
+
+    $scope.events = {
+      init: false,
+      data: [],
+      // limits the number of events to show at any one time
+      limit: function () {
+        if ($scope.events.data) {
+          var length = $scope.events.data.length,
+            total = $scope.events.total;
+          return length < total ? length - 1 : total;
+        }
+      },
+      // loads more events
+      loadMore: function () {
+        var lastEvent = $scope.events.data[$scope.events.data.length - 1];
+        Events.params.lastIndex = lastEvent.Index;
+        getEvents();
+      }
+    };
+
+    // merg any extra api data we need
+    if($attrs.config) {
+      try {
+        _.extend(Events.params, angular.fromJson($attrs.config));
+      } catch (e) {
+        //silent fail
+      }
+    }
+
+    // Gets events and sets the api response on the scope
+    function getEvents() {
+      Events.getEvents()
+        .success(function (response) {
+          $scope.events.data = $scope.events.data.concat(response.Data);
+          $scope.events.total = response.TotalSquares;
+          Picturefill.reEvaluate();
+        })
+        .finally(function () {
+          $scope.events.init = true;
+        });
+    }
+    // initialised in template, the total number of
+    // events to load at a time
+    $scope.$watch('events.pageSize', function (current) {
+      if (current) {
+        Events.params.pageSize = current;
+        getEvents();
+      }
+    });
+    // month filter watcher
+    $scope.$watch('events.monthFilter', function (current) {
+      if (!angular.isUndefined(current) || current === '') {
+        Events.params.month = current || '';
+        Events.params.lastIndex = 0;
+        $scope.events.data = [];
+        getEvents();
+      }
+    });
+    // type filter watcher (cricket, football, etc)
+    $scope.$watch('events.typeFilter', function (current) {
+      if (!angular.isUndefined(current) || current === '') {
+        Events.params.category = current || '';
+        Events.params.lastIndex = 0;
+        $scope.events.data = [];
+        getEvents();
+      }
+    });
+
+  }]);
+},{}],47:[function(require,module,exports){
+'use strict';
+
+var ContentPages = angular.module('ContentPages', []);
+require('./controllers/ContentPageCtrl');
+
+module.exports = ContentPages;
+},{"./controllers/ContentPageCtrl":46}],46:[function(require,module,exports){
+'use strict';
+
+/**
+ * ContentPage Controller
+ *  sets up scope model and methods to get ContentPage
+ */
+angular.module('ContentPages')
+  .controller('ContentPageCtrl', ['$scope', 'ContentPages', 'Picturefill',
+    function ($scope, ContentPages, Picturefill) {
+      $scope.pages = {
+        init: false,
+        results: {
+          Data: []
+        }
+      };
+
+      // Gets ContentPage and sets the api response on the scope
+      function getContentPages() {
+        ContentPages.params.itemId = $scope.pages.itemId;
+
+        ContentPages.getPages()
+          .success(function (response) {
+            $scope.pages.results = response;
+            Picturefill.reEvaluate();
+          });
+      }
+
+      // Initial call to get ContentPages after itemId in scope
+      $scope.$watch('pages.itemId', function (current) {
+        if (current) {
+          getContentPages();
+        }
+      });
+    }
+  ]);
+},{}],45:[function(require,module,exports){
+'use strict';
+
+var Activities = angular.module('Activities', []);
+require('./controllers/ActivitiesCtrl');
+
+module.exports = Activities;
+},{"./controllers/ActivitiesCtrl":44}],44:[function(require,module,exports){
+'use strict';
+
+/**
+ * Activities Controller
+ *  sets up scope model and methods to get activities
+ */
+angular.module('Activities')
+  .controller('ActivitiesCtrl', ['$scope', '$attrs', 'Activities', 'Picturefill',
+    function ($scope, $attrs, Activities, Picturefill) {
+      $scope.activities = {
+        init: false,
+        results: {
+          Data: []
+        },
+        // limits the number of activities to show at any one time
+        limit: function () {
+          var length = $scope.activities.results.Data.length,
+            total = $scope.activities.results.TotalSquares || $scope.activities.results.Data.length;
+          return length < total ? length - 1 : total;
+        },
+        // loads more activities
+        loadMore: function () {
+          var lastEvent = _.takeRight($scope.activities.results.Data)[0];
+          Activities.params.lastIndex = lastEvent.Index;
+          getActivities();
+        }
+      };
+
+      // merg any extra api data we need
+      if($attrs.config) {
+        try {
+          _.extend(Activities.params, angular.fromJson($attrs.config));
+        } catch (e) {
+          //silent fail
+        }
+      }
+
+      // Gets activities and sets the api response on the scope
+      function getActivities() {
+        Activities.params.itemId = $scope.activities.itemId;
+        Activities.params.pageSize = $scope.activities.pageSize;
+
+        Activities.getActivities()
+          .success(function (response) {
+            if (!$scope.activities.init) {
+              $scope.activities.init = true;
+            }
+            response.Data = $scope.activities.results.Data.concat(response.Data);
+            $scope.activities.results = response;
+            Picturefill.reEvaluate();
+          });
+      }
+
+      // Initial call to get activities after itemId in scope
+      $scope.$watch('activities.itemId', function (current) {
+        if (current) {
+          getActivities();
+        }
+      });
+    }
+  ]);
+
+},{}],38:[function(require,module,exports){
+'use strict';
+
+var Utils = angular.module('Utils', []);
+require('./toggle');
+require('./float-label');
+require('./scrollimate');
+require('./weather');
+require('./strength-meter');
+require('./video-play');
+
+
+
+module.exports = Utils;
+
+},{"./float-label":37,"./scrollimate":39,"./strength-meter":40,"./toggle":41,"./video-play":42,"./weather":43}],43:[function(require,module,exports){
+'use strict';
+
+/**
+ * Weather directive
+ *  Gets weather from Weather service and puts it on a local scope
+ *  then pulls out forecasts date and matches it to an icon
+ */
+angular.module('Utils')
+  .directive('weather', ['$http', 'Weather', function ($http, Weather) {
+    return {
+      scope: true,
+      link: function ($scope, element, attrs) {
+        $scope.weather = {};
+        Weather.getForecast()
+          .then(function (results) {
+            var forecasts = _.pluck(results.query.results.channel, 'item.forecast'),
+              weatherdate = attrs.weatherdate,
+              forecast = _.filter(forecasts, {
+                date: weatherdate
+              });
+
+            if (forecast && forecast.length) {
+              forecast = forecast[0];
+            } else {
+              forecast = forecasts[0];
+            }
+            $scope.weather.results = forecasts;
+            $scope.weather.forecast = forecast;
+            // get icons if we have weather
+            $scope.weather.forecast.icon = setWeatherIcon(forecast.code);
+            $scope.$evalAsync();
+          });
+
+        // match weather codes to icon classes
+        function setWeatherIcon(condid) {
+          var icon = '';
+          switch (condid) {
+          case '0':
+            icon = 'wi-tornado';
+            break;
+          case '1':
+            icon = 'wi-storm-showers';
+            break;
+          case '2':
+            icon = 'wi-tornado';
+            break;
+          case '3':
+            icon = 'wi-thunderstorm';
+            break;
+          case '4':
+            icon = 'wi-thunderstorm';
+            break;
+          case '5':
+            icon = 'wi-snow';
+            break;
+          case '6':
+            icon = 'wi-rain-mix';
+            break;
+          case '7':
+            icon = 'wi-rain-mix';
+            break;
+          case '8':
+            icon = 'wi-sprinkle';
+            break;
+          case '9':
+            icon = 'wi-sprinkle';
+            break;
+          case '10':
+            icon = 'wi-hail';
+            break;
+          case '11':
+            icon = 'wi-showers';
+            break;
+          case '12':
+            icon = 'wi-showers';
+            break;
+          case '13':
+            icon = 'wi-snow';
+            break;
+          case '14':
+            icon = 'wi-storm-showers';
+            break;
+          case '15':
+            icon = 'wi-snow';
+            break;
+          case '16':
+            icon = 'wi-snow';
+            break;
+          case '17':
+            icon = 'wi-hail';
+            break;
+          case '18':
+            icon = 'wi-hail';
+            break;
+          case '19':
+            icon = 'wi-cloudy-gusts';
+            break;
+          case '20':
+            icon = 'wi-fog';
+            break;
+          case '21':
+            icon = 'wi-fog';
+            break;
+          case '22':
+            icon = 'wi-fog';
+            break;
+          case '23':
+            icon = 'wi-cloudy-gusts';
+            break;
+          case '24':
+            icon = 'wi-cloudy-windy';
+            break;
+          case '25':
+            icon = 'wi-thermometer';
+            break;
+          case '26':
+            icon = 'wi-cloudy';
+            break;
+          case '27':
+            icon = 'wi-night-cloudy';
+            break;
+          case '28':
+            icon = 'wi-day-cloudy';
+            break;
+          case '29':
+            icon = 'wi-night-cloudy';
+            break;
+          case '30':
+            icon = 'wi-day-cloudy';
+            break;
+          case '31':
+            icon = 'wi-night-clear';
+            break;
+          case '32':
+            icon = 'wi-day-sunny';
+            break;
+          case '33':
+            icon = 'wi-night-clear';
+            break;
+          case '34':
+            icon = 'wi-day-sunny-overcast';
+            break;
+          case '35':
+            icon = 'wi-hail';
+            break;
+          case '36':
+            icon = 'wi-day-sunny';
+            break;
+          case '37':
+            icon = 'wi-thunderstorm';
+            break;
+          case '38':
+            icon = 'wi-thunderstorm';
+            break;
+          case '39':
+            icon = 'wi-thunderstorm';
+            break;
+          case '40':
+            icon = 'wi-storm-showers';
+            break;
+          case '41':
+            icon = 'wi-snow';
+            break;
+          case '42':
+            icon = 'wi-snow';
+            break;
+          case '43':
+            icon = 'wi-snow';
+            break;
+          case '44':
+            icon = 'wi-cloudy';
+            break;
+          case '45':
+            icon = 'wi-lightning';
+            break;
+          case '46':
+            icon = 'wi-snow';
+            break;
+          case '47':
+            icon = 'wi-thunderstorm';
+            break;
+          case '3200':
+            icon = 'wi-cloud';
+            break;
+          default:
+            icon = 'wi-cloud';
+            break;
+          }
+
+          return icon;
+
+        }
+      }
+    };
+  }]);
+},{}],42:[function(require,module,exports){
+'use strict';
+
+/**
+ * Float label pattern directive
+ *  toggles class has value to allow labels to stay floated
+ */
+
+angular.module('Utils')
+  .directive('videoPlay', function() {
+    return {       
+        link: function (scope, element) {
+              var iframe = element[0].querySelector('iframe');
+
+			element.bind('click', function(){
+				iframe.src = iframe.src + '&autoplay=1';
+			});
+        }
+    };
+});
+
+},{}],41:[function(require,module,exports){
+'use strict';
+
+/**
+ * Toggle directive
+ *  allows toggling an active class on any elements target
+ *  uses angular animate service to allow custom animation timing
+ */
+angular.module('Utils')
+  .directive('toggle', ['$animate', function ($animate) {
+    return {
+      restrict: 'A',
+      link: function ($scope, element, attrs) {
+        var target = attrs.toggle || element,
+          $el = angular.element(target);
+        element.on('click', function () {
+          $el.each(function () {
+            var $current = angular.element(this);
+            if ($current.hasClass('active')) {
+              $animate.removeClass($current, 'active');
+            } else {
+              $animate.addClass($current, 'active');
+            }
+          });
+          $scope.$evalAsync();
+        });
+      }
+    };
+  }]);
+
+},{}],40:[function(require,module,exports){
+'use strict';
+
+var PassMeter = require('pass-meter');
+/**
+ * Strength meter directive
+ *  uses strength.js for password complexity
+ */
+angular.module('Utils')
+  .directive('strengthMeter', [function () {
+    return {
+      restrict: 'A',
+      link: function ($scope, element, attr) {
+        var meter = new PassMeter();
+
+        $scope.strength ={};
+
+        $scope.$watch(attr.source, function(current){
+          if (current) {
+            $scope.strength.rating = meter.test(current);
+          }
+        });
+      }
+    };
+  }]);
+
+},{"pass-meter":78}],39:[function(require,module,exports){
+'use strict';
+
+/**
+ * Scroll animate directive
+ *  animates browser view port to target element
+ *  if no target found, scrolls to top of page
+ */
+angular.module('Utils')
+  .directive('scrollimate', [function () {
+    return {
+      restrict: 'A',
+      link: function ($scope, element, attr) {
+        var $body = angular.element('html, body'),
+          target = attr.href || attr.ref,
+          $target = angular.element(target),
+          offset = attr.offset || 0;
+
+        if (!$target.length) {
+          $target = $body;
+        }
+        element.on('click', function () {
+          $body.animate({
+            scrollTop: $target.offset().top - offset
+          });
+        });
+      }
+    };
+  }]);
+},{}],37:[function(require,module,exports){
+'use strict';
+
+/**
+ * Float label pattern directive
+ *  toggles class has value to allow labels to stay floated
+ */
+angular.module('Utils')
+  .directive('floatLabel', [function () {
+    return {
+      restrict: 'A',
+      scope: {
+        ngModel: '='
+      },
+      link: function ($scope, element, attrs) {
+
+        // after focus on input, determine whether to add
+        // a has-value class on it based on its value
+        function focusCheck() {
+          var val = element.val();
+          // -1 is a special case for the quirky web forms that dont like empty val
+          if (val === '' || !val || val === -1 || val === '-1') {
+            element.removeClass('-has-value');
+          } else {
+            element.addClass('-has-value');
+          }
+        }
+
+        // focus check event listener
+        element.focusout(function () {
+          focusCheck();
+        });
+
+        // on pressing return this blurs the field
+        // allowing mobiles to dismiss keyboard input
+        element.keypress(function (event) {
+          if (event.which === 13) {
+            element.blur();
+            return Boolean(attrs.submit);
+          }
+        });
+
+        $scope.$watch(attrs.focus, function (current) {
+          if (current === true) {
+            setTimeout(function () {
+              element.focus();
+            }, 1000);
+          }
+        });
+
+        // watch inputs angular model if any and use that for
+        // monitoring focus check
+        $scope.$watch('ngModel', _.debounce(function () {
+          focusCheck();
+        }, 300));
+      }
+    };
+  }]);
+
+},{}],36:[function(require,module,exports){
+'use strict';
+
+var Services = angular.module('Services', []);
+require('./Events');
+require('./Activities');
+require('./Search');
+require('./ContentPages');
+require('./News');
+require('./Newsletters');
+require('./Weather');
+require('./Vote');
+require('./Maps');
+require('./Blog');
+require('./Booking');
+require('./Address');
+require('./Faq');
+
+module.exports = Services;
+
+},{"./Activities":23,"./Address":24,"./Blog":25,"./Booking":26,"./ContentPages":27,"./Events":28,"./Faq":29,"./Maps":30,"./News":31,"./Newsletters":32,"./Search":33,"./Vote":34,"./Weather":35}],35:[function(require,module,exports){
+'use strict';
+
+/**
+ * Weather Service
+ *  gets weather forecast using Yahoo Weather
+ *  https://developer.yahoo.com/weather/
+ */
+angular.module('Services')
+  .service('Weather', ['$q', function ($q) {
+    // static string for polling melbourne weather
+    // no real need outside melbourne for now so wont make dynamic
+    var apiUrl = 'https://query.yahooapis.com/v1/public/yql?' +
+      'q=select%20item.forecast%20from%20weather.forecast%20where%20woeid%20%3D%201103816%20and%20u%3D%22c%22' +
+      '&format=json&env=store%3A%2F%2Fdatatables.org%2Falltableswithkeys',
+      deferred = $q.defer();
+
+    // last minute switch to jquery ajax
+    // as angular $http was bitching and its 3:30AM in UK
+    this.getForecast = function () {
+      jQuery.support.cors = true;
+      jQuery.ajax({
+        crossDomain: true,
+        type: 'POST',
+        url: apiUrl,
+        dataType: 'jsonp',
+        success: function (r) {
+          deferred.resolve(r);
+        }
+      });
+
+      return deferred.promise;
+    };
+  }]);
+},{}],34:[function(require,module,exports){
+'use strict';
+
+/**
+ * Vote Service
+ *  cast and get vote results
+ */
+angular.module('Services')
+  .service('Vote', ['$http', function ($http) {
+    var resultsApiUrl = '/mcgapi/services/poll/GetPollResults?',
+      voteApiUrl = '/mcgapi/services/poll/SubmitPoll?',
+      params = {
+        pollId: '',
+        optionId: ''
+      };
+
+    this.getResults = function (params) {
+      // var param = 'pollId=' + params.pollId;
+      return $http.get(resultsApiUrl + params);
+    };
+
+    this.castVote = function (params) {
+      return $http.get(voteApiUrl + jQuery.param(params));
+    };
+
+    this.params = params;
+  }]);
+},{}],33:[function(require,module,exports){
+'use strict';
+
+/**
+ * Search Service
+ *  gets search results from api
+ */
+angular.module('Services')
+  .service('Search', ['$http', function ($http) {
+    var apiUrl = '/mcgapi/services/contentsearch/GetSearchResults?',
+      params = {
+        searchTerm: '',
+        templateId: '',
+        pageNo: 1
+      };
+
+    this.getResults = function (param) {
+      param = param || params;
+      return $http.get(apiUrl + jQuery.param(param));
+    };
+
+    this.params = params;
+  }]);
+},{}],32:[function(require,module,exports){
+'use strict';
+
+/**
+ * News Service
+ *  gets news items from an api
+ */
+angular.module('Services')
+  .service('Newsletters', ['$http', function ($http) {
+    var newsletterApiUrl = '/mcgapi/services/newsletter/GetNewsletterGrid?',
+      previusEditionsApiUrl = '/mcgapi/services/newsletter/GetPreviousEditionsGrid?',
+      params = {
+        itemId: '',
+        filterTypeId: ''
+      };
+
+    this.getNewsletters = function (param) {
+      param = param || params;
+      return $http.get(newsletterApiUrl + jQuery.param(param));
+    };
+
+    this.getPreviousEditions = function (param) {
+      param = param || params;
+      return $http.get(previusEditionsApiUrl + jQuery.param(param));
+    };
+
+    this.params = params;
+  }]);
+
+},{}],31:[function(require,module,exports){
+'use strict';
+
+/**
+ * News Service
+ *  gets news items from an api
+ */
+angular.module('Services')
+  .service('News', ['$http', function ($http) {
+    var apiUrl = '/mcgapi/services/news/GetNews?',
+      params = {
+        itemId: '67228799-2C1D-4701-B179-C10AF4E11C3F',
+        lastIndex: 0,
+        pageSize: 6
+      };
+
+    this.getNews = function (param) {
+      param = param || params;
+      return $http.get(apiUrl + jQuery.param(param));
+    };
+
+    this.params = params;
+  }]);
+},{}],30:[function(require,module,exports){
+'use strict';
+
+/**
+ * Map Service
+ *  returns the seat
+ *
+ * dummy local data '/data/map-find-my-seat.json'
+ */
+angular.module('Services')
+
+  // Finds the bay your seat is in
+  .service('MapFindSeat', ['$http', function ($http) {
+    var apiUrl = '/mcgapi/services/locations/FindMySeat?',
+    // var apiUrl = '/dummyData/map-find-my-seat.json?',
+      params = {
+        // find my seat or find something
+        bay: '',
+        row: '',
+        seat: '',
+
+        // only expecting one result
+        numberOfPages: 1,
+        pageSize : 1,
+        currentPage: 1
+      };
+
+    this.getSeat = function (param) {
+      param = param || params;
+
+      return $http.get(apiUrl + jQuery.param(param));
+    };
+
+    this.params = params;
+  }])
+
+  // gets the static transport markers
+  .service('MapStaticTransport', ['$http', function ($http) {
+    var transportURL = '/assets/data/map-transport-routes.json';
+
+    this.getStaticTransport = function () {
+      return $http.get(transportURL);
+    };
+  }])
+
+  // gets the content for the transport from CMS
+  .service('MapTransportContent', ['$http', function ($http) {
+    var apiUrl = '/mcgapi/services/locations/GetTransportOptions?',
+    // var apiUrl = '/dummyData/map-transport.json?',
+      params = {
+        // blank so we fetch all. API will fail if they aren't there
+        transportCategory: '',
+        publicTransType: '',
+
+        // default size was 10, we have content markers to show
+        numberOfPages: 1,
+        pageSize : 15,
+        currentPage: 1
+      };
+
+    this.getTransportContent = function () {
+      return $http.get(apiUrl + jQuery.param(params));
+    };
+  }])
+
+
+  // search by term or categpry for locations at the G
+  .service('MapFindSomething', ['$http', function ($http) {
+    var apiUrl = '/mcgapi/services/locations/GetLocations?',
+    // var apiUrl = '/dummyData/map-find-something.json?',
+      // blank so we can fetch all
+      params = {
+        keywords: '',
+        category: '',
+        level : ''
+      };
+
+    this.getResults = function (param) {
+      param = param || params;
+
+      return $http.get(apiUrl + jQuery.param(param));
+    };
+
+    this.params = params;
+  }]);
+
+},{}],29:[function(require,module,exports){
+'use strict';
+
+/**
+ * FAQ Service
+ *  gets faq items from api
+ */
+angular.module('Services')
+  .service('Faq', ['$http', function ($http) {
+    var apiUrl = '/mccapi/services/faq/getfaq?', //searchterm=lor
+      params = {
+        searchTerm: ''
+      };
+
+    this.getResults = function (param) {
+      param = param || params;
+      return $http.get(apiUrl + jQuery.param(param));
+    };
+
+    this.params = params;
+  }]);
+
+},{}],28:[function(require,module,exports){
+'use strict';
+
+/**
+ * Events Service
+ *  gets events from an api
+ */
+angular.module('Services')
+  .service('Events', ['$http', function ($http) {
+    var apiUrl = '/mcgapi/services/events/GetMCGEvents?',
+      params = {
+        month: '',
+        category: '',
+        lastIndex: 0,
+        pageSize: 16
+      };
+
+    this.getEvents = function (param) {
+      param = param || params;
+      return $http.get(apiUrl + jQuery.param(param));
+    };
+
+    this.params = params;
+  }]);
+},{}],27:[function(require,module,exports){
+'use strict';
+
+/**
+ * Activies Service
+ *  gets activity items from an api
+ */
+angular.module('Services')
+  .service('ContentPages', ['$http', function ($http) {
+    var apiUrl = '/mcgapi/services/contentsearch/GetPagesByDataSource?',
+      params = {
+        itemId: ''
+      };
+
+    this.getPages = function (param) {
+      param = param || params;
+      return $http.get(apiUrl + jQuery.param(param));
+    };
+
+    this.params = params;
+  }]);
+},{}],26:[function(require,module,exports){
+'use strict';
+
+/**
+ * Booking Service
+ *  gets members and guest passes from an api
+ */
+angular.module('Services')
+  .service('Booking', ['$http', function ($http) {
+    var memberApiUrl = '/mccapi/services/member/GetMemberForDining?',
+      guestPassApiUrl = '/mccapi/services/member/GetGuestCardForDining?',
+      paymentsApiUrl = '/mccapi/services/member/GetMemberPaymentsInfo?referenceNumber=',
+      paymentsPostApiUrl = '/mccapi/services/member/PayMembershipRenewals',
+      params = {};
+
+    this.getMember = function () {
+      return $http.get(memberApiUrl + jQuery.param(params));
+    };
+    this.getGuestPass = function () {
+      return $http.get(guestPassApiUrl + jQuery.param(params));
+    };
+    this.getMemberPayments = function (referenceNumber) {
+      return $http.get(paymentsApiUrl + referenceNumber);
+    };
+    this.postMemberPayments = function (data, token) {
+      return $http({
+        method: 'POST',
+        url: paymentsPostApiUrl,
+        data: data,
+        headers: {
+          'RequestVerificationToken': token
+        }
+      });
+    };
+
+    this.params = params;
+  }]);
+
+},{}],25:[function(require,module,exports){
+'use strict';
+
+/**
+ * Events Service
+ *  gets events from an api
+ */
+angular.module('Services')
+  .service('Blog', ['$http', '$q', '$timeout', function ($http, $q, $timeout) {
+    var apiUrl = '/mcgapi/services/blog/GetBlogs?',
+      params = {
+        month: '',
+        category: '',
+        lastIndex: 0,
+        pageSize: 4
+      };
+    var deferred = $q.defer();
+    var timer;
+
+    this.getBlogs = function (param) {
+      param = param || params;
+      // reject old promise
+      deferred.reject();
+      // create new one
+      deferred = $q.defer();
+      // cancel old timer
+      $timeout.cancel(timer);
+      // creat new one
+      timer = $timeout(function (){
+        $http
+          .get(apiUrl + jQuery.param(param))
+          .then(function (response) {
+            deferred.resolve(response.data);
+          });
+      }, 100);
+      // return new promise
+      return deferred.promise;
+    };
+
+    this.params = params;
+  }]);
+
+},{}],24:[function(require,module,exports){
+'use strict';
+
+/**
+ * Activies Service
+ *  gets activity items from an api
+ */
+angular.module('Services')
+  .service('Address', ['$http', function ($http) {
+    var getAddressUrl = '/mccapi/services/member/AddressSearch?',
+      updateAddressUrl = '/mccapi/services/member/UpdateAddress?partial=',
+      notFoundUrl = '/mccapi/services/member/AddressNotFound?';
+    //'/mccapi/services/member/AddressSearch?',
+
+    this.validate = function (param, isPostal) {
+      var postal = '&isPostalAddressSame=' + isPostal;
+      return $http.get(getAddressUrl + jQuery.param(param) + postal);
+    };
+
+    this.save = function (address, isPostal) {
+      var residential = '&isResidential=' + address.fields.isResidential,
+        postal = '&isPostalAddressSame=' + isPostal;
+      return $http.get(updateAddressUrl + address.selected + residential + postal);
+    };
+
+    this.notFound = function (address) {
+      return $http.get(notFoundUrl + jQuery.param(address.fields));
+    };
+  }]);
+
+},{}],23:[function(require,module,exports){
+'use strict';
+
+/**
+ * Activies Service
+ *  gets activity items from an api
+ */
+angular.module('Services')
+  .service('Activities', ['$http', function ($http) {
+    var apiUrl = '/mcgapi/services/activities/GetActivitiesByDataSource?',
+      params = {
+        itemId: '',
+        lastIndex: 0,
+        pageSize: 6
+      };
+
+    this.getActivities = function (param) {
+      param = param || params;
+      return $http.get(apiUrl + jQuery.param(param));
+    };
+
+    this.params = params;
+  }]);
+},{}],22:[function(require,module,exports){
+/**
+ * Put the various polyfill libraries we use here
+ */
+
+var Polyfills = angular.module('Polyfills', []);
+require('object-fit-images')();
+require('viewportUnits').init();
+require('./Picturefill');
+
+module.exports = Polyfills;
+
+},{"./Picturefill":21,"object-fit-images":83,"viewportUnits":82}],21:[function(require,module,exports){
+'use strict';
+
+require('picturefill');
+
+/**
+ * Picturefill Service
+ *  global way to re-evaluate picturefill tags on browsers that
+ *  don't support it natively
+ */
+angular.module('Polyfills')
+  .service('Picturefill', ['$timeout', function ($timeout) {
+
+    this.reEvaluate = function (images) {
+      var config = images ? {
+        elements: images
+      } : {
+        reevaluate: true
+      };
+
+      $timeout(function () {
+        picturefill(config);
+      }, 500);
+    };
+
+  }]);
+},{"picturefill":79}],16:[function(require,module,exports){
+'use strict';
+
+var Filters = angular.module('Filters', ['ngSanitize']);
+require('./htmlfy');
+require('./to-array');
+require('./uniq');
+require('./ratify');
+require('./pluck');
+require('./bisect');
+
+module.exports = Filters;
+
+},{"./bisect":14,"./htmlfy":15,"./pluck":17,"./ratify":18,"./to-array":19,"./uniq":20}],20:[function(require,module,exports){
+'use strict';
+
+/**
+ * uniq filter
+ *  exposes lodash uniq function
+ *  https://lodash.com/docs#uniq
+ */
+angular.module('Filters')
+  .filter('uniq', [function () {
+    return function (source) {
+      return _.uniq(source);
+    };
+  }]);
+},{}],19:[function(require,module,exports){
+'use strict';
+
+/**
+ * toArray filter
+ *  allows creating arrays from integers or strings
+ *  mainly used in pagination from a page size integer
+ *  https://lodash.com/docs#toArray
+ */
+angular.module('Filters')
+  .filter('toArray', [function () {
+    return function (val) {
+      var array = [];
+      if (_.isNumber(val)) { 
+        // this is the meat of it
+        for (var i = 0; i < val; i++) {
+          array[i] = i + 1;
+        }
+      } else {
+        // this is just splitting a string to an array
+        array = _.toArray(val);
+      }
+      return array;
+    };
+  }]);
+},{}],18:[function(require,module,exports){
+'use strict';
+
+/**
+ * password rating filter
+ *  judges integer ratin from 0 - 100
+ *  returns string rating
+ */
+angular.module('Filters')
+  .filter('ratify', [function () {
+    return function (rank) {
+      var rating = 'weak';
+      if (rank > 20 && rank < 50) { // medium
+        rating = 'medium';
+      } else if (rank >= 50 && rank < 80) { // good
+        rating = 'good';
+      } else if (rank >= 80) { // strong
+        rating = 'strong';
+      }
+      return rating;
+    };
+  }]);
+
+},{}],17:[function(require,module,exports){
+'use strict';
+
+/**
+ * pluck filter
+ *  exposes lodash pluck function
+ *  https://lodash.com/docs#pluck
+ */
+angular.module('Filters')
+  .filter('pluck', [function () {
+    return function (source, key) {
+      return _.pluck(source, key);
+    };
+  }]);
+},{}],15:[function(require,module,exports){
+'use strict';
+
+/**
+ * htmlfy filter
+ *  allows arbitrary html strings to be allowed in DOM insertion
+ *  by authorising them with the angular security service
+ */
+angular.module('Filters')
+  .filter('htmlfy', ['$sce', function ($sce) {
+    return function (val) {
+      return $sce.trustAsHtml(val);
+    };
+  }]);
+},{}],14:[function(require,module,exports){
+'use strict';
+
+/**
+ * toArray filter
+ *  allows creating arrays from integers or strings
+ *  mainly used in pagination from a page size integer
+ *  https://lodash.com/docs#toArray
+ */
+angular.module('Filters')
+  .filter('bisect', [function () {
+    return function (val, deli, index) {
+      var result = '';
+      if (val) {
+        result = val.toString().split(deli)[index];
+      }
+      return result;
+    };
+  }]);
+
+},{}],13:[function(require,module,exports){
+'use strict';
+
+var Forms = angular.module('Forms', []);
+
+require('./controllers/AddressCtrl');
+
+module.exports = Forms;
+
+},{"./controllers/AddressCtrl":12}],12:[function(require,module,exports){
+'use strict';
+
+angular.module('Forms')
+  .controller('AddressCtrl', ['$scope', '$timeout', 'Address',
+    function ($scope, $timeout, Address) {
+      $scope.address = {
+        postal: {
+          fields: {
+            address1:'',
+            address2:'',
+            address3:'',
+            postcode:'',
+            city:'',
+            state:'',
+            country:'',
+            isResidential: false
+          },
+          view: false
+        },
+        residential: {
+          fields: {
+            address1:'',
+            address2:'',
+            address3:'',
+            postcode:'',
+            city:'',
+            state:'',
+            country:'',
+            isResidential: true
+          },
+          view: false
+        }
+      };
+
+      var rPOBox = /^PO Box \d*/i;
+
+      $scope.address.validate = function (address) {
+        address.checking = true;
+
+        // todo: should the feedback communicate the use of a PO box?
+        if (address.fields.address1.match(rPOBox) && address.fields.isResidential) {
+          return showErrorState(address, 'errorpox');
+        }
+
+        Address.validate(address.fields, $scope.address.isPostalAddressSame)
+          .success(function (response) {
+            $timeout(function () {
+              var partials = response.AddressPartialMatches;
+              if (partials && partials[0] !== '') {
+                address.checking = false;
+                address.selected = partials[0];
+                // this is saved automaticaly so hide ui
+                if(partials.length === 1) {
+                  address.list = '';
+                  address.view = false;
+                } else {
+                  address.list = partials;
+                }
+              } else {
+                showErrorState(address);
+              }
+            }, 1000);
+          })
+          .error(function () {
+            showErrorState(address);
+          });
+      };
+
+      $scope.address.save = function (address) {
+        address.checking = true;
+        Address.save(address, $scope.address.isPostalAddressSame)
+          .success(function () {
+            $timeout(function () {
+              address.checking = false;
+              address.list = undefined;
+              address.view = false;
+            }, 1000);
+          })
+          .error(function () {
+            showErrorState(address);
+          });
+      };
+
+      $scope.address.notFound = function (address) {
+        address.checking = true;
+        Address.notFound(address)
+          .finally(function () {
+            showErrorState(address);
+          });
+      };
+
+      $scope.address.cancelPostal = function () {
+        if(!$scope.address.isPostalAddressSame && !$scope.address.postal.selected) {
+          $scope.address.isPostalAddressSame = true;
+        } else {
+          $scope.address.postal.view = false;
+        }
+      };
+
+      function showErrorState (address, type) {
+        address.checking = false;
+        address.error = true;
+        if(type) {
+          address[type] = true;
+        }
+      }
+
+      $scope.$watch('address.isPostalAddressSame', function (current) {
+        if(current === false && !$scope.address.postal.selected) {
+          $scope.address.postal.view = true;
+        }
+      });
+  }]);
+
+},{}],11:[function(require,module,exports){
+'use strict';
+
+var Carousel = angular.module('Carousel', []);
+require('owl.carousel');
+require('./directives/carousel');
+require('./directives/gallery');
+
+module.exports = Carousel;
+
+},{"./directives/carousel":9,"./directives/gallery":10,"owl.carousel":77}],10:[function(require,module,exports){
+'use strict';
+
+/**
+ * carousel directive
+ *  initialises owl carousel plugin
+ */
+angular.module('Carousel')
+  .directive('gallery', [function () {
+    return {
+      restrict: 'A',
+      link: function ($scope, element) {
+        var api;
+
+        $scope.carousel = {
+          total: element.children().length,
+          page: 1
+        };
+
+        // need to register initialized handler before
+        // the plugin runs
+        element.on('initialized.owl.carousel', function () {
+          $scope.$evalAsync(function () {
+            $scope.carousel.activeInfo = element.find('.active.center p').text();
+          });
+        });
+
+        // initalise the carousel plugin
+        api = element.owlCarousel({
+          center: true,
+          items: 1,
+          nav: true,
+          dots: true,
+          loop: true,
+          responsive: {
+            770: {
+              items: 2
+            }
+          }
+        });
+
+        // update on each page translation
+        api.on('translate.owl.carousel', function (evt) {
+          $scope.$evalAsync(function () {
+            $scope.carousel.page = evt.page.index + 1;
+            $scope.carousel.activeInfo = element.find('.active.center p').text();
+          });
+        });
+
+        // custom controls
+        angular.element('.carousel .nav-left').click(function() {
+          api.trigger('prev.owl.carousel');
+        });
+
+        angular.element('.carousel .nav-right').click(function() {
+          api.trigger('next.owl.carousel');
+        });
+
+      }
+    };
+  }]);
+
+},{}],9:[function(require,module,exports){
+'use strict';
+
+/**
+ * carousel directive
+ *  initialises owl carousel plugin
+ */
+angular.module('Carousel')
+  .directive('carousel', [function () {
+    return {
+      restrict: 'A',
+      link: function ($scope, element) {
+        element.owlCarousel({
+          items: 1,
+          nav: true,
+          navText: ['<i class="icon-utility-gallery-left"></i>', '<i class="icon-utility-gallery-right"></i>'],
+          dots: true,
+          loop: true
+        });
+      }
+    };
+  }]);
+
+},{}],8:[function(require,module,exports){
+'use strict';
+
+var Calendar = angular.module('Calendar', []);
+require('./directives/calendar');
+
+module.exports = Calendar;
+
+},{"./directives/calendar":7}],7:[function(require,module,exports){
+'use strict';
+
+/**
+ * Calendar directive
+ *  initialises Pikaday calendar plugin
+ */
+
+var Pikaday = require('pikaday');
+angular.module('Calendar')
+  .directive('calendar', [function () {
+    return {
+      restrict: 'A',
+      link: function ($scope, element, attrs) {
+        var picker = new Pikaday({
+            field: element[0],
+            format: 'YYYY',
+            onSelect: function() {
+              formatDate();
+            }
+          });
+
+        function formatDate () {
+          var date = new Date(picker.toString()),
+            formated = date.getDate() + '/' +
+              (date.getUTCMonth() + 1) + '/' +
+              date.getUTCFullYear();
+
+          element.val(formated);
+        }
+        //firefox bug to init value
+        element.val(attrs.value);
+      }
+    };
+  }]);
+
+},{"pikaday":80}],6:[function(require,module,exports){
+'use strict';
+
+var Booking = angular.module('Booking', []);
+require('./controllers/BookingCtrl');
+
+module.exports = Booking;
+
+},{"./controllers/BookingCtrl":5}],5:[function(require,module,exports){
+'use strict';
+
+/**
+ * Booking Controller
+ *  sets up scope model and methods to get events from api
+ */
+angular.module('Booking')
+  // linters cracked the sads "line too long"
+  .controller('BookingCtrl', ['$scope', '$attrs', '$timeout', 'Booking', 'toArrayFilter', 'bisectFilter',
+    function( $scope, $attrs, $timeout, Booking, toArrayFilter, bisectFilter) {
+      //data-ng-init="booking = {members:2, guests:0, newMembers: [], newGuests:[]};"
+      $scope.booking = {
+        member: {},
+        newMembers: [],
+        guests: [],
+        guestPasses: [],
+        newGuests: [],
+        addedGuests: 0,
+        addedGuestsTemp: 0,
+        guestAllowance: 0,
+        extras: {}
+      };
+
+      // only need this once on load
+      if ($attrs.roomType) {
+        Booking.params.roomType = $attrs.roomType;
+      }
+
+      $scope.booking.addMember = function (cardNumber, mainMember, requirements) {
+        if(checkMemberLimit() || mainMember) {
+          if(validMemberNumber(cardNumber)){
+            $scope.booking.processingMember = true;
+            Booking.params.cardNumnber = cardNumber;
+            Booking.getMember()
+              .then(function (response) {
+                  if(response.data.ErrorMessage) {
+                    $scope.booking.errorMessage = response.data.ErrorMessage;
+                    $scope.booking.processingMember = false;
+                  } else if (mainMember){
+                    _.merge($scope.booking.member, response.data);
+                    $scope.booking.cancel();
+                    updateGuestLimit();
+                  } else {
+                    response.data.specialRequirements = requirements;
+                    $scope.booking.newMembers.push(response.data);
+                    $scope.booking.cancel();
+                    updateGuestLimit();
+                  }
+              });
+          } else {
+            // $scope.booking.processingMember = false;
+            $scope.booking.errorMessage = 'Card number already added, please enter a different number.';
+          }
+        } else {
+          $scope.booking.errorMessage = 'You have reached the maximum number of attendees you can invite.';
+        }
+      };
+
+      $scope.booking.removeMember = function (cardNumber) {
+        // var guests = $scope.booking.addedGuests;
+        _.remove($scope.booking.newMembers, function (member) {
+          var remove = member.CardNumber === cardNumber;
+          if(remove){
+            $scope.booking.extras['member' + cardNumber] = undefined;
+          }
+          return remove;
+        });
+        updateGuestLimit();
+      };
+
+      $scope.booking.removeGuest = function (index) {
+        $scope.booking.newGuests.splice(index,1);
+        $scope.booking.extras['guest' + (index + 1)] = undefined;
+        updateGuestLimit();
+      };
+
+      $scope.booking.removeGuestPass = function (cardNumber) {
+        // var guests = $scope.booking.addedGuests;
+        _.remove($scope.booking.guestPasses, function (pass) {
+          return pass.CardNumber === cardNumber;
+        });
+        updateGuestLimit();
+      };
+
+      $scope.booking.addGuestPass = function (cardNumber) {
+        $scope.booking.processingGuestPass = true;
+        Booking.params.cardNumnber = cardNumber;
+        if(validGuestPass(cardNumber)) {
+          Booking.getGuestPass()
+            .then(function (response){
+              if(response.data.ErrorMessage) {
+                  $scope.booking.errorMessage = response.data.ErrorMessage;
+                  $scope.booking.processingGuestPass = false;
+              } else {
+                $scope.booking.guestPasses.push(response.data);
+                updateGuestLimit();
+                $scope.booking.cancel();
+              }
+            });
+        } else {
+          $scope.booking.processingGuestPass = false;
+          $scope.booking.errorMessage = 'Card number already added, please enter a different number';
+        }
+      };
+
+      $scope.booking.getPayments = function (referenceNumber, mainMember) {
+        if(validateReferenceNumber(referenceNumber)){
+          $scope.booking.processingMember = true;
+          Booking.getMemberPayments(referenceNumber)
+            .then(function (response) {
+              if(mainMember) {
+                $scope.booking.mainMember = response.data;
+              } else {
+                $scope.booking.newMembers.push(response.data);
+              }
+              $scope.booking.cancel();
+            }, function (error) {
+              $scope.booking.processingMember = false;
+              $scope.booking.errorMessage = error.data.Message;
+            });
+        } else {
+          // $scope.booking.processingMember = false;
+          $scope.booking.errorMessage = 'This reference number has already been' +
+            ' added to the transaction, please enter a different reference number or click "Cancel".';
+        }
+      };
+
+      $scope.booking.postPayments = function () {
+        var members = $scope.booking.newMembers.concat($scope.booking.mainMember),
+          data = _.filter(members, {PaymentStatus: 'Outstanding'});
+
+        $scope.booking.processingMember = true;
+        Booking.postMemberPayments(data, $attrs.token)
+          .then(function(response){
+            if(response.data) {
+              window.location.href = response.data;
+            }
+          }, function(error) {
+            $scope.booking.paymentError = error.data.Message;
+          });
+      };
+
+      $scope.booking.selectGuests = function (guests) {
+        if(checkGuestLimit()){
+          $scope.booking.addedGuests = guests;
+          $scope.booking.cancel();
+        } else {
+          $scope.booking.errorMessage = 'You have reached the maximum number of attendees you can invite.';
+        }
+      };
+
+      $scope.booking.addFullGuest = function () {
+        var members = $scope.booking.newMembers.length,
+          guests = $scope.booking.newGuests.length,
+          maxLimit = $scope.booking.maxGuests,
+          guestLimit = $scope.booking.guestLimit;
+        if((guests + members < maxLimit) && (guests < guestLimit)){
+          var guest = $scope.booking.tempGuest;
+          $scope.booking.newGuests.push(guest);
+          $scope.booking.cancel();
+        } else {
+          $scope.booking.errorMessage = 'You have reached the maximum number of attendees you can invite.';
+        }
+      };
+
+      $scope.booking.cancel = function () {
+        $scope.booking.processingMember = false;
+        $scope.booking.processingGuest = false;
+        $scope.booking.processingGuestPass = false;
+        $scope.booking.addNewMember = false;
+        $scope.booking.addNewGuest = false;
+        $scope.booking.addNewGuestPass = false;
+        $scope.booking.newGuestPass = '';
+        $scope.booking.newMemberCard = '';
+        $scope.booking.newMemberReference = '';
+        $scope.booking.errorMessage = '';
+      };
+
+      function validateCardNumber (group, cardNumber) {
+        var numberAdded = _.filter(group, {'CardNumber': String(cardNumber)}).length,
+        validity = true;
+
+        if(numberAdded || cardNumber === '') {
+          validity = false;
+        }
+        return validity;
+      }
+
+      function validMemberNumber(cardNumber) {
+        var members = [$scope.booking.member].concat($scope.booking.newMembers);
+        return validateCardNumber(members, cardNumber);
+      }
+
+      function validateReferenceNumber(referenceNumber) {
+        var group = $scope.booking.newMembers.concat($scope.booking.mainMember),
+          numberAdded = _.filter(group, {'ReferenceNumber': String(referenceNumber)}).length,
+        validity = true;
+
+        if(numberAdded || referenceNumber === '') {
+          validity = false;
+        }
+        return validity;
+      }
+
+      function validGuestPass(cardNumber) {
+        var passes = $scope.booking.guestPasses;
+        return validateCardNumber(passes, cardNumber);
+      }
+
+      function updateGuestLimit() {
+        var limit = $scope.booking.maxGuests,
+          member = $scope.booking.member,
+          allowance,
+          guestPasses,
+          totalMemberGuests;
+
+          if(member) {
+            // default guest allowance based on logged in member
+            allowance = member.GuestRatio * 1;
+
+            // get all extra members guest allowances
+            totalMemberGuests = _.chain($scope.booking.newMembers)
+              .pluck('GuestRatio')
+              .sum()
+              .value();
+
+            // get all the guest passes allowances
+            guestPasses = _.chain($scope.booking.guestPasses)
+              .pluck('GuestRatio')
+              .sum()
+              .value();
+
+            // all members and their guest limits combined
+            totalMemberGuests += member.GuestRatio * 1;
+            totalMemberGuests += guestPasses;
+            $scope.booking.guestAllowance = totalMemberGuests;
+
+            if(totalMemberGuests > limit) {
+              allowance = limit;
+            } else {
+              allowance = totalMemberGuests;
+            }
+            // this model is used on the UI selection to choose number of guests
+            $scope.booking.guests = toArrayFilter(allowance);
+            $scope.booking.guestLimit = allowance;
+            // finaly, check previous chosen guest limit isnt over new limit
+            if($scope.booking.addedGuests > allowance) {
+              $scope.booking.addedGuests = allowance;
+            }
+          }
+      }
+
+      function checkMemberLimit() {
+        var limit = $scope.booking.maxGuests,
+          guests = getGuestNumbers(),
+          members = $scope.booking.newMembers.length;
+        // console.log('check member limit: ', members, guests, limit);
+        return (members + guests) < limit;
+      }
+
+      function checkGuestLimit() {
+        var guestLimit = $scope.booking.guestLimit,
+          maxLimit = $scope.booking.maxGuests,
+          guests = getGuestNumbers(),
+          members = $scope.booking.newMembers.length;
+        // console.log('checking guest limit', guestLimit, guests, members);
+        return guests <= guestLimit && ((members + guests) <= maxLimit);
+      }
+
+      function getGuestNumbers () {
+        var guests = $scope.booking.newGuests.length ?
+          $scope.booking.newGuests.length: ($scope.booking.addedGuestsTemp * 1);
+
+        return guests;
+      }
+
+      function runningExtrasTotal () {
+        var extras = $scope.booking.extras,
+          total = 0;
+
+        total = _.reduce(extras, function(result, item) {
+          var value = 0,
+            intergized = parseInt(item);
+
+          if(isNaN(intergized)) {
+            value = (bisectFilter(item, '|', 1) * 1);
+          } else {
+            value = intergized;
+          }
+          return value + result;
+        }, 0);
+
+        return total;
+      }
+
+      function paymentTotal () {
+        var total = 0,
+          main = $scope.booking.mainMember,
+          members = $scope.booking.newMembers.concat(main);
+
+        total = _.reduce(members, function (result, member) {
+          var membership = 0,
+            items = _.chain(member.Groups).pluck('Items').flatten().value(),
+            currentTotal = _.reduce(items, function (result, item) {
+              if(item.IsSelected) {
+                return item.Amount + result;
+              }
+              return result;
+            }, 0);
+
+            if(member.PaymentStatus === 'Outstanding') {
+              membership = _.reduce(member.Membership, function (result, item) {
+                return item.RenewalPaymentStatus !== 'Paid' ? item.Amount + result : result;
+              }, 0);
+              currentTotal += membership;
+            }
+            return result + currentTotal;
+        }, 0);
+
+        $scope.booking.paymentTotal = total;
+      }
+
+      function init() {
+        var cardNumber = $scope.booking.cardNumber;
+        if (cardNumber && Booking.params.eventId) {
+          $scope.booking.addMember(cardNumber, true);
+        } else {
+          $timeout(init, 1000);
+        }
+      }
+
+      $scope.$watch($attrs.currentMember, function (current){
+        if(current) {
+          $scope.booking.cardNumber = current;
+          init();
+        }
+      });
+
+      $scope.$watch($attrs.eventId, function (current){
+        Booking.params.eventId = current;
+        $scope.booking.eventId = current;
+      });
+
+      $scope.$watch($attrs.bookingType, function (current){
+        if(current) {
+          Booking.params.bookingType = current;
+        }
+      });
+
+      $scope.$watch($attrs.maxGuests, function (current){
+        if(current && current > 0) {
+          // subtract one for default member
+          $scope.booking.maxGuests = (current * 1) - 1;
+        }
+      });
+
+      $scope.$watch($attrs.restore, function (current){
+        if(current) {
+          _.merge($scope.booking, current);
+          updateGuestLimit();
+        }
+      });
+
+      $scope.$watchCollection('booking.extras', function (current){
+        if(current) {
+          $scope.booking.runningTotal = runningExtrasTotal();
+        }
+      });
+
+      $scope.$watch('booking.mainMember', function (current) {
+        if(current) {
+          paymentTotal();
+        }
+      }, true);
+      $scope.$watch('booking.newMembers', function (current) {
+        if($scope.booking.mainMember && current) {
+          paymentTotal();
+        }
+      }, true);
+  }]);
+
+},{}],4:[function(require,module,exports){
+'use strict';
+
+var Faq = angular.module('Faq', []);
+require('./controllers/FaqCtrl');
+
+module.exports = Faq;
+
+},{"./controllers/FaqCtrl":3}],3:[function(require,module,exports){
+'use strict';
+
+/**
+ * Faq Controller
+ *  sets up scope model and methods to get faqs from api
+ */
+angular.module('Faq')
+  .controller('FaqCtrl', ['$scope', 'Faq', function ($scope, Faq ) {
+    $scope.faq = {
+      cancel: function () {
+        $scope.faq.query = '';
+        $scope.faq.search = undefined;
+      }
+    };
+
+    function search() {
+      Faq.getResults()
+        .then(function (response) {
+          $scope.faq.search = response.data;
+        });
+    }
+
+    $scope.$watch('faq.query',  _.debounce(function (query) {
+      if (query) {
+        Faq.params.searchTerm = query;
+        search();
+        $scope.$evalAsync();
+      }
+    }, 300));
+  }]);
+
+},{}],2:[function(require,module,exports){
+'use strict';
+
+var Blog = angular.module('Blog', []);
+require('./controllers/BlogCtrl');
+
+module.exports = Blog;
+
+},{"./controllers/BlogCtrl":1}],1:[function(require,module,exports){
+'use strict';
+
+/**
+ * Blog Controller
+ *  sets up scope model and methods to get events from api
+ */
+angular.module('Blog')
+// linters cracked the sads "line too long"
+  .controller('BlogCtrl', ['$scope', '$attrs', 'Blog', 'Picturefill', function (
+      $scope,
+      $attrs,
+      Blog,
+      Picturefill
+    ) {
+    $scope.blog = {
+      init: false,
+      data: [],
+      // limits the number of events to show at any one time
+      limit: function () {
+        if ($scope.blog.data) {
+          var length = $scope.blog.data.length,
+            total = $scope.blog.total;
+          return length < total ? length - 1 : total;
+        }
+      },
+      // loads more events
+      loadMore: function () {
+        var lastEvent = $scope.blog.data[$scope.blog.data.length - 1];
+        Blog.params.lastIndex = lastEvent.Index;
+        getBlog();
+      }
+    };
+
+    // merg any extra api data we need
+    if($attrs.config) {
+      try {
+        _.extend(Blog.params, angular.fromJson($attrs.config));
+      } catch (e) {
+        //silent fail
+      }
+    }
+
+    // Gets events and sets the api response on the scope
+    function getBlog() {
+      Blog.getBlogs()
+        .then(function (response) {
+          $scope.blog.data = $scope.blog.data.concat(response.Data);
+          $scope.blog.total = response.TotalResult;
+          Picturefill.reEvaluate();
+        })
+        .finally(function () {
+          $scope.blog.init = true;
+        });
+    }
+    // initialised in template, the total number of
+    // events to load at a time
+    $scope.$watch('blog.pageSize', function (current) {
+      if (current) {
+        Blog.params.pageSize = current;
+        getBlog();
+      }
+    });
+    // month filter watcher
+    $scope.$watch('blog.monthFilter', function (current) {
+      if (!angular.isUndefined(current) || current === '') {
+        Blog.params.month = current || '';
+        Blog.params.lastIndex = 0;
+        $scope.blog.data = [];
+        getBlog();
+      }
+    });
+    // type filter watcher (cricket, football, etc)
+    $scope.$watch('blog.typeFilter', function (current) {
+      if (!angular.isUndefined(current) || current === '') {
+        Blog.params.category = current || '';
+        Blog.params.lastIndex = 0;
+        $scope.blog.data = [];
+        getBlog();
+      }
+    });
+
+  }]);
+
+},{}]},{},[68]);

@@ -1,0 +1,241 @@
+/*jslint browser: true*/
+/*global Juggernaut, $, listener:true */
+
+/**
+* Root Model class.
+*
+* @class Model
+* @namespace Juggernaut.OO.Models
+* @constructor
+* @extends Juggernaut.OO.SuperClass
+*/
+Juggernaut.OO.Models.Model = Juggernaut.OO.utils.extendClass(
+	Juggernaut.OO.SuperClass,
+	{
+		pubMethods: {
+			/**
+			* .
+			*
+			* @method	init
+			* @param {Object} options .
+			* @param {Juggernaut.OO.Views.View} view .
+			*/
+			init: function( options, view ) {
+				'use strict';
+				this.id = options.id;
+				this.view = view;
+				this._events = {};
+				this._oneEvents = {};
+
+				if(
+					( options && options.config && typeof options.config === 'object' ) &&
+					( this.configDefaults && typeof this.configDefaults === 'object' )
+				) {
+					this.configDefaults = _.extend( this.configDefaults, options.config );
+				} else if( options && options.config && typeof options.config === 'object' ) {
+					this.configDefaults = options.config;
+				}
+
+				if( this.configDefaults && typeof this.configDefaults === 'object' ) {
+					this.config = Juggernaut.OO.utils.createNewStorageModel( this.configDefaults );
+				}
+			},
+
+			/**
+			* .
+			*
+			* @method	superInit
+			* @param {Object} context .
+			* @param {Array} args .
+			*/
+			superInit: function( context, args ) {
+				'use strict';
+				this.sup.init.apply( context, args );
+			},
+
+			/**
+			* Migrating Red Wolf code over to Marvel OO, keeping them in sync
+			* Not sure Power Sider will ever let me get rid of marvel OO
+			*
+			* @method	oldInit
+			* @param {Object} options .
+			* @param {View} view .
+			*/
+			oldInit: function( options, view ) {
+				'use strict';
+				this.initBasics( options, view );
+				if(
+					( options && options.config && typeof options.config === 'object' ) &&
+					( this.configDefaults && typeof this.configDefaults === 'object' )
+				) {
+					this.configDefaults = _.extend( this.configDefaults, options.config );
+				} else if( options && options.config && typeof options.config === 'object' ) {
+					this.configDefaults = options.config;
+				}
+
+				if( this.configDefaults && typeof this.configDefaults === 'object' ) {
+					this.config = Juggernaut.OO.utils.createNewStorageModel( this.configDefaults );
+				}
+			},
+
+			/**
+			* .
+			*
+			* @method initBasics
+			* @param {Object} options .
+			* @param {View} view .
+			*/
+			initBasics: function( options, view ) {
+				'use strict';
+				this.id = options.id;
+				this.view = view;
+				this._events = {};
+				this._oneEvents = {};
+			},
+
+			/**
+			* .
+			*
+			* @method	on
+			* @param {String} name .
+			* @param {Function} callback .
+			* @param {Object} context .
+			* @param {Object} data .
+			* @param {Boolean} once .
+			*/
+			on: function( name, callback, context, data, once ) {
+				'use strict';
+				if( !context ){ context = this; }
+				var storage;
+				if( once ) {
+					storage = this._oneEvents;
+				} else {
+					storage = this._events;
+				}
+				var hasListener = false;
+				if( !storage[ name ] ) {
+					storage[ name ] = [];
+				} else {
+					var listeners = storage[ name ];
+					for ( var i = listeners.length - 1; i >= 0; i-- ) {
+						var lCheck = listeners[ i ];
+						if( lCheck.callback === callback && lCheck.context === context ) {
+							hasListener = true;
+						}
+					}
+				}
+
+				if( callback && !hasListener ) {
+					var listener = {
+						callback: callback,
+						context: context
+					};
+					if( data ) {
+						listener.data = data;
+					}
+					storage[ name ].push( listener );
+				}
+			},
+
+			/**
+			* .
+			*
+			* @param {String} name .
+			* @param {Function} callback .
+			* @param {Object} context .
+			* @param {Object} data .
+			* @method	one
+			*/
+			one: function( name, callback, context, data ) {
+				'use strict';
+				this.on( name, callback, context, data, true );
+			},
+
+			/**
+			* .
+			*
+			* @method	off
+			* @param {String} name .
+			* @param {Function} callback .
+			* @param {Object} context .
+			*/
+			off: function( name, callback, context ) {
+				'use strict';
+				var listeners = this._events[ name ];
+				if( listeners ) {
+					for ( var i = listeners.length - 1; i >= 0; i-- ) {
+						var listener = listeners[ i ];
+						if( listener.callback === callback && listener.context === context ) {
+							listeners.splice( i, 1 );
+						}
+					}
+				}
+			},
+
+			/**
+			* .
+			*
+			* @param {String} name .
+			* @method	trigger
+			*/
+			trigger: function( name, e ) {
+				'use strict';
+				//console.log( 'pwrSldr.js/trigger:\n\t triggered: ' + name );
+				if( this._events ) {
+					this._doCallback( this._events[ name ], e );
+				}
+
+				if( this._oneEvents ) {
+					this._doCallback( this._oneEvents[ name ], e );
+					if( this._oneEvents[ name ] ) {
+						delete this._oneEvents[ name ];
+					}
+				}
+			},
+
+			/**
+			* .
+			*
+			* @param {Object} options .
+			* @method	track
+			*/
+			track: function( options ) {
+				'use strict';
+
+				if( options ) {
+					var defaults = {
+						hitType: 'event',
+						eventCategory: this.type,
+						eventAction: null,
+						eventLabel: null
+					};
+					options = _.extend( defaults, options );
+					//console.log( options );
+					if( window.ga ) {
+						window.ga( 'send', options );
+					}
+				}
+			}
+
+		},
+		privMethods: {
+			/**
+			* Where the callback gets called
+			*
+			* @private
+			* @method _doCallback
+			* @param {Array} listeners Holds all the callback info
+			*/
+			_doCallback: function( listeners, e ) {
+				'use strict';
+				if( listeners ) {
+					for ( var i = listeners.length - 1; i >= 0; i-- ) {
+						var listener = listeners[ i ];
+						listener.callback.call( listener.context, listener, e );
+					}
+				}
+			}
+		}
+	}
+);
+

@@ -1,0 +1,95 @@
+
+/* Initial 1.7 - Responsive layout Script */
+
+	
+	$(function() {
+		if($(window).width() <= 640) {
+			$("#sitehead").find("a img").toggleClass("logo-image");
+			$("a:has(.logo-image)").not('a#selectedsite').wrap( "<div id='logo'></div>" );
+			
+			$('#accesstools').insertBefore('#search');
+			
+			/* Nav Burger */
+			$("#sitehead").find("#pri-nav").before("<div id=\"nav-icon\"><span></span><span></span><span></span><span></span></div>");
+			$("#sitehead").find("#nav-icon").before("<div id=\"search-icon\"><span><img src=\"https://cdn.initial.com/assets/global/images/search-button.png\"></span></div>");
+			$("#sitehead").find("#formsearch").insertBefore("#pri-nav");
+			
+					
+				$('#nav-icon').click(function(){
+					$(this).toggleClass('open');
+						$("#search").hide(); 
+						$("#formsearch").hide(); 
+						$("#pri-nav").toggle(); 
+						$("#navmain").css("display","none");
+					});
+				$('#search-icon').click(function(){
+					$("#pri-nav").hide(); 
+					$("#search").toggle();
+					$("#formsearch").toggle();
+					$('#nav-icon').removeClass('open');
+					$("#navmain").css("display","none");  
+					
+				});
+						
+			$('#search').insertBefore('#pri-nav');	
+			
+			$("#sitewrap4").find("a img").toggleClass("l-cta-image");
+			$("#siteextended").find("a img").toggleClass("r-cta-image");
+			$("#siteextended > img").toggleClass("r-cta-image");
+			$("#sitecontent").find("p").toggleClass("inner-image");
+			
+			
+			
+			$(function() {
+				
+					$("#section-banner").find("img").toggleClass("banner-image");
+					$('#navmain').insertAfter('#pri-nav');
+					$('.contact-box').toggleClass('call-out');
+					  
+					$('.contact-box').insertBefore('#sitecontent > h1');
+					
+					$('#navmain').prepend('<span class="back-arrow"><img src=\"https://cdn.initial.com/assets/global/images/back-arrow.png\"></span>');
+					
+					$('span.back-arrow').click(function(){
+						if(document.referrer.indexOf(window.location.hostname) != -1){
+						parent.history.back();
+						return false;
+					} 
+				}); 
+				
+				$('#navbreadcrumb').insertBefore('.back-arrow');
+				
+				/* Colorbox Resize */		 		  
+				$(window).resize(function () {
+					if($('#cboxOverlay').is(':visible')){
+					$.colorbox.load(true);
+					}
+				});
+				$(function(){
+					$(".inline").colorbox({inline:true, width:"80%", height:"80%"});
+					$(".iframe").colorbox({iframe:true, width:"80%", height:"80%"});
+				});
+				
+				/* Custom contact box placement*/
+				//$("#siteextended").find('.rhs_shadow').attr('id', 'cta_frame');
+				
+				$("#siteextended").find('#cta_frame').insertBefore( "#sitecontent" );
+				$("a:has(.r-cta-image)").wrap( "<div id='contact-buttons'></div>" );
+				$("#siteextended").find('#contact-buttons').insertAfter("#content");	 
+				
+				$('.rhs_shadow').toggleClass('call-out');
+				
+				
+				
+				
+		});
+		
+	}	
+		
+		
+			
+
+
+	
+	});
+

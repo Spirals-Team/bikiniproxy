@@ -1,0 +1,28 @@
+function openTIXXWindow(url,home_away) {
+	var windowprops = 'dependent,status,scrollbars,titlebar,resizable';
+	var height = 900;
+	var width = 1024;
+	windowprops += ",height=" + height + ",innerHeight=" + height;
+	windowprops += ",width=" + width + ",innerWidth=" + width;
+	if (window.screen) {
+		var ah = screen.availHeight - 30;
+		var aw = screen.availWidth - 10;
+		var xc = (aw - width) / 2;
+		var yc = (ah - height) / 2;
+		windowprops += ",left=" + xc + ",screenX=" + xc;
+		windowprops += ",top=" + yc + ",screenY=" + yc;
+	}
+	
+	var ticketWin = window.open("/components/global/ticketing_redirect.html?jumpTo="+escape(url)+"&home_away="+home_away,'Tickets',windowprops);
+}
+
+function openNonTIXXWindow(url,home_away) {
+	var windowprops = 'dependent,status,scrollbars,titlebar,resizable,location,toolbar,menubar';
+	if (home_away) {
+		if (home_away == "away") {
+			var ans = confirm("You've selected an away game. Tickets will be fulfilled by the home club's ticketing agent. Do you wish to continue?");
+			if (ans) ticketWin = window.open(url, 'Tickets', windowprops);
+		} 
+		if (home_away == "home") ticketWin = window.open(url,'Tickets',windowprops);
+	} else ticketWin = window.open(url,'Tickets',windowprops);
+}

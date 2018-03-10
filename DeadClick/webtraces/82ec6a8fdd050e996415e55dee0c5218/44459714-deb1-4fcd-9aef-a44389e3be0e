@@ -1,0 +1,1484 @@
+/*******************************************************************************
+Copyright (c) 2000-2006 Oracle Corporation
+
+File        : form1013.js
+
+Open Issues : 
+
+$revision_history$
+26-sep-2006   Steven Davelaar
+  1.4         Added var hasPendingChanges (
+22-sep-2006   Steven Davelaar
+  1.3         Added check for hasPendingChanges
+17-aug-2006   Jaco Verheul
+  1.2         Check for required table items improved to handle required el expression.
+23-jun-2006   Steven Davelaar
+  1.1         Removed methods no longer used in 10.1.3
+06-aug-2005   Steven Davelaar
+  1.0         Copied from form.js of JHeadstart 10.1.2
+******************************************************************************/
+
+/* Debug procedure */
+var debugMode = false;
+
+// View type.
+var viewType="ADF Faces";
+
+/**
+ * debug gives debug messages based on the setting of debugMode
+ * the debugMode can be switched of during debugging
+ */
+function debug(text)
+{
+  if (debugMode)
+  {
+    debugMode = confirm(text);
+  }
+} // debug
+// Global variables.
+/**
+ * form contains the name of the form that should be submitted.
+ */
+var form;
+/**
+ * field contains the name of the field that should get some value.
+ */
+var field;
+/**
+ * reset contains an array of fields that should be reset before a form
+ * submission.
+ */
+var reset;
+/**
+ * if ignoreChanges has a value then the appropriate functions don't check
+ * for changes.
+ */
+var ignoreChanges;
+/**
+ * ignoreChangedFields is an array that contains form
+ * fields that are ignored while checking a page for changes.
+ */
+var ignoreChangedFields = new Array();
+/**
+ * requiredRowItems contains the names of the items that are required in a table.
+ * Required table items cannot be enforced by ADF Faces validation if empty rows are used.
+ * The items in this array are of type JhsItem.
+ */
+var requiredRowItems = new Array();
+/**
+ * itemScreenPrompts contains the prompts of all form items.
+ */
+var itemScreenPrompts = new Array();
+/**
+ * tablesToBeValidated contains all the table names
+ * that need to be validated on submit. 
+ */
+var tablesToBeValidated = new Array();
+/**
+ * These are public variables that are used by CheckForChanges, and its helper functions
+ */
+var dataForm;
+
+/**
+ * hasPendingChanges is set in generated pages
+ */
+var hasPendingChanges;
+
+/**
+ * getItemName gets the 'technical' name of an item. In case of ADF Faces table item names have
+ * the format [tableName]:[rownum]:[itemName], in which case the rownum needs to be stripped
+ * @param item: item to get the name for
+ * @return: the name of the item
+ */
+function getItemName(item)
+{
+  var type;
+  var itemName;
+  var colon1;
+  var colon2;
+
+  debug("in getItemName");
+  if (!item)
+  {
+    alert("undefined item >"+item+"< in getItemName");
+    return null;
+  }
+  else
+  {
+    type = getItemType(item);
+    if (type == "radiogroup")
+    {
+      itemName = item[0].name;
+    }
+    else if (!item.name && item[0] && item[0].name)
+    {
+      // Apparently item is an array. Just take the name of the first item
+      itemName = item[0].name;
+    }     
+    else
+    {
+      itemName = item.name;
+    }
+    // only in case of ADF Faces does the item name contain the rownum
+    if (viewType == "ADF Faces")
+    {
+      itemName = stripRownumFromName(itemName);
+    }
+  }
+  return itemName;
+} // getItemName
+/**
+ * constructTableItemName construct the HTML item name of an item in a table. In case of ADF Faces
+ * table item names have the format [tableName]:[rownum]:[itemName]. 
+ * @param itemName: the item name including the ADF Faces table name, when applicable
+ * @param rownum: the index of the item in the table
+ * @return: the name of the item as it will be rendered in the HTML table
+ */
+function constructTableItemName(itemName, rownum)
+{
+  var tableItemName;
+
+  if (!itemName)
+  {
+    alert("undefined itemName in constructTableItemName");
+    return null;
+  }
+  if (!rownum)
+  {
+    alert("undefined rownum in constructTableItemName");
+    return null;
+  }
+
+  if (viewType == "ADF Faces")
+  {
+    tableItemName = rownum+":"+itemName;
+  }
+  else
+  {
+    tableItemName = itemName+"["+rownum+"]";
+  }
+  return tableItemName;
+} // constructTableItemName
+/**
+ * stripTableItemName strips the rowNum from items that have the format
+ * [tableName]:[rownum]:[itemName]
+ * note: ADF Faces
+ * @param itemName: the itemName before stripping the rownum
+ * @return: the 'short' name of the item
+ */
+function stripRownumFromName(itemName)
+{
+  colon = itemName.lastIndexOf(":");
+  if (colon > -1)
+  {
+    itemName = itemName.substring(colon+1);
+  }  
+  return itemName;
+} // stripRownumFromTableItemName
+/**
+ * hasChanged checks if the value of item has changed. Thereby also hidden items are checked.
+ * @param item: the item to check
+ * @return: true when the item has changed, false otherwise
+ */
+function hasChanged(item)
+{
+  // debug("In hasChanged for item: "+item);
+  var changed = false;
+
+  if (!item)
+  {
+    alert("undefined item >"+item+"< in hasChanged");
+    changed = null;
+  }
+  else
+  {
+    // getItemType will discover when item is an invalid parameter
+    var type = getItemType(item);
+    var itemName = getItemName(item);
+
+    if (!ignoreField(itemName))
+    {
+      var value;
+      var defaultValue;
+      var checked;
+      var defaultChecked;
+      // Check if item is an array. If so, handle differently than if it's
+      // a single object
+      if (!item.name && item[0] && item[0].name)
+      {
+        defaultValue = item[0].defaultValue;
+        value = item[0].value;
+        checked = item[0].checked;
+        defaultChecked = item[0].defaultChecked;
+      }
+      else
+      {
+        defaultValue = item.defaultValue;
+        value = item.value;
+        checked = item.checked;
+        defaultChecked = item.defaultChecked;
+      }    
+    
+      if (  (  (type == "password" || type == "text" || type == "textarea")
+            && defaultValue != value
+            )
+         || (  (type == "checkbox" || type == "radio")
+            && defaultChecked != checked
+            )
+         )
+      {
+        changed = true;
+      }
+      else if (type == "radiogroup")
+      {
+        for (var i = 0; i < item.length && !changed; i++)
+        {
+          changed = (item[i].defaultChecked != item[i].checked);
+        }
+      }
+      else if (type == "select-one" || type == "select-multiple")
+      {
+        var options         = item.options;
+        var defaultSelected = 0;
+        for (var j = 0; j < options.length; j++)
+        {
+          if (options[j].defaultSelected)
+          {
+            defaultSelected = j;
+          }
+        }
+
+        if (  (defaultSelected != options.selectedIndex)
+           && (options.selectedIndex != -1)
+           )
+        {
+          changed = true;
+        }
+      }
+      else if (type == "hidden")
+      {
+        changed = (item.value != item.defaultValue);
+      }
+    }
+  }
+
+  return changed;
+} // hasChanged
+/**
+ * isEmptyDisplayItem checks if the item is "empty" from the end user perspective.
+ * @param item: the item to check
+ * @return: true when it is an empty display item, false otherwise
+ */
+function isEmptyDisplayItem(item)
+{
+  var empty = true;
+  var type;
+
+  if (!item)
+  {
+    alert("undefined item >"+item+"< isEmptyDisplayItem");
+    return null;
+  }
+  else
+  {
+    // getItemType will discover when item is an invalid parameter
+    var type  = getItemType(item);
+    if (type != "hidden")
+    {
+      empty = isEmptyItem(item);
+    }
+    else // hidden items are never an empty display item
+    {
+      empty = false;
+    }
+    debug("item "+item.name+": empty is " + empty);
+    return empty;
+  }
+} // isEmptyDisplayItem
+
+
+/**
+ * Get the value of the "hasChanges" item of a specific row in the table
+ * Helper function for checkForChanges.
+ * @param tableName: the name of the table
+ * @param rownum: the number of the row
+ * @return: the value of hasChanges
+ */
+function getChangedStatus(tableName, rownum)
+{
+  return dataForm[tableName+":"+rownum+":hasChanges"].value;
+} // getChangedStatus
+
+
+/**
+ * setChangedStatus sets the value of the "hasChanges" item of a specific row in the table
+ * Helper function for checkForChanges.
+ * @param tableName: the name of the table
+ * @param rownum: the number of the row
+ * @param value: the value to set
+ */
+function setChangedStatus(tableName, rownum, value)
+{
+  dataForm[tableName+":"+rownum+":hasChanges"].value = value;
+} // setChangedStatus
+
+
+/**
+ * userHasChanged checks if an item has been changed by the user. Therefore only non-hidden
+ * items are checked.
+ * @param item: the item to check
+ * @return: true when the value has changed, false otherwise
+ */
+function userHasChanged(item)
+{
+  if (!item)
+  {
+    alert("undefined item >"+item+"< in userHasChanged");
+    return null;
+  }
+  else
+  {
+    var type = getItemType(item);
+    // only displayed items can return true
+    if (type != "hidden")
+    {
+      return hasChanged(item);
+    }
+    else
+    {
+      return false;
+    }
+  }
+} // userHasChanged
+
+
+/**
+ * hasInsertStatus gets the value of the "inserting" field of a specific row in the table
+ * Helper function for checkForChanges.
+ * note: ADF Faces
+ * @param tableName: the name of the table
+ * @param rownum: the number of the row
+ * @return: true when inserting equals Y, false otherwise
+ */
+function hasInsertStatus(tableName, rownum)
+{
+  debug("dataForm: "+dataForm);
+  if (dataForm[tableName+":rowKeyStr:"+rownum])
+  {
+    debug("Row "+rownum+" inserting = "+dataForm[tableName+":rowKeyStr:"+rownum].value);
+    return (dataForm[tableName+":rowKeyStr:"+rownum].value == '');
+  }
+  else
+  {
+    debug("Row "+rownum+" is existing row");
+    return false;
+  }
+} // hasInsertStatus
+
+
+/**
+ * isEmptyDisplayLine checks if all the visible items in a row are empty
+ * Helper function for checkForChanges
+ * @param formName: the name of the form
+ * @param tableItems: array of table item names
+ * @param rownum: the number of the row
+ * @return: true when all visible items are empty, false otherwise
+ */
+function isEmptyDisplayLine(formName, tableItems, rownum)
+{
+  debug("in isEmptyDisplayLine");
+
+  var form      = document.forms[formName];
+  var emptyline = true;
+  var type;
+  var item;
+  var tableItemName;
+
+  for (var k = 0; (k < tableItems.length) && emptyline; k++)
+  {
+    // pass rownum as a string
+    tableItemName = constructTableItemName(tableItems[k], rownum+"");
+    item = form[tableItemName];
+    // getItemType deals with undefined items
+    type = getItemType(item);
+    // ignore hidden items, checkboxes and radio buttons
+    // checking for hidden & using isEmptyItem, because isEmptyDisplayItem
+    // will return false for hidden items.
+    if (  type != "hidden"
+       && type != "checkbox"
+       && type != "radio"
+       && !isEmptyItem(item)
+       )
+    {
+      emptyline = false;
+    }
+  }
+
+  debug("Row "+ rownum+": empty line is "+ emptyline);
+  return emptyline;
+} // isEmptyDisplayLine
+
+
+/**
+ * createTableItemNamesArray creates an array of table item names
+ * @param formName: the name of the form
+ * @param tableName: the name of the table for which the array should be created
+ * @return: an array of table item names ("table name:item name")
+ */
+function createTableItemNamesArray(formName, tableName)
+{
+  var form               = document.forms[formName];
+  var formElementsCount  = form.elements.length / 1;
+  var tempTableItemNames = new Array(formElementsCount);
+  var itemFound          = new Array();
+  var itemCount          = 0;
+
+  var item;
+  var itemName;
+  var colon1;
+  var colon2;
+
+  // loop through all items in the form and add those items to tempTableItems
+  // that belong to tableName
+  for (var i = 0 ; i < formElementsCount ; i++)
+  {
+    item     = form.elements[i];
+    itemName = new String(item.name);
+    colon1   = itemName.indexOf(":");
+    colon2   = itemName.lastIndexOf(":");
+    // add item to the array when it is in table with tableName
+    if (  colon1 > -1 && colon2 > -1 && colon1 != colon2
+       && tableName == itemName.substring(0, colon1)
+       )
+    {
+      // itemFound indicates if a specific item name already has been found
+      strippedItemName = stripRownumFromName(itemName);
+      if (!itemFound[strippedItemName])
+      {
+        itemFound[strippedItemName] = true;
+        tempTableItemNames[itemCount] = strippedItemName;
+        itemCount++;
+      }
+    }
+  }
+
+  // As there may be items in the form than do not belong to the table, the length
+  // of tempTableItems may be longer than necessary. Therefore an array is created
+  // with a length equal to the number of table items, to be returned.
+  var tableItemNames = new Array(itemCount);
+  for (var i = 0; i < itemCount; i++)
+  {
+    tableItemNames[i] = tempTableItemNames[i];
+  }
+
+  //  debugString = "Found the following items for table "+tableName+": \n\n";
+  //  for (var i = 0 ; i < itemCount; i++) debugString +="- "+tableItemNames[i]+"\n";
+  //  debug(debugString);
+
+  return tableItemNames;
+
+} // createTableItemNamesArray
+
+
+/**
+ * getScreenPrompt translates an item name to a prompt as displayed on the screen.
+ * It is used for form layout and table layout, and also in samepage master-detail
+ * pages so for items that are in a table, the table name needs to be added, e.g.:
+ *   getScreenPrompt("Ename");
+ *   getScreenPrompt("EmpDepSet:Ename");
+ * note: ADF Faces & JSP
+ * @param itemName: the name of the item for which to get the prompt
+ * @return: the prompt of the item if it could be found in itemScreenPrompts, the
+ * name of the item otherwise
+ */
+//TODO Steven, deze functie kan weg.
+function getScreenPrompt(itemName)
+{
+  var prompt;
+
+  debug("in getScreenPrompt");
+  if (!itemName)
+  {
+    alert("undefined itemName in getScreenPrompt");
+    return null;
+  }
+  else
+  {
+    // For backward compatibility, check if itemScreenPrompts array exists.
+    if (itemScreenPrompts)
+    {
+      for (var i = 0; i < itemScreenPrompts.length; i++)
+      {
+        if (itemScreenPrompts[i][0] == itemName)
+        {
+          debug("prompt for item "+itemName+" = "+itemScreenPrompts[i][1]);
+          prompt = itemScreenPrompts[i][1];
+        }
+      }
+    }
+    if (!prompt) // itemScreenPrompts does not exists, or does not include itemName
+    {
+      prompt = itemName;
+      // if itemName includes the table name remove the table name
+      // in case of JSP we cannot strip the FormBean name
+      var j  = prompt.lastIndexOf(':');
+      if (j > -1)
+      {
+        prompt = itemName.substring(j+1);
+      }
+      debug("prompt for item is "+prompt+", because no prompt could be found");
+    }
+  }
+  return prompt;
+} // getScreenPrompt
+
+
+function checkForEmptyRequiredRowItems(formName, rownum, tableName)
+{
+  var form = document.forms[formName];
+  var formItem;
+  var type;
+  var formItemName;
+  var formTableItemName;
+  var item = new JhsItem();
+
+  debug("In checkForEmptyRequiredRowItems: "+tableName+" row: "+rownum);
+  // only check when requiredRowItems have been specified
+  if (requiredRowItems)
+  {
+    // loop through all the required items
+    for (var i = 0; i < requiredRowItems.length; i++)
+    {
+      item=requiredRowItems[i];
+      if (item)
+      {
+        // convert rownum to string
+        formTableItemName = tableName+":"+rownum+":"+item.naam;
+        debug("checking item name "+formTableItemName);
+        formItem = form[formTableItemName];
+        debug("checking item "+formItem);
+        // non-updateble items are rendered as text, so it should be checked if the item
+        // exists before checking the requiredness
+        if (formItem)
+        {
+          debug("Checking for requiredness of item "+i+": "+formTableItemName+", formitem="+formItem);
+          if (isEmptyDisplayItem(formItem))
+          {
+            // Show the message to fill in this field
+            alert(getMessage("requiredFields")+item.prompt);
+            type = getItemType(formItem);
+            // Give the offending item the focus
+            if (type == "radiogroup")
+            {
+              formItem[0].focus();
+            }
+            else
+            {
+              formItem.focus();
+            }
+            // return false as soon as an empty required item has been found
+            debug("returning false in checkForEmptyRequiredRowItems because of item "+formItemName+":"+rownum);
+            return false;
+          }
+        }
+      }  
+    }
+    // return true when no empty required items could be found
+    return true;
+  }
+  else
+  {
+    // return true when there are no requiredRowItems
+    return true;
+  }
+} // checkForEmptyRequiredRowItems
+
+/**
+ * deleteRowChecked checks if the delete checkbox has been checked for a row
+ * Helper function for checkForChanges.
+ * @param tableName: the name of the table
+ * @param rownum: the number of the row in the table
+ * @return: true when deleteRow has been checked, false otherwise
+ */
+function deleteRowChecked(tableName, rownum)
+{
+  debug("In deleteRowChecked, tableName="+tableName+", rownum="+rownum);
+
+  var deleteRowItem = dataForm[tableName+":"+rownum+":deleteRow"];
+
+  if (  deleteRowItem
+     && deleteRowItem.checked
+     )
+  {
+    return true;
+  }
+  else
+  {
+    // return false for when there is no item deleteRowItem or when it is not checked
+    return false;
+  }
+} // deleteRowChecked
+
+/**
+ * Validates form with name formName. 
+ * Currently, this entails checking all tables in the form. Make
+ * sure that you have registered the tables by calling addTableToBeValidated
+ * for each table in the form. 
+ */
+function validateForm(formName)
+{
+  if (isFormValidationDisabled())
+  {
+    debug("form validation is disabled, do NOT perform checkForChanges ");
+    enableFormValidation();
+    return;
+  }
+  debug("Number of tables to be validated: "+tablesToBeValidated.length);
+  for (var i = 0; i < tablesToBeValidated.length; i ++)
+  {
+    // Only check the tables in form formName
+    if (tablesToBeValidated[i].formName == formName)
+    {
+      debug("Table to be validated: "+tablesToBeValidated[i].tableName);
+      // Check whether the form and the table exist before
+      // validating it. It might be not the case when autoQuery
+      // is turned off and no search criteria have been entered yet. 
+      var dataForm = document.forms[formName];    
+//      if (dataForm && dataForm[tablesToBeValidated[i].tableName+":length"])
+      if (dataForm)
+      {
+        var b = checkForChanges(formName, tablesToBeValidated[i].tableName);
+        if (!b) return false;
+      }
+    }
+  }
+  return true;
+}
+
+/**
+ * This function should never be called directly anymore. Use validateForm
+ * instead.
+ *
+ * checkForChanges is used when a table is submitted. The table should contain
+ * a field 'hasChanges' for each row. This function populates those fields. If
+ * a row has not changed then the value is 'N', if it has changes the value is
+ * 'Y'. It also calls checkRequiredRowItems() to validate if there are required
+ * items without a value.
+ * @param formName: the name of the form
+ * @param tableName: the name of the table to check for changes
+ * @return: false when an error occured regarding a required item, true otherwise
+ */
+function checkForChanges(formName, tableName)
+{
+  debug("in checkForChanges for table "+tableName);
+  // Set dataForm variable so that we don't need to supply the form name
+  // to all helper functions of this method.
+  dataForm       = document.forms[formName];
+
+  // Create array of all table items.
+  var tableItems = createTableItemNamesArray(formName, tableName);
+  var changeMade = false;
+  var initialStatus;
+  var item;
+
+  // Loop through all the rows, and determine the record status
+//  for (var i = 0 ; i < rowcount; i++)
+  rowExists = true;
+  i = -1;
+  while (rowExists)
+  {
+    i++;
+    debug("determining record status for row "+i);
+    
+    changeMade    = false;
+
+    if (  hasInsertStatus(tableName,i)
+       && (  isEmptyDisplayLine(formName, tableItems, i)
+          || deleteRowChecked(tableName, i)
+          )
+       )
+    {
+      // This record should be deleted (i.e. not submitted, i.e. no changes)
+      changeMade = false;
+    }
+    else
+    {
+      // This record needs to be saved, even if the user does not manually
+      // change any fields
+      changeMade = true;
+    }
+    debug("change made in row "+i+": "+changeMade);
+
+    if (changeMade)
+    {
+      changeMade = false;
+      // Loop through all items in the row to see if one was changed
+      for (var j = 0 ; j < tableItems.length && !changeMade; j++)
+      {
+        debug("current item: "+tableItems[j]);
+        // set hasChanges to 'Y' for row as soon as a changed item has been found
+        item = dataForm[tableName+":"+i+":"+tableItems[j]];
+        // non-updateble items are rendered as text, so it should be checked if the item
+        // exists before calling userHasChanged
+        rowExists = item;
+        if (  item
+           && userHasChanged(item)
+           )
+        {
+          debug("Field "+tableItems[j]+" on row "+i+" was changed");
+          changeMade = true;
+        }
+      }
+    }
+
+    // If a change was made to this row (and it does not have the delete checkbox checked)
+    // check if the required fields for this row are filled in. If not, abort the loop
+    // and return false;
+    if (  changeMade
+       && !deleteRowChecked(tableName, i)
+       && !checkForEmptyRequiredRowItems(formName, i, tableName)
+       )
+    {
+      debug("checkForChanges returns false for table "+tableName);
+      return false;
+    }
+  }
+  debug("checkForChanges returns true for table "+tableName);
+  return true;
+} // checkForChanges
+
+
+/**
+ * getItemType returns the type of an item. If it is a radio group with more than 1 option,
+ * the item is itself an array of radio group items.
+ * @param item: the item for which to return the type
+ * @return: the type of the item
+ */
+function getItemType(item)
+{
+  var type = null;
+
+  if (!item)
+  {
+    alert("undefined item >"+item+"< in getItemType");
+  }
+  else
+  {
+    if (  !item.type
+       && !isString(item)
+       && item[0].type == "radio"
+       ) // the item is an array of radio items
+    {
+      type = "radiogroup";
+    }
+    else if (!item.type && item[0] && item[0].type)
+    {
+      // Apparently item is an array. Just take the type of the first item
+      type = item[0].type;
+    }    
+    else if (!item.type)
+    {
+      alert("unrecognized item >"+item+"< in getItemType");
+    }
+    else
+    {
+      type = item.type;
+    }
+  }
+
+  return type;
+} // getItemType
+
+/**
+ * Constructor of the JhsTable object
+ * This object is used for registering all tables to be checked
+ */
+function JhsTable(formName, tableName) {
+  this.formName  = formName;
+  this.tableName = tableName;
+}
+
+/**
+ * Constructor of JhsItem object.
+ * This object is used for registering an array with required table items.
+ */
+
+function JhsItem(naam, prompt) {
+  this.naam = naam;
+  this.prompt = prompt;
+}
+
+/**
+ * isEmptyItem checks if an item is null or has an empty value
+ * note: ADF Faces & JSP
+ * @param item: the item to check
+ * @return: true when the item is null or has an empty value
+ * (leading and trailing spaces are stripped before checking)
+ */
+function isEmptyItem(item)
+{
+  var type;
+
+  if (!item)
+  {
+    alert("undefined item >"+item+"< in isEmptyItem");
+    return null;
+  }
+  else
+  {
+    // getItemType will discover when item is an invalid parameter
+    type = getItemType(item);
+
+    // an isolated radio button should be ignored, i.e. return false
+    if (type == "radio")
+    {
+      return false;
+    }
+    // a checkbox should be ignored, i.e. return false, as checked/unchecked are equivalent to
+    // something like Y/N
+    else if (type == "checkbox")
+    {
+      return false;
+    }
+    // the value of a radiogroup depends on one of the items having the property checked
+    else if (type == "radiogroup")
+    {
+      var isEmpty = true;
+      for (var i=0; i < item.length && isEmpty; i++)
+      {
+        isEmpty = !item[i].checked;
+      }
+      return isEmpty;
+    }
+    // the value of poplists need to be retrieved in a different way
+    else if (type == "select-one" || type == "select-multiple")
+    // the value of poplists is depends on the selectedIndex
+    {
+      // strip all leading and trailing spaces (in Netscape hidden items contain spaces)
+      if (item.selectedIndex==-1)
+      {  
+        return '';
+      }      
+      return (stripSpaces(item.options[item.selectedIndex].value).length == 0);
+    }
+    // in other cases (password, text, textarea) the value depends on the property value
+    else if (item.value)
+    {
+      // strip all leading and trailing spaces (in Netscape hidden items contain spaces)
+      return (stripSpaces(item.value).length == 0);
+    }
+    else // when item has no value, it is considered to be empty
+    {
+      return true;
+    }
+  }
+} // isEmptyItem
+
+
+/**
+ * resetValues loops through the global array 'reset' and resets all the fields
+ * that correspond to the array items.
+ * @param formName: the name of the form
+ */
+function resetValues(formName)
+{
+  var form = document.forms[formName];
+  var item;
+  var itemType;
+  if (reset)
+  {
+    for (var i = 0 ; i < reset.length ; i++)
+    {
+      item = form[reset[i]];
+      if (item)
+      {
+        itemType = getItemType(item);
+        if (  itemType != "radio"
+           && itemType != "radiogroup"
+           && itemType != "checkbox"
+           && itemType != "select-one"
+           )
+        {
+          item.value = "";
+        }
+      }
+    }
+  }
+} // resetValues
+
+
+/**
+ * resetFormValues loops through all forms, then through all form items of type 'hidden',
+ * and if the hidden item did not have a default value, it is reset. The effect of this
+ * is therefore similar to reloading a page, but only for hidden fields. This procedure
+ * is called by default from the onLoad event of each ADF Faces page, to make sure that (navigation)
+ * hidden fields are cleared when the user performs a navigation, uses the backbutton, and
+ * performs another navigation. On iExploder the hidden fields are not cleared automatically.
+ * on Netscape they are.
+ *       this function does not work properly for Netscape 7.0.2 as item.defaultValue for
+ *       hidden items will be the same as the changed value
+ */
+function resetFormValues()
+{
+  var form;
+  var item;
+  for (var f = 0 ; f < document.forms.length ; f++)
+  {
+    form = document.forms[f];
+    for (var i = 0 ; i < form.elements.length ; i++)
+    {
+      item = form.elements[i];
+      if (  item.type == "hidden"
+         && item.defaultValue == ""
+         )
+      {
+        item.value = "";
+      }
+    }
+  }
+} // resetFormValues
+
+
+
+/**
+ * isString checks if the argument is a string
+ * @param 'argument': the argument to check
+ * @return: true if the 1st argument is a string, false otherwise
+ */
+function isString()
+{
+  if (arguments[0] == null)
+  {
+    return false;
+  }
+  else if (typeof arguments[0] == 'string')
+  {
+    return true;
+  }
+  else if (  (typeof arguments[0] == 'object')
+          && (arguments[0].constructor)
+          )
+  {
+    var criterion = arguments[0].constructor.toString().match(/string/i);
+    return (criterion != null);
+  }
+  else
+  {
+    return false;
+  }
+}
+
+
+/**
+ * stripSpaces removes leading and trailing spaces from a string
+ * @param aString: the string to strip
+ * @return: the stripped string
+ */
+function stripSpaces(aString)
+{
+  if (!isString(aString))
+  {
+    alert("undefined string >"+aString+"< in stripSpaces");
+    return null;
+  }
+  else
+  {
+    // strip leading spaces
+    while (aString.substring(0,1) == " ")
+    {
+      aString = aString.substring(1);
+    }
+    // strip trailing spaces
+    while (aString.substring(aString.length-1,aString.length) == " ")
+    {
+      aString = aString.substring(0,aString.length-1);
+    }
+
+    return aString
+  }
+} // stripSpaces
+
+
+/**
+ * isNumber checks if a string (after stripping leading and trailing spaces) represents
+ * a numeric value. Empty strings are not considered to be a number.
+ * This validator is more strict than the ADF Faces decimal validator, because it does not
+ * accept values like "1a2".
+ * Remark: values like "1e3" are accepted, because its interpreted as 1000 (one raised
+ * to the power of three)
+ * @param aString: the string to check
+ * @return: true when aString represents a number, false otherwise
+ */
+function isNumber(aString)
+{
+  if (!isString(aString))
+  {
+    alert("undefined string >"+aString+"< in isNumber");
+    return null;
+  }
+  else
+  {
+    // empty strings are not numbers
+    if (stripSpaces(aString).length == 0)
+    {
+      return false;
+    }
+
+    // if aString evaluates to number zero, return true
+    if ((aString*aString) == 0)
+    {
+      return true;
+    }
+
+    // in all other cases, return true if item divided by itself it returns 1
+    return (aString/aString == 1);
+  }
+} // isNumber
+
+
+/**
+ * ignoreField checks if an item should be ignored when checking for changed items.
+ * Items to be ignored are expected to start with an underscore (_) or be in the array
+ * ignoreChangedFields
+ * @param itemName: the item to be checked
+ * @return: true when the item should be ignored (when the name start with an
+ * underscore or when it is in the array ignoreChangedFields), false otherwise
+ */
+function ignoreField(itemName)
+{
+  debug("In ignoreField with itemName: "+itemName);
+
+  itemNameStripped = stripRownumFromName(itemName);
+
+  if (itemNameStripped.substring(0,1) == "_")
+  {
+    return true;
+  }
+
+  if (ignoreChangedFields)
+  {
+    for (var j = 0 ; j < ignoreChangedFields.length ; j++)
+    {
+      if (ignoreChangedFields[j] == itemNameStripped)
+      {
+        return true;
+      }
+    }
+  }
+  // now check whether the unstripped item name should be ignored 
+  if (ignoreChangedFields)
+  {
+    for (var j = 0 ; j < ignoreChangedFields.length ; j++)
+    {
+      if (ignoreChangedFields[j] == itemName)
+      {
+        return true;
+      }
+    }
+  }
+
+  // return false in all other cases
+  return false;
+
+} // ignoreField
+
+
+/**
+ * hasChanges loops over all forms in the document and checks if one or more of the form items
+ * have been changed by the user. If there are (unsumitted) changes, the user is asked
+ * whether he wants to leave the page, or return to the page and save the changes. By calling
+ * ignoreField, some of the items are ignored by hasChanges().
+ * @return: true when there are unsubmitted changes (that might be because of an error on
+ * the page), false otherwise
+ */
+function hasChanges()
+{
+  // first check for middle tier pending changes, this
+  // var is set in pageConfig.jspx
+  if (hasPendingChanges && hasPendingChanges == 'true' )
+  {
+    debug("hasChanges returns true because hasPendingChanges has a value");
+    return true;
+  }
+  for (var i = 0 ; i < document.forms.length ; i++)
+  {
+    var form = document.forms[i];
+
+    debug("checking form >"+form.name+"< for changes");
+
+    // return true when there are errors on the page
+    // S. Davelaar 10-02-2006: prefix with dataForm: for JSF !!! 
+    if (form.elements["dataForm:pageConfig:pageConfig:hasChanges"])
+    {
+      if (stripSpaces(form.elements["dataForm:pageConfig:pageConfig:hasChanges"].value) != "" )
+      {
+        debug("hasChanges returns true because hasChanges has a value");
+        return true;
+      }
+      // else it concerns a select page
+    }
+
+    // return true when one of the items in any form have been changed by the user
+    for (var k = 0 ; k < form.elements.length ; k++)
+    {
+      var item = form.elements[k];
+      // fix for error in StripRowNum on UIX table pages in JDev 10.1.2
+      // a new HTML element without a type is present on the page (for single selection ADF Faces element)
+      if (!item.type)
+      {
+        continue;
+      }
+
+      if (  !ignoreField(item.name)
+         && userHasChanged(item)
+         )
+      {
+        debug("hasChanges returns true because item >"+item.name+"< has changed");
+        return true;
+      }
+    }
+  }
+
+  // in any other case, return false
+  debug("hasChanges returns false");
+  return false;
+} // hasChanges
+
+
+/**
+ * confirmChanges checks if one of the form items has changed by calling hasChanges
+ * If so, it asks the user to confirm if he wants to leave the page without saving,
+ * or return to the same page. After the user has the opportunity to save the changes.
+ * note: ADF Faces & JSP
+ * @return; true when there are no changes or when the user choose to leave the page
+ * whithout saving them, false otherwise.
+ */
+function confirmChanges()
+{
+  var anyFormChanged = hasChanges();
+
+  var confirmed;
+
+  if (anyFormChanged)
+  {
+    confirmed = confirm(getMessage("hasChanged"));
+  }
+
+  if (!anyFormChanged || confirmed)
+  {
+    return true;
+  }
+  else
+  {
+    return false;
+  }
+} // confirmChanges
+
+
+/**
+ * This function should be called from a button on a singleSelection
+ * table. It check whether there is a selected row and, if so,
+ * whether that row is not a new (and therefore not yet inserted) row.
+ * To do this, the parameter checkItemName is passed. This should
+ * be a field that is always null for new rows (no matter which fields
+ * the end user already filled in, and that is never null for queried
+ * rows. A perfect candidate would be the readOnly<PrimaryKey> formvalue.
+ * To omit this check for new rows (for example if the table does not
+ * have any new rows), call checkSelectedRow without the 3rd argument.
+ */
+function checkSelectedRow(formName, tableName, checkItemName)
+{
+  var form  = document.forms[formName];
+  var field = form[tableName+":selected"];
+  var j     = -1;
+
+  if (field.length)
+  {
+    // than more than one radio group item is selectable
+    for (var i = 0; i < field.length; i++)
+    {
+      debug("Checking if row "+i+" is checked");
+      if (field[i].checked)
+      {
+        j = i;
+      }
+    }
+
+    if (j == -1)
+    {
+      alert(getMessage("noRowsSelected"));
+      return false;
+    }
+  }
+  else
+  {
+    if (!field.checked)
+    {
+      alert(getMessage("noRowsSelected"));
+      return false;
+    }
+  }
+
+  if (checkItemName)
+  {
+    var checkItem = form[tableName+":"+checkItemName+":"+j];
+    if (stripSpaces(checkItem.value) == "")
+    {
+      alert(getMessage("newRowSelected"));
+      return false;
+    }
+  }
+
+  var anyFormChanged = false;
+  if (!ignoreChanges)
+  {
+    anyFormChanged = hasChanges();
+  }
+
+  var confirmed;
+  if (  !anyFormChanged
+     || confirm(getMessage("hasChanged"))
+     )
+  {
+    return true;
+  }
+  else
+  {
+    return false;
+  }
+} // checkSelectedRow
+
+/**
+ * replace replaces all occurences of a specific text in a string
+ * @param string: the string for which text needs to be replaced
+ * @param text: the text that needs to be replaced
+ * @param by: the replacement text
+ */
+function replace(aString, text, by)
+{
+  if (  !isString(aString)
+     || !isString(text)
+     || !isString(by)
+     )
+  {
+    alert("undefined aString >"+aString+", "+text+", "+by+"< in replace");
+    return null;
+  }
+  else
+  {
+    var strLength = aString.length;
+    var txtLength = text.length;
+
+    // return the original string when either the string or the text to be
+    // replaced have length 0
+    if (  (strLength == 0)
+       || (txtLength == 0)
+       )
+    {
+      return aString;
+    }
+
+    var i = aString.indexOf(text);
+    if (  (!i)
+       && (text != aString.substring(0,txtLength))
+       )
+    {
+      return aString;
+    }
+
+    if (i == -1)
+    {
+      return aString;
+    }
+
+    var newstr = aString.substring(0,i) + by;
+    if ((i + txtLength) < strLength)
+    {
+      newstr += replace(aString.substring(i+txtLength,strLength),text,by);
+    }
+
+    return newstr;
+  }
+} // replace
+
+/**
+ * Loops through all the forms and look for the first occurence of an element with name
+ * elementName.
+ *
+ * @param elementName The name of the element to look for
+ * @result The first occurence of the element with name elementName. null, if no
+ *         element with name elementName could be found
+ */
+function getFormElement(elementName)
+{
+  var result = null;
+
+  for (var i = 0 ; i < document.forms.length ; i++)
+  {
+    var searchForm = document.forms[i];
+    if (searchForm.elements[elementName])
+    {
+      result = searchForm.elements[elementName];
+    }
+  }
+
+  return result;
+}
+
+/**
+ * Loops through all the forms and looks for the first occurence of an element with name
+ * elementName. The function returns the value of this element. 
+ *
+ * note: JSP
+ * @param elementName The name of the element to look for
+ * @result The value of the first occurence of the element with name elementName. null, if no
+ *         element with name elementName could be found
+ */
+function getFormElementValue(elementName)
+{
+  var result = null;
+  var formElement = getFormElement(elementName);
+  if (formElement)
+  {
+    result = formElement.value;
+  } 
+  return result;
+}
+
+function getDataForm()
+{
+  return document.forms[dataFormName];
+}
+
+ function setClassOnElement( elementId, className)
+ {
+    el = document.getElementById(elementId);
+    agt = navigator.userAgent.toLowerCase();
+    if (agt.indexOf('mozilla')!=-1 && agt.indexOf('spoofer')==-1 && agt.indexOf('compatible') == -1)
+      // mozilla
+      el.setAttribute("class", className);
+    else
+      el.setAttribute("className", className);
+ }
+
+
+function addToIgnoreChangedFields(fields) 
+{
+  curlength = ignoreChangedFields.length;
+  for (i = 0; i<fields.length; i++)
+    ignoreChangedFields[curlength + i] = fields[i];
+}
+
+/**
+ * Append a new array of prompts to array "itemScreenPrompts"
+ */
+function addItemScreenPrompts(prompts) 
+{
+  curlength = itemScreenPrompts.length;
+  for (i = 0; i<prompts.length; i++)
+    itemScreenPrompts[curlength + i] = prompts[i];
+}
+
+/**
+ * Append a new array of row items to array "requiredRowItems"
+ */
+//function addRequiredRowItems(items) 
+//{
+//  debug ("in addRequiredRowItems");
+//  curlength = requiredRowItems.length;
+//  for (i = 0; i<items.length; i++)
+//    requiredRowItems[curlength + i] = items[i];
+//}
+
+function addRequiredRowItems(formName, tableName, items) 
+{
+  debug ("in addRequiredRowItems");
+  curlength = requiredRowItems.length;
+  debug ("length=" + items.length);
+  addTableToBeValidated (formName, tableName);
+
+  for (i = 0; i<items.length; i++)
+    requiredRowItems[curlength + i] = items[i];
+}
+
+function addTableToBeValidated(form, tableName)
+{
+  debug ("addTableToBeValidated " + tableName);
+  
+  // check whether this combination of form and table already exists in 
+  // the array.
+  
+  tablePresent=false;
+  for (i = 0; i<tablesToBeValidated.length ; i++) {
+    debug ("jaco in lus");
+    
+    debug ("cond1 " + tablesToBeValidated[i].formName==form); 
+    debug ("cond2 " + tablesToBeValidated[i].tableName==tableName); 
+    if (tablesToBeValidated[i].formName==form &&
+        tablesToBeValidated[i].tableName==tableName) {
+      tablePresent=true;
+    }
+  }
+  
+  if (!tablePresent) {
+    debug ("add table " + tableName);
+    var jhsTable = new JhsTable(form, tableName);
+    tablesToBeValidated[tablesToBeValidated.length]=jhsTable;
+  }
+}
+
+/**
+ * Call this function when your input control creates a partial page requests
+ * that submits the form, and Jheadstart should NOT do custom javascript
+ * validation like checking required items in a table
+ */
+function disableFormValidation()
+{
+  if (getDataForm().validateForm)
+  {
+    getDataForm().validateForm.value='false';
+  }
+}  
+
+/**
+ * Call this function to enable Jheadstart ustom javascript
+ * validation like checking required items in a table
+ */
+function enableFormValidation()
+{
+  if (getDataForm().validateForm)
+  {
+    getDataForm().validateForm.value = "true";
+  }
+}  
+
+function isFormValidationDisabled()
+{
+  if (getDataForm().validateForm)
+  {
+    return getDataForm().validateForm.value=='false';
+  }
+  else
+  {
+    return false;
+  }
+}  
+
+function alertForChanges()
+{
+  var changed = hasChanges();
+  var confirmed;
+  if (changed)
+  {
+     confirmed = confirm(getMessage("hasChanged"));
+  }
+
+  if (!changed || confirmed)
+  {
+    return true;
+  }
+  else
+  {
+    return false;
+  }
+}

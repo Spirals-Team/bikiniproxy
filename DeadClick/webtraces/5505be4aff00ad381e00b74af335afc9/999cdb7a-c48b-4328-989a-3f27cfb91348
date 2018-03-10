@@ -1,0 +1,561 @@
+try {
+    var cxTest = cxTest || {};
+    cxTest.callQueue = cxTest.callQueue || [];
+    if (!cxTest.library) {
+        cxTest.library = {
+            version: '1.18',
+            prefix: null,
+            persistedQueryId: null,
+            testGroup: -1,
+            testVariant: null,
+            previewTestId : null,
+            previewCampaign : null,
+            startTime: new Date(),
+            visibilityField: 'timeHalf',
+            trackTime: 0.5,
+            debug : false,
+
+            init: function (scriptPattern, prefix, persistedQueryId, visibilityField) {
+                this.prefix = prefix;
+                this.persistedQueryId = persistedQueryId;
+
+                var params = {};
+
+                if (scriptPattern) {
+                    var scripts = document.getElementsByTagName('script');
+                    var script = null;
+                    for (var i = 0; !script && (i < scripts.length); ++i) {
+                        if (scripts[i] && scripts[i].src && scripts[i].src.indexOf(scriptPattern) > -1) {
+                            script = scripts[i];
+                        }
+                    }
+                    if (script && script.src && (script.src.indexOf('#') > -1)) {
+                        var searchPart = script.src.replace(/.*#/, '');
+                        params = cX.decodeUrlEncodedNameValuePairs(searchPart);
+                    }
+                }
+
+                var args = cX.parseUrlArgs();
+                this.testVariant = args.testVariant || params.testVariant || params.ver;
+                this.previewTestId = args.testId || params.testId;
+                this.previewCampaign = args.campaign || params.campaign;
+                this.testGroup = this.getTestGroup();
+
+                cX.setCustomParameters({ ver: this.version, testGroup: this.testGroup });
+
+                var delay = (new Date() - this.startTime) / 1000;
+
+                if (visibilityField && visibilityField.length) {
+                    this.visibilityField = visibilityField;
+                }
+
+                if (delay > 2.0) {
+                    cX.setCustomParameters({ loadDelay: delay.toFixed(1) });
+                }
+            },
+
+            getTestGroup: function () {
+                var cxId = cX.getUserId();
+                var newBucket = -1;
+                if (cxId && cxId.length) {
+                    var newHash = 0;
+
+                    for (var i = 0; i < cxId.length; i++) {
+                        newHash = ((newHash << 5) - newHash) + cxId.charCodeAt(i);
+                        newHash |= 0;
+                    }
+
+                    newBucket = Math.abs(newHash) % 100;
+                } else {
+                    newBucket = Math.floor(Math.random() * 100);
+                }
+
+                return newBucket;
+            },
+
+            _applyContext : function(context) {
+                if (!context) {
+                    context = {};
+                }
+
+                if (!context.context) {
+                    context.context = {};
+                }
+
+                if (!context.context.categories) {
+                    context.context.categories = {};
+                }
+
+                if(!context.context.parameters) {
+                    context.context.parameters = [];
+                }
+
+                if (this.previewCampaign) {
+                    context.context.categories.campaign = '' + this.previewCampaign;
+                } else {
+                    context.context.categories.testgroup = '' + this.testGroup;
+                    context.context.parameters.push({ key : 'testgroup', value : '' + this.testGroup});
+                }
+
+                return context;
+            },
+
+            reportTestImpression: function (testId, testVariant) {
+                if (testId !== null) {
+                    if (this.prefix && this.persistedQueryId) {
+                        cX.setEventAttributes({ origin: this.prefix + '-web', persistedQueryId: this.persistedQueryId });
+                        cX.sendEvent('imp', {
+                            testId: '' + testId,
+                            testVariant: testVariant
+                        });
+                    }
+                }
+            },
+
+            _reportWidgetVisible: function (testId, testVariant) {
+                cX.sendEvent('widgetVisible', {
+                    testId: '' + testId,
+                    testVariant: testVariant
+                });
+            },
+
+            trackVisibility: function (divId, testId, testVariant) {
+                if (testId !== null) {
+                    var self = this;
+                    cX.trackElement({
+                        elementId: divId,
+                        trigger: {
+                            on: function (state) {
+                                return state.visibility[self.visibilityField] >= self.trackTime;
+                            },
+                            callback: function (state) {
+                                self._reportWidgetVisible(testId, testVariant);
+                            }
+                        }
+                    });
+                }
+            },
+
+            instrumentClickLinks: function (divId, testId, testVariant) {
+
+                var element = document.getElementById(divId);
+                var links = [].slice.call(element.getElementsByTagName('a'));
+
+                var urlData = 'cx_testId=' + encodeURIComponent(testId) +
+                    '&cx_testVariant=' + encodeURIComponent(testVariant);
+
+                for (var i = 0; i < links.length; ++i) {
+                    var href = links[i].href;
+                    href += (href.indexOf('#') < 0 ? '#' : '&') + urlData + '&cx_artPos=' + i;
+                    links[i].href = href;
+                }
+            },
+
+            _updateClickUrls : function (items) {
+                if (items) {
+
+                    for (var i = 0; i < items.length; ++i) {
+                        var item = items[i];
+                        if (item.click_url) {
+
+                            if ((item.type !== 'noImpact')&&(item.type !== 'free')) {
+                                var testId = item.testId || '0';
+                                var testVariant = item.type === 'ctrl' ? 'ctrl' : 'cx_' + (item.campaign || 0);
+
+                                item.click_url += '?cx_testId=' + testId + '&cx_testVariant=' + testVariant + '&cx_artPos=' + i;
+
+                                if (item.tag) {
+                                    item.click_url += '&cx_tag=' + item.tag;
+                                }
+                                if (item._type) {
+                                    item.click_url += '&cx_type=' + item._type;
+                                }
+                            }
+
+                        }
+                    }
+                }
+            },
+
+            updateRecsClickUrls: function (testId, testVariant, items) {
+                if (items) {
+                    for (var i = 0; i < items.length; ++i) {
+                        var item = items[i];
+                        if (item.click_url) {
+                            item.click_url += '?cx_testId=' + testId + '&cx_testVariant=' + testVariant + '&cx_artPos=' + i;
+
+                            if (item.tag) {
+                                item.click_url += '&cx_tag=' + item.tag;
+                            }
+                        }
+                    }
+                }
+            },
+
+            clickTracker: function(item, callback) {
+                var linkId = 'cXLinkId' + cX.library._randomString();
+                if (item && item.click_url) {
+                    if (!callback) {
+                        return cX.clickTracker(item.click_url);
+                    } else {
+                        window.requestAnimationFrame(function() {
+                            var linkEl = document.getElementById(linkId);
+                            cX.addEventListener(linkEl, 'mousedown', function() { linkEl.removeAttribute('href'); });
+                            cX.addEventListener(linkEl, 'touchstart', function() { linkEl.removeAttribute('href'); });
+                            cX.addEventListener(linkEl, 'click', function () {
+                                cX.sendSpaRecsClick(item.click_url, function () {
+                                    callback(item);
+                                });
+                            });
+                        });
+                    }
+                } else if (item && item.clickUrl) {
+                    if (item.contentItem && item.contentItem.click_url) {
+                        var clickUrl = item.contentItem.click_url;
+
+                        window.requestAnimationFrame(function() {
+                            var linkEl = document.getElementById(linkId);
+                            cX.addEventListener(linkEl, 'mousedown', function() { linkEl.removeAttribute('href'); });
+                            cX.addEventListener(linkEl, 'touchstart', function() { linkEl.removeAttribute('href'); });
+                            cX.addEventListener(linkEl, 'click', function() {
+                                cX.sendSpaRecsClick(clickUrl, function() {
+                                    if (callback) {
+                                        callback(item);
+                                    } else {
+                                        window.location.href = item.clickUrl;
+                                    }
+                                });
+                            });
+                        });
+                    } else {
+                        return cX.clickTracker(item.clickUrl)
+                    }
+                }
+                return linkId;
+            },
+
+            getDivId: function (className) {
+                if (className && className.length) {
+                    var testCandidates = document.getElementsByClassName(className);
+                    if (testCandidates && testCandidates.length === 1) {
+                        var div = testCandidates[0];
+
+                        if (!(div.id && div.id.length)) {
+                            div.id = className + '-01';
+                        }
+                        return div.id;
+                    }
+                }
+                return null;
+            },
+
+            _processResult : function(divId, items) {
+
+                if (items && items.length) {
+                    var item = items[0];
+
+                    if ((item.type !== 'noImpact') && (item.type !== 'free')) {
+
+                        var testId = item.testId || '0';
+                        var testVariant = item.type === 'ctrl' ? 'ctrl' : 'cx_' + (item.campaign || 0);
+
+                        this.reportTestImpression(testId, testVariant);
+
+                        if (item.type === 'ctrl') {
+                            this.instrumentClickLinks(divId, testId, testVariant);
+                        }
+                        this.trackVisibility(divId, testId, testVariant);
+                    }
+                }
+            },
+
+            processCxResult: function (testId, divId) {
+                this.reportTestImpression(testId, 'cx');
+                var element = document.getElementById(divId);
+                var cxDivId = null;
+                if (element.previousElementSibling) {
+                    cxDivId = element.previousElementSibling.id;
+                    if (element.className === 'template') {
+                        element.parentNode.removeChild(element);
+                    }
+                }
+                this.trackVisibility(cxDivId || divId, testId, 'cx');
+            },
+
+            _isIgnoredResponse : function(data) {
+                if (data && data.response && data.response.items && data.response.items.length) {
+                    var item = data.response.items[0];
+                    return (item.type === 'noImpact') || (item.type === 'free');
+                }
+                return true;
+            },
+
+            _isAdResponse : function(data) {
+                if (data && data.response && data.response.items && data.response.items.length) {
+                    var item = data.response.items[0];
+                    return (item.type === 'personalized') && item.adSpaceId && item.adTargetingKeywords;
+                }
+                return false;
+            },
+
+            displayResult : function(divId, data, context) {
+
+                if (data.response.items && data.response.items.length) {
+                    if (data.response.items[0].type === 'ctrl') {
+                        return;
+                    }
+                }
+
+                var template = data.response.template;
+                var rawStyle = data.response.style;
+                var rawCode = data.response.head;
+
+                if (rawStyle && rawStyle.length) {
+                    var style = document.createElement('style');
+
+                    style.type = 'text/css';
+                    if (style.styleSheet) {
+                        style.styleSheet.cssText = css;
+                    } else {
+                        style.appendChild(document.createTextNode(rawStyle));
+                    }
+                    document.getElementsByTagName('head')[0].appendChild(style);
+                }
+
+                if (rawCode && rawCode.length) {
+                    var codeObj = document.createElement('script');
+                    codeObj.type = 'text/javascript';
+                    codeObj.text = rawCode;
+                    document.getElementsByTagName('head')[0].appendChild(codeObj);
+                }
+
+                var templateDiv = 'cx-' + cX.getRandomString() + '-tmp';
+
+                if (divId) {
+                    document.getElementById(divId).innerHTML = '<div id="' + templateDiv + '" class="template" style="display:none">' + template + '</div>';
+                    cX.renderTemplate(templateDiv, divId, data, context);
+                } else {
+                    var templ = document.createElement('div');
+                    templ.id = templateDiv;
+                    templ.className = 'template';
+                    templ.setAttribute('style', 'display: none;');
+                    templ.innerHTML = '<div id="' + templateDiv + '-src">' + template + '</div><div id="' + templateDiv + '-dst"></div>';
+                    document.body.appendChild(templ);
+                    cX.renderTemplate(templateDiv + '-src', templateDiv + '-dst', data, context);
+                }
+            },
+
+            runCxVersion: function (testId, divId, widgetParams, context, callback) {
+                var self = this;
+
+                if (widgetParams.renderTemplateUrl) {
+                    widgetParams.insertBeforeElementId = divId;
+                    widgetParams.testId = testId;
+                    widgetParams.testVariant = 'cx';
+                    widgetParams.onImpressionResult = function () {
+                        self.processCxResult(testId, divId, context);
+                        if (callback) {
+                            callback();
+                        }
+                    };
+                } else {
+                    if (!widgetParams.renderFunction) {
+                        widgetParams.renderFunction = function (data, context) {
+                            if (testId) {
+                                self.updateRecsClickUrls(testId, 'cx', data.response.items);
+                            }
+                            self.displayResult(divId, data);
+                            self.processCxResult(testId, divId);
+                            if (callback) {
+                                // data and context only available when running in-page
+                                callback(data, context);
+                            }
+                        }
+                    } else {
+                        var origRenderFunc = widgetParams.renderFunction;
+                        widgetParams.renderFunction = function (data, context) {
+                            self.updateRecsClickUrls(testId, 'cx', data.response.items);
+                            self.processCxResult(testId, divId);
+                            origRenderFunc(data, context);
+                            if (callback) {
+                                callback(data, context);
+                            }
+                        };
+                    }
+                }
+
+                context = self._applyContext(context);
+                cX.insertWidget(widgetParams, context);
+            },
+
+            displayWidget: function (divId, widgetParams, context, callback) {
+                this.runCxVersion(null, divId, widgetParams, context, callback);
+            },
+
+            runCtrlVersion: function (testId, divId, callback) {
+                this.reportTestImpression(testId, 'ctrl');
+                this.instrumentClickLinks(divId, testId, 'ctrl');
+                this.trackVisibility(divId, testId, 'ctrl');
+                if (callback) {
+                    setTimeout(callback, 1);
+                }
+            },
+
+            runTest: function (testId, divId, testSize, widgetParams, context, callback) {
+                if (this.testVariant === 'cx') {
+                    this.runCxVersion(testId, divId, widgetParams, context, callback);
+                } else if (this.testVariant === 'ctrl') {
+                    this.runCtrlVersion(testId, divId, callback);
+                } else if ((this.testGroup > -1) && (testSize > 0)) {
+                    if (this.testGroup < testSize * 100) {
+                        this.runCxVersion(testId, divId, widgetParams, context, callback);
+                    } else if (this.testGroup > 100 * (1.0 - testSize)) {
+                        this.runCtrlVersion(testId, divId, callback);
+                    }
+                } else if (callback) {
+                    setTimeout(callback, 1);
+                }
+            },
+
+            _renderFunction : function (targetDiv, data, context, callback) {
+
+                if (!this._isIgnoredResponse(data)) {
+                    this._updateClickUrls(data.response.items);
+                    this.displayResult(targetDiv, data);
+                    this._processResult(targetDiv, data.response.items);
+                }
+
+                if (callback) {
+                    callback(data, context);
+                }
+            },
+
+            run : function(widgetParams, context, callback) {
+                var self = this;
+
+                var targetDiv = widgetParams.targetElementId;
+
+                widgetParams.renderFunction = function (data, context) {
+                    if (self._isAdResponse(data)) {
+                        var resp =  data.response;
+                        var item =  resp.items[0];
+                        var requestBody = {
+                            adSpaceId: item.adSpaceId,
+                            initialHorizontalAdUnits: 1,
+                            initialVerticalAdUnits: 1,
+                            k: item.adTargetingKeywords,
+                            renderFunction : function (data) {
+                                var ad = self.cxad.getAd(data);
+                                if (ad) {
+                                    ad.contentItem = item;
+                                    self._renderFunction(targetDiv, {response: { template : resp.template, style : resp.style, head : resp.head, items: [ad] }}, context, callback);
+                                }
+                            }
+                        };
+
+                        cX.insertAdSpace(requestBody);
+                    } else {
+                        self._renderFunction(targetDiv, data, context, callback);
+                    }
+                };
+
+                context = self._applyContext(context);
+                cX.insertWidget(widgetParams, context);
+            },
+
+            invoke: function(func) {
+                func.apply(window, Array.prototype.slice.call(arguments, 1));
+            }
+        };
+
+        (function (d, s, e, t) {
+            e = d.createElement(s); e.type = 'text/java' + s; e.async = 'async';
+            e.src = 'http' + ('https:' === location.protocol ? 's://s' : '://') + 'cdn.cxense.com/cx.js';
+            t = d.getElementsByTagName(s)[0]; t.parentNode.insertBefore(e, t);
+        })(document, 'script');
+    }
+
+    if (!cxTest.cxad) {
+        cxTest.cxad = {
+            isRetina : false,
+            getContent : function(ad, key, defaultValue) {
+                if (ad.creative && ad.creative.content && ad.creative.content.length) {
+                    var contents = ad.creative.content;
+                    for (var k = 0; k < contents.length; k++) {
+                        var content = contents[k];
+                        if (content.key === key) {
+                            return content.value[0];
+                        }
+                    }
+                }
+                return defaultValue || '';
+            },
+
+            getImage : function(ad, key) {
+                var posts = [''];
+
+                if (this.isRetina) {
+                    posts = [' retina', ''];
+                }
+
+                for (var ix in posts) {
+                    var p = posts[ix];
+
+                    if (ad.creative && ad.creative.images && ad.creative.images.length) {
+                        var images = ad.creative.images;
+                        var lowerKey = key.toLowerCase();
+                        for (var k = 0; k < images.length; k++) {
+                            var image = images[k];
+
+                            var actualKey = image.key.toLowerCase();
+
+                            if (actualKey === lowerKey + p) {
+                                return image.source;
+                            }
+                        }
+                    }
+                }
+                return '';
+            },
+
+            getAd : function(data) {
+                if (data && data.searchResult && data.searchResult.spaces && data.searchResult.spaces[0] && data.searchResult.spaces[0].ads) {
+                    var adSpace = data.searchResult.spaces[0];
+                    if (adSpace.ads.length >= 1) {
+                        return adSpace.ads[0];
+                    }
+                }
+                return null;
+            }
+        }
+    }
+
+    function cxTest_callQueueExecute() {
+        try {
+            var currCall = null;
+            while (currCall = cxTest.callQueue.shift()) {
+                try {
+                    var fnName = currCall[0];
+                    var fnArgs = currCall.slice(1);
+                    cxTest.library[fnName].apply(cxTest.library, fnArgs);
+                } catch (e) {}
+            }
+        } catch (e) {}
+    }
+
+    setTimeout(cxTest_callQueueExecute, 25);
+
+    cxTest.callQueue.push = function() {
+        Array.prototype.push.apply(this, arguments);
+        setTimeout(cxTest_callQueueExecute, 1);
+        return this.length;
+    };
+
+    (function() {
+        for (var propName in cxTest.library) {
+            if (cxTest.library.hasOwnProperty(propName)) {
+                cxTest[propName] = cxTest.library[propName];
+            }
+        }
+    })();
+} catch (e) {console.log(e);}

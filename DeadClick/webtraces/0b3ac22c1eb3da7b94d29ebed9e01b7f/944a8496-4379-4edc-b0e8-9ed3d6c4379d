@@ -1,0 +1,285 @@
+function initMap() {
+	var base = '/design/images/';
+	var pin = base + 'pos_rouge.png';
+	var cornet = base + 'cornet.png';
+	var cible = base + 'cible_bleue.png';
+	var mapBaseLat = 46.20;
+	var mapBaseLng = -72.5;
+	var mapZoom = 8;
+	var mapMinZoom = 5;
+	var mapMaxZoom = 17;
+	var markers = [];
+	var lastInfoWindow = null;
+	var pinPosition;
+
+	// Paramètres de la carte
+	var map = new google.maps.Map(
+		document.getElementById('map'), {
+			zoom: mapZoom,
+			center: {
+				lat: mapBaseLat,
+				lng: mapBaseLng
+			},
+			disableDefaultUI: true,
+			zoomControl: true,
+			minZoom: mapMinZoom,
+			maxZoom: mapMaxZoom,
+			height: '100px',
+			styles: [{
+				featureType: "road",
+				elementType: "geometry",
+				stylers: [{
+					lightness: 100
+				}, {
+					visibility: "simplified"
+				}]
+			}, {
+				featureType: "poi",
+				elementType: "labels",
+				stylers: [{
+					visibility: "off"
+				}]
+			}, {
+				featureType: "road",
+				elementType: "geometry.fill",
+				stylers: [{
+					color: "white"
+				}]
+			}],
+		}
+	);
+	
+	// Créer les marqueurs
+	for (i = 0; i < rows.length; i++) {
+		row = rows[i];
+
+		var contentString = "";
+		var domaines = [];
+
+		var login = row[0];
+		var poste = row[1];
+		var compagnie = row[2];
+		var lieu = row[3];
+		var lat = row[4];
+		var lng = row[5];
+		var logo = row[6];
+		var champ1 = row[7];
+		var champ2 = row[8];
+		var percentage = row[9];
+		var label = row[10];
+
+		domaines.push(champ1, champ2);
+
+		if (percentage != -1) {
+			contentString += '<img align="right" src="/design/svg/' + percentage + '.svg" style="margin-top: 5px; margin-bottom: 5px; margin-left: 5px; width:47px; height: 47px">';
+			labelText = ' ';
+		}
+
+		if (logo.indexOf('empty.gif') == -1) {
+			contentString += '<img src="' + logo + '" style="margin-top: 5px;">';
+		}
+
+		var action = "display";
+		if (lang === "eng") action = "show&temp=display_ENG";
+
+		contentString +=
+			'<a id="lien" href="/cgi-bin/emplois/pm.cgi?action=' + action + '&login=' + login + '" target="_blank">' +
+			'<p id="poste">' + poste + '</p>' +
+			'<p id="compagnie">' + compagnie + '</p>' +
+			'<p id="lieu">' + lieu + '</p>' +
+			'</a>';
+
+		markers.push(createMarker(new google.maps.LatLng(lat, lng), contentString));
+	}
+
+	// Créer le cluster de marqueurs
+	var markerCluster = new MarkerClusterer(
+		map,
+		markers, {
+			styles: [{
+				url: cible,
+				width: 40,
+				height: 40,
+				textColor: 'white',
+				textSize: 16,
+				fontFamily: '"Open Sans Condensed", sans-serif;',
+			}],
+			imagePath: '/javascript/js-marker-clusterer/images/m',
+			gridSize: 55,
+			maxZoom: 12,
+			averageCenter: true,
+		}
+	);
+
+	// Enlever la fenêtre info lorsqu'on clique sur la carte
+	google.maps.event.addListener(map, 'click', function() {
+		if (lastInfoWindow) lastInfoWindow.close();
+	});
+
+	// Lancer la recherche de ville, lieu ou code postal
+	document.getElementById('rechercher').addEventListener('click', function() {
+		var keywords = document.getElementById('keywords').value;
+		
+		if (keywords === "") {
+			useLocation();
+		} else {
+			useLocation(keywords);
+		}
+	});
+
+	// Événements pour la recherche avancee
+	document.getElementById('rechercheAvancee').addEventListener('change', function(event) {
+		console.log(event.target.id);
+		if (event.target.id === "keywords") {
+			document.getElementById('rechercher').click();
+		} else {
+			toggleMarkers();		
+		}
+	});
+
+	// N'afficher que les marqueurs remplissant les conditions de la recherche avancée
+	function toggleMarkers() {
+		var listeDomaines = ['ventes', 'marketing', 'communications', 'redaction', 'administration', 'graphiques'];
+
+		var keepMarkers = [];
+
+		var seuil = parseInt(document.getElementById('pourcentage').value);
+
+		if (isNaN(seuil)) seuil = 0;
+
+		for (j = 0; j < markers.length; j++) {
+			var domaines = markers[j].domaines;
+			var percentage = markers[j].label.percentage;
+
+			var keep = false;
+
+			for (k = 0; k < listeDomaines.length; k++) {
+				var d = document.getElementById(listeDomaines[k]);
+
+				for (l = 0; l < domaines.length; l++) {
+					if ((d.value === domaines[l]) && (d.checked === true) && (percentage >= seuil || percentage == -1)) {
+						keep = true;
+					}
+				}
+			}
+
+			if (keep === true) {
+				keepMarkers.push(markers[j]);
+			}
+		}
+
+		markerCluster.clearMarkers();
+		markerCluster.addMarkers(keepMarkers);
+	}
+
+	// Créer un marqueur
+	function createMarker(coord, contentString) {
+		var marker = new google.maps.Marker({
+			position: coord,
+			map: map,
+			icon: {
+				url: cornet,
+				labelOrigin: new google.maps.Point(18, 17.5)
+			},
+			zIndex: markers.length,
+			domaines: domaines,
+			label: {
+				text: label,
+				fontSize: '13px',
+				fontFamily: '"Open Sans Condensed", sans-serif;',
+				fontWeight: 'bold',
+				color: '#001d51ff',
+				percentage: percentage
+			}
+		});
+
+		var infoWindow = new google.maps.InfoWindow({
+			content: contentString
+		});
+
+		google.maps.event.addListener(marker, 'click', function() {
+			if (lastInfoWindow) lastInfoWindow.close();
+
+			infoWindow.open(map, marker);
+
+			lastInfoWindow = infoWindow;
+		});
+
+		return marker;
+	}
+
+	// Placer la carte selon l'adresse fournie
+	function useLocation(adresse) {
+		if (!adresse) adresse = baseAdresse;
+
+		//console.log('adresse: ' + adresse);
+
+		if (pinPosition) pinPosition.setMap(null);
+
+		if (loginX === '' && adresse === 'adresse') {
+			//Non connecté
+			pinPosition = new google.maps.Marker({
+				position: { lat: mapBaseLat, lng: mapBaseLng},
+				map: null,
+				icon: pin
+			});
+
+			var reculer = 0;
+			//Reculer le facteur de zoom si c'est un iphone 5
+			if (window.innerWidth <= 375) {
+				reculer = 1;
+			}
+
+			map.setCenter(new google.maps.LatLng(mapBaseLat, mapBaseLng));
+			map.setZoom(mapZoom - reculer);
+
+			//if (navigator.geolocation) {
+			//	navigator.geolocation.getCurrentPosition(function(pos) {
+			//		var coords = pos.coords;
+			//
+			//		var location = new google.maps.LatLng(coords.latitude, coords.longitude);
+			//
+			//		pinPosition = new google.maps.Marker({
+			//			position: location,
+			//			map: map,
+			//			icon: pin
+			//		});
+			//
+			//		map.setCenter(location);
+			//		map.setZoom(pinZoom);
+			//	}, function() {
+			//		// Si il y a une erreur
+			//		map.setCenter(new google.maps.LatLng(mapBaseLat, mapBaseLng));
+			//		map.setZoom(mapZoom);
+			//	});
+			//} else {
+			//	map.setCenter(new google.maps.LatLng(mapBaseLat, mapBaseLng));
+			//	map.setZoom(mapZoom);
+			//}
+		} else {
+			var geocoder = new google.maps.Geocoder();
+
+			geocoder.geocode({
+				'address': adresse
+			}, function(results, status) {
+				if (status == google.maps.GeocoderStatus.OK) {
+					var location = results[0].geometry.location;
+
+					pinPosition = new google.maps.Marker({
+						position: location,
+						map: map,
+						icon: pin
+					});
+
+					map.setCenter(location);
+					map.setZoom(pinZoom);
+				}
+			});
+		}
+	}
+
+	// Utiliser la position de base
+	toggleMarkers();		
+	useLocation();
+
+}

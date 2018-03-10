@@ -1,0 +1,96 @@
+jQuery(document).ready(function($){
+
+	$('.slider, #slider, .related').fadeIn("slow");
+	$('#slider').bxSlider({
+		infiniteLoop: true,
+		speed: 500,
+		auto: true,
+		controls: false,
+		pager: true,
+		autoDelay: 1000,
+		mode: 'fade',
+		pause: 5000
+	});
+	
+	$("a[href='#top'], .scroll.up.init").click(function() {
+	  $("html, body").animate({ scrollTop: 0 }, "slow");
+	  return false;
+	});
+});
+
+jQuery(document).ready(function($){
+	
+	$("#product .content").fadeIn('slow');
+	$('#product .social, #product .zoom').fadeIn(600);
+
+	
+	$("#add-to-cart").click(function(){
+		var width = $("#add-to-cart").outerWidth();
+		$("#add-to-cart").css({'width': width+'px'});
+		$("#add-to-cart").val("Adding...").animate({
+			color: '#444',
+			backgroundColor: '#fff'
+		}, 400);
+	});
+	
+	
+	$('.image img').each(function(){
+		if (!this.complete) { // if image is NOT cached
+			$(this).load(function(){
+				$(this).fadeIn(400);
+			});
+		} else { // if image is cached
+			$(this).fadeIn(400);
+		}
+	});
+
+});
+
+
+$(function() {
+  $('a[href*=#]:not([href=#])').click(function() {
+    if (location.pathname.replace(/^\//,'') == this.pathname.replace(/^\//,'') && location.hostname == this.hostname) {
+      var target = $(this.hash);
+      target = target.length ? target : $('[name=' + this.hash.slice(1) +']');
+      if (target.length) {
+        $('html,body').animate({
+          scrollTop: target.offset().top
+        }, 1000);
+        return false;
+      }
+    }
+  });
+});
+
+$(document).scroll(function(){
+	if($(this).scrollTop() > ($(document).height() - 1000)){
+		var height = $(document).height(),
+			contentHeight = $('.pdpContentWrap').outerHeight();
+		$(".pdpContentWrap").css('top', (height - contentHeight - 360) + "px");
+		$('.pdpContentWrap').addClass('bottom');
+
+	} else {
+		$('.pdpContentWrap').removeClass('bottom');
+		$(".pdpContentWrap").css('top', "100px");
+	}
+})
+
+$('a#sizeChartToggle').click(function(){
+	$('#size_chart').toggleClass('hidden');
+	//$('.scroll').addClass('hidden');
+})
+
+$('#size_chart_toggle').click(function(){
+	$('#size_chart').addClass('hidden');
+	//$('.scroll').removeClass('hidden');
+})
+
+$('.customer li').on('click', function(){
+	$('.login_background').toggleClass('hidden');
+	$('.account_login').toggleClass('hidden');
+});
+
+$('#toggleLogin').on('click', function(){
+	$('.login_background').addClass('hidden');
+	$('.account_login').addClass('hidden');
+})

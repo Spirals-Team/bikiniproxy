@@ -1,0 +1,1 @@
+(function(o){Object.assign=function(o,t){for(var e,l,n=1;n<arguments.length;++n){l=arguments[n];for(e in l)Object.prototype.hasOwnProperty.call(l,e)&&(o[e]=l[e])}return o}}).call("object"==typeof window&&window||"object"==typeof self&&self||"object"==typeof global&&global||{});

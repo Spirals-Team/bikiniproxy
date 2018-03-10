@@ -1,0 +1,274 @@
+/* Updated 08/24/2017 adding overlay when adblocker is enabled - Elvis */
+/* Updated 7/27/2017 adblocking data capture to Omniture - KJL */
+/* Previously Updated 9/16/16 PageFair Omniture Adjustments ML */
+/* Previously updated 9/12/16 Elvis Adding PageFair Pixel and Omniture Integration */
+
+var tcArray, tcSliceG; //the letter after tcSlice is an abbreviated vendor name in case we need more than one.
+
+if ($.cookie('gab') != null || $.cookie('turnuuid') != null) { // Check for Ad-block cookie + set variable for initial Pageview call if existing
+    if (typeof window.s_context != 'object') {
+        window.s_context = {};
+    }
+    if ($.cookie('gab') == '1') {
+        window.s_context['wb.adblocker'] = 'ab1';
+    } else if ($.cookie('gab') == '0') {
+        window.s_context['wb.adblocker'] = 'ab0';
+    }
+    if ($.cookie('turnuuid') != null) {
+        window.s_context['wb.turnid'] = $.cookie('turnuuid');
+    }
+}
+
+$(function () {
+    // This takes the tactics string from DFPTargetKeys and slices the first 20 items out of it for the Google Retargeting pixel in the footer.
+    if (typeof DFPTargetKeys !== "undefined") {
+        tcArray = DFPTargetKeys.userSegVars.tc.split(",");
+        tcSliceG = tcArray.slice(0, 19);
+    } else {
+        tcSliceG = null;
+    }
+
+    // load Experian Match Back Pixel only once per session
+    //if (!$.cookie("expMatchBkPxl")) {
+    //    $.cookie("expMatchBkPxl", "true", {domain: '', path: ''});
+    //    $("body").append('<img height="1" width="1" src="//d.turn.com/r/dd/id/L21rdC84MTYvY2lkLzI4NTg2NTM1L3QvMg/kv/profession=' + s_user_group + '">');
+    //}
+
+    // load Experian Match Back Pixel
+    AIQ.init();
+
+    //pagefair code - Enables adblock detection and measurement
+    function async_load(script_url) {
+        var protocol = ('https:' == document.location.protocol ? 'https://' : 'http://');
+        var s = document.createElement('script');
+        s.src = protocol + script_url;
+        var x = document.getElementsByTagName('script')[0];
+        x.parentNode.insertBefore(s, x);
+    }
+
+    if (!$.cookie('gab')) {
+        bm_website_code = 'DCA5BC05D88E412E';
+        jQuery(document).ready(function () {
+            async_load('asset.pagefair.com/measure.min.js')
+        });
+        jQuery(document).ready(function () {
+            async_load('asset.pagefair.net/ads.min.js')
+        });
+    }
+
+    window.pf_notify = function (status) {
+
+        // don't execute this inside an iframe
+        if (window.top !== window.self) {
+            return false;
+        }
+
+        try {
+            if (DFPTargetKeys.reqHeaders.device == 'MOBILE' || DFPTargetKeys.reqHeaders.device == 'IPAD') {
+                return false;
+            }
+        } catch (e) {
+            console.log(e);
+        }
+
+
+
+        if (status) { // if ad-blocker is in use
+            if (!$.cookie('gab')) { // If cookie was never set, AND ad-blocker turned on
+                // set context variable when adblock is detected.
+                window.wmdSetContext("wb.adblocker", "ab1");
+                // add new context variable to following ad-hoc/module call
+                window.addLinkTrackVars('wb.adblocker');
+                // make ad-hoc call to record adblock usage for "one-hit-wonder" visitors
+                window.wmdPageLink('pagefair');
+                // remove new context variable for all subsequent ad-hoc/module calls
+                window.remLinkTrackVars('wb.adblocker');
+
+            }
+            if ($.cookie('gab') !== '1') {
+                // omniture code will check this cookie to determine use of adblock
+                $.cookie("gab", 1, {path: '/'});
+            }
+            if ($.cookie('ab_recently_msged') === null) {
+                $.cookie('ab_recently_msged', '1', {expires: 7, domain: 'medscape.com'});
+                abMessage.init();
+            }
+
+        } else {
+            if (!$.cookie('gab')) { // If cookie was never set, AND ad-blocker turned on
+                // set context variable when adblock is detected.
+                window.wmdSetContext("wb.adblocker", "ab0");
+                // add new context variable to following ad-hoc/module call
+                window.addLinkTrackVars('wb.adblocker');
+                // make ad-hoc call to record adblock usage for "one-hit-wonder" visitors
+                window.wmdPageLink('pagefair_imp');
+                // remove new context variable for all subsequent ad-hoc/module calls
+                window.remLinkTrackVars('wb.adblocker');
+            }
+            if ($.cookie('gab') !== '0') {
+                // omniture code will check this cookie to determine use of adblock
+                $.cookie("gab", 0, {path: '/'});
+            }
+        }
+    };
+
+});
+
+// This is the default message
+var _adb_messages = [];
+_adb_messages[0] = {
+    title: 'We notice you\'re <br/> using an ad blocker',
+    p1: 'Providing you with medical information is possible because of advertisers.',
+    p2: 'If Medscape is useful to you, please turn off your ad blocker.',
+    button: 'Allow Ads'
+};
+
+
+var message = _adb_messages[0]; 
+if (typeof _adb_message != 'undefined' && _adb_message != null) { // set the message using test and target if available
+    message = _adb_message; //variable from t&t;
+}
+var abMessage = {
+    init: function () {
+        this._pagefair_img_link = "//img." + getDomain() + "medscapestatic.com/pi/global/blockmsg";
+        this.ad_blocker_overlay = ['<div id="ad-blocker-overlay"></div>'];
+        this.message_overlay_html = [
+            '<div id="ab-message-overlay">',
+            '<div id="ab-message-overlay-close" onclick="wmdPageLink(\'pagefair_x\');"></div>',
+            '<img src="//img.medscapestatic.com/pi/logos/mscp-logo.png" id="ab-logo" alt="logo"/>',
+            '<h1 id="ab-header">' + message.title + '</h1>',
+            '<p id="ab-message-1">' + message.p1 + '</p>',
+            '<p id="ab-message-2">' + message.p2 + '</p>',
+            '<button  id="allow-ads-btn" class="blue-button" onclick="wmdPageLink(\'pagefair_off\');">' + message.button + '</button>',
+            '<h1 id="ab-thank-you">Thank You!</h1>',
+            '</div>'
+        ].join('');
+        this.instructions_overlay_html = [
+            '<div id="instructions-overlay">',
+            '<div id="instructions-overlay-close"></div>',
+            '<div id="instructions-overlay-content">',
+            '<p>1. Which of these icons appears in your browser toolbar?</p>',
+            '<div id="icons">',
+            '<img src="' + this._pagefair_img_link + '/abp.png" instr-src="/abp.gif">',
+            '<img src="' + this._pagefair_img_link + '/ab.png" instr-src="/ab.gif">',
+            '<img src="' + this._pagefair_img_link + '/ub.png" instr-src="/ub.gif">',
+            '<img src="' + this._pagefair_img_link + '/adg.png" instr-src="/adg.gif">',
+            '</div>',
+            '<p id="instructions-two">2. Follow the instructions in the image</p>',
+            '<p id="instructions-three">3. <a id="reload-page" href="">Reload</a> the page</p>',
+            '</div>',
+            '</div>'
+        ].join('');
+
+        this.instructions_gif = ['<img id="instructions-gif">'].join('');
+
+        $('body').append(this.ad_blocker_overlay);
+        $('body').append(this.message_overlay_html);
+        $('body').append(this.instructions_overlay_html);
+
+        $("#ab-message-overlay-close").click(function () {
+            $('#ab-message-overlay').remove();
+            $('#ad-blocker-overlay').remove();
+            $('#instructions-overlay').remove();
+        });
+
+        $("#allow-ads-btn").click(function () {
+            $('#ab-message-overlay').remove();
+            $('#instructions-overlay').show();
+
+            $('body').append(abMessage.instructions_gif);
+
+            $("#instructions-overlay-close").click(function () {
+                $('#instructions-overlay').remove();
+                $('#ad-blocker-overlay').remove();
+                $('#instructions-gif').remove();
+            });
+
+            $("#instructions-overlay img").click(function () {
+                $('img#instructions-gif').attr("src", abMessage._pagefair_img_link + $(this).attr("instr-src"));
+            });
+            $("#instructions-overlay img").one("click", function () {
+                $('#instructions-two, #instructions-three').css('visibility', 'visible');
+            });
+        });
+
+    }
+
+};
+
+function addMessageListener(obj, func) {
+	if (obj.addEventListener) { // all other browsers
+		obj.addEventListener("message",func, false);
+	}
+	else if (obj.attachEvent) { //IE-8
+		obj.attachEvent("onmessage",func);
+	}
+}
+
+var AIQ = {
+    beacons: {
+        turn: "//d.turn.com/r/dd/id/L21rdC84MTYvY2lkLzI4NTQ1NTU0L3QvMi9jYXQvMzE5NjM2OTM"
+    },
+
+    status: {
+        id: 0
+    },
+
+    init: function() {
+        var turnid = this.getTurnIDCookie();
+        if(!turnid || turnid == 0) {
+            this.triggerBeacon("turn");
+        }
+        else {
+            this.callOmniture();
+        }
+    },
+
+    triggerBeacon: function(name) {
+        var self = this;
+        var uri = self.beacons[name];
+        $('<iframe>', {
+            src: uri,
+            id: name,
+            width: 1,
+            height: 1
+        })
+		.appendTo("body")
+		.load(function() {
+			this.contentWindow.postMessage({bturnid:true},'*'); //send the message and target URI
+		});
+		addMessageListener(window, function(event) {
+            if (event.origin !== "https://img.medscape.com")
+                return;
+			if(event.data.turnid)
+				self.returnID(event.data.turnid);
+		}, false);
+    },
+
+    returnID: function(id) {
+        if(this.status.id !== id)
+            this.status.id = id;
+        this.setTurnIDCookie();
+        this.callOmniture();
+    },
+
+    setTurnIDCookie: function() {
+        $.cookie("turnuuid", this.status.id, {path: '/', expires: 7});
+    },
+
+    getTurnIDCookie: function() {
+        this.status.id = $.cookie("turnuuid");
+        return this.status.id;
+    },
+
+    callOmniture: function() {
+        //window.wmdSetContext("wb.turnid", this.status.id);
+        if (typeof window.s_context != 'object') {
+            window.s_context = {};
+        }
+        window.s_context['wb.turnid'] = this.status.id;
+        // window.addLinkTrackVars('wb.turnid');
+        // window.wmdPageLink('experian');
+        // window.remLinkTrackVars('wb.turnid');
+    }
+};

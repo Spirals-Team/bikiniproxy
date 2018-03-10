@@ -1,0 +1,742 @@
+/**
+ * sothebys.global.js: Global utility functions and helpers in a nice centralized location
+ */
+var lastMediaEvent = {type: "",position:0};
+var videoPosition = 0, timePlayed;
+
+var Sothebys = Sothebys || {};
+!function(window, Sothebys) {
+
+	Sothebys.util = {
+		$mobileListButton : $("#mobileListButton"),
+		mobileMenuActive : false,
+		init : function() {
+
+			//Make sure modals that should be centered vertically are
+			function centerModal() {
+			    $(this).css('display', 'block');
+			    var $dialog = $(this).find(".modal-dialog");
+			    var offset = ($(window).height() - $dialog.height()) / 2;
+			    // Center modal vertically in window
+			    $dialog.css("margin-top", offset);
+			}
+
+			$('.modal.center-vert').on('show.bs.modal', centerModal);
+			$(window).on("resize", function () {
+			    $('.modal.center-vert:visible').each(centerModal);
+			});
+
+			$('.slides-mask').hide();
+			if ($('#slideWidget').size() > 0)
+				$('.slides-mask').attr('style', '');
+
+			Sothebys.util.updateClickShow();
+			Sothebys.util.$mobileListButton.on("click", function(){
+				if (!Sothebys.util.mobileMenuActive) {
+					Sothebys.util.mobileMenu("open");
+					Sothebys.util.mobileMenuActive = true;
+				} else {
+					Sothebys.util.mobileMenu("close");
+					Sothebys.util.mobileMenuActive = false;
+				}
+			});
+			$("#mobileSearchButton").toggle(function(){Sothebys.util.mobileSearch("open")},function(){Sothebys.util.mobileSearch("closed")});
+			$(".mobile-subnav-trigger").on("click", function(){$(this).toggleClass("open");});
+			$('.single-lot .description').each(function () {
+				//Read More/Less for single lot
+				new STBCore.TextExpander(this, {
+			        maxHeight: 300,
+			        text: '.description-wrap',
+			        expander: '.expander-anchor',
+			        toggleClass: 'full-desc'
+				});
+			});
+
+
+			$('.eventdetail-singlelot-wrap .lotdetail-description').each(function () {
+				//Read More/Less for single lot
+				new STBCore.TextExpander(this, {
+			        maxHeight: 300,
+			        text: '.lotdetail-description-text',
+			        expander: '.expander-anchor',
+			        toggleClass: 'full-desc'
+				});
+			});
+
+
+			if ($('.eventdetail-footer-content').size() > 0 && $('.eventdetail-getapp').size() <= 0) {
+				$('.eventdetail-footer-content').css('text-align', 'center');
+			}
+
+			if (!window.location.origin) {
+			  window.location.origin = window.location.protocol + "//" + window.location.hostname + (window.location.port ? ':' + window.location.port: '');
+			}
+		},
+		updateEllipses : function() {
+			$(".ellipsis").ellipsis();
+			$(".live-ellipsis").ellipsis({
+				live : true
+			});
+		},
+		updateClickShow : function() {
+			// Necessary to hide overlays when clicked
+			// This is used to force the overlay to stay opened when track sale/
+			// track exhibition is clicked. 
+			$('body').on(
+					'click',
+					'.inline-overlay',
+					function() {
+						var $this = $(this);
+						if ($this.attr("data-ignore-global")) {
+							return true;
+						}
+						var el = $this.find('.overlay-content').not('.no-click-show');
+						el.toggleClass('show');
+						if (el.hasClass('show') && ('ontouchstart' in window)
+								&& !(el.hasClass('register-login-overlay'))) {
+							// create pad
+							var pad = $('<div></div>');
+							pad.attr('id', 'fullScreenOverlay');
+							pad.css('position', 'absolute').css('top', '0')
+									.css('left', '0');
+							pad.css('width', $(document).width() + 'px');
+							pad.css('height', $(document).height() + 'px');
+							pad.css('z-index', ~~(el.css('z-index')) - 1);
+							pad.click(function() {
+								el.removeClass('show');
+								$(this).remove();
+							});
+							$('body').prepend(pad);
+						} else {
+							$('#fullScreenOverlay').remove();
+						}
+					});
+		},
+		mobileMenu : function(state) {
+			var $nav = $("nav.mobile-nav");
+			var $bodyWrap = $("#bodyWrap");
+			var $containers = $("body").children();
+			var adjustHeight = function () {
+				var docHeight = ($(document).height() - $(".mobile-header").height());
+				$nav.height(docHeight);
+			};
+			var adjuster = setInterval(adjustHeight, 250)
+			if (state === "open") {
+				$bodyWrap.addClass("inactive");
+				$nav.addClass("active");
+				Sothebys.util.$mobileListButton.addClass("rotate");
+			} else {
+				clearInterval(adjuster);
+				$bodyWrap.removeClass("inactive");
+				$nav.removeClass("active");
+				Sothebys.util.$mobileListButton.removeClass("rotate");
+			}
+		},
+		mobileSearch : function(state) {
+			var $form = $("form.mobile-search");
+			if (state === "open") {
+				$form.animate({marginTop: 0},300);
+			} else {
+				$form.animate({marginTop:-50},300);
+			}
+		},
+		cleanseOnBlur: function () {
+			var $el = $(this);
+			$el.val(STBCore.Util.stripTags($el.val()));
+		},
+		getParameter : function(paramName, urlStr) {
+			paramName = paramName.replace(/[\[]/, "\\\[").replace(/[\]]/,
+					"\\\]");
+			var regexS = "[\\?&]" + paramName + "=([^&#]*)";
+			var regex = new RegExp(regexS);
+			var myURL = (urlStr) ? urlStr : window.location.href;
+			var results = regex.exec(myURL);
+			if (results == null)
+				return "";
+			else
+				return results[1];
+		},
+		getSize : function() {
+			if (typeof window.matchMedia === 'undefined')
+				return "desktop";
+			else
+				return ((matchMedia('screen and (max-width: 767px)').matches) ? "mobile"
+						: ((matchMedia('screen and (min-width: 768px) and (max-width: 979px)').matches) ? "tablet"
+								: "desktop"));
+		},
+		registerExactTarget : function(email) {
+			console.log('registerExactTarget is called');
+			var email = $('#emailSignup-email').val();
+			var $errorMsg = $("#emailSignup-error");
+			if (email.length == 0) {
+				console.log('email is too short')
+				$errorMsg.fadeIn('fast');
+				return;
+			};
+			var targetUrl = "/content/sothebys/preferences.createdefaultpreferenceuseronexacttarget.html?ue="+email;
+			console.log("Registering for exact target at " + targetUrl);
+			$.get(targetUrl, function(data){
+				console.log(data);
+				$errorMsg.css("color", "#2ECC40");
+				$errorMsg.html("Registeration Successful");
+				$errorMsg.fadeIn('fast');
+				setTimeout(function() {
+					$('#emailSignupModal').modal('toggle');
+				}, 1000);
+				;
+			});
+			console.log("Registering for exact target");
+		},
+		studioNewsletter : function() {
+			var email = $('.EmailSignup').val();
+    		var re = /^([\w-]+(?:\.[\w-]+)*)@((?:[\w-]+\.)*\w[\w-]{0,66})\.([a-z]{2,6}(?:\.[a-z]{2})?)$/i;
+			var $errorMsg = $(".EmailSignup-errorMessage");
+			var $successMsg = $(".EmailSignup-successMessage");
+			var $emailExistsMsg = $(".EmailSignup_exists");
+			$successMsg.hide();
+			$emailExistsMsg.hide();
+			$errorMsg.hide();
+			if ((email.length == 0) || (!re.test(email))) {
+				$errorMsg.fadeIn('fast');
+				return;
+			};
+			var targetUrl = "/content/sothebys/preferences.createstudionewsletterpreferenceuser.html?ue="+email;
+			$.get(targetUrl, function(data){
+				if (data.created){
+					$('.st-btn.newsletter').hide();
+					$('.EmailSignup').hide();
+					$('.EmailSignup-successLine').show();
+					$successMsg.fadeIn('fast');
+					try {
+						setOmnitureNewsletterSignUp();
+					}
+					catch (e){
+					}
+				} else {
+					$emailExistsMsg.fadeIn('fast');
+				}
+			});
+		},
+		calendarHeroClick : function(url) {
+			try {
+				setOmnitureCalenderHero(url);
+			}
+			catch (e){
+			}
+		},
+		sendContactEmail : function(formVal) {
+			var name = $("#contactFirstName").val(), lastName = $(
+					"#contactLastName").val(), email = $("#contactEmail").val(), message = $(
+					"#contactMessage").val(), targetUrl = '';
+
+			if (formVal == 'gallery') {
+				var tmpDataObject = {
+					first_name : name,
+					last_name : lastName,
+					email : email,
+					body_text : message
+				};
+
+				if (document.location.pathname.indexOf('past-exhibitions') >= 0)
+					targetUrl = document.location.pathname.split('.').shift()
+							.split('past-exhibitions').shift()
+							+ 'exhibitions/_jcr_content.sendEmail.html';
+				else
+					targetUrl = document.location.pathname.split('.').shift()
+							+ '/_jcr_content.sendEmail.html';
+
+				$.post(targetUrl, tmpDataObject, function(data) {
+					Sothebys.galleryContact.parseResponse(data);
+					if (typeof (omniSiteCat) !== "undefined") { // RED-1499: Added Site Catalyst
+						// for Gallery.
+						omniSiteCat.onSubmit();
+					}
+				}, 'json');
+
+			}
+		},
+		loginAndForward : function(cookieName, url) {
+			var cname = cookieName ? cookieName : "resource";
+			var targetUrl = url ? url : encodeURIComponent(document.location);
+
+			var originalUrl = targetUrl;
+			var parameter = encodeURIComponent("&isAuthenticated=false");
+			var newParameter = encodeURIComponent("&isAuthenticated=true");
+			var urlTmp = originalUrl.replace(parameter, newParameter);
+			if (urlTmp) {
+				$.cookie(cname, urlTmp, {
+					path : '/'
+				});
+			}
+			window.location = '/en/registration/login-to-sothebys.html';
+		},
+		loginAndReturn : function(cookieName) {
+			var cname = "resource";
+			if (cookieName) {
+				cname = cookieName;
+			}
+			var originalUrl = encodeURIComponent(document.location);
+			var parameter = encodeURIComponent("&isAuthenticated=false");
+			var newParameter = encodeURIComponent("&isAuthenticated=true");
+			var urlTmp = originalUrl.replace(parameter, newParameter);
+			if (urlTmp) {
+				$.cookie(cname, urlTmp, {
+					path : '/'
+				});
+			}
+			window.location = '/en/registration/login-to-sothebys.html';
+		},
+		loginAndReturnAnchor : function(cookieName, anchor) {
+			var cname = "resource";
+			if (cookieName) {
+				cname = cookieName;
+			}
+			var originalUrl = encodeURIComponent(document.location.href + anchor);
+			var parameter = encodeURIComponent("&isAuthenticated=false");
+			var newParameter = encodeURIComponent("&isAuthenticated=true");
+			var urlTmp = originalUrl.replace(parameter, newParameter);
+			if (urlTmp) {
+				$.cookie(cname, urlTmp, {
+					path : '/'
+				});
+			}
+			window.location = '/en/registration/login-to-sothebys.html';
+		},
+		registerTransactional : function(cookieName, eventShortPath, url, canRegisterForTransactional, isLessThan24Hours, eventTitle) {
+			var cname = cookieName ? cookieName : "resource";
+
+			if (url) {
+				$.cookie(cname, url, {
+					path : '/'
+				});
+
+				// If the user is not allowed to register, make sure their netIframeWizzard is null
+				// If they can, direct them back to this URL later when used in signup confirmation email
+				if (!canRegisterForTransactional || isLessThan24Hours) {
+					$.cookie('nextIframeWizzard', null, {
+						path : '/'
+					});
+				} else {
+					$.cookie('nextIframeWizzard', url, {
+						path : '/'
+					});
+				}
+
+			}
+			// User cannot register because the auction is too soon
+			// and is simple user
+			if(isLessThan24Hours) {
+				$("#SimpleClosedRegistration").modal();
+				$("#SimpleClosedRegistration .event-title-placeholder").text(eventTitle);
+				return false;
+			}
+
+			// Create cookie to track ability to bid
+			// If an article name is passed, that means the event is closed for registration.
+			if (!canRegisterForTransactional) { 
+				//If bad eventName, use the word selected instead of undefined
+				if (eventTitle === undefined) { 
+					eventTitle = "Selected";
+				}
+
+				window.location = '/en/registration/register-new-account.html?name=' + encodeURIComponent(eventTitle);
+				return false;
+			}
+			
+			// Allowed to register, link to transactional registration	
+			window.location = '/en/registration/transactional.html/' + eventShortPath;
+		},
+		blockNewTransacational: function(eventTitle) {
+			$("#BlockNewTransacational").modal();
+			$("#BlockNewTransacational .event-title-placeholder").text(eventTitle);
+		},
+		formatMoney : function(n, decPlaces, thouSeparator, decSeparator) {
+					decPlaces = isNaN(decPlaces = Math.abs(decPlaces)) ? 2
+							: decPlaces,
+					decSeparator = decSeparator == undefined ? "."
+							: decSeparator,
+					thouSeparator = thouSeparator == undefined ? ","
+							: thouSeparator,
+					sign = n < 0 ? "-" : "",
+					i = parseInt(n = Math.abs(+n || 0).toFixed(decPlaces)) + "",
+					j = (j = i.length) > 3 ? j % 3 : 0;
+			return sign
+					+ (j ? i.substr(0, j) + thouSeparator : "")
+					+ i.substr(j).replace(/(\d{3})(?=\d)/g,
+							"$1" + thouSeparator)
+					+ (decPlaces ? decSeparator
+							+ Math.abs(n - i).toFixed(decPlaces).slice(2) : "");
+		},
+		formatNumber : function(n, decPlaces, thouSeparator, decSeparator) {
+					decPlaces = isNaN(decPlaces = Math.abs(decPlaces)) ? 0
+							: decPlaces,
+					decSeparator = decSeparator == undefined ? "."
+							: decSeparator,
+					thouSeparator = thouSeparator == undefined ? ","
+							: thouSeparator,
+					sign = n < 0 ? "-" : "",
+					i = parseInt(n = Math.abs(+n || 0).toFixed(decPlaces)) + "",
+					j = (j = i.length) > 3 ? j % 3 : 0;
+			return sign
+					+ (j ? i.substr(0, j) + thouSeparator : "")
+					+ i.substr(j).replace(/(\d{3})(?=\d)/g,
+							"$1" + thouSeparator)
+					+ (decPlaces ? decSeparator
+							+ Math.abs(n - i).toFixed(decPlaces).slice(2) : "");
+		},
+		removeSpecialCharacters : function(str) {
+            var translateRegEx = /[öäüÖÄÜáàâéèêúùûóòôÁÀÂÉÈÊÚÙÛÓÒÔß]/g;
+            var translate = {
+                "ä": "a", "ö": "o", "ü": "u",
+                "Ä": "A", "Ö": "O", "Ü": "U",
+                "á": "a", "à": "a", "â": "a",
+                "é": "e", "è": "e", "ê": "e",
+                "ú": "u", "ù": "u", "û": "u",
+                "ó": "o", "ò": "o", "ô": "o",
+                "Á": "A", "À": "A", "Â": "A",
+                "É": "E", "È": "E", "Ê": "E",
+                "Ú": "U", "Ù": "U", "Û": "U",
+                "Ó": "O", "Ò": "O", "Ô": "O",
+                "ß": "s"
+              };
+                return str.replace(translateRegEx,function(match) { return translate[match]; }).replace(/'/g,"").replace(/&#39;/g,"").replace(/ /g,"").replace(/,/g,"").toLowerCase();
+        },
+		isJQuery : function(obj) {
+			return obj instanceof jQuery;
+		},
+		urlPrefix : function() {
+			// init: function() {
+			var url = window.location.protocol + '//' + window.location.host
+					+ '/', path = window.location.pathname.split('/'), tempPrefix = path[1]
+					+ '/' + path[2] + '/';
+
+			if (tempPrefix === 'content/sothebys/') {
+				url += tempPrefix + path[3]; // language (en/fr/it/etc.)
+			} else {
+				url += path[1];
+			}
+			return url;
+			// }
+		},
+		urls : {
+			sale : {
+				paginationFetchURL : document.location.pathname.split('.')
+						.shift()
+						+ '/_jcr_content.lots.lotsListing.html',
+				filterUpdateURL : document.location.pathname.split('.').shift()
+						+ '.filters.updateSaleFilter.html'
+			},
+			auctions : {
+				paginationFetchURL : document.location.pathname.split('.')
+						.shift()
+						+ '/list/_jcr_content.eventsList.html',
+				filterUpdateURL : document.location.pathname.split('.').shift()
+						+ '/list/_jcr_content/filter.updateFilter.json'
+			},
+			video : {
+				paginationFetchURL : document.location.pathname.split('.')
+						.shift()
+						+ '/_jcr_content.videoList.html',
+				filterUpdateURL : document.location.pathname.split('.').shift()
+						+ '/_jcr_content.updateFilter.json'
+			},
+			blogpost : {
+				paginationFetchURL : document.location.pathname.split('.')
+						.shift()
+						+ '/_jcr_content.blogList.html',
+				filterUpdateURL : document.location.pathname.split('.').shift()
+						+ '/_jcr_content.updateFilter.json'
+			},
+			singleblogpost : {
+				paginationFetchURL : document.location.pathname.split('.')
+						.shift()
+						+ '/_jcr_content.blogPostList.html',
+				filterUpdateURL : document.location.pathname.split('.').shift()
+						+ '/_jcr_content.updateFilter.json'
+			},
+			//Added for COM-2657
+		    slideshow : {
+            paginationFetchURL: document.location.pathname.split('.').shift() + '/_jcr_content.slideList.html',
+            filterUpdateURL: document.location.pathname.split('.').shift() + '/_jcr_content.updateSlideshowFilter.json'
+            },
+			currencyUrl : '/en/auctions/list/_jcr_content.currencyRates.json'
+		},
+		//hasEvent checks to see if a element contains an event; requires jQuery
+		hasEvent : function( el, eventName ){
+			if( !$( el ).length || !$( el ).data( 'events' ) ){
+				return false;
+			}
+			return !!$( el ).data( 'events' )[ eventName ];
+		},
+		disableImageRightClick : function(){ //POJS!!!
+			var imgArr = document.getElementsByTagName("IMG");
+			for(var i=0; i<imgArr.length; i++){
+			    var img = imgArr[i];
+			    if(img.className && img.className.indexOf(" copyright")!=-1) continue;
+				if (img.addEventListener) {
+			        img.addEventListener('contextmenu', function(e) {
+			            e.preventDefault();
+			        }, false);
+			    } else {
+			        img.attachEvent('oncontextmenu', function() {
+			            window.event.returnValue = false;
+			        });
+			    }
+			    img.className += " copyright";
+			}
+		},
+	    onMediaEventFired : function(evt){
+	    	var evtType, evtCode, evtPlayed;
+		  	if ((evt.type != lastMediaEvent.type)||((evt.type == "mediaProgress")&&(evt.position != lastMediaEvent.position))) {
+			    switch(evt.type) {
+			        case "mediaPlay":
+			        	try{
+			            	omniSiteCat.setOmnitureMediaEvent(evt.type,"event66");
+			            }
+			            catch(e){}
+			            console.log(evt.type,"event66");
+			            timePlayed = setInterval(function(){
+			            	try{
+			            		omniSiteCat.setOmnitureMediaEvent("progress","event63");
+			            	}
+			            	catch(e){}
+			            },10000);
+			            break;
+			        case "mediaBegin":
+			        	try{
+			            	omniSiteCat.setOmnitureMediaEvent(evt.type,"event64");
+			            }
+			            catch(e){}
+			            console.log(evt.type,"event64");
+			            break;
+			        case "mediaStop":
+			            evtPlayed = evt.position/evt.duration;
+			            if (evtPlayed > .98){
+			                try{
+			                	omniSiteCat.setOmnitureMediaEvent(evt.type,"event65");
+			           		}
+			           		catch(e){}
+			           	}
+			            console.log(evt.type,"event65");
+			            clearInterval(timePlayed);
+			            break;
+			        case "mediaProgress":
+			            evtPlayed = evt.position/evt.duration;
+			            if (videoPosition === 0){
+			                if (evtPlayed > .25) {
+			                    try{
+			                    	omniSiteCat.setOmnitureMediaEvent(evt.type,"event67",-1);
+			                    }
+			                    catch(e){}
+			                    console.log(evt.type,"event67");
+			                    videoPosition = 25;
+			                }
+			            }else if(videoPosition === 25){
+			                if (evtPlayed > .5) {
+			                	try{
+			                   	 	omniSiteCat.setOmnitureMediaEvent(evt.type,"event68",-1);
+			                    }
+			                    catch(e){}
+			                    console.log(evt.type,"event68");
+			                    videoPosition = 50;
+			                }
+			            }else if(videoPosition === 50){
+			                if (evtPlayed > .75) {
+			                	try{
+			                    	omniSiteCat.setOmnitureMediaEvent(evt.type,"event69",-1);
+			                    }
+			                    catch(e){}
+			                    console.log(evt.type,"event69");
+			                    videoPosition = 75;
+			                }
+			            }
+			            break;
+			    }
+			    lastMediaEvent = evt;
+	    	}
+		},
+		mp4VideoEventFired: function(evt, video){
+			var evtPlayed  = video.currentTime/video.duration;
+		  	if ((evt != lastMediaEvent.type)||((evt == "playing")&&(evt != lastMediaEvent.position))) {
+			    switch(evt) {
+			        case "play":
+			        	if(video.currentTime == 0) { //video's first play
+			        		try {
+			            		omniSiteCat.setOmnitureHTMLVideoEvent(evt,"event64", evtPlayed, "Studio How To Video", "Studio How To Video", "Studio How To Video");
+			            		omniSiteCat.setOmnitureHTMLVideoEvent(evt,"event66", evtPlayed, "Studio How To Video", "Studio How To Video", "Studio How To Video");
+			            	}
+			            	catch(e){}
+			            }else {
+			            	try {
+			            		omniSiteCat.setOmnitureHTMLVideoEvent(evt,"event66", evtPlayed, "Studio How To Video", "Studio How To Video", "Studio How To Video");
+			            	}
+			            	catch(e){}
+			            }
+			            timePlayed = setInterval(function(){
+			            	try{
+			            		omniSiteCat.setOmnitureHTMLVideoEvent("progress","event63",evtPlayed, "Studio How To Video", "Studio How To Video", "Studio How To Video");
+			            	}
+			            	catch(e){}
+			            },10000);
+			            break;
+			        case "pause":
+			            if (evtPlayed > .98){
+			            	try {
+			                	omniSiteCat.setOmnitureHTMLVideoEvent(evt,"event65", evtPlayed, "Studio How To Video", "Studio How To Video", "Studio How To Video");
+			            	}
+			            	catch(e){}
+			            }
+			            clearInterval(timePlayed);
+			            break;
+			        case "timeupdate":
+			            if (videoPosition === 0){
+			                if (evtPlayed > .25) {
+			                    try {
+			                    	omniSiteCat.setOmnitureHTMLVideoEvent(evt,"event67", -1, "Studio How To Video", "Studio How To Video", "Studio How To Video");
+			                    }
+			            		catch(e){}
+			                    videoPosition = 25;
+			                }
+			            }else if(videoPosition === 25){
+			                if (evtPlayed > .5) {
+			                	try {
+			                    	omniSiteCat.setOmnitureHTMLVideoEvent(evt,"event68", -1, "Studio How To Video", "Studio How To Video", "Studio How To Video");
+			                    }
+			            		catch(e){}
+			                    videoPosition = 50;
+			                }
+			            }else if(videoPosition === 50){
+			                if (evtPlayed > .75) {
+			                	try {
+			                    	omniSiteCat.setOmnitureHTMLVideoEvent(evt,"event69", -1, "Studio How To Video", "Studio How To Video", "Studio How To Video");
+			                    }
+			            		catch(e){}
+			                    videoPosition = 75;
+			                }
+			            }
+			            break;
+			    }
+			    lastMediaEvent = evt;
+	    	}
+		},
+		/* COM-2938: adding Omniture login and Register click event */
+		setOmnitureLoginClickEvent: function(event, string) {
+			try {
+			    omniSiteCat.setOmnitureLoginClickEvent(event, string);
+			} catch (e) {
+			    console.log(e);
+			    return false;
+			}
+		}
+		/* COM-2938: adding Omniture login and Register click event */
+	};
+
+	/*
+	 * Function to run a queue of ajax calls before executing a callback
+	 * Used in sothebys.menu.js as example
+	 * arr:Array - An array of objects configured for the request
+	 *             url:String [REQUIRED] URL for the request
+	 *             type:String [OPTIONAL] GET of POST. Default is GET.
+	 *             data:String [OPTIONAL] URL endoded string
+	 *             dataType:String [OPTIONAL]
+	 */
+	Sothebys.bulkAJAX = function(arr, callback, errorCallback) {
+		// Type checking
+		// Removed because of no underscore
+
+		var ajaxIndex = 0;
+
+		tryRequest(0);
+
+		function tryRequest(i) {
+			var request = $.ajax({
+				url : arr[i].url,
+				type : arr[i].type || 'GET',
+				data : arr[i].data || '',
+				cache : true,     // COM-2853 Enable caching for ajax call
+				dataType : arr[i].dataType || 'json',
+				success : function(data, status, xhr) {
+					arr[i].result = data;
+					ajaxIndex++;
+					if (ajaxIndex == arr.length) {
+						callback.call(this, arr);
+					} else {
+						tryRequest(ajaxIndex);
+					}
+				},
+				error : function(error) {
+					console.log("Sothebys.bulkAJAX ERROR:", error);
+					if (errorCallback)
+						errorCallback.call(this, error);
+				}
+			});
+		}
+	};
+
+	Sothebys.template = {
+		selectedOption : '<span class="option" data-name="{{name}}" data-type="{{type}}" style="{{style}}"><a href=""><i class="glyph-x"></i><span>{{name}}</span></a></span>'
+	};
+
+	Sothebys.currencyConverter = {
+
+		init : function() {
+			$('#image-zoom-overlay .currency-dropdown ul').on('click', 'a',
+					Sothebys.filter.onCurrencyChangedInLotDetail);
+			$('.lot .currency-dropdown ul').on('click', 'a',
+					Sothebys.filter.onCurrencyChangedInLotDetail);
+			$('.lotdetail-estimate .currency-dropdown ul').on('click', 'a',
+					Sothebys.filter.onCurrencyChangedInLotDetail);
+
+			if (($('.currency-dropdown').size() > 0 || (typeof(AuctionSettings) != 'undefined' && AuctionSettings.pageName == "results"))
+					&& Sothebys.filter.currencyTable == null) {
+				var saleDateEpoch = $('#x-event-date').attr('xcdate');
+				var saleDate;
+				var saleDateEpochN = 0;
+
+				if (saleDateEpoch) {
+					saleDateEpochN = parseInt(saleDateEpoch);
+				}
+
+				if (saleDateEpochN > 0) {
+					saleDate = new Date(saleDateEpochN);
+				} else {
+					saleDate = new Date();
+				}
+				$.ajax({
+					url : Sothebys.util.urls.currencyUrl + '/' + Sothebys.filter.formatDate(saleDate, 'mm-dd-yyyy'),
+					cache : true, // COM-2853 Enable caching for ajax calls
+					success : function(data) {
+						Sothebys.filter.currencyTable = data;
+						Sothebys.filter.setCurrency(null, AuctionSettings.pageName, Sothebys.filter.currencyTable);
+						if (AuctionSettings.pageName === "lot" || (AuctionSettings.pageName === "pastAuction" && $('.eventdetail-singlelot-wrap').size() > 0)) {
+							//Need to add the lot estimate price in default currency
+							var priceVal = Math.ceil(Number($('.estimate .range-from').attr('data-range-from')));
+							var estimateVal = Math.ceil(Number($('.estimate .range-to').attr('data-range-to')));
+							$('.estimate .range-from').text(Sothebys.filter.priceFormatting(priceVal));
+							$('.estimate .range-to').text(Sothebys.filter.priceFormatting(estimateVal));
+						} else {
+							Sothebys.filter.submit();
+						}
+					},
+					error : function(xhr, ajaxOptions, thrownError) {
+						console.log('Error retrieving currency table. ( Status = ' + xhr.status + ', Msg: ' + thrownError + ')');
+						Sothebys.filter.submit();
+					}
+				});
+			}
+		}
+
+	};
+
+	Sothebys.registerHelpers = function() {
+		// Helpers for .com and gallery were moved
+		// to the Handlebars.js file. They weren't
+		// registering properly otherwise.
+	};
+
+	Sothebys.analytics = {
+		log : function(msg) {
+		}
+	};
+
+}(window, Sothebys);

@@ -1,0 +1,130 @@
+/*************************************************************************/
+//Contenu dans le JS de la page aha
+/*************************************************************************/
+
+function getAllNodesContent ( nodeElement, kw_list, message )
+{
+	var childsArray = nodeElement.childNodes;
+	var pass = 1;
+	var returnValue = "unlocked";
+
+	for(var i = 0; i < childsArray.length; i++){
+		if ( childsArray[i].nodeName != "SCRIPT" && childsArray[i].nodeName != "IFRAME" && childsArray[i].nodeName != "IMG" && childsArray[i].nodeName != "A" ) {
+			/*if ( childsArray[i].nodeName == "A" )
+			{
+				pass = 0;
+				if ( window.location.host == childsArray[i].host ){
+					pass = 1;
+				}
+			}*/
+			if ( pass == 1 ){
+				if(childsArray[i].hasChildNodes()){
+					returnValue = getAllNodesContent ( childsArray[i], kw_list, message );
+					if ( returnValue == "locked" ){
+						return "locked";
+					}
+				}else {
+					if ( childsArray[i].nodeName == "#text" ) {
+						returnValue = getAllWordsFromText ( childsArray[i].textContent, kw_list, message , "content");
+						if ( returnValue == "locked" ){
+							return "locked";
+						}
+					}
+				}
+			}
+		}	
+	}
+	if ( document.body == nodeElement )
+	{
+	    var url_words = new Array();
+            var str = document.location.href;
+            var res1 = str.split("-");
+            for(var i= 0; i < res1.length; i++)
+            {
+                var res2 = res1[i].split("_");
+                for(var j= 0; j < res2.length; j++)
+                {
+                    var res3 = res2[j].split(".");
+                    for(var k= 0; k < res3.length; k++)
+                    {
+                        var res4 = res3[k].split("/");
+                        for(var l= 0; l < res4.length; l++)
+                        {
+                            var res5 = res4[l].split("&");
+                            for(var m= 0; m < res5.length; m++)
+                            {
+                                var res6 = res5[m].split("=");
+                                for(var n= 0; n < res6.length; n++)
+                                {
+                                    if ( typeof(res6[n]) != "undefined" && res6[n] != "" && res6[n] != "\n" ) {
+                                        url_words.push(res6[n].replace("%20", " ").toLowerCase());
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+	    returnValue = getAllWordsFromText (url_words, kw_list, message, "url");
+	    if ( returnValue == "unlocked" ){
+		var pageTitle = document.title;
+                returnValue = getAllWordsFromText ( pageTitle, kw_list, message, "title");
+		if ( returnValue == "locked" ) return "locked";
+	    }
+	    else return "locked";	
+	}
+	return "unlocked";
+}
+
+// sample mode Array contient les mots de l'url. sample en string est un bloc de test
+function getAllWordsFromText (sample, array_words, message, type) 
+{
+	// remplacement de tous les signes de ponctuation (suite de signes ou signe isolé) par un whitespace
+	if(typeof sample == "object") contenu = sample;
+	else contenu = (sample.toLowerCase()).replace(/[\.,-\/#!$%\^&\*;:{}=\-_'`~()]+/g, ' ');
+	
+	var blocking_keyword = "";
+	var blocking_keywords_nb = array_words.length;
+
+	for ( var i = 0; i < blocking_keywords_nb; i ++ ) {
+
+                var word = array_words[i];
+                var word_splitted = word.split("+");
+		//tous les mots de la combinaison doivent etre dans le texte
+                if( word_splitted.length > 1 ){
+
+                    var nb_occ   = 0;
+                    for ( var j = 0; j < word_splitted.length; j ++ ) {
+			final_word = (typeof sample !== "object") ? " "+word_splitted[j].toLowerCase()+" " : word_splitted[j].toLowerCase();
+                        nb_occ += contenu.indexOf(final_word) > 0 ? 1 : 0;
+                    }
+                    if(nb_occ  == word_splitted.length) blocking_keyword = word;
+                }
+		//mot simple
+		else{
+		    final_word = ( typeof sample !== "object") ? " "+word.toLowerCase()+" " : word.toLowerCase();
+                    if( contenu.indexOf(final_word) >= 0 ) blocking_keyword = word;
+                }
+
+		if(blocking_keyword){
+			//bloquer les publicités
+			message += "&alerte_desc="+type+":"+word;
+                        useFirewallForcedBlock(message);
+                        return "locked";
+		}
+        }	
+  	return "unlocked";
+}	
+
+function useFirewallForcedBlock( message ){
+    var adloox_img_fw=message;
+    scriptFw=document.createElement("script");
+    scriptFw.src=adloox_img_fw;
+    document.body.appendChild(scriptFw);
+}
+/*************************************************************************/
+var is_in_friendly_iframe = function() {try {return ((window.self.document.domain == window.top.document.domain) && (self !== top));} catch (e) {return false;}}();
+var win_t = is_in_friendly_iframe ? top.window : window;var firstNode = win_t.document.body;var contentTab_2 = ["alcanar+catalunya","alcanar+terroristas","alcanar+terroriste","alcanar+terroristes","amenaza del terrorismo","amenaza terrorista","atantado+camioneta","ataque+alunizadores","ataque+barcelona","ataque+cambrils","ataques+barcelona","ataques+cambrils","atentado+alunizadores","atentado+barcelona","atentado+cambrils","atentado+la rambla","atentado+las ramblas","atentados+barcelona","atentados+cambrils","atentados+camioneta","atentados+la rambla","atentados+las ramblas","attaque+barcelone","attaque+cambrils","attaque+voiture+bélier","attaques+barcelone","attaques+cambrils","attentat+barcelone","attentat+cambrils","attentat+la rambla","attentat+las ramblas","attentat+van","attentat+voiture+bélier","attentats+barcelone","attentats+cambrils","attentats+la rambla","attentats+las ramblas","attentats+van","barcelona+coche+alunizadores","barcelona+terrorismo","barcelone+terrorisme","barcelone+voiture+bélier","cambrils+terrorista","cambrils+terroristas","cambrils+terroriste","cambrils+terroristes","camioneta+ataque","camioneta+ataques","camioneta+atentado","camioneta+atentados","camioneta+rambla","camionnette+attaque","camionnette+attaques","camionnette+attentat","camionnette+attentats","camionnette+barcelone","camionnette+rambla","camionnette+ramblas","daesh+atentado","daesh+atentados","daesh+attentat","daesh+attentats","daesh+barcelona","daesh+barcelone","david rachline","Driss+Oukabir","estado+ilsamico+atentado","florian philippot","fourgonnette+attaque","fourgonnette+attaques","fourgonnette+attentat","fourgonnette+attentats","fourgonnette+barcelone","fourgonnette+rambla","fourgonnette+ramblas","front national","furgoneta+ataque","furgoneta+atentado","furgoneta+atentados","furgoneta+barcelona","furgoneta+rambla","furgoneta+ramblas","gilbert collard","jean françois jalkh","jean marie le pen","le pen","lepéniste","louis aliot","marine le pen","marine+présidente","marion marechal le pen","mossos+catalogne","mossos+catalunya","Oubakir+terrorista","Oukabir","oukabir+daesh","Oukabir+terroriste","peligro","robert menard","steeve briois","terrorismo","terrorista","terroristas"];
+var message_2 = "//data17.adlooxtracking.com/ads/ic.php?fw=1&iframe=2&version=2&client=aod&banniere=ban2aod&id_editeur=1_ADLOOX_ID_15141996_ADLOOX_ID_93475210_ADLOOX_ID_4172785_ADLOOX_ID__ADLOOX_ID_https%3A%2F%2Fwww.proz.com_ADLOOX_ID_https%3A%2F%2Fwww.proz.com%2Fforum%2Flinguistics%2F25460-little_test_for_english_native_speakers.html&campagne=aod2&methode=AO&fai=ad_iframe%40https%3A%2F%2Fgoogleads.g.doubleclick.net%2Fpagead%2Fads%3Fclient%3Dca-pub-6352711904489305%26output%3Dhtml%26h%3D90%26slotname%3D6659914336%26adk%3D1735496353%26adf%3D3279755398%26w%3D970%26loeid%3D38893312%252C332260006%26format%3D970x90%26url%3Dhttps%253A%252F%252Fwww.proz.com%252Fforum%252Flinguistics%252F25460-little_test_for_english_native_speakers.html%253Fprint%253D1%26ea%3D0%26flash%3D0%26wgl%3D1%26dt%3D1518709978408%26bpp%3D11%26bdt%3D301%26fdt%3D12%26idt%3D43%26shv%3Dr20180212%26cbv%3Dr20170110%26saldr%3Daa%26correlator%3D7168684276377%26frm%3D23%26ga_vid%3D1463544891.1518709977%26ga_sid%3D1518709978%26ga_hid%3D725250412%26ga_fc%3D0%26pv%3D1%26iag%3D15%26icsg%3D2%26nhd%3D2%26dssz%3D2%26mdo%3D0%26mso%3D0%26u_tz%3D60%26u_his%3D2%26u_java%3D0%26u_h%3D600%26u_w%3D800%26u_ah%3D600%26u_aw%3D800%26u_cd%3D24%26u_nplug%3D0%26u_nmime%3D0%26adx%3D51%26ady%3D194%26biw%3D1280%26bih%3D600%26isw%3D970%26ish%3D90%26ifk%3D2342702821%26scr_x%3D0%26scr_y%3D0%26eid%3D21061122%252C38893302%252C191880502%252C332260002%252C389613001%252C41667001%26oid%3D3%26rx%3D0%26eae%3D2%26fc%3D784%26brdim%3D0%252C0%252C0%252C0%252C800%252C0%252C800%252C600%252C970%252C90%26vis%3D1%26rsz%3Do%257C%257CeE%257C%26abl%3DCS%26ppjl%3Df%26pfx%3D0%26fu%3D20%26bc%3D1%26osw_key%3D687325548%26ifi%3D1%26dtd%3D74&url_referrer=https%3A%2F%2Fgoogleads.g.doubleclick.net%2Fpagead%2Fads%3Fclient%3Dca-pub-6352711904489305%26output%3Dhtml%26h%3D90%26slotname%3D6659914336%26adk%3D1735496353%26adf%3D3279755398%26w%3D970%26loeid%3D38893312%2C332260006%26format%3D970x90%26url%3Dhttps%3A%2F%2Fwww.proz.com%2Fforum%2Flinguistics%2F25460-little_test_for_english_native_speakers.html%3Fprint%3D1%26ea%3D0%26flash%3D0%26wgl%3D1%26dt%3D1518709978408%26bpp%3D11%26bdt%3D301%26fdt%3D12%26idt%3D43%26shv%3Dr20180212%26cbv%3Dr20170110%26saldr%3Daa%26correlator%3D7168684276377%26frm%3D23%26ga_vid%3D1463544891.1518709977%26ga_sid%3D1518709978%26ga_hid%3D725250412%26ga_fc%3D0%26pv%3D1%26iag%3D15%26icsg%3D2%26nhd%3D2%26dssz%3D2%26mdo%3D0%26mso%3D0%26u_tz%3D60%26u_his%3D2%26u_java%3D0%26u_h%3D600%26u_w%3D800%26u_ah%3D600%26u_aw%3D800%26u_cd%3D24%26u_nplug%3D0%26u_nmime%3D0%26adx%3D51%26ady%3D194%26biw%3D1280%26bih%3D600%26isw%3D970%26ish%3D90%26ifk%3D2342702821%26scr_x%3D0%26scr_y%3D0%26eid%3D21061122%2C38893302%2C191880502%2C332260002%2C389613001%2C41667001%26oid%3D3%26rx%3D0%26eae%3D2%26fc%3D784%26brdim%3D0%2C0%2C0%2C0%2C800%2C0%2C800%2C600%2C970%2C90%26vis%3D1%26rsz%3Do%7C%7CeE%7C%26abl%3DCS%26ppjl%3Df%26pfx%3D0%26fu%3D20%26bc%3D1%26osw_key%3D687325548%26ifi%3D1%26dtd%3D74&ads_forceblock=1&log=1&visite_id=67588684880";
+getAllNodesContent ( firstNode, contentTab_2, message_2 );
+var adloox_impression=1;

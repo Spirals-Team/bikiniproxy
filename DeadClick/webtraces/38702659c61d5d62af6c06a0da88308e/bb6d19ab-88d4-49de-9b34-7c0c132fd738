@@ -1,0 +1,35 @@
+$(function(){
+	$('.navbar-default .navbar-nav > li > a').removeAttr("data-toggle");
+
+	$('.navbar .dropdown').hover(function() {
+	  $(this).find('.dropdown-menu').first().stop(true, true).slideDown(150);
+	}, function() {
+	  $(this).find('.dropdown-menu').first().stop(true, true).slideUp(105)
+	});
+
+
+	// cache the window object
+		   $window = $(window);
+		 
+		   $('div[data-type="background"]').each(function(){
+		     // declare the variable to affect the defined data-type
+		     var $scroll = $(this);
+		                     
+		      $(window).scroll(function() {
+		      	var backgroundPos = $scroll.css('backgroundPosition').split(" ");
+		      	var xPos1 = backgroundPos[0],
+   					yPos1 = backgroundPos[1];
+		        // HTML5 proves useful for helping with creating JS functions!
+		        // also, negative value because we're scrolling upwards                             
+		        var yPos = yPos1-($window.scrollTop() / $scroll.data('speed')); 
+		         
+		        // background position
+		        var coords = '50% '+ yPos + 'px';
+		 
+		        // move the background
+		        $scroll.css({ backgroundPosition: coords });    
+		      }); // end window scroll
+		   });  // end section function
+});
+
+	

@@ -1,0 +1,1586 @@
+
+
+<!DOCTYPE html>
+
+<html>
+<head><meta name="viewport" content="width=device-width" /><link rel="icon" href="/Content/images/favicon.png" type="image/x-icon" />
+     <script type="text/javascript" src="/Content/js/jquery-1.10.2.min.js"></script> 
+      <link rel="stylesheet" href="/Content/css/responsive-nav.css" type="text/css" />
+    <script type="text/javascript" src="/Content/js/responsive-nav.js"></script>
+     
+<meta name="description" content="Education in Punch District - Literacy Rate, Total Number of Literates, Enrolment at Primary, Schools and Degree Colleges, Middle and High Secondary Schools, Net Enrolment Ratio, Dropout Rate, Department of Education, Transition Rate, Gross Enrolment Ratio, Religion-wise Number of Literates, Total Number of Illiterates, Children with Special Needs, Education Guarantee Scheme, Upper Primary Schools in Punch District" />
+    <meta name="keywords" content="Net Enrolment Ratio in Punch District | Dropout Rate in Punch District | Department of Education in Punch District | Transition Rate in Punch District | Gross Enrolment Ratio in Punch District | Religion-wise Number of Literates in Punch District | Total Number of Illiterates in Punch District | Children with Special Needs in Punch District | Education Guarantee Scheme in Punch District | Upper Primary Schools in Punch District | Statistics Data | Literacy Rate in Punch District | Total Number of Literates in Punch District | Enrolment at Primary in Punch District | Schools and Degree Colleges in Punch District | Middle and High Secondary Schools in Punch District" />
+    <script type="text/javascript" src="/Scripts/stats.js"></script>
+  <link rel="Stylesheet" href="/Content/css/allstates.css" type="text/css" />
+
+      <script type="text/javascript">
+          function showmb(misurl, islogin, datahead) {
+              var murl = misurl.trim();
+              var iLen = String(murl).length;
+
+              var mDFName = String(murl).substring(1, 15);
+
+              var mCFName = String(murl).substring(iLen, iLen - 11);
+              divwinname = "tblstatmsg";
+
+              //Storing the ulr to open on every click
+              var ssurl = document.getElementById('url2redirect');
+              ssurl.value = murl;
+              islogin = islogin.trim();
+              if (islogin == "") {
+                  islogin = "F";
+              }
+              if (islogin == "T" && mDFName == "DataTable.aspx") {
+                  //alert('login T and datat');
+                  var leftposition = (window.screen.width / 2) - ((800 / 2) + 10);
+                  var topposition = (window.screen.height / 2) - ((600 / 2) + 50);
+                  var popup = window.open(murl, '_blank', 'height=600, width=800,left=' + leftposition + ', top=' + topposition + ', ScreenX=' + leftposition + ', ScreenY=' + topposition + ', status=no, menubar=no, scrollbars=yes, toolbar=no, location=no, directories=no');
+                  if (popup == null) {
+                      alert("our site currently requires popup blockers be disabled");
+                  }
+                  return false;
+              }
+              else if (islogin == "F" && mDFName == "DataTable.aspx") {
+                  document.getElementById('ssdt').innerHTML = datahead;
+                  var ocdiv = document.getElementById(divwinname);
+                  ocdiv.style.display = 'block';
+                  return false;
+              }
+
+          }
+          function fnDataTemplate(misurl, islogin, datahead) {
+              var murl = misurl.trim();
+              var iLen = String(murl).length;
+
+              var mDFName = String(murl).substring(1, 15);
+
+              var mCFName = String(murl).substring(iLen, iLen - 11);
+              divwinname = "tblstatmsg";
+
+              //Storing the ulr to open on every click
+              var ssurl = document.getElementById('url2redirect');
+              ssurl.value = murl;
+              islogin = islogin.trim();
+              if (islogin == "") {
+                  islogin = "F";
+              }
+              if (mDFName == "DataTable.aspx") {
+                  //alert('login T and datat');
+                  var leftposition = (window.screen.width / 2) - ((800 / 2) + 10);
+                  var topposition = (window.screen.height / 2) - ((600 / 2) + 50);
+                  var popup = window.open('/DataTableTemplate.aspx' + String(murl).substring(15), '_blank', 'height=600, width=800,left=' + leftposition + ', top=' + topposition + ', ScreenX=' + leftposition + ', ScreenY=' + topposition + ', status=no, menubar=no, scrollbars=yes, toolbar=no, location=no, directories=no');
+                  if (popup == null) {
+                      alert("our site currently requires popup blockers be disabled");
+                  }
+                  return false;
+              }
+              //else if (islogin == "F" && mDFName == "DataTable.aspx") {
+              //    document.getElementById('ssdt').innerHTML = datahead;
+              //    var ocdiv = document.getElementById(divwinname);
+              //    ocdiv.style.display = 'block';
+              //    return false;
+              //}
+              return false;
+          }
+          function fntest() {
+              var sts = "fsdfsd";
+              sts = sts.trim();
+              alert(sts);
+          }
+          function fnGetDataSW(stcode, swsecid, statetitle, regorst) {
+              //alert(stcode + ',' + swsecid);
+              document.getElementById('divMainloader').style.display = 'block';
+
+              $.ajax({
+                  type: "GET",
+                  dataType: "json",
+                  data: { statecode: stcode, secid: swsecid },
+                  url: "/showstat/GetStatsSW",
+
+                  success: function (data) {
+                      var addchilds = "";
+                      var addchilds1 = "";
+                      var checkav = false;
+                      $.each(data, function (i, item) {
+                          if (item.RecId == "3") {
+                              checkav = true;
+                              addchilds1 += "<li><a href='/" + item.StatNextURL + "' onclick=\"javascript:return showmb('/" + item.StatNextURL + "','','" + item.Title + "');\">" + item.Title + "</a></li> ";
+                        }
+                        else {
+                            addchilds += "<li><a href='/" + item.StatNextURL + "' onclick=\"javascript:return showmb('/" + item.StatNextURL + "','','" + item.Title + "');\">" + item.Title + "</a></li> ";
+                        }
+                        // alert(item.StatNextURL);
+                    });
+                    $('#divShowData #ulshowdata').html(addchilds);
+                    $('#divShowData #ulrelateddata').html(addchilds1); if (checkav == true) $('#spnrellink').html('Related links'); else $('#spnrellink').html('');
+                    document.getElementById('divIndiaLevel').style.display = 'block';
+                    $('#divShowingFor').html('Currently showing <b>' + statetitle + '</b> ' + regorst + ' Level consolidated figures');
+                    document.getElementById('divMainloader').style.display = 'none';
+
+                }, error: function (ex) {
+                    document.getElementById('divIndiaLevel').style.display = 'block';
+                    document.getElementById('divMainloader').style.display = 'none';
+                    alert('Failed to retrieve states.' + ex);
+                }
+            });
+            return false;
+        }
+        function MaintainScroll() {
+            $('html body').animate({
+                scrollTop: $("#divShowData").offset().top - 300
+            }, 'fast');
+
+        }
+       
+        function hidemb() {
+            var tblmsg = document.getElementById('tblstatmsg');
+            tblmsg.style.display = 'none';
+        }
+    </script>
+    <script type="text/javascript">
+        function fnipuloginwns() {
+            $.ajax({
+                type: "POST",
+                dataType: "json",
+                data: {},
+                url: "/showstat/uiplogin",
+                success: function (data) {
+                    if (data.msgtype == $('#hgo').val()) {
+                        var dispe = data.msg;
+                        document.getElementById('divSSUNError').style.display = 'block';
+                        document.getElementById('tblstatmsg').style.display = 'none';
+                        $('#divSSUNVal').html(dispe);
+                    }
+                    else
+                        window.location.href = data.msg;
+                }, error: function (ex) {
+                    window.location.href = "/Home/Index";
+                }
+            });
+        }
+        function fnunploginwns() {
+            $.ajax({
+                type: "POST",
+                dataType: "json",
+                data: { un: $('#tbxUN').val(), upwd: $('#tbxPW').val() },
+                url: "/showstat/unplogin",
+                success: function (data) {
+                    if (data.msgtype == $('#hgo').val()) {
+                        var dispe = data.msg;
+                        document.getElementById('divSSUNError').style.display = 'block';
+                        $('#divSSUNVal').html(dispe);
+                        document.getElementById('tblstatmsg').style.display = 'none';
+                    }
+                    else
+                        window.location.href = data.msg;
+                }, error: function (ex) {
+                    window.location.href = "/Home/Index";
+                }
+            });
+            return false;
+        }
+        function hidedivs(ids) {
+            document.getElementById(ids).style.display = 'none';
+            document.getElementById('tblstatmsg').style.display = 'block';
+            return false;
+
+        }
+        function closediv(ids) {
+            document.getElementById(ids).style.display = 'none';
+            $('#username').val('');
+            $('#password').val('');
+            return false;
+        }
+
+        </script>
+<title>
+	
+    Punch Education, District Level Information of Punch | Jammu and Kashmir
+
+</title><link rel="stylesheet" href="/Content/css/flexslider.css" type="text/css" />
+<script src="/Scripts/js/slider.js" type="text/javascript"></script>
+  
+  
+  <!-- FlexSlider -->
+<script defer src="/Scripts/js/jquery.flexslider.js" type="text/javascript"></script>
+    <link rel="stylesheet" href="/Content/css/style.css" type="text/css" />
+    <script type="text/javascript" src="/Scripts/jquery-1.7.1.min.js"></script>
+    <script type="text/javascript" src="/Scripts/js/dropdowncontent.js"></script>
+    <script type="text/javascript">
+        $(document).ready(function () {
+            if (typeof String.prototype.trim !== 'function') {
+                String.prototype.trim = function () {
+                    return this.replace(/^\s+|\s+$/g, '');
+                }
+            }
+        });
+       
+    </script>
+    
+<script> 
+(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){  
+ (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o), 
+ m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m) 
+})(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+ ga('create', 'UA-182083-10', 'DistrictsOfIndia.com'); 
+ga('send', 'pageview');
+ga('set', 'anonymizeIP', true);
+</script>
+    <style type="text/css">
+         .offsec {-webkit-user-select: none;
+-khtml-user-select: none;
+-moz-user-select: none;
+-ms-user-select: none;
+-o-user-select: none;
+user-select: none;
+        }
+    </style>
+</head>
+<body  oncontextmenu='return false;'  ondragstart="return false" onselectstart="return false" class="offsec">
+    <div>
+    <div class="top_strip">
+	    
+
+
+ 
+<link href="/Content/css/allstates.css" type="text/css" rel="Stylesheet" />
+
+<script type="text/javascript">
+    function fnulogout() {
+        //var curl = window.location.href;
+        $.ajax({
+            type: "POST",
+            dataType: "json",
+            data: {},
+            url: "/Common/ulogout",
+            success: function (data) {
+                window.location.href = data;
+                return false;
+            }, error: function (ex) {
+                window.location.href = "/Home/Index";
+                return false;
+            }
+        });
+    }
+    function fnipulogin() {
+        document.getElementById('divLoginLoader').style.display = "block";
+        $.ajax({
+            type: "POST",
+            dataType: "json",
+            data: {},
+            url: "/Common/uiplogin",
+            success: function (data) {
+                if (data.msgtype == $('#hgo').val()) {
+                    var dispe = data.msg;
+                    document.getElementById('divUNError').style.display = 'block';
+                    document.getElementById('divLoginLoader').style.display = "none";
+                    $('#divUNVal').html(dispe);
+                    return false;
+                }
+                else {
+                    document.getElementById('divLoginLoader').style.display = "none";
+                    window.location.href = data.msg;
+                }
+            }, error: function (ex) {
+                document.getElementById('divLoginLoader').style.display = "none";
+                window.location.href = "/Home/Index";
+            }
+        });
+    }
+    function fnunplogin() {
+        document.getElementById('divLoginLoader').style.display = "block";
+        $.ajax({
+            type: "POST",
+            dataType: "json",
+            data: { un: $('#username').val(), upwd: $('#password').val() },
+            url: "/Common/unplogin",
+            success: function (data) {
+
+                if (data.msgtype == $('#hgo').val()) {
+                    var dispe = data.msg; document.getElementById('divLoginLoader').style.display = "none";
+                    document.getElementById('divUNError').style.display = 'block';
+                    $('#divUNVal').html(dispe);
+                }
+                else {
+                    document.getElementById('divLoginLoader').style.display = "none";
+                    window.location.href = data.msg;
+                }
+            }, error: function (ex) {
+                document.getElementById('divLoginLoader').style.display = "none";
+                window.location.href = "/Home/Index";
+            }
+        });
+    }
+    function closediv(ids) {
+        document.getElementById(ids).style.display = 'none';
+        $('#username').val('');
+        $('#password').val('');
+        return false;
+    }
+
+
+</script>
+<script type="text/javascript">
+    $(window).scroll(function () {
+        var sticky = $('.top_strip'),
+            scroll = $(window).scrollTop();
+        if (scroll >= 100) sticky.addClass('fixed');
+        else sticky.removeClass('fixed');
+    });
+</script>
+<div class="top_strip">
+	<div class="wraper">
+    
+         <a href="/Index.aspx" ><div id="logo">Districts<span>of</span>India</div></a>
+        <div class="top_right">
+    <div style="float:left; width:auto;">
+    <div class="login_menu">
+     <a href="#" id="searchlink" rel="subcontent">Login</a></div>
+         <div class="menu_container">
+   <div class="rmm">
+      <ul>
+        <li><a href="/index.aspx">Home</a></li>
+       <li><a href="/AboutUs.aspx">About Us</a></li>
+        <li><a href="/Subscriber.aspx">Subscribe</a></li>
+        <li><a href="/Contactus.aspx">Contact Us</a></li>
+       </ul>
+    </div>
+    </div>
+	<div id="google_translate_element" style="float:left;"></div>
+<script>
+    function googleTranslateElementInit() {
+        new google.translate.TranslateElement({
+            pageLanguage: 'en', layout: google.translate.TranslateElement.InlineLayout.SIMPLE
+        }, 'google_translate_element');
+    }
+
+</script>
+<script type="text/javascript" src="/Scripts/js/translate.txt">
+</script>
+      
+     
+</div>
+     
+      <div style="float:left;"><a class="addthis_button_compact" style="padding:0px;"><img src="/Content/images/share-1.png" alt="" border="0" width="14" /></a></div></div><input type="hidden" id="hgo" value="d" />
+
+      
+ <script type="text/javascript" src="//s7.addthis.com/js/300/addthis_widget.js#pubid=xa-50da96f36c6bcee2"></script> 
+    <div class="login_box">
+
+
+
+
+<DIV id="subcontent" class="login_matter" >
+
+
+<form method="get" action="" id="topform">
+<div style="float:right;" class="Log">
+                    <a href="javascript:dropdowncontent.hidediv('subcontent')">
+                        <span class="login_close">X</span>
+                    </a>
+        </div>
+<div class="OR">OR</div>
+<div style="margin-bottom:10px; width:80%; text-align:center; color:#af3650; font-size:13px;"><b>Login Your Account</b></div>
+
+
+<div class="IP_box">
+
+<p><b>Through IP Login</b></p><br />
+<p><input name="" type="button" value="Click" class="submit_btn" onclick="javascript: return fnipulogin();"></p>
+</div>
+
+<div style="float:left; border-left:1px solid #999; padding-left:30px;">
+<form method="get" action="" id="topform">
+<p><b>Through Username & Password</b></p>
+<div style="padding:5px;"><label for="username">Username : </label><input name="username" id="username" maxlength="255" style="width:125px; height:25px; border-radius:5px; border:1px solid #ccc; box-shadow:1px 1px 10px 1px #ddd;" alt="Search" /> </div>
+<div style="padding:5px;"><label for="password">Password :&nbsp;&nbsp;</label><input name="password" id="password" maxlength="255" type="password"  style="width:125px; height:25px; border-radius:5px; border:1px solid #ccc; box-shadow:2px 1px 10px 1px #ddd;" alt="Search" />  </div>
+
+
+
+
+<div style="float:right; padding:5px 5px 0;"><input value="Submit" type="button"class="submit_btn" onclick="javascript: fnunplogin();" / >
+</div>
+</form></div>
+                    
+<div id="divLoginLoader" style="height:29px;width:29px;display:none;position:fixed;margin-left:100px;margin-top:5px;"><img src="/Content/images/loading2.gif" height="28" width="28" /> </div>
+
+<div style="float:left; margin-top:5px; line-height:18px; text-align:center; width:85%;" class="signup">
+    <a href="/Profile/FogotPass" style="color: #b82300;" >Forgot Password?</a><br />
+    <a href="/profile/myprofile.aspx">My Account</a>
+                    </div>
+                    </form>
+</DIV>
+
+
+</div>
+
+<script type="text/javascript">
+    //Call dropdowncontent.init("anchorID", "positionString", glideduration, "revealBehavior") at the end of the page:
+
+    dropdowncontent.init("searchlink", "right-bottom", 100, "mouseover")
+</script> </div></div>
+
+<DIV id="mulogdivs" class="centered" style="display:none;" ><TABLE style="BORDER-RIGHT: #336bac 1px solid; BORDER-TOP: #336bac 1px solid; BORDER-LEFT: #336bac 1px solid; BORDER-BOTTOM: #336bac 1px solid; HEIGHT: 153px" cellSpacing=0 cellPadding=0 width="100%" align=center border=0><TBODY><TR><TD style="WIDTH: 77%; HEIGHT: 117px" align=center bgColor=#e0f0f8><TABLE cellSpacing=0 cellPadding=0 width="100%" border=0><TBODY>
+<TR><TD class="style90" align="center" style="height:40px;padding-top:10px;" >
+
+<span id="lblLEMsg1" style="width:392px;font-weight:bold;color:Red;"></span>
+
+ </TD></TR>
+ <TR><TD  align=center style="height:30px; padding-top:0px;">
+
+ <span id="lblLogStatus" style="font-weight:bold;color:Red;">Sorry! This IP 122.160.71.14 is not registered with us for the website www.indiastat.com.</span> </TD></TR>
+ 
+ </TBODY></TABLE><TABLE style="HEIGHT: 30px" cellSpacing=0 cellPadding=0 width="100%" bgColor=#ffffff border=0><TBODY><TR><TD style="HEIGHT: 30px" vAlign=middle align="center"><a href="#" id="LinkButton1"  onclick="JavaScript:closediv('mulogdivs');">Close</a> </TD></TR></TBODY></TABLE></TD></TR></TBODY></TABLE></DIV>
+
+<div id="divUNError" style="display:none;height:auto;width:300px;top:30%;left:50%;margin-left:-150px;margin-top:-50px;position:fixed;z-index:999;padding:15px;background-color:#f6f6f6;">
+<center>
+<div id="divUNVal" style="background-color:#e0f0f8;" ></div></center>
+</div>
+<input name="1$lblWSID" type="hidden" id="1_lblWSID" />
+<div >
+ <script type="text/javascript">
+     $(window).bind("load", function () {
+         $('.goog-te-menu-value span:first').text("English");
+     });
+ </script>
+     
+ <script type="text/javascript">
+     var navigation = responsiveNav(".nav-collapse", {
+         init: function () {
+             console.log("Responsive Nav Inited!");
+         },
+         open: function () {
+             console.log("Opening…");
+         },
+         close: function () {
+             console.log("Closing…");
+         }
+     });
+    </script>
+</div>
+</div>
+    <div class="wraper">
+
+
+ 
+
+
+<div class="top">
+   
+    	 <div class="logo">
+             
+              <a href="/index.aspx"/>
+             
+             
+             
+             <img src="/Content/images/Site_Logos/districtsofindia.png" border="0" alt="DistrictsOfIndia.com" /></a><br />
+              <span>District Level Datasets of Economics, Social, Industrial, Demographic, Education & other Variables of </span>
+        <div class="asso">An Associate Website of <a href="/Index.aspx" target="_self">DistrictsofIndia.com</a></div>
+    	 </div>
+     
+        
+   
+  
+      <div class="top_right">
+        <div class="top_ad">
+        
+        	<a href="http://www.datanetindia-ebooks.com" target="_blank"><img src="/Content/images/Book_AD.gif" border="0"></a>	
+        </div>
+      </div>
+  </div>
+  
+  
+  </div>
+  <div class="wraper">
+
+  <!-- left body start -->
+  <div class="body_left">
+  
+   
+  
+
+
+<script type="text/javascript" language="javascript">
+
+    function controlEnter(obj, event) {
+        var keyCode = event.keyCode ? event.keyCode : event.which ? event.which : event.charCode;
+        if (keyCode == 13) {
+             alert("ok")
+           // __doPostBack(obj, '');
+            document.getElementById(obj).click();
+            return false;
+        }
+        else {
+            return true;
+        }
+    }
+</script>
+
+<script type="text/javascript">
+    $(document).ready(function () {
+        $.getJSON("/Search/districts", function (data) {
+           
+                var addstate = "";
+                $.each(data, function (i, item) {
+                
+                    addstate += "<option value='" + item.Value + "'>" + item.Text + "</option>";
+                  
+                });
+                document.getElementById("dDistrict").innerHTML = addstate;
+
+            });
+        });
+    function fncheckselectval() {
+        if ($('#txtSearch').val() == 'Search Key Word' && ($('#dDistrict').val() == 'Select District' || $('#dDistrict').val() == '0')) {
+            alert('Please enter a keyword and select a district');
+            return false;
+        }
+        else if ($('#txtSearch').val() == 'Search Key Word') {
+            alert('Pease enter a keyword');
+            return false;
+        }
+        else if ($('#dDistrict').val() == 'Select District' || $('#dDistrict').val() == '0') {
+            alert('Please select a district');
+            return false;
+        }
+
+        return true;
+    }
+</script>
+
+
+<div id="1_divds"> 
+<form action="/Search/wdcDataSearch1" method="post">
+
+    <div class="search"><div class="data_search">Data Search</div><input name="txtSearch" id="txtSearch"  style="width:315px"  type="text" id="txtSearch" value="Search Key Word" onFocus="if(this.value=='Search Key Word') this.value =''" onBlur="if(this.value=='') this.value='Search Key Word'"> 
+  
+ 
+ 
+    
+    <select name="dDistrict" id="dDistrict" style="width:205px">
+    <option>Select District</option>
+    </select>
+    <div><a href="#"><input type="image" src="/Content/images/search_icon.png" onclick="javascript:return fncheckselectval();" alt="Search" style="width:32px; border:0px; padding:0px;" /></a></div></div>
+</form></div> 
+          
+   
+
+    </div>
+   
+   
+
+    <!-- left body End -->
+  
+  
+      <!-- Right body Start -->
+  <div class="body_right">
+  
+     <div class="body_right">
+         
+
+    <script>
+        $(function () {
+            myFunction();
+           
+            setInterval(function () {
+                myFunction();
+            }, 1000);
+        });
+        function myFunction() {
+            $.ajax({
+                type: "POST",
+                dataType: "json",
+                data: {},
+                async: false,
+                url: "/Common/fngetdpop",
+                success: function (data) {
+                    $('#txtindiapop').val(data.India);
+                    $('#txtdistrictdpop').val(data.District);
+                    $('#txtstatepop').val(data.State);
+                    
+                }, error: function (ex) {
+
+                }
+            });
+
+        }
+    </script>
+<div class="body_right_box" style="height: 185px;">
+  <span style="float:left; height:25px; margin:0px -25px 0px 0px; padding:0px 5px 0px 5px; border-right:1px solid #fff; background:none;"><img src="/Content/images/icons/clock-icon.png" border="0"></span><div class="clock_head">Population clock</div>
+  <div class="date">Thursday, February 15, 2018</div>
+     <div style="width:100%; float:left; clear:both; margin-top:5px;">
+   <div class="india" style="width:170px">Punch Distt.</div>
+  <div style="float:left; width:110px; border:0px dotted #ccc;">
+      <input type="text" id="txtdistrictdpop" name="txtdistrictdpop" style="width: 95px;height: 13px;font-size: 12px;text-align: center;font-weight:bold; border-color: rgb(157, 44, 44); border-width: 1px;" readonly="readonly" />
+      
+  </div>
+         <div class="india" style="width:170px"> State</div>
+  <div style="float:left; width:110px; border:0px dotted #ccc; height:20px;">
+        <input type="text" id="txtstatepop" name="txtstatepop" style="width: 95px;height: 13px;font-size: 12px;text-align: center;font-weight:bold; border-color: rgb(157, 44, 44); border-width: 1px;" readonly="readonly" />
+
+  </div>
+ </div>
+  <div class="india" style="width:170px">India</div>
+  <div style="float:left; width:110px; border:0px dotted #ccc;">
+     <input type="text" id="txtindiapop" name="txtindiapop" style="width: 95px;height: 13px;font-size: 12px;text-align: center;font-weight:bold; border-color: rgb(157, 44, 44); border-width: 1px;" readonly="readonly" />
+  </div>
+   <div style="width:100%; float:left; clear:both; margin-top:5px;">
+ 
+  <div style="font-size:11px; color:#005195; float:left; clear:both; margin:-5px 0px 0px 185px;">(Estimated as of now)</div>
+  
+  </div>
+  <div class="more_btn"><a target="_blank" href="/popclockflashdistrict.aspx" style="margin-top:1px;">more &raquo;</a></div>
+  </div>
+         <div style="margin-bottom:50px">
+     
+<style>
+.more_btn {width:auto; float:right; clear:both; margin:0px 5px 0px 0px;}
+.more_btn a{font:italic bold 12px arial; color:#fff; width:auto; float:right; clear:both;  background:#f5821f; border:0px solid #ccc; border-radius:2px; padding:2px 4px 2px 4px;}
+.more_btn a:hover{color:#fff; background:#f5821f; box-shadow:1px 1px 1px #024073;}
+</style>
+
+ <div class="body_right_box" style=" background:#f1f1f1;width:100%;">
+    <div>
+    <div style="float:left; margin:5px 10px 0px 5px;width:20%;"><img src="/content/images/chart.png"></div>
+    <div  style=" float:left; text-align:center; text-shadow:1px 1px 2px #fff; margin:15px 0px 0px 0px;width:70%"><a style="font:bold 13px arial;color: #7f0000;" href="/CustomHtmlChart/CustomChart">Create Charts & Maps with Data</a></div>
+    </div>
+    
+    </div>
+         </div>
+         
+<script type="text/javascript">
+    function fnloaddefault(evt) {
+        $(evt).attr('src', '/Content/images/DFB_siwan.png');
+    }
+   
+</script>
+<link rel="stylesheet" href="css/zoom.css" /> 
+
+ <div class="body_right_box" >
+      <div class="dfb_head" style="border-left: 5px solid #041c4e;background-color:#fff;padding:0px;text-indent:0px;"><p style="margin:0px;margin-left:4px;background-color:#f5821f;padding-left:10px;">Jammu &amp; Kashmir District Factbook <sup><span style="font-size:10px;">TM</span></sup>  : Punch District</p></div>
+ 
+    <div class="district_text">       
+    <p class="district_head" style="padding-top:5px;"> 
+  <img src="http://www.datanetindia-ebooks.com/images/states/Jammu_&amp;_Kashmir/Punch-District-Factbook-Jammu &amp; Kashmir.jpg" onerror="fnloaddefault(this)" class="dg-picture-zoom" style="float:left; padding:0px 8px 0px 0px; width:140px" / ><p>Books on statistical data of Indian districts are few and far from comprehensiveness. This one of its kind book endeavours to reveal a particular district with socio-economic data. All passionate readers from every walk of life would benefit from this one-stop data guide to make out easily where the district stands in the Indian platform. </p></p>
+    </div>
+    <div class="more_btn"><a href="http://www.datanetindia-ebooks.com/District_Factbook/Jammu_&amp;_Kashmir/Punch" target="_blank">more &raquo;</a></div>  
+    </div>
+  <div class="body_right_box">
+      <div class="dfb_head" style="border-left: 5px solid #041c4e;background-color:#fff;padding:0px;text-indent:0px;"><p style="margin:0px;margin-left:4px;background-color:#f5821f;padding-left:10px;">Jammu &amp; Kashmir District FactPage <sup><span style="font-size:10px;">TM</span></sup> : Punch District</p></div>
+  
+    <div class="district_text">
+    <p class="district_head">
+       <a href = "javascript:void(0)" onclick = "document.getElementById('Factpage').style.display='block';document.getElementById('fade').style.display='block'"> <img src="/Content/images/FB_page.png" style="float:left; padding:0px 8px 0px 0px; width:150px" / ></a><P>This report comprises the vivid information of a particular district on almost all socio-economic parameters. The statistical data and diagrams provide complete manifestation of the information of a district in a very handy format.</p></p>
+    </div>
+    
+    <div class="more_btn"><a href="http://www.datanetindia-ebooks.com/District_Factpage/Jammu_&amp;_Kashmir/Punch" target="_blank">more &raquo;</a></div>
+   <div id="Factpage" class="popup_container">  
+ <div class="close_popup"><a href = "javascript:void(0)" onclick = "document.getElementById('Factpage').style.display='none';document.getElementById('fade').style.display='none'">X</a></div> 
+    <div class="white_content"><img src="/content/factpage/factpage.jpg"></div>
+     </div>
+        <div id="fade" class="black_overlay"></div>
+    </div>
+
+
+
+<div class="body_right_box">
+     <div class="right_ad">
+        <script async src="//pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
+<!-- Districtsofindia Top 1 Ad -->
+<ins class="adsbygoogle"
+	style="display:block;width:300px;height:250px;"
+    data-ad-client="ca-pub-5804483449323119"
+     data-ad-slot="6827438918">
+     </ins>
+<script>
+    (adsbygoogle = window.adsbygoogle || []).push({});
+</script>
+         
+      
+
+
+</div>
+
+    
+  </div>
+
+
+  <style type="text/css">
+        * { 
+margin:0px;
+padding:0px;
+}
+.containerpub { 
+width:300px;
+padding:0px;
+margin:0 auto;
+margin-top:0px;
+height:250px;
+}
+.SliderStyle {
+position:relative;
+width:300px;
+}
+.SliderStyle img {
+position:absolute;
+top:0px;
+left:0px;
+}
+
+/* The slices and boxes in the Slider */
+.nivo-slice {
+display:block;
+position:absolute;
+z-index:5;
+height:250px; width:300px;
+}
+.nivo-box {
+display:block;
+position:absolute;
+z-index:5;
+}
+/* Caption styles */
+.nivo-caption {
+position:absolute;
+padding-top:10px;
+top:130px;
+color:white;
+opacity:1; /* Overridden by captionOpacity setting */
+height: 35px;
+width: 180px;
+font-size:18px;
+font-family:Times New Roman;
+font-weight: normal;
+z-index:8;
+background-color:black;
+}
+.nivo-caption p {
+padding:5px;
+padding-left: 20px;
+margin:0;
+ 
+}
+.nivo-caption a {
+display:inline !important;
+}
+.nivo-html-caption {
+display:none;
+}
+
+</style>
+
+<script type="text/javascript" src="/Scripts/js/jquery.nivo.slider.pack.js"></script>
+<script type="text/javascript">
+    $(window).load(function () {
+    
+        $('#slider1').nivoSlider({
+
+            effect: 'random',
+            slices: 15,
+            boxCols: 8,
+            boxRows: 4,
+            animSpeed: 3500,
+            pauseTime: 7000,
+            startSlide: 0,
+            directionNav: false,
+            directionNavHide: false,
+            controlNav: false,
+            controlNavThumbs: false,
+            controlNavThumbsFromRel: false,
+            //            controlNavThumbsSearch: '.jpg', 
+            //            controlNavThumbsReplace: '_thumb.jpg',
+            keyboardNav: false,
+            pauseOnHover: false,
+            manualAdvance: false,
+            captionOpacity: 0.6,
+            //            prevText: 'Prev', 
+            //            nextText: 'Next', 
+            randomStart: false
+        });
+    });
+</script>
+<div class="body_right_box">
+<div class="clock_head" style="text-indent:10px;"><span style="float:left; width:6px; background:#082666; border-right:3px solid #fff;">&nbsp;</span>Publications</div>
+   <div class="containerpub"><a href="http://www.datanetindia-ebooks.com/" target="_blank"> 
+  <div id="slider1" class="SliderStyle">
+    
+     
+          <img src="https://www.datanetindia-ebooks.com/images/Election_Atlas/Election_Atlas_Of_India_SM.png" alt="" />
+     
+        
+          <img src="/Content/images/publications/india-elects.jpg" alt="" />
+     
+        
+          <img src="/Content/images/publications/Pre-Election_Uttar-Pradesh.png" alt="" />
+     
+        
+          <img src="/Content/images/publications/Pre-Election_Uttarakhand.png" alt="" />
+     
+        
+          <img src="/Content/images/publications/Pre-Election_Punjab.png" alt="" />
+     
+        
+          <img src="/Content/images/publications/Pre-Election_Karnataka.png" alt="" />
+     
+        
+          <img src="/Content/images/publications/Pre-Election_GOA.png" alt="" />
+     
+        
+          <img src="/Content/images/publications/Post-Election_West-Bengal.png" alt="" />
+     
+        
+          <img src="/Content/images/publications/Post-Election_Puducherry.png" alt="" />
+     
+        
+          <img src="/Content/images/publications/Post-Election_Kerala.png" alt="" />
+     
+        
+          <img src="/Content/images/publications/Post-Election_Bihar.png" alt="" />
+     
+        
+          <img src="/Content/images/publications/Post-Election_Assam.png" alt="" />
+     
+        
+          <img src="/Content/images/publications/DF_Bijnor_(UP).png" alt="" />
+     
+        
+          <img src="/Content/images/publications/Assembly_FB_Hapur.png" alt="" />
+     
+        
+</div></a>
+</div>
+
+</div>
+   
+	<div class="more_btn"><a href="http://www.datanetindia-ebooks.com/" target="_blank">more &gt;&gt;</a></div>
+<div class="body_right_box" style="height:250px;">
+   <a href="http://www.indiastat.com" target="_blank"><img src="/Content/images/Indiastat_AD.gif" border="0"></a>
+  </div> 
+ <div class="body_right_box">
+ <div class="right_ad">
+   
+     
+
+<script async src="//pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
+<!-- Districtsofindia Top 2 Ad -->
+<ins class="adsbygoogle"
+     style="display:block;width:300px;height:250px;"
+     data-ad-client="ca-pub-5804483449323119"
+     data-ad-slot="8304172113">
+     </ins>
+<script>
+    (adsbygoogle = window.adsbygoogle || []).push({});
+</script>
+
+
+
+		
+    
+
+   
+</div>
+
+  </div>
+
+  
+  <div class="body_right_box">
+   <a href="http://www.electionsinindia.com/Index.aspx" target="_blank"><img src="/Content/images/Election-AD.gif" border="0"></a>
+  </div>
+
+  <div class="body_right_box" style="height:200px;">
+   <a href="http://datanetindia-ebooks.com/" target="_blank"><img src="/Content/images/eBook_AD.gif"></a>
+  </div>
+      
+         </div>
+
+
+        <!-- Right body End -->
+  </div>
+     
+   
+
+  
+
+<link rel="stylesheet" href="/Content/css/media.css" type="text/css"/>
+
+<script type="text/javascript" src="/Scripts/js/ddaccordion.js"></script>
+<script type="text/javascript">
+
+    function DataTable(HeaderId, StateCode, DistrictCode, SectorCode, StandaloneData, vLoginVerified, Header, Autherises) {
+        var sectorid_ved1;
+        var isallSector = 0;
+        var i;
+        var j;
+        var sectorid;
+        var distcode;
+        var allstate;
+        var isalld;
+        var vTempHeader = new String();
+       
+        vTempHeader = Header.replace(/@/g, ",");
+        vTempHeader = vTempHeader.replace(/#/g, " ");
+        vTempHeader = vTempHeader.replace(/P2O5/g, "P<sub>2</sub>O<sub>5</sub>");
+        vTempHeader = vTempHeader.replace(/K2O/g, "K<sub>2</sub>O");
+       
+        var Autherise = parseInt(Autherises);
+        var SectorAutherise = 0;
+        var DistrictAutherise = 0;
+
+        var sectorid_ved;
+
+        //var TocheckSectorcode='';
+        sectorid = '';
+        //alert(sectorid);
+        //alert(sectorid);
+
+
+        //chech sector wise user right ******start
+        sectorid_ved = sectorid
+        
+        if (sectorid_ved.length == 1) {
+            sectorid_ved = "0" + sectorid_ved;
+        }
+        else if (sectorid_ved.length == 0) {
+            sectorid_ved = SectorCode;
+        }
+        else if (sectorid_ved.length == 2) {
+            sectorid_ved = sectorid;
+        }
+
+     
+
+        if (sectorid.indexOf(',') != -1) {
+
+            var Array_sectorid_ved = new Array();
+          
+            Array_sectorid_ved = sectorid_ved.split(",");
+            for (var v = 0; v < Array_sectorid_ved.length; v++) {
+                // alert(Array_sectorid_ved[v]);
+
+
+
+                if (Array_sectorid_ved[v].length == 1) {
+                    Array_sectorid_ved[v] = "0" + Array_sectorid_ved[v];
+                }
+                else if (Array_sectorid_ved[v].length == 0) {
+
+                    Array_sectorid_ved[v] = Array_sectorid_ved[v];
+                }
+                else if (Array_sectorid_ved[v].length == 2) {
+                    Array_sectorid_ved[v] = Array_sectorid_ved[v];
+                }
+
+                var vv = Array_sectorid_ved[v].replace(' ', '');
+                var secvv = SectorCode.replace(' ', '');
+               //alert(vv);
+               // alert(secvv);
+                if (vv == secvv) {
+                    vstatcode = Array_sectorid_ved[v];
+                    sectorid_ved1 = Array_sectorid_ved[v];
+
+                }
+
+            }
+        }
+
+        else {
+            sectorid_ved1 = sectorid_ved;
+        }
+        //alert(sectorid_ved);
+        //alert(vstatcode);
+        //chech sector wise user right ******end
+        
+        distcode = '0';
+       
+        //changes on 3rd april 2010 for all districts
+        isalld = '';
+        allstate = '';
+        if (DistrictCode == 9999) {
+            if (isalld == 1) {
+                var alls = allstate.split(",")
+                for (m = 0; m < alls.length; m++) {
+                    if (alls[m] == StateCode) {
+                        Autherise = 1;
+
+                    }
+                }
+            }
+        }
+        if (isalld == 1) {
+            isallSector = 1;
+        }
+      
+
+        if (sectorid != "") {
+            var sect = sectorid.split(",");
+            var dist = distcode.split(",");
+            for (i = 0; i < sect.length; i++) {
+                if (parseInt(sect[i]) == parseInt(SectorCode)) {
+                    SectorAutherise = 1;
+                }
+            }
+            for (j = 0; j < dist.length; j++) {
+                if (dist[j] == DistrictCode) {
+                    DistrictAutherise = 1;
+                }
+            }
+            if (DistrictAutherise == 1 && SectorAutherise == 1) {
+                Autherise = 1;
+            }
+        }
+        else {
+            var dist = distcode.split(",");
+            for (j = 0; j < dist.length; j++) {
+                if (dist[j] == DistrictCode) {
+                    Autherise = 1;
+                }
+            }
+        }
+        //alert(isallSector);
+     
+        vLoginVerified = '0';
+        if (vLoginVerified == 0) {
+            //server.execute("NewPage.aspx?hid="+ HeaderId +"&sc="+ StateCode +"&dc="+ DistrictCode +"&sd="+ StandaloneData +"&hd="+ Header +"") 
+            //window.location.href("NewPage.aspx?hid="+ HeaderId +"&sc="+ StateCode +"&dc="+ DistrictCode +"&sd="+ StandaloneData +"&hd="+ Header +"")
+         
+            document.getElementById("ssdt").innerHTML = vTempHeader;
+            ShowMemberLogin();
+            return false;
+        }
+        else if (vLoginVerified == 1 && Autherise == 0) {
+            document.getElementById("divCheck").style.display = "block";
+        }
+        else if (vLoginVerified == 1 && Autherise == 1 && sectorid_ved1 != SectorCode && isallSector == 0) {
+            document.getElementById("divCheck").style.display = "block";
+        }
+        else if (vLoginVerified == 1 && Autherise == 1) {
+            var leftposition = (window.screen.width / 2) - ((800 / 2) + 10);
+            var topposition = (window.screen.height / 2) - ((600 / 2) + 50);
+            window.open('/DataTable.aspx?hid=' + HeaderId + "&sc=" + StateCode + "&dc=" + DistrictCode + "&sd=" + StandaloneData, HeaderId, 'height=600, width=800,left=' + leftposition + ', top=' + topposition + ', ScreenX=' + leftposition + ', ScreenY=' + topposition + ',directories=0, menubar=0, location=0, resizable=1, scrollbars=1, status=0, toolbar=0');
+        }
+        //    if(sectorid==SectorCode)
+        //    {
+        //        document.getElementById("divCheck").style.visibility="visible";
+        //       PlaceMemberLogin1();
+        //      //alert("Sorry! You are unautherised to access Data");
+        //    }
+       
+        return false;
+    }
+    var y1 = 20;
+    (document.getElementById) ? dom = true : dom = false;
+    function PlaceMemberLogin1() {
+        if (dom && !document.all) {
+            document.getElementById("divCheck").style.top = window.pageYOffset + (window.innerHeight - (window.innerHeight - y1)) + "px";
+        }
+        if (document.all) {
+            document.all["divCheck"].style.top = document.documentElement.scrollTop + (document.documentElement.clientHeight - (document.documentElement.clientHeight - y1)) + "px";
+        }
+        window.setTimeout("PlaceMemberLogin1()", 10);
+    }
+    var y1 = 20;
+    (document.getElementById) ? dom = true : dom = false;
+    function HideMemberLogin() {
+        if (dom) {
+            document.getElementById("LayerMemberLogin").style.visibility = "hidden";
+        }
+        return false;
+    }
+    function ShowMemberLogin() {
+            var ocdiv = document.getElementById('tblstatmsg');
+            ocdiv.style.display = 'block';
+            return false;
+    }
+    function PlaceMemberLogin() {
+        if (dom && !document.all) {
+            document.getElementById("LayerMemberLogin").style.top = window.pageYOffset + (window.innerHeight - (window.innerHeight - y1)) + "px";
+        }
+        if (document.all) {
+            document.all["LayerMemberLogin"].style.top = document.documentElement.scrollTop + (document.documentElement.clientHeight - (document.documentElement.clientHeight - y1)) + "px";
+        }
+        window.setTimeout("PlaceMemberLogin()", 10);
+    }
+
+    function PlaceMemberLogin1() {
+        if (dom && !document.all) {
+            document.getElementById("divCheck").style.top = window.pageYOffset + (window.innerHeight - (window.innerHeight - y1)) + "px";
+        }
+        if (document.all) {
+            document.all["divCheck"].style.top = document.documentElement.scrollTop + (document.documentElement.clientHeight - (document.documentElement.clientHeight - y1)) + "px";
+        }
+        window.setTimeout("PlaceMemberLogin1()", 10);
+    }
+    function closediv(ids) {
+        document.getElementById(ids).style.display = 'none';
+        return false;
+    }
+    function DataTableTemplate(HeaderId, StateCode, DistrictCode, SectorCode, StandaloneData, vLoginVerified, Header, Autherises) {
+        var i;
+        var j;
+        var sectorid;
+        var distcode;
+        var allstate;
+        var isalld;
+        var vTempHeader = new String();
+        vTempHeader = Header.replace(/@/g, ",");
+        vTempHeader = vTempHeader.replace(/#/g, " ");
+        vTempHeader = vTempHeader.replace(/P2O5/g, "P<sub>2</sub>O<sub>5</sub>");
+        vTempHeader = vTempHeader.replace(/K2O/g, "K<sub>2</sub>O");
+        var Autherise = parseInt(Autherises);
+        var SectorAutherise = 0;
+        var DistrictAutherise = 0;
+        //var TocheckSectorcode='';
+        sectorid = '';
+        distcode = '0';
+        //changes on 3rd april 2010 for all districts
+        isalld = '';
+        allstate = '';
+        //Ashok 20-08-2011
+        Autherise = 1;
+        if (DistrictCode == 9999) {
+            if (isalld == 1) {
+                var alls = allstate.split(",")
+                for (m = 0; m < alls.length; m++) {
+                    if (alls[m] == StateCode) {
+                        Autherise = 1;
+                    }
+                }
+            }
+        }
+
+
+        if (sectorid != "") {
+            var sect = sectorid.split(",");
+            var dist = distcode.split(",");
+            for (i = 0; i < sect.length; i++) {
+                if (sect[i] == SectorCode) {
+                    SectorAutherise = 1;
+                }
+            }
+            for (j = 0; j < dist.length; j++) {
+                if (dist[j] == DistrictCode) {
+                    DistrictAutherise = 1;
+                }
+            }
+            if (DistrictAutherise == 1 && SectorAutherise == 1) {
+                Autherise = 1;
+            }
+        }
+        else {
+            var dist = distcode.split(",");
+            for (j = 0; j < dist.length; j++) {
+                if (dist[j] == DistrictCode) {
+                    Autherise = 1;
+                }
+            }
+        }
+        // }
+        //alert(Autherise)
+        vLoginVerified = '0';
+
+        //if(vLoginVerified==0)
+        //{
+        //server.execute("NewPage.aspx?hid="+ HeaderId +"&sc="+ StateCode +"&dc="+ DistrictCode +"&sd="+ StandaloneData +"&hd="+ Header +"") 
+        //window.location.href("NewPage.aspx?hid="+ HeaderId +"&sc="+ StateCode +"&dc="+ DistrictCode +"&sd="+ StandaloneData +"&hd="+ Header +"")
+        //  document.getElementById("Heading").innerHTML = vTempHeader;
+        // ShowMemberLogin();             
+        //}
+        //else if(vLoginVerified==1 && Autherise==0)
+        //{
+
+        //document.getElementById("divCheck").style.visibility="visible";
+        //PlaceMemberLogin1();
+        //alert("Sorry! You are unautherised to access Data");
+        //}
+        //else if(vLoginVerified==1 && Autherise==1)
+        //{
+        var leftposition = (window.screen.width / 2) - ((800 / 2) + 10);
+        var topposition = (window.screen.height / 2) - ((600 / 2) + 50);
+        window.open('/DataTableTemplate.aspx?hid=' + HeaderId + "&sc=" + StateCode + "&dc=" + DistrictCode + "&sd=" + StandaloneData, HeaderId, 'height=600, width=800,left=' + leftposition + ', top=' + topposition + ', ScreenX=' + leftposition + ', ScreenY=' + topposition + ',directories=0, menubar=0, location=0, resizable=1, scrollbars=1, status=0, toolbar=0');
+        //}
+    }
+    function closediv(ids) {
+        document.getElementById(ids).style.display = 'none';
+        $('#username').val('');
+        $('#password').val('');
+        return false;
+    }
+   
+</script>
+
+ <div class="body_left">
+<style type="text/css">
+.category{background:#f5f5f5; margin-top:5px;}
+.category a{color:#043f70; text-align:justify;}
+.categoryitems{padding:7px; margin-top:5px;}
+.rotateimg{-webkit-transform: rotate(180deg);-moz-transform:rotate(180deg);-o-transform:rotate(180deg);-ms-transform: rotate(180deg);}
+</style>
+<link rel="stylesheet" type="text/css" href="/Content/css/expandable.css">
+ 
+
+ 
+     
+<form action="/jammuandkashmir/punch/education/index.aspx" method="post">
+<DIV id="tblstatmsg">
+<DIV><TABLE style="BORDER-RIGHT: #336bac 1px solid; BORDER-TOP: #336bac 1px solid; BORDER-LEFT: #336bac 1px solid; BORDER-BOTTOM: #336bac 1px solid" cellSpacing=0 cellPadding=0 width="100%" align=center border=0>
+<TBODY>
+
+
+
+<TR><TD style="WIDTH: 100%" align=center bgColor=#e0f0f8><TABLE cellSpacing=0 cellPadding=0 width="100%" border=0><TBODY><TR><TD class="style90" align=center height=50>
+<span id="1_lbltblhead"></span> 
+<DIV id="ssdt" style="color:#005195; font-weight:bold;">
+</DIV><BR /></TD></TR></TBODY></TABLE><table height="112" cellSpacing=0 cellPadding=0 width="100%" bgColor=#ffffff border=0><TBODY><TR><TD vAlign=bottom align=center height=22>
+<STRONG style="COLOR: #7c7c7c">This information is available only to registered Subscriber.</STRONG> </TD></TR><TR><TD vAlign=bottom align=center height=22>Existing Subscriber please login by providing your <SPAN class="lefMenustyle">Username</SPAN> and <SPAN class="lefMenustyle">Password</SPAN> below </TD></TR><TR><TD vAlign=bottom align=center height=22><SPAN style="FONT-SIZE: 10pt; COLOR: red; FONT-FAMILY: Verdana">User name: </SPAN><input type="text" id="tbxUN" name="tbxUN" style="width:100px;padding:5px; border-radius:5px; border:1px solid #ccc; box-shadow:1px 1px 10px 1px #ddd; margin-bottom:5px;" value="username" onclick="if (this.value == 'username') { this.value = '' }" onblur="if(this.value==''){this.value='username'}" /><STRONG> &nbsp;</STRONG>&nbsp; <FONT face="Verdana" color=red size=2>Password: </FONT><input type="password" id="tbxPW" name="tbxPW" style="width:100px;padding:5px; border-radius:5px; border:1px solid #ccc; box-shadow:1px 1px 10px 1px #ddd; margin-bottom:5px;" value="........" onclick="    if (this.value == '........') { this.value = '' }" onblur="if(this.value==''){this.value='........'}" /><STRONG> </STRONG><div style="float:right; margin:3px 15px 0px 0px;"><input type="image" style="height:22px;" id="imgdivUNLog" onclick="    javascript: return fnunploginwns();" src="/Content/imgs/Common/data_search_go1.jpg" /></div><STRONG> <BR />IP Access User click </STRONG><a href="#0"><input type="button" id="lbtniplog" name="btncommand" style="font-size:10pt;color:red;font-family:Verdana;background:none!important;border:none;padding:0!important;" value="Here" onclick="    javascript: return fnipuloginwns();" /></a><STRONG> &nbsp;for login.</STRONG> </TD></TR><TR><TD vAlign=bottom align=center height=22>Use of this web site constitutes acceptance of <a href="/mustsee/MustseeTerm.aspx" target="_blank"> "Terms of Use and Disclaimer"</a> </TD></TR><TR><TD vAlign=bottom align=center height=22><STRONG style="COLOR: #7c7c7c">Non-Subscriber</STRONG>, please check <SPAN class="style1">'</SPAN> <a id="1_h1" href="/Subscribe/Index" target="_blank" style="FONT:bold 10pt verdana; COLOR: #005195;">Subscribe</a> ' for more details. <BR /><FONT ><span style="color:Red ;">(Please Note: After login, you are require to re-click the desired table heading)</span></FONT> </TD></TR><TR><TD style="HEIGHT: 14px"><TABLE cellSpacing=0 cellPadding=0 width="100%" border=0><TBODY><TR><TD width="1%" height=32></TD><TD align=center height=35><INPUT onclick="javascript: hidemb('tblstatmsg');" type=button value="Close" name="button" style="margin-bottom:5px;" class="submit_btn" /> <INPUT id="url2redirect" type=hidden name="dataurl" visible="false" /> </TD><TD width="1%"></TD></TR></TBODY></TABLE></TD></TR></TBODY></TABLE></TD></TR></TBODY></TABLE></DIV></DIV>
+                                        </form>
+
+
+ 
+        <div class="clr"> 
+    <div class="btn"><a href="/Home/registration_demo">Register Here for FREE Trial Access</a></div>
+    
+    <div class="btn" style="float:right;"><a href="/jammuandkashmir/statedistrict.aspx">Jammu &amp; Kashmir Index Page</a></div>
+    
+  </div>
+      <div class="center_head">District Level Information of Punch (Jammu &amp; Kashmir)</div>
+
+ <div class="list_container">
+ <div class="sections">
+       <span>  
+
+     <a href="/jammuandkashmir/anantnag/index.aspx" class="">Anantnag</a>
+    
+
+
+     <a href="/jammuandkashmir/budgam/index.aspx" class="">Budgam</a>
+    
+
+
+     <a href="/jammuandkashmir/baramula/index.aspx" class="">Baramula</a>
+    
+
+
+     <a href="/jammuandkashmir/doda/index.aspx" class="">Doda</a>
+    
+
+
+     <a href="/jammuandkashmir/jammu/index.aspx" class="">Jammu</a>
+    
+
+
+     <a href="/jammuandkashmir/kargil/index.aspx" class="">Kargil</a>
+    
+
+
+     <a href="/jammuandkashmir/kathua/index.aspx" class="">Kathua</a>
+    
+
+
+     <a href="/jammuandkashmir/kupwara/index.aspx" class="">Kupwara</a>
+    
+
+
+     <a href="/jammuandkashmir/leh-ladakh/index.aspx" class="">Leh - Ladakh</a>
+    
+
+
+     <a href="/jammuandkashmir/pulwama/index.aspx" class="">Pulwama</a>
+    
+
+
+     <a href="/jammuandkashmir/punch/index.aspx" class="active">Punch</a>
+    
+
+
+     <a href="/jammuandkashmir/rajouri/index.aspx" class="">Rajouri</a>
+    
+
+
+     <a href="/jammuandkashmir/srinagar/index.aspx" class="">Srinagar</a>
+    
+
+
+     <a href="/jammuandkashmir/udhampur/index.aspx" class="">Udhampur</a>
+    
+
+
+     <a href="/jammuandkashmir/ganderbal/index.aspx" class="">Ganderbal</a>
+    
+
+
+     <a href="/jammuandkashmir/kulgam/index.aspx" class="">Kulgam</a>
+    
+
+
+     <a href="/jammuandkashmir/ramban/index.aspx" class="">Ramban</a>
+    
+
+
+     <a href="/jammuandkashmir/reasi/index.aspx" class="">Reasi</a>
+    
+
+
+     <a href="/jammuandkashmir/bandipore/index.aspx" class="">Bandipore</a>
+    
+
+
+     <a href="/jammuandkashmir/kishtwar/index.aspx" class="">Kishtwar</a>
+    
+
+
+     <a href="/jammuandkashmir/samba/index.aspx" class="">Samba</a>
+    
+
+
+     <a href="/jammuandkashmir/shupiyan/index.aspx" class="">Shupiyan</a>
+    
+
+
+     <a href="/jammuandkashmir/alldistricts/index.aspx" class="">All Districts</a>
+    
+
+  </span> </div><div class="sections_arrow">&nbsp;</div>
+ 
+   
+  
+<div class="sector_head" ><span style='float:left; width:6px; background:#082666; border-right:3px solid #fff;'>&nbsp;</span>Sector -wise information </div><div class="sections_next"><span><a href="/jammuandkashmir/punch/administrativeunits/index.aspx" onclick="javascript:return showmb('/jammuandkashmir/punch/administrativeunits/index.aspx','','Administrative Units');" class="">Administrative Units</a><a href="/jammuandkashmir/punch/agriculture/index.aspx" onclick="javascript:return showmb('/jammuandkashmir/punch/agriculture/index.aspx','','Agriculture');" class="">Agriculture</a><a href="/jammuandkashmir/punch/banksandfinancialinstitutions/index.aspx" onclick="javascript:return showmb('/jammuandkashmir/punch/banksandfinancialinstitutions/index.aspx','','Banks and Financial Institutions');" class="">Banks and Financial Institutions</a><a href="/jammuandkashmir/punch/crimeandlaw/index.aspx" onclick="javascript:return showmb('/jammuandkashmir/punch/crimeandlaw/index.aspx','','Crime and Law');" class="">Crime and Law</a><a href="/jammuandkashmir/punch/demographics/index.aspx" onclick="javascript:return showmb('/jammuandkashmir/punch/demographics/index.aspx','','Demographics');" class="">Demographics</a><a href="/jammuandkashmir/punch/economy/index.aspx" onclick="javascript:return showmb('/jammuandkashmir/punch/economy/index.aspx','','Economy');" class="">Economy</a><a href="/jammuandkashmir/punch/education/index.aspx" onclick="javascript:return showmb('/jammuandkashmir/punch/education/index.aspx','','Education');" class="active">Education</a><a href="/jammuandkashmir/punch/environmentandforest/index.aspx" onclick="javascript:return showmb('/jammuandkashmir/punch/environmentandforest/index.aspx','','Environment and Forest');" class="">Environment and Forest</a><a href="/jammuandkashmir/punch/health/index.aspx" onclick="javascript:return showmb('/jammuandkashmir/punch/health/index.aspx','','Health');" class="">Health</a><a href="/jammuandkashmir/punch/industriesandmining/index.aspx" onclick="javascript:return showmb('/jammuandkashmir/punch/industriesandmining/index.aspx','','Industries and Mining');" class="">Industries and Mining</a><a href="/jammuandkashmir/punch/infrastructure/index.aspx" onclick="javascript:return showmb('/jammuandkashmir/punch/infrastructure/index.aspx','','Infrastructure');" class="">Infrastructure</a><a href="/jammuandkashmir/punch/labourandworkforce/index.aspx" onclick="javascript:return showmb('/jammuandkashmir/punch/labourandworkforce/index.aspx','','Labour and Workforce');" class="">Labour and Workforce</a><a href="/jammuandkashmir/punch/media/index.aspx" onclick="javascript:return showmb('/jammuandkashmir/punch/media/index.aspx','','Media');" class="">Media</a><a href="/jammuandkashmir/punch/socialandwelfareschemes/index.aspx" onclick="javascript:return showmb('/jammuandkashmir/punch/socialandwelfareschemes/index.aspx','','Social and Welfare Schemes');" class="">Social and Welfare Schemes</a><a href="/jammuandkashmir/punch/tourism/index.aspx" onclick="javascript:return showmb('/jammuandkashmir/punch/tourism/index.aspx','','Tourism');" class="">Tourism</a><a href="/jammuandkashmir/punch/housing/index.aspx" onclick="javascript:return showmb('/jammuandkashmir/punch/housing/index.aspx','','Housing');" class="">Housing</a></span></div><div class='sections_next_arrow'>&nbsp;</div><div id="divShowData"  style="clear:both;"><a href="" style="padding:0; border:0;"><div class="list_head">Education</div></a></div><div class="category_container"> <ul id="ulshowdata"><li><a href="/DataTable.aspx?hid=96971&sc=15&dc=1511&sd=0" onclick="javascript:return DataTable('96971','15','1511','07','0','0','Age Group-wise Population Attending Educational Institution by Completed Education Level by Residence and Sex in Punch District (Jammu & Kashmir) (As per 2011 Census) - Part II','0');" >Age Group-wise Population Attending Educational Institution by Completed Education Level by Residence and Sex in Punch District (Jammu & Kashmir) (As per 2011 Census) - Part II</a><a href ='javascript:ShowText('Message')' onmouseover="ShowText('Message','View Data Table Format'); return true;" onmouseout=" HideText('Message'); return true; " style=" text-decoration:none;cursor:pointer" onclick ="DataTableTemplate('96971','15','1511','07','0','','Age Group-wise Population Attending Educational Institution by Completed Education Level by Residence and Sex in Punch District (Jammu & Kashmir) (As per 2011 Census) - Part II','0')" class='stytle5' title='View Sample Data Format'>&nbsp;<img src='/Content/images/v_image_1.jpg'  border='0'></a><div id='Message' class='box'></div></li><li><a href="/DataTable.aspx?hid=92377&sc=15&dc=1511&sd=0" onclick="javascript:return DataTable('92377','15','1511','07','0','0','Age Group-wise Scheduled Tribe Population Attending Educational Institutions and Type of Educational Institution by Residence and Sex in Punch (Jammu & Kashmir) (2011) - Part II','0');" >Age Group-wise Scheduled Tribe Population Attending Educational Institutions and Type of Educational Institution by Residence and Sex in Punch (Jammu & Kashmir) (2011) - Part II</a><a href ='javascript:ShowText('Message')' onmouseover="ShowText('Message','View Data Table Format'); return true;" onmouseout=" HideText('Message'); return true; " style=" text-decoration:none;cursor:pointer" onclick ="DataTableTemplate('92377','15','1511','07','0','','Age Group-wise Scheduled Tribe Population Attending Educational Institutions and Type of Educational Institution by Residence and Sex in Punch (Jammu & Kashmir) (2011) - Part II','0')" class='stytle5' title='View Sample Data Format'>&nbsp;<img src='/Content/images/v_image_1.jpg'  border='0'></a><div id='Message' class='box'></div></li><li><a href="/DataTable.aspx?hid=88938&sc=15&dc=1511&sd=0" onclick="javascript:return DataTable('88938','15','1511','07','0','0','Female Headed Household Scheduled Caste Illiiterates Population by Residence and Sex in Punch District (Jammu & Kashmir) (As per 2011 Census)','0');" >Female Headed Household Scheduled Caste Illiiterates Population by Residence and Sex in Punch District (Jammu & Kashmir) (As per 2011 Census)</a><a href ='javascript:ShowText('Message')' onmouseover="ShowText('Message','View Data Table Format'); return true;" onmouseout=" HideText('Message'); return true; " style=" text-decoration:none;cursor:pointer" onclick ="DataTableTemplate('88938','15','1511','07','0','','Female Headed Household Scheduled Caste Illiiterates Population by Residence and Sex in Punch District (Jammu & Kashmir) (As per 2011 Census)','0')" class='stytle5' title='View Sample Data Format'>&nbsp;<img src='/Content/images/v_image_1.jpg'  border='0'></a><div id='Message' class='box'></div></li><li><a href="/DataTable.aspx?hid=89458&sc=15&dc=1511&sd=0" onclick="javascript:return DataTable('89458','15','1511','07','0','0','Female Headed Household Scheduled Tribe Literates Population by Residence and Sex in Punch District (Jammu & Kashmir) (As per 2011 Census)','0');" >Female Headed Household Scheduled Tribe Literates Population by Residence and Sex in Punch District (Jammu & Kashmir) (As per 2011 Census)</a><a href ='javascript:ShowText('Message')' onmouseover="ShowText('Message','View Data Table Format'); return true;" onmouseout=" HideText('Message'); return true; " style=" text-decoration:none;cursor:pointer" onclick ="DataTableTemplate('89458','15','1511','07','0','','Female Headed Household Scheduled Tribe Literates Population by Residence and Sex in Punch District (Jammu & Kashmir) (As per 2011 Census)','0')" class='stytle5' title='View Sample Data Format'>&nbsp;<img src='/Content/images/v_image_1.jpg'  border='0'></a><div id='Message' class='box'></div></li><li><a href="/DataTable.aspx?hid=64993&sc=15&dc=1511&sd=0" onclick="javascript:return DataTable('64993','15','1511','07','0','0','Scheduled Caste Illiterate Population (Person/Male/Female/Total/Rural/Urban) in Punch District (Jammu & Kashmir) (As per 2011 Census)','0');" >Scheduled Caste Illiterate Population (Person/Male/Female/Total/Rural/Urban) in Punch District (Jammu & Kashmir) (As per 2011 Census)</a><a href ='javascript:ShowText('Message')' onmouseover="ShowText('Message','View Data Table Format'); return true;" onmouseout=" HideText('Message'); return true; " style=" text-decoration:none;cursor:pointer" onclick ="DataTableTemplate('64993','15','1511','07','0','','Scheduled Caste Illiterate Population (Person/Male/Female/Total/Rural/Urban) in Punch District (Jammu & Kashmir) (As per 2011 Census)','0')" class='stytle5' title='View Sample Data Format'>&nbsp;<img src='/Content/images/v_image_1.jpg'  border='0'></a><div id='Message' class='box'></div></li><li><a href="/DataTable.aspx?hid=68201&sc=15&dc=1511&sd=0" onclick="javascript:return DataTable('68201','15','1511','07','0','0','Number of Houseless Illiterate Population (Person/Male/Female//Total/Rural/Urban) in Punch District (Jammu & Kashmir) (As per 2011 Census)','0');" >Number of Houseless Illiterate Population (Person/Male/Female//Total/Rural/Urban) in Punch District (Jammu & Kashmir) (As per 2011 Census)</a><a href ='javascript:ShowText('Message')' onmouseover="ShowText('Message','View Data Table Format'); return true;" onmouseout=" HideText('Message'); return true; " style=" text-decoration:none;cursor:pointer" onclick ="DataTableTemplate('68201','15','1511','07','0','','Number of Houseless Illiterate Population (Person/Male/Female//Total/Rural/Urban) in Punch District (Jammu & Kashmir) (As per 2011 Census)','0')" class='stytle5' title='View Sample Data Format'>&nbsp;<img src='/Content/images/v_image_1.jpg'  border='0'></a><div id='Message' class='box'></div></li><li><a href="/DataTable.aspx?hid=67522&sc=15&dc=1511&sd=0" onclick="javascript:return DataTable('67522','15','1511','07','0','0','Scheduled Tribe Literate Population (Person/Male/Female/Total/Rural/Urban) in Punch District (Jammu & Kashmir) (As per 2011 Census)','0');" >Scheduled Tribe Literate Population (Person/Male/Female/Total/Rural/Urban) in Punch District (Jammu & Kashmir) (As per 2011 Census)</a><a href ='javascript:ShowText('Message')' onmouseover="ShowText('Message','View Data Table Format'); return true;" onmouseout=" HideText('Message'); return true; " style=" text-decoration:none;cursor:pointer" onclick ="DataTableTemplate('67522','15','1511','07','0','','Scheduled Tribe Literate Population (Person/Male/Female/Total/Rural/Urban) in Punch District (Jammu & Kashmir) (As per 2011 Census)','0')" class='stytle5' title='View Sample Data Format'>&nbsp;<img src='/Content/images/v_image_1.jpg'  border='0'></a><div id='Message' class='box'></div></li><li><a href="/DataTable.aspx?hid=87272&sc=15&dc=1511&sd=0" onclick="javascript:return DataTable('87272','15','1511','07','0','0','Age Group-wise Adolescent and Youth Scheduled Tribe Illiiterates Population by Residence and Sex in Punch District (Jammu & Kashmir) (As per 2011 Census)','0');" >Age Group-wise Adolescent and Youth Scheduled Tribe Illiiterates Population by Residence and Sex in Punch District (Jammu & Kashmir) (As per 2011 Census)</a><a href ='javascript:ShowText('Message')' onmouseover="ShowText('Message','View Data Table Format'); return true;" onmouseout=" HideText('Message'); return true; " style=" text-decoration:none;cursor:pointer" onclick ="DataTableTemplate('87272','15','1511','07','0','','Age Group-wise Adolescent and Youth Scheduled Tribe Illiiterates Population by Residence and Sex in Punch District (Jammu & Kashmir) (As per 2011 Census)','0')" class='stytle5' title='View Sample Data Format'>&nbsp;<img src='/Content/images/v_image_1.jpg'  border='0'></a><div id='Message' class='box'></div></li><li><a href="/DataTable.aspx?hid=88868&sc=15&dc=1511&sd=0" onclick="javascript:return DataTable('88868','15','1511','07','0','0','Female Headed Household Scheduled Caste Literates Population by Residence and Sex in Punch District (Jammu & Kashmir) (As per 2011 Census)','0');" >Female Headed Household Scheduled Caste Literates Population by Residence and Sex in Punch District (Jammu & Kashmir) (As per 2011 Census)</a><a href ='javascript:ShowText('Message')' onmouseover="ShowText('Message','View Data Table Format'); return true;" onmouseout=" HideText('Message'); return true; " style=" text-decoration:none;cursor:pointer" onclick ="DataTableTemplate('88868','15','1511','07','0','','Female Headed Household Scheduled Caste Literates Population by Residence and Sex in Punch District (Jammu & Kashmir) (As per 2011 Census)','0')" class='stytle5' title='View Sample Data Format'>&nbsp;<img src='/Content/images/v_image_1.jpg'  border='0'></a><div id='Message' class='box'></div></li><li><a href="/DataTable.aspx?hid=68356&sc=15&dc=1511&sd=0" onclick="javascript:return DataTable('68356','15','1511','07','0','0','Number of Houseless Literate Population (Person/Male/Female//Total/Rural/Urban) in Punch District (Jammu & Kashmir) (As per 2011 Census)','0');" >Number of Houseless Literate Population (Person/Male/Female//Total/Rural/Urban) in Punch District (Jammu & Kashmir) (As per 2011 Census)</a><a href ='javascript:ShowText('Message')' onmouseover="ShowText('Message','View Data Table Format'); return true;" onmouseout=" HideText('Message'); return true; " style=" text-decoration:none;cursor:pointer" onclick ="DataTableTemplate('68356','15','1511','07','0','','Number of Houseless Literate Population (Person/Male/Female//Total/Rural/Urban) in Punch District (Jammu & Kashmir) (As per 2011 Census)','0')" class='stytle5' title='View Sample Data Format'>&nbsp;<img src='/Content/images/v_image_1.jpg'  border='0'></a><div id='Message' class='box'></div></li><li><a href="/DataTable.aspx?hid=67251&sc=15&dc=1511&sd=0" onclick="javascript:return DataTable('67251','15','1511','07','0','0','Illiterate Population (Person/Male/Female/Total/Rural/Urban) in Punch District (Jammu & Kashmir) (As per 2011 Census)','0');" >Illiterate Population (Person/Male/Female/Total/Rural/Urban) in Punch District (Jammu & Kashmir) (As per 2011 Census)</a><a href ='javascript:ShowText('Message')' onmouseover="ShowText('Message','View Data Table Format'); return true;" onmouseout=" HideText('Message'); return true; " style=" text-decoration:none;cursor:pointer" onclick ="DataTableTemplate('67251','15','1511','07','0','','Illiterate Population (Person/Male/Female/Total/Rural/Urban) in Punch District (Jammu & Kashmir) (As per 2011 Census)','0')" class='stytle5' title='View Sample Data Format'>&nbsp;<img src='/Content/images/v_image_1.jpg'  border='0'></a><div id='Message' class='box'></div></li><li><a href="/DataTable.aspx?hid=96966&sc=15&dc=1511&sd=0" onclick="javascript:return DataTable('96966','15','1511','07','0','0','Age Group-wise Population Attending Educational Institution by Completed Education Level by Residence and Sex in Punch District (Jammu & Kashmir) (As per 2011 Census) - Part I','0');" >Age Group-wise Population Attending Educational Institution by Completed Education Level by Residence and Sex in Punch District (Jammu & Kashmir) (As per 2011 Census) - Part I</a><a href ='javascript:ShowText('Message')' onmouseover="ShowText('Message','View Data Table Format'); return true;" onmouseout=" HideText('Message'); return true; " style=" text-decoration:none;cursor:pointer" onclick ="DataTableTemplate('96966','15','1511','07','0','','Age Group-wise Population Attending Educational Institution by Completed Education Level by Residence and Sex in Punch District (Jammu & Kashmir) (As per 2011 Census) - Part I','0')" class='stytle5' title='View Sample Data Format'>&nbsp;<img src='/Content/images/v_image_1.jpg'  border='0'></a><div id='Message' class='box'></div></li><li><a href="/DataTable.aspx?hid=91387&sc=15&dc=1511&sd=0" onclick="javascript:return DataTable('91387','15','1511','07','0','0','Age Group-wise Scheduled Caste Population Attending Educational Institutions and Type of Educational Institution by Residence and Sex in Punch (Jammu & Kashmir) (2011) - Part I','0');" >Age Group-wise Scheduled Caste Population Attending Educational Institutions and Type of Educational Institution by Residence and Sex in Punch (Jammu & Kashmir) (2011) - Part I</a><a href ='javascript:ShowText('Message')' onmouseover="ShowText('Message','View Data Table Format'); return true;" onmouseout=" HideText('Message'); return true; " style=" text-decoration:none;cursor:pointer" onclick ="DataTableTemplate('91387','15','1511','07','0','','Age Group-wise Scheduled Caste Population Attending Educational Institutions and Type of Educational Institution by Residence and Sex in Punch (Jammu & Kashmir) (2011) - Part I','0')" class='stytle5' title='View Sample Data Format'>&nbsp;<img src='/Content/images/v_image_1.jpg'  border='0'></a><div id='Message' class='box'></div></li><li><a href="/DataTable.aspx?hid=91388&sc=15&dc=1511&sd=0" onclick="javascript:return DataTable('91388','15','1511','07','0','0','Age Group-wise Scheduled Caste Population Attending Educational Institutions and Type of Educational Institution by Residence and Sex in Punch (Jammu & Kashmir) (2011) - Part II','0');" >Age Group-wise Scheduled Caste Population Attending Educational Institutions and Type of Educational Institution by Residence and Sex in Punch (Jammu & Kashmir) (2011) - Part II</a><a href ='javascript:ShowText('Message')' onmouseover="ShowText('Message','View Data Table Format'); return true;" onmouseout=" HideText('Message'); return true; " style=" text-decoration:none;cursor:pointer" onclick ="DataTableTemplate('91388','15','1511','07','0','','Age Group-wise Scheduled Caste Population Attending Educational Institutions and Type of Educational Institution by Residence and Sex in Punch (Jammu & Kashmir) (2011) - Part II','0')" class='stytle5' title='View Sample Data Format'>&nbsp;<img src='/Content/images/v_image_1.jpg'  border='0'></a><div id='Message' class='box'></div></li><li><a href="/DataTable.aspx?hid=42712&sc=15&dc=1511&sd=0" onclick="javascript:return DataTable('42712','15','1511','07','0','0','Number of Houses used for Schools, Colleges etc. in Punch District (Jammu & Kashmir) (2011)','0');" >Number of Houses used for Schools, Colleges etc. in Punch District (Jammu & Kashmir) (2011)</a><a href ='javascript:ShowText('Message')' onmouseover="ShowText('Message','View Data Table Format'); return true;" onmouseout=" HideText('Message'); return true; " style=" text-decoration:none;cursor:pointer" onclick ="DataTableTemplate('42712','15','1511','07','0','','Number of Houses used for Schools, Colleges etc. in Punch District (Jammu & Kashmir) (2011)','0')" class='stytle5' title='View Sample Data Format'>&nbsp;<img src='/Content/images/v_image_1.jpg'  border='0'></a><div id='Message' class='box'></div></li><li><a href="/DataTable.aspx?hid=86539&sc=15&dc=1511&sd=0" onclick="javascript:return DataTable('86539','15','1511','07','0','0','Age Group-wise Adolescent and Youth Illiiterates Population by Residence and Sex in Punch District (Jammu & Kashmir) (As per 2011 Census)','0');" >Age Group-wise Adolescent and Youth Illiiterates Population by Residence and Sex in Punch District (Jammu & Kashmir) (As per 2011 Census)</a><a href ='javascript:ShowText('Message')' onmouseover="ShowText('Message','View Data Table Format'); return true;" onmouseout=" HideText('Message'); return true; " style=" text-decoration:none;cursor:pointer" onclick ="DataTableTemplate('86539','15','1511','07','0','','Age Group-wise Adolescent and Youth Illiiterates Population by Residence and Sex in Punch District (Jammu & Kashmir) (As per 2011 Census)','0')" class='stytle5' title='View Sample Data Format'>&nbsp;<img src='/Content/images/v_image_1.jpg'  border='0'></a><div id='Message' class='box'></div></li><li><a href="/DataTable.aspx?hid=92378&sc=15&dc=1511&sd=0" onclick="javascript:return DataTable('92378','15','1511','07','0','0','Age Group-wise Scheduled Tribe Population Attending Educational Institutions and Type of Educational Institution by Residence and Sex in Punch (Jammu & Kashmir) (2011) - Part I','0');" >Age Group-wise Scheduled Tribe Population Attending Educational Institutions and Type of Educational Institution by Residence and Sex in Punch (Jammu & Kashmir) (2011) - Part I</a><a href ='javascript:ShowText('Message')' onmouseover="ShowText('Message','View Data Table Format'); return true;" onmouseout=" HideText('Message'); return true; " style=" text-decoration:none;cursor:pointer" onclick ="DataTableTemplate('92378','15','1511','07','0','','Age Group-wise Scheduled Tribe Population Attending Educational Institutions and Type of Educational Institution by Residence and Sex in Punch (Jammu & Kashmir) (2011) - Part I','0')" class='stytle5' title='View Sample Data Format'>&nbsp;<img src='/Content/images/v_image_1.jpg'  border='0'></a><div id='Message' class='box'></div></li><li><a href="/DataTable.aspx?hid=92495&sc=15&dc=1511&sd=0" onclick="javascript:return DataTable('92495','15','1511','07','0','0','Age Group-wise Scheduled Tribe Population by Educational Level (Literate without Educational Level) by Residence and Sex in Punch District (Jammu & Kashmir) (As per 2011 Census)','0');" >Age Group-wise Scheduled Tribe Population by Educational Level (Literate without Educational Level) by Residence and Sex in Punch District (Jammu & Kashmir) (As per 2011 Census)</a><a href ='javascript:ShowText('Message')' onmouseover="ShowText('Message','View Data Table Format'); return true;" onmouseout=" HideText('Message'); return true; " style=" text-decoration:none;cursor:pointer" onclick ="DataTableTemplate('92495','15','1511','07','0','','Age Group-wise Scheduled Tribe Population by Educational Level (Literate without Educational Level) by Residence and Sex in Punch District (Jammu & Kashmir) (As per 2011 Census)','0')" class='stytle5' title='View Sample Data Format'>&nbsp;<img src='/Content/images/v_image_1.jpg'  border='0'></a><div id='Message' class='box'></div></li><li><a href="/DataTable.aspx?hid=64649&sc=15&dc=1511&sd=0" onclick="javascript:return DataTable('64649','15','1511','07','0','0','Scheduled Caste Literate Population (Person/Male/Female/Total/Rural/Urban) in Punch District (Jammu & Kashmir) (As per 2011 Census)','0');" >Scheduled Caste Literate Population (Person/Male/Female/Total/Rural/Urban) in Punch District (Jammu & Kashmir) (As per 2011 Census)</a><a href ='javascript:ShowText('Message')' onmouseover="ShowText('Message','View Data Table Format'); return true;" onmouseout=" HideText('Message'); return true; " style=" text-decoration:none;cursor:pointer" onclick ="DataTableTemplate('64649','15','1511','07','0','','Scheduled Caste Literate Population (Person/Male/Female/Total/Rural/Urban) in Punch District (Jammu & Kashmir) (As per 2011 Census)','0')" class='stytle5' title='View Sample Data Format'>&nbsp;<img src='/Content/images/v_image_1.jpg'  border='0'></a><div id='Message' class='box'></div></li><li><a href="/DataTable.aspx?hid=87856&sc=15&dc=1511&sd=0" onclick="javascript:return DataTable('87856','15','1511','07','0','0','Female Headed Household Literates Population by Residence and Sex in Punch District (Jammu & Kashmir) (As per 2011 Census)','0');" >Female Headed Household Literates Population by Residence and Sex in Punch District (Jammu & Kashmir) (As per 2011 Census)</a><a href ='javascript:ShowText('Message')' onmouseover="ShowText('Message','View Data Table Format'); return true;" onmouseout=" HideText('Message'); return true; " style=" text-decoration:none;cursor:pointer" onclick ="DataTableTemplate('87856','15','1511','07','0','','Female Headed Household Literates Population by Residence and Sex in Punch District (Jammu & Kashmir) (As per 2011 Census)','0')" class='stytle5' title='View Sample Data Format'>&nbsp;<img src='/Content/images/v_image_1.jpg'  border='0'></a><div id='Message' class='box'></div></li><li><a href="/DataTable.aspx?hid=86231&sc=15&dc=1511&sd=0" onclick="javascript:return DataTable('86231','15','1511','07','0','0','Age Group-wise Adolescent and Youth Scheduled Tribe Literates Population by Residence and Sex in Punch District (Jammu & Kashmir) (As per 2011 Census)','0');" >Age Group-wise Adolescent and Youth Scheduled Tribe Literates Population by Residence and Sex in Punch District (Jammu & Kashmir) (As per 2011 Census)</a><a href ='javascript:ShowText('Message')' onmouseover="ShowText('Message','View Data Table Format'); return true;" onmouseout=" HideText('Message'); return true; " style=" text-decoration:none;cursor:pointer" onclick ="DataTableTemplate('86231','15','1511','07','0','','Age Group-wise Adolescent and Youth Scheduled Tribe Literates Population by Residence and Sex in Punch District (Jammu & Kashmir) (As per 2011 Census)','0')" class='stytle5' title='View Sample Data Format'>&nbsp;<img src='/Content/images/v_image_1.jpg'  border='0'></a><div id='Message' class='box'></div></li><li><a href="/DataTable.aspx?hid=96975&sc=15&dc=1511&sd=0" onclick="javascript:return DataTable('96975','15','1511','07','0','0','Age Group-wise Population Attending Educational Institution by Completed Education Level by Residence and Sex in Punch District (Jammu & Kashmir) (As per 2011 Census) - Part III','0');" >Age Group-wise Population Attending Educational Institution by Completed Education Level by Residence and Sex in Punch District (Jammu & Kashmir) (As per 2011 Census) - Part III</a><a href ='javascript:ShowText('Message')' onmouseover="ShowText('Message','View Data Table Format'); return true;" onmouseout=" HideText('Message'); return true; " style=" text-decoration:none;cursor:pointer" onclick ="DataTableTemplate('96975','15','1511','07','0','','Age Group-wise Population Attending Educational Institution by Completed Education Level by Residence and Sex in Punch District (Jammu & Kashmir) (As per 2011 Census) - Part III','0')" class='stytle5' title='View Sample Data Format'>&nbsp;<img src='/Content/images/v_image_1.jpg'  border='0'></a><div id='Message' class='box'></div></li><li><a href="/DataTable.aspx?hid=93061&sc=15&dc=1511&sd=0" onclick="javascript:return DataTable('93061','15','1511','07','0','0','Age Group-wise Population by Educational Level Graduate and Above by Residence and Sex in Punch District (Jammu & Kashmir) (As per 2011 Census) - Part III','0');" >Age Group-wise Population by Educational Level Graduate and Above by Residence and Sex in Punch District (Jammu & Kashmir) (As per 2011 Census) - Part III</a><a href ='javascript:ShowText('Message')' onmouseover="ShowText('Message','View Data Table Format'); return true;" onmouseout=" HideText('Message'); return true; " style=" text-decoration:none;cursor:pointer" onclick ="DataTableTemplate('93061','15','1511','07','0','','Age Group-wise Population by Educational Level Graduate and Above by Residence and Sex in Punch District (Jammu & Kashmir) (As per 2011 Census) - Part III','0')" class='stytle5' title='View Sample Data Format'>&nbsp;<img src='/Content/images/v_image_1.jpg'  border='0'></a><div id='Message' class='box'></div></li><li><a href="/DataTable.aspx?hid=89358&sc=15&dc=1511&sd=0" onclick="javascript:return DataTable('89358','15','1511','07','0','0','Female Headed Household Scheduled Tribe Illiiterates Population by Residence and Sex in Punch District (Jammu & Kashmir) (As per 2011 Census)','0');" >Female Headed Household Scheduled Tribe Illiiterates Population by Residence and Sex in Punch District (Jammu & Kashmir) (As per 2011 Census)</a><a href ='javascript:ShowText('Message')' onmouseover="ShowText('Message','View Data Table Format'); return true;" onmouseout=" HideText('Message'); return true; " style=" text-decoration:none;cursor:pointer" onclick ="DataTableTemplate('89358','15','1511','07','0','','Female Headed Household Scheduled Tribe Illiiterates Population by Residence and Sex in Punch District (Jammu & Kashmir) (As per 2011 Census)','0')" class='stytle5' title='View Sample Data Format'>&nbsp;<img src='/Content/images/v_image_1.jpg'  border='0'></a><div id='Message' class='box'></div></li><li><a href="/DataTable.aspx?hid=67576&sc=15&dc=1511&sd=0" onclick="javascript:return DataTable('67576','15','1511','07','0','0','Scheduled Tribe Illiterate Population (Person/Male/Female/Total/Rural/Urban) in Punch District (Jammu & Kashmir) (As per 2011 Census)','0');" >Scheduled Tribe Illiterate Population (Person/Male/Female/Total/Rural/Urban) in Punch District (Jammu & Kashmir) (As per 2011 Census)</a><a href ='javascript:ShowText('Message')' onmouseover="ShowText('Message','View Data Table Format'); return true;" onmouseout=" HideText('Message'); return true; " style=" text-decoration:none;cursor:pointer" onclick ="DataTableTemplate('67576','15','1511','07','0','','Scheduled Tribe Illiterate Population (Person/Male/Female/Total/Rural/Urban) in Punch District (Jammu & Kashmir) (As per 2011 Census)','0')" class='stytle5' title='View Sample Data Format'>&nbsp;<img src='/Content/images/v_image_1.jpg'  border='0'></a><div id='Message' class='box'></div></li><li><a href="/DataTable.aspx?hid=66980&sc=15&dc=1511&sd=0" onclick="javascript:return DataTable('66980','15','1511','07','0','0','Literate Population (Person/Male/Female/Total/Rural/Urban) in Punch District (Jammu and Kashmir) (As per 2011 Census)','0');" >Literate Population (Person/Male/Female/Total/Rural/Urban) in Punch District (Jammu and Kashmir) (As per 2011 Census)</a><a href ='javascript:ShowText('Message')' onmouseover="ShowText('Message','View Data Table Format'); return true;" onmouseout=" HideText('Message'); return true; " style=" text-decoration:none;cursor:pointer" onclick ="DataTableTemplate('66980','15','1511','07','0','','Literate Population (Person/Male/Female/Total/Rural/Urban) in Punch District (Jammu and Kashmir) (As per 2011 Census)','0')" class='stytle5' title='View Sample Data Format'>&nbsp;<img src='/Content/images/v_image_1.jpg'  border='0'></a><div id='Message' class='box'></div></li><li><a href="/DataTable.aspx?hid=90680&sc=15&dc=1511&sd=0" onclick="javascript:return DataTable('90680','15','1511','07','0','0','Age Group-wise Population by Educational Level (Literate without Educational Level) by Residence and Sex in Punch District (Jammu & Kashmir) (As per 2011 Census)','0');" >Age Group-wise Population by Educational Level (Literate without Educational Level) by Residence and Sex in Punch District (Jammu & Kashmir) (As per 2011 Census)</a><a href ='javascript:ShowText('Message')' onmouseover="ShowText('Message','View Data Table Format'); return true;" onmouseout=" HideText('Message'); return true; " style=" text-decoration:none;cursor:pointer" onclick ="DataTableTemplate('90680','15','1511','07','0','','Age Group-wise Population by Educational Level (Literate without Educational Level) by Residence and Sex in Punch District (Jammu & Kashmir) (As per 2011 Census)','0')" class='stytle5' title='View Sample Data Format'>&nbsp;<img src='/Content/images/v_image_1.jpg'  border='0'></a><div id='Message' class='box'></div></li><li><a href="/DataTable.aspx?hid=93714&sc=15&dc=1511&sd=0" onclick="javascript:return DataTable('93714','15','1511','07','0','0','Age Group-wise Scheduled Caste Population by Educational Level Graduate and Above by Residence and Sex in Punch District (Jammu & Kashmir) (As per 2011 Census) - Part I','0');" >Age Group-wise Scheduled Caste Population by Educational Level Graduate and Above by Residence and Sex in Punch District (Jammu & Kashmir) (As per 2011 Census) - Part I</a><a href ='javascript:ShowText('Message')' onmouseover="ShowText('Message','View Data Table Format'); return true;" onmouseout=" HideText('Message'); return true; " style=" text-decoration:none;cursor:pointer" onclick ="DataTableTemplate('93714','15','1511','07','0','','Age Group-wise Scheduled Caste Population by Educational Level Graduate and Above by Residence and Sex in Punch District (Jammu & Kashmir) (As per 2011 Census) - Part I','0')" class='stytle5' title='View Sample Data Format'>&nbsp;<img src='/Content/images/v_image_1.jpg'  border='0'></a><div id='Message' class='box'></div></li><li><a href="/DataTable.aspx?hid=91240&sc=15&dc=1511&sd=0" onclick="javascript:return DataTable('91240','15','1511','07','0','0','Age Group-wise Population Attending Educational Institutions and Type of Educational Institution by Residence and Sex in Punch (Jammu & Kashmir) (2011) - Part I','0');" >Age Group-wise Population Attending Educational Institutions and Type of Educational Institution by Residence and Sex in Punch (Jammu & Kashmir) (2011) - Part I</a><a href ='javascript:ShowText('Message')' onmouseover="ShowText('Message','View Data Table Format'); return true;" onmouseout=" HideText('Message'); return true; " style=" text-decoration:none;cursor:pointer" onclick ="DataTableTemplate('91240','15','1511','07','0','','Age Group-wise Population Attending Educational Institutions and Type of Educational Institution by Residence and Sex in Punch (Jammu & Kashmir) (2011) - Part I','0')" class='stytle5' title='View Sample Data Format'>&nbsp;<img src='/Content/images/v_image_1.jpg'  border='0'></a><div id='Message' class='box'></div></li><li><a href="/DataTable.aspx?hid=93057&sc=15&dc=1511&sd=0" onclick="javascript:return DataTable('93057','15','1511','07','0','0','Age Group-wise Population by Educational Level Graduate and Above by Residence and Sex in Punch District (Jammu & Kashmir) (As per 2011 Census) - Part I','0');" >Age Group-wise Population by Educational Level Graduate and Above by Residence and Sex in Punch District (Jammu & Kashmir) (As per 2011 Census) - Part I</a><a href ='javascript:ShowText('Message')' onmouseover="ShowText('Message','View Data Table Format'); return true;" onmouseout=" HideText('Message'); return true; " style=" text-decoration:none;cursor:pointer" onclick ="DataTableTemplate('93057','15','1511','07','0','','Age Group-wise Population by Educational Level Graduate and Above by Residence and Sex in Punch District (Jammu & Kashmir) (As per 2011 Census) - Part I','0')" class='stytle5' title='View Sample Data Format'>&nbsp;<img src='/Content/images/v_image_1.jpg'  border='0'></a><div id='Message' class='box'></div></li><li><a href="/DataTable.aspx?hid=91854&sc=15&dc=1511&sd=0" onclick="javascript:return DataTable('91854','15','1511','07','0','0','Age Group-wise Scheduled Caste Population by Educational Level (Literate without Educational Level) by Residence and Sex in Punch District (Jammu & Kashmir) (As per 2011 Census)','0');" >Age Group-wise Scheduled Caste Population by Educational Level (Literate without Educational Level) by Residence and Sex in Punch District (Jammu & Kashmir) (As per 2011 Census)</a><a href ='javascript:ShowText('Message')' onmouseover="ShowText('Message','View Data Table Format'); return true;" onmouseout=" HideText('Message'); return true; " style=" text-decoration:none;cursor:pointer" onclick ="DataTableTemplate('91854','15','1511','07','0','','Age Group-wise Scheduled Caste Population by Educational Level (Literate without Educational Level) by Residence and Sex in Punch District (Jammu & Kashmir) (As per 2011 Census)','0')" class='stytle5' title='View Sample Data Format'>&nbsp;<img src='/Content/images/v_image_1.jpg'  border='0'></a><div id='Message' class='box'></div></li><li><a href="/DataTable.aspx?hid=92491&sc=15&dc=1511&sd=0" onclick="javascript:return DataTable('92491','15','1511','07','0','0','Age Group-wise Scheduled Tribe Population by Educational Level (Below Primary/Primary/Middle/Matric/Secondary) by Residence and Sex in Punch District (Jammu & Kashmir) (As per 2011 Census)','0');" >Age Group-wise Scheduled Tribe Population by Educational Level (Below Primary/Primary/Middle/Matric/Secondary) by Residence and Sex in Punch District (Jammu & Kashmir) (As per 2011 Census)</a><a href ='javascript:ShowText('Message')' onmouseover="ShowText('Message','View Data Table Format'); return true;" onmouseout=" HideText('Message'); return true; " style=" text-decoration:none;cursor:pointer" onclick ="DataTableTemplate('92491','15','1511','07','0','','Age Group-wise Scheduled Tribe Population by Educational Level (Below Primary/Primary/Middle/Matric/Secondary) by Residence and Sex in Punch District (Jammu & Kashmir) (As per 2011 Census)','0')" class='stytle5' title='View Sample Data Format'>&nbsp;<img src='/Content/images/v_image_1.jpg'  border='0'></a><div id='Message' class='box'></div></li><li><a href="/DataTable.aspx?hid=97832&sc=15&dc=1511&sd=0" onclick="javascript:return DataTable('97832','15','1511','07','0','0','Religion-wise Number of Illiterates by Residence and Sex in Punch District (Jammu & Kashmir) (As per 2011 Census)','0');" >Religion-wise Number of Illiterates by Residence and Sex in Punch District (Jammu & Kashmir) (As per 2011 Census)</a><a href ='javascript:ShowText('Message')' onmouseover="ShowText('Message','View Data Table Format'); return true;" onmouseout=" HideText('Message'); return true; " style=" text-decoration:none;cursor:pointer" onclick ="DataTableTemplate('97832','15','1511','07','0','','Religion-wise Number of Illiterates by Residence and Sex in Punch District (Jammu & Kashmir) (As per 2011 Census)','0')" class='stytle5' title='View Sample Data Format'>&nbsp;<img src='/Content/images/v_image_1.jpg'  border='0'></a><div id='Message' class='box'></div></li><li><a href="/DataTable.aspx?hid=94362&sc=15&dc=1511&sd=0" onclick="javascript:return DataTable('94362','15','1511','07','0','0','Age Group-wise Scheduled Tribes Population by Educational Level Graduate and Above by Residence and Sex in Punch District (Jammu & Kashmir) (As per 2011 Census) - Part II','0');" >Age Group-wise Scheduled Tribes Population by Educational Level Graduate and Above by Residence and Sex in Punch District (Jammu & Kashmir) (As per 2011 Census) - Part II</a><a href ='javascript:ShowText('Message')' onmouseover="ShowText('Message','View Data Table Format'); return true;" onmouseout=" HideText('Message'); return true; " style=" text-decoration:none;cursor:pointer" onclick ="DataTableTemplate('94362','15','1511','07','0','','Age Group-wise Scheduled Tribes Population by Educational Level Graduate and Above by Residence and Sex in Punch District (Jammu & Kashmir) (As per 2011 Census) - Part II','0')" class='stytle5' title='View Sample Data Format'>&nbsp;<img src='/Content/images/v_image_1.jpg'  border='0'></a><div id='Message' class='box'></div></li><li><a href="/DataTable.aspx?hid=86007&sc=15&dc=1511&sd=0" onclick="javascript:return DataTable('86007','15','1511','07','0','0','Age Group-wise Adolescent and Youth Literates Population by Residence and Sex in Punch District (Jammu & Kashmir) (As per 2011 Census)','0');" >Age Group-wise Adolescent and Youth Literates Population by Residence and Sex in Punch District (Jammu & Kashmir) (As per 2011 Census)</a><a href ='javascript:ShowText('Message')' onmouseover="ShowText('Message','View Data Table Format'); return true;" onmouseout=" HideText('Message'); return true; " style=" text-decoration:none;cursor:pointer" onclick ="DataTableTemplate('86007','15','1511','07','0','','Age Group-wise Adolescent and Youth Literates Population by Residence and Sex in Punch District (Jammu & Kashmir) (As per 2011 Census)','0')" class='stytle5' title='View Sample Data Format'>&nbsp;<img src='/Content/images/v_image_1.jpg'  border='0'></a><div id='Message' class='box'></div></li><li><a href="/DataTable.aspx?hid=86147&sc=15&dc=1511&sd=0" onclick="javascript:return DataTable('86147','15','1511','07','0','0','Age Group-wise Adolescent and Youth Scheduled Caste Literates Population by Residence and Sex in Punch District (Jammu & Kashmir) (As per 2011 Census)','0');" >Age Group-wise Adolescent and Youth Scheduled Caste Literates Population by Residence and Sex in Punch District (Jammu & Kashmir) (As per 2011 Census)</a><a href ='javascript:ShowText('Message')' onmouseover="ShowText('Message','View Data Table Format'); return true;" onmouseout=" HideText('Message'); return true; " style=" text-decoration:none;cursor:pointer" onclick ="DataTableTemplate('86147','15','1511','07','0','','Age Group-wise Adolescent and Youth Scheduled Caste Literates Population by Residence and Sex in Punch District (Jammu & Kashmir) (As per 2011 Census)','0')" class='stytle5' title='View Sample Data Format'>&nbsp;<img src='/Content/images/v_image_1.jpg'  border='0'></a><div id='Message' class='box'></div></li><li><a href="/DataTable.aspx?hid=71324&sc=15&dc=1511&sd=0" onclick="javascript:return DataTable('71324','15','1511','07','0','0','Houseless Literate Population by Residence and Sex in Punch District (Jammu & Kashmir) (As per 2011 Census)','0');" >Houseless Literate Population by Residence and Sex in Punch District (Jammu & Kashmir) (As per 2011 Census)</a><a href ='javascript:ShowText('Message')' onmouseover="ShowText('Message','View Data Table Format'); return true;" onmouseout=" HideText('Message'); return true; " style=" text-decoration:none;cursor:pointer" onclick ="DataTableTemplate('71324','15','1511','07','0','','Houseless Literate Population by Residence and Sex in Punch District (Jammu & Kashmir) (As per 2011 Census)','0')" class='stytle5' title='View Sample Data Format'>&nbsp;<img src='/Content/images/v_image_1.jpg'  border='0'></a><div id='Message' class='box'></div></li><li><a href="/DataTable.aspx?hid=86746&sc=15&dc=1511&sd=0" onclick="javascript:return DataTable('86746','15','1511','07','0','0','Age Group-wise Adolescent and Youth Scheduled Caste Illiiterates Population by Residence and Sex in Punch District (Jammu & Kashmir) (As per 2011 Census)','0');" >Age Group-wise Adolescent and Youth Scheduled Caste Illiiterates Population by Residence and Sex in Punch District (Jammu & Kashmir) (As per 2011 Census)</a><a href ='javascript:ShowText('Message')' onmouseover="ShowText('Message','View Data Table Format'); return true;" onmouseout=" HideText('Message'); return true; " style=" text-decoration:none;cursor:pointer" onclick ="DataTableTemplate('86746','15','1511','07','0','','Age Group-wise Adolescent and Youth Scheduled Caste Illiiterates Population by Residence and Sex in Punch District (Jammu & Kashmir) (As per 2011 Census)','0')" class='stytle5' title='View Sample Data Format'>&nbsp;<img src='/Content/images/v_image_1.jpg'  border='0'></a><div id='Message' class='box'></div></li><li><a href="/DataTable.aspx?hid=93059&sc=15&dc=1511&sd=0" onclick="javascript:return DataTable('93059','15','1511','07','0','0','Age Group-wise Population by Educational Level Graduate and Above by Residence and Sex in Punch District (Jammu & Kashmir) (As per 2011 Census) - Part II','0');" >Age Group-wise Population by Educational Level Graduate and Above by Residence and Sex in Punch District (Jammu & Kashmir) (As per 2011 Census) - Part II</a><a href ='javascript:ShowText('Message')' onmouseover="ShowText('Message','View Data Table Format'); return true;" onmouseout=" HideText('Message'); return true; " style=" text-decoration:none;cursor:pointer" onclick ="DataTableTemplate('93059','15','1511','07','0','','Age Group-wise Population by Educational Level Graduate and Above by Residence and Sex in Punch District (Jammu & Kashmir) (As per 2011 Census) - Part II','0')" class='stytle5' title='View Sample Data Format'>&nbsp;<img src='/Content/images/v_image_1.jpg'  border='0'></a><div id='Message' class='box'></div></li><li><a href="/DataTable.aspx?hid=68279&sc=15&dc=1511&sd=0" onclick="javascript:return DataTable('68279','15','1511','07','0','0','Houseless Literacy Rate (Person/Male/Female//Total/Rural/Urban) in Punch District (Jammu & Kashmir) (As per 2011 Census)','0');" >Houseless Literacy Rate (Person/Male/Female//Total/Rural/Urban) in Punch District (Jammu & Kashmir) (As per 2011 Census)</a><a href ='javascript:ShowText('Message')' onmouseover="ShowText('Message','View Data Table Format'); return true;" onmouseout=" HideText('Message'); return true; " style=" text-decoration:none;cursor:pointer" onclick ="DataTableTemplate('68279','15','1511','07','0','','Houseless Literacy Rate (Person/Male/Female//Total/Rural/Urban) in Punch District (Jammu & Kashmir) (As per 2011 Census)','0')" class='stytle5' title='View Sample Data Format'>&nbsp;<img src='/Content/images/v_image_1.jpg'  border='0'></a><div id='Message' class='box'></div></li><li><a href="/DataTable.aspx?hid=93716&sc=15&dc=1511&sd=0" onclick="javascript:return DataTable('93716','15','1511','07','0','0','Age Group-wise Scheduled Caste Population by Educational Level Graduate and Above by Residence and Sex in Punch District (Jammu & Kashmir) (As per 2011 Census) - Part II','0');" >Age Group-wise Scheduled Caste Population by Educational Level Graduate and Above by Residence and Sex in Punch District (Jammu & Kashmir) (As per 2011 Census) - Part II</a><a href ='javascript:ShowText('Message')' onmouseover="ShowText('Message','View Data Table Format'); return true;" onmouseout=" HideText('Message'); return true; " style=" text-decoration:none;cursor:pointer" onclick ="DataTableTemplate('93716','15','1511','07','0','','Age Group-wise Scheduled Caste Population by Educational Level Graduate and Above by Residence and Sex in Punch District (Jammu & Kashmir) (As per 2011 Census) - Part II','0')" class='stytle5' title='View Sample Data Format'>&nbsp;<img src='/Content/images/v_image_1.jpg'  border='0'></a><div id='Message' class='box'></div></li><li><a href="/DataTable.aspx?hid=67009&sc=15&dc=1511&sd=0" onclick="javascript:return DataTable('67009','15','1511','07','0','0','Literacy Rate (Person/Male/Female/Total/Rural/Urban) in Punch District (Jammu and Kashmir) (As per 2011 Census)','0');" >Literacy Rate (Person/Male/Female/Total/Rural/Urban) in Punch District (Jammu and Kashmir) (As per 2011 Census)</a><a href ='javascript:ShowText('Message')' onmouseover="ShowText('Message','View Data Table Format'); return true;" onmouseout=" HideText('Message'); return true; " style=" text-decoration:none;cursor:pointer" onclick ="DataTableTemplate('67009','15','1511','07','0','','Literacy Rate (Person/Male/Female/Total/Rural/Urban) in Punch District (Jammu and Kashmir) (As per 2011 Census)','0')" class='stytle5' title='View Sample Data Format'>&nbsp;<img src='/Content/images/v_image_1.jpg'  border='0'></a><div id='Message' class='box'></div></li><li><a href="/DataTable.aspx?hid=90681&sc=15&dc=1511&sd=0" onclick="javascript:return DataTable('90681','15','1511','07','0','0','Age Group-wise Population by Educational Level (Below Primary/Primary/Middle/Matric/Secondary) by Residence and Sex in Punch District (Jammu & Kashmir) (As per 2011 Census)','0');" >Age Group-wise Population by Educational Level (Below Primary/Primary/Middle/Matric/Secondary) by Residence and Sex in Punch District (Jammu & Kashmir) (As per 2011 Census)</a><a href ='javascript:ShowText('Message')' onmouseover="ShowText('Message','View Data Table Format'); return true;" onmouseout=" HideText('Message'); return true; " style=" text-decoration:none;cursor:pointer" onclick ="DataTableTemplate('90681','15','1511','07','0','','Age Group-wise Population by Educational Level (Below Primary/Primary/Middle/Matric/Secondary) by Residence and Sex in Punch District (Jammu & Kashmir) (As per 2011 Census)','0')" class='stytle5' title='View Sample Data Format'>&nbsp;<img src='/Content/images/v_image_1.jpg'  border='0'></a><div id='Message' class='box'></div></li><li><a href="/DataTable.aspx?hid=90682&sc=15&dc=1511&sd=0" onclick="javascript:return DataTable('90682','15','1511','07','0','0','Age Group-wise Population by Educational Level (Higher Secondary/Intermediate/Technical Diploma or Certificate not Equal to Degree/Graduate and Above/Unclassified) by Residence and Sex in Punch District (Jammu & Kashmir) (As per 2011 Census)','0');" >Age Group-wise Population by Educational Level (Higher Secondary/Intermediate/Technical Diploma or Certificate not Equal to Degree/Graduate and Above/Unclassified) by Residence and Sex in Punch District (Jammu & Kashmir) (As per 2011 Census)</a><a href ='javascript:ShowText('Message')' onmouseover="ShowText('Message','View Data Table Format'); return true;" onmouseout=" HideText('Message'); return true; " style=" text-decoration:none;cursor:pointer" onclick ="DataTableTemplate('90682','15','1511','07','0','','Age Group-wise Population by Educational Level (Higher Secondary/Intermediate/Technical Diploma or Certificate not Equal to Degree/Graduate and Above/Unclassified) by Residence and Sex in Punch District (Jammu & Kashmir) (As per 2011 Census)','0')" class='stytle5' title='View Sample Data Format'>&nbsp;<img src='/Content/images/v_image_1.jpg'  border='0'></a><div id='Message' class='box'></div></li><li><a href="/DataTable.aspx?hid=93719&sc=15&dc=1511&sd=0" onclick="javascript:return DataTable('93719','15','1511','07','0','0','Age Group-wise Scheduled Caste Population by Educational Level Graduate and Above by Residence and Sex in Punch District (Jammu & Kashmir) (As per 2011 Census) - Part III','0');" >Age Group-wise Scheduled Caste Population by Educational Level Graduate and Above by Residence and Sex in Punch District (Jammu & Kashmir) (As per 2011 Census) - Part III</a><a href ='javascript:ShowText('Message')' onmouseover="ShowText('Message','View Data Table Format'); return true;" onmouseout=" HideText('Message'); return true; " style=" text-decoration:none;cursor:pointer" onclick ="DataTableTemplate('93719','15','1511','07','0','','Age Group-wise Scheduled Caste Population by Educational Level Graduate and Above by Residence and Sex in Punch District (Jammu & Kashmir) (As per 2011 Census) - Part III','0')" class='stytle5' title='View Sample Data Format'>&nbsp;<img src='/Content/images/v_image_1.jpg'  border='0'></a><div id='Message' class='box'></div></li><li><a href="/DataTable.aspx?hid=87874&sc=15&dc=1511&sd=0" onclick="javascript:return DataTable('87874','15','1511','07','0','0','Female Headed Household Illiiterates Population by Residence and Sex in Punch District (Jammu & Kashmir) (As per 2011 Census)','0');" >Female Headed Household Illiiterates Population by Residence and Sex in Punch District (Jammu & Kashmir) (As per 2011 Census)</a><a href ='javascript:ShowText('Message')' onmouseover="ShowText('Message','View Data Table Format'); return true;" onmouseout=" HideText('Message'); return true; " style=" text-decoration:none;cursor:pointer" onclick ="DataTableTemplate('87874','15','1511','07','0','','Female Headed Household Illiiterates Population by Residence and Sex in Punch District (Jammu & Kashmir) (As per 2011 Census)','0')" class='stytle5' title='View Sample Data Format'>&nbsp;<img src='/Content/images/v_image_1.jpg'  border='0'></a><div id='Message' class='box'></div></li><li><a href="/DataTable.aspx?hid=67494&sc=15&dc=1511&sd=0" onclick="javascript:return DataTable('67494','15','1511','07','0','0','Scheduled Tribe Literacy Rate (Person/Male/Female/Total/Rural/Urban) in Punch District (Jammu & Kashmir) (As per 2011 Census)','0');" >Scheduled Tribe Literacy Rate (Person/Male/Female/Total/Rural/Urban) in Punch District (Jammu & Kashmir) (As per 2011 Census)</a><a href ='javascript:ShowText('Message')' onmouseover="ShowText('Message','View Data Table Format'); return true;" onmouseout=" HideText('Message'); return true; " style=" text-decoration:none;cursor:pointer" onclick ="DataTableTemplate('67494','15','1511','07','0','','Scheduled Tribe Literacy Rate (Person/Male/Female/Total/Rural/Urban) in Punch District (Jammu & Kashmir) (As per 2011 Census)','0')" class='stytle5' title='View Sample Data Format'>&nbsp;<img src='/Content/images/v_image_1.jpg'  border='0'></a><div id='Message' class='box'></div></li><li><a href="/DataTable.aspx?hid=91243&sc=15&dc=1511&sd=0" onclick="javascript:return DataTable('91243','15','1511','07','0','0','Age Group-wise Population Attending Educational Institutions and Type of Educational Institution by Residence and Sex in Punch (Jammu & Kashmir) (2011) - Part II','0');" >Age Group-wise Population Attending Educational Institutions and Type of Educational Institution by Residence and Sex in Punch (Jammu & Kashmir) (2011) - Part II</a><a href ='javascript:ShowText('Message')' onmouseover="ShowText('Message','View Data Table Format'); return true;" onmouseout=" HideText('Message'); return true; " style=" text-decoration:none;cursor:pointer" onclick ="DataTableTemplate('91243','15','1511','07','0','','Age Group-wise Population Attending Educational Institutions and Type of Educational Institution by Residence and Sex in Punch (Jammu & Kashmir) (2011) - Part II','0')" class='stytle5' title='View Sample Data Format'>&nbsp;<img src='/Content/images/v_image_1.jpg'  border='0'></a><div id='Message' class='box'></div></li><li><a href="/DataTable.aspx?hid=92492&sc=15&dc=1511&sd=0" onclick="javascript:return DataTable('92492','15','1511','07','0','0','Age Group-wise Scheduled Tribe Population by Educational Level (Higher Secondary/Intermediate/Technical Diploma or Certificate not Equal to Degree/Graduate and Above/Unclassified) by Residence and Sex in Punch District (Jammu & Kashmir) (As per 2011 Census)','0');" >Age Group-wise Scheduled Tribe Population by Educational Level (Higher Secondary/Intermediate/Technical Diploma or Certificate not Equal to Degree/Graduate and Above/Unclassified) by Residence and Sex in Punch District (Jammu & Kashmir) (As per 2011 Census)</a><a href ='javascript:ShowText('Message')' onmouseover="ShowText('Message','View Data Table Format'); return true;" onmouseout=" HideText('Message'); return true; " style=" text-decoration:none;cursor:pointer" onclick ="DataTableTemplate('92492','15','1511','07','0','','Age Group-wise Scheduled Tribe Population by Educational Level (Higher Secondary/Intermediate/Technical Diploma or Certificate not Equal to Degree/Graduate and Above/Unclassified) by Residence and Sex in Punch District (Jammu & Kashmir) (As per 2011 Census)','0')" class='stytle5' title='View Sample Data Format'>&nbsp;<img src='/Content/images/v_image_1.jpg'  border='0'></a><div id='Message' class='box'></div></li><li><a href="/DataTable.aspx?hid=91882&sc=15&dc=1511&sd=0" onclick="javascript:return DataTable('91882','15','1511','07','0','0','Age Group-wise Scheduled Caste Population by Educational Level (Higher Secondary/Intermediate/Technical Diploma or Certificate not Equal to Degree/Graduate and Above/Unclassified) by Residence and Sex in Punch District (Jammu & Kashmir) (As per 2011 Census)','0');" >Age Group-wise Scheduled Caste Population by Educational Level (Higher Secondary/Intermediate/Technical Diploma or Certificate not Equal to Degree/Graduate and Above/Unclassified) by Residence and Sex in Punch District (Jammu & Kashmir) (As per 2011 Census)</a><a href ='javascript:ShowText('Message')' onmouseover="ShowText('Message','View Data Table Format'); return true;" onmouseout=" HideText('Message'); return true; " style=" text-decoration:none;cursor:pointer" onclick ="DataTableTemplate('91882','15','1511','07','0','','Age Group-wise Scheduled Caste Population by Educational Level (Higher Secondary/Intermediate/Technical Diploma or Certificate not Equal to Degree/Graduate and Above/Unclassified) by Residence and Sex in Punch District (Jammu & Kashmir) (As per 2011 Census)','0')" class='stytle5' title='View Sample Data Format'>&nbsp;<img src='/Content/images/v_image_1.jpg'  border='0'></a><div id='Message' class='box'></div></li><li><a href="/DataTable.aspx?hid=94359&sc=15&dc=1511&sd=0" onclick="javascript:return DataTable('94359','15','1511','07','0','0','Age Group-wise Scheduled Tribes Population by Educational Level Graduate and Above by Residence and Sex in Punch District (Jammu & Kashmir) (As per 2011 Census) - Part I','0');" >Age Group-wise Scheduled Tribes Population by Educational Level Graduate and Above by Residence and Sex in Punch District (Jammu & Kashmir) (As per 2011 Census) - Part I</a><a href ='javascript:ShowText('Message')' onmouseover="ShowText('Message','View Data Table Format'); return true;" onmouseout=" HideText('Message'); return true; " style=" text-decoration:none;cursor:pointer" onclick ="DataTableTemplate('94359','15','1511','07','0','','Age Group-wise Scheduled Tribes Population by Educational Level Graduate and Above by Residence and Sex in Punch District (Jammu & Kashmir) (As per 2011 Census) - Part I','0')" class='stytle5' title='View Sample Data Format'>&nbsp;<img src='/Content/images/v_image_1.jpg'  border='0'></a><div id='Message' class='box'></div></li><li><a href="/DataTable.aspx?hid=71281&sc=15&dc=1511&sd=0" onclick="javascript:return DataTable('71281','15','1511','07','0','0','Houseless Literate Population by Residence and Sex in Punch District (Jammu & Kashmir) (As per 2011 Census)','0');" >Houseless Literate Population by Residence and Sex in Punch District (Jammu & Kashmir) (As per 2011 Census)</a><a href ='javascript:ShowText('Message')' onmouseover="ShowText('Message','View Data Table Format'); return true;" onmouseout=" HideText('Message'); return true; " style=" text-decoration:none;cursor:pointer" onclick ="DataTableTemplate('71281','15','1511','07','0','','Houseless Literate Population by Residence and Sex in Punch District (Jammu & Kashmir) (As per 2011 Census)','0')" class='stytle5' title='View Sample Data Format'>&nbsp;<img src='/Content/images/v_image_1.jpg'  border='0'></a><div id='Message' class='box'></div></li><li><a href="/DataTable.aspx?hid=65322&sc=15&dc=1511&sd=0" onclick="javascript:return DataTable('65322','15','1511','07','0','0','Scheduled Caste Literacy Rate (Person/Male/Female/Total/Rural/Urban) in Punch District (Jammu & Kashmir) (As per 2011 Census)','0');" >Scheduled Caste Literacy Rate (Person/Male/Female/Total/Rural/Urban) in Punch District (Jammu & Kashmir) (As per 2011 Census)</a><a href ='javascript:ShowText('Message')' onmouseover="ShowText('Message','View Data Table Format'); return true;" onmouseout=" HideText('Message'); return true; " style=" text-decoration:none;cursor:pointer" onclick ="DataTableTemplate('65322','15','1511','07','0','','Scheduled Caste Literacy Rate (Person/Male/Female/Total/Rural/Urban) in Punch District (Jammu & Kashmir) (As per 2011 Census)','0')" class='stytle5' title='View Sample Data Format'>&nbsp;<img src='/Content/images/v_image_1.jpg'  border='0'></a><div id='Message' class='box'></div></li><li><a href="/DataTable.aspx?hid=91871&sc=15&dc=1511&sd=0" onclick="javascript:return DataTable('91871','15','1511','07','0','0','Age Group-wise Scheduled Caste Population by Educational Level (Below Primary/Primary/Middle/Matric/Secondary) by Residence and Sex in Punch District (Jammu & Kashmir) (As per 2011 Census)','0');" >Age Group-wise Scheduled Caste Population by Educational Level (Below Primary/Primary/Middle/Matric/Secondary) by Residence and Sex in Punch District (Jammu & Kashmir) (As per 2011 Census)</a><a href ='javascript:ShowText('Message')' onmouseover="ShowText('Message','View Data Table Format'); return true;" onmouseout=" HideText('Message'); return true; " style=" text-decoration:none;cursor:pointer" onclick ="DataTableTemplate('91871','15','1511','07','0','','Age Group-wise Scheduled Caste Population by Educational Level (Below Primary/Primary/Middle/Matric/Secondary) by Residence and Sex in Punch District (Jammu & Kashmir) (As per 2011 Census)','0')" class='stytle5' title='View Sample Data Format'>&nbsp;<img src='/Content/images/v_image_1.jpg'  border='0'></a><div id='Message' class='box'></div></li><li><a href="/DataTable.aspx?hid=94363&sc=15&dc=1511&sd=0" onclick="javascript:return DataTable('94363','15','1511','07','0','0','Age Group-wise Scheduled Tribes Population by Educational Level Graduate and Above by Residence and Sex in Punch District (Jammu & Kashmir) (As per 2011 Census) - Part III','0');" >Age Group-wise Scheduled Tribes Population by Educational Level Graduate and Above by Residence and Sex in Punch District (Jammu & Kashmir) (As per 2011 Census) - Part III</a><a href ='javascript:ShowText('Message')' onmouseover="ShowText('Message','View Data Table Format'); return true;" onmouseout=" HideText('Message'); return true; " style=" text-decoration:none;cursor:pointer" onclick ="DataTableTemplate('94363','15','1511','07','0','','Age Group-wise Scheduled Tribes Population by Educational Level Graduate and Above by Residence and Sex in Punch District (Jammu & Kashmir) (As per 2011 Census) - Part III','0')" class='stytle5' title='View Sample Data Format'>&nbsp;<img src='/Content/images/v_image_1.jpg'  border='0'></a><div id='Message' class='box'></div></li><li><a href="/DataTable.aspx?hid=97853&sc=15&dc=1511&sd=0" onclick="javascript:return DataTable('97853','15','1511','07','0','0','Religion-wise Number of Literates by Residence and Sex in Punch District (Jammu & Kashmir) (As per 2011 Census)','0');" >Religion-wise Number of Literates by Residence and Sex in Punch District (Jammu & Kashmir) (As per 2011 Census)</a><a href ='javascript:ShowText('Message')' onmouseover="ShowText('Message','View Data Table Format'); return true;" onmouseout=" HideText('Message'); return true; " style=" text-decoration:none;cursor:pointer" onclick ="DataTableTemplate('97853','15','1511','07','0','','Religion-wise Number of Literates by Residence and Sex in Punch District (Jammu & Kashmir) (As per 2011 Census)','0')" class='stytle5' title='View Sample Data Format'>&nbsp;<img src='/Content/images/v_image_1.jpg'  border='0'></a><div id='Message' class='box'></div></li><li><a href="/DataTable.aspx?hid=16633&sc=15&dc=1511&sd=0" onclick="javascript:return DataTable('16633','15','1511','07','0','0','Numbers of Scheduled Tribe/Scheduled Caste Students Provided with Special Coaching from 9th to 12th Classes in Punch District (Jammu & Kashmir) (2007-2008)','0');" >Numbers of Scheduled Tribe/Scheduled Caste Students Provided with Special Coaching from 9th to 12th Classes in Punch District (Jammu & Kashmir) (2007-2008)</a><a href ='javascript:ShowText('Message')' onmouseover="ShowText('Message','View Data Table Format'); return true;" onmouseout=" HideText('Message'); return true; " style=" text-decoration:none;cursor:pointer" onclick ="DataTableTemplate('16633','15','1511','07','0','','Numbers of Scheduled Tribe/Scheduled Caste Students Provided with Special Coaching from 9th to 12th Classes in Punch District (Jammu & Kashmir) (2007-2008)','0')" class='stytle5' title='View Sample Data Format'>&nbsp;<img src='/Content/images/v_image_1.jpg'  border='0'></a><div id='Message' class='box'></div></li><li><a href="/DataTable.aspx?hid=27488&sc=15&dc=1511&sd=0" onclick="javascript:return DataTable('27488','15','1511','07','0','0','Number of Teachers at Pre-Primary/Primary, Middle and Secondary/Higher Secondary Schools in Punch District (Jammu & Kashmir) (2007-2008)','0');" >Number of Teachers at Pre-Primary/Primary, Middle and Secondary/Higher Secondary Schools in Punch District (Jammu & Kashmir) (2007-2008)</a><a href ='javascript:ShowText('Message')' onmouseover="ShowText('Message','View Data Table Format'); return true;" onmouseout=" HideText('Message'); return true; " style=" text-decoration:none;cursor:pointer" onclick ="DataTableTemplate('27488','15','1511','07','0','','Number of Teachers at Pre-Primary/Primary, Middle and Secondary/Higher Secondary Schools in Punch District (Jammu & Kashmir) (2007-2008)','0')" class='stytle5' title='View Sample Data Format'>&nbsp;<img src='/Content/images/v_image_1.jpg'  border='0'></a><div id='Message' class='box'></div></li><li><a href="/DataTable.aspx?hid=15946&sc=15&dc=1511&sd=0" onclick="javascript:return DataTable('15946','15','1511','07','0','0','Distribution of Estimated Literacy Rate in Punch District (Jammu & Kashmir) (2008)','0');" >Distribution of Estimated Literacy Rate in Punch District (Jammu & Kashmir) (2008)</a><a href ='javascript:ShowText('Message')' onmouseover="ShowText('Message','View Data Table Format'); return true;" onmouseout=" HideText('Message'); return true; " style=" text-decoration:none;cursor:pointer" onclick ="DataTableTemplate('15946','15','1511','07','0','','Distribution of Estimated Literacy Rate in Punch District (Jammu & Kashmir) (2008)','0')" class='stytle5' title='View Sample Data Format'>&nbsp;<img src='/Content/images/v_image_1.jpg'  border='0'></a><div id='Message' class='box'></div></li><li><a href="/DataTable.aspx?hid=27487&sc=15&dc=1511&sd=0" onclick="javascript:return DataTable('27487','15','1511','07','0','0','Enrolment at Primary, Middle and Secondary/Higher Secondary Schools in Punch District (Jammu & Kashmir) (2007-2008)','0');" >Enrolment at Primary, Middle and Secondary/Higher Secondary Schools in Punch District (Jammu & Kashmir) (2007-2008)</a><a href ='javascript:ShowText('Message')' onmouseover="ShowText('Message','View Data Table Format'); return true;" onmouseout=" HideText('Message'); return true; " style=" text-decoration:none;cursor:pointer" onclick ="DataTableTemplate('27487','15','1511','07','0','','Enrolment at Primary, Middle and Secondary/Higher Secondary Schools in Punch District (Jammu & Kashmir) (2007-2008)','0')" class='stytle5' title='View Sample Data Format'>&nbsp;<img src='/Content/images/v_image_1.jpg'  border='0'></a><div id='Message' class='box'></div></li><li><a href="/DataTable.aspx?hid=27486&sc=15&dc=1511&sd=0" onclick="javascript:return DataTable('27486','15','1511','07','0','0','Number of Primary, Middle and Secondary/Higher Secondary Schools in Punch District (Jammu & Kashmir) (2007-2008)','0');" >Number of Primary, Middle and Secondary/Higher Secondary Schools in Punch District (Jammu & Kashmir) (2007-2008)</a><a href ='javascript:ShowText('Message')' onmouseover="ShowText('Message','View Data Table Format'); return true;" onmouseout=" HideText('Message'); return true; " style=" text-decoration:none;cursor:pointer" onclick ="DataTableTemplate('27486','15','1511','07','0','','Number of Primary, Middle and Secondary/Higher Secondary Schools in Punch District (Jammu & Kashmir) (2007-2008)','0')" class='stytle5' title='View Sample Data Format'>&nbsp;<img src='/Content/images/v_image_1.jpg'  border='0'></a><div id='Message' class='box'></div></li><li><a href="/DataTable.aspx?hid=17264&sc=15&dc=1511&sd=0" onclick="javascript:return DataTable('17264','15','1511','07','0','0','Enrolment at Primary, Middle and Secondary/Higher Secondary Schools in Punch District (Jammu & Kashmir) (2006-2007)','0');" >Enrolment at Primary, Middle and Secondary/Higher Secondary Schools in Punch District (Jammu & Kashmir) (2006-2007)</a><a href ='javascript:ShowText('Message')' onmouseover="ShowText('Message','View Data Table Format'); return true;" onmouseout=" HideText('Message'); return true; " style=" text-decoration:none;cursor:pointer" onclick ="DataTableTemplate('17264','15','1511','07','0','','Enrolment at Primary, Middle and Secondary/Higher Secondary Schools in Punch District (Jammu & Kashmir) (2006-2007)','0')" class='stytle5' title='View Sample Data Format'>&nbsp;<img src='/Content/images/v_image_1.jpg'  border='0'></a><div id='Message' class='box'></div></li><li><a href="/DataTable.aspx?hid=16632&sc=15&dc=1511&sd=0" onclick="javascript:return DataTable('16632','15','1511','07','0','0','Number of Gujjar/Bakerwal Hostels and Hostliers in Punch District (Jammu & Kashmir) (2006-2007)','0');" >Number of Gujjar/Bakerwal Hostels and Hostliers in Punch District (Jammu & Kashmir) (2006-2007)</a><a href ='javascript:ShowText('Message')' onmouseover="ShowText('Message','View Data Table Format'); return true;" onmouseout=" HideText('Message'); return true; " style=" text-decoration:none;cursor:pointer" onclick ="DataTableTemplate('16632','15','1511','07','0','','Number of Gujjar/Bakerwal Hostels and Hostliers in Punch District (Jammu & Kashmir) (2006-2007)','0')" class='stytle5' title='View Sample Data Format'>&nbsp;<img src='/Content/images/v_image_1.jpg'  border='0'></a><div id='Message' class='box'></div></li><li><a href="/DataTable.aspx?hid=17213&sc=15&dc=1511&sd=0" onclick="javascript:return DataTable('17213','15','1511','07','0','0','Number of Primary, Middle and Secondary/Higher Secondary Schools in Punch District (Jammu & Kashmir) (2006-2007)','0');" >Number of Primary, Middle and Secondary/Higher Secondary Schools in Punch District (Jammu & Kashmir) (2006-2007)</a><a href ='javascript:ShowText('Message')' onmouseover="ShowText('Message','View Data Table Format'); return true;" onmouseout=" HideText('Message'); return true; " style=" text-decoration:none;cursor:pointer" onclick ="DataTableTemplate('17213','15','1511','07','0','','Number of Primary, Middle and Secondary/Higher Secondary Schools in Punch District (Jammu & Kashmir) (2006-2007)','0')" class='stytle5' title='View Sample Data Format'>&nbsp;<img src='/Content/images/v_image_1.jpg'  border='0'></a><div id='Message' class='box'></div></li><li><a href="/DataTable.aspx?hid=17215&sc=15&dc=1511&sd=0" onclick="javascript:return DataTable('17215','15','1511','07','0','0','Number of Teachers at Pre-Primary, Primary, Middle and Secondary/Higher Secondary Schools in Punch District (Jammu & Kashmir) (2006-2007)','0');" >Number of Teachers at Pre-Primary, Primary, Middle and Secondary/Higher Secondary Schools in Punch District (Jammu & Kashmir) (2006-2007)</a><a href ='javascript:ShowText('Message')' onmouseover="ShowText('Message','View Data Table Format'); return true;" onmouseout=" HideText('Message'); return true; " style=" text-decoration:none;cursor:pointer" onclick ="DataTableTemplate('17215','15','1511','07','0','','Number of Teachers at Pre-Primary, Primary, Middle and Secondary/Higher Secondary Schools in Punch District (Jammu & Kashmir) (2006-2007)','0')" class='stytle5' title='View Sample Data Format'>&nbsp;<img src='/Content/images/v_image_1.jpg'  border='0'></a><div id='Message' class='box'></div></li><li><a href="/DataTable.aspx?hid=8464&sc=15&dc=1511&sd=0" onclick="javascript:return DataTable('8464','15','1511','07','0','0','Enrolment at Primary, Middle and Secondary/Higher Secondary Schools in Punch District (Jammu & Kashmir) (2005-2006)','0');" >Enrolment at Primary, Middle and Secondary/Higher Secondary Schools in Punch District (Jammu & Kashmir) (2005-2006)</a><a href ='javascript:ShowText('Message')' onmouseover="ShowText('Message','View Data Table Format'); return true;" onmouseout=" HideText('Message'); return true; " style=" text-decoration:none;cursor:pointer" onclick ="DataTableTemplate('8464','15','1511','07','0','','Enrolment at Primary, Middle and Secondary/Higher Secondary Schools in Punch District (Jammu & Kashmir) (2005-2006)','0')" class='stytle5' title='View Sample Data Format'>&nbsp;<img src='/Content/images/v_image_1.jpg'  border='0'></a><div id='Message' class='box'></div></li><li><a href="/DataTable.aspx?hid=8466&sc=15&dc=1511&sd=0" onclick="javascript:return DataTable('8466','15','1511','07','0','0','Number of Teachers at Primary, Middle and Secondary/Higher Secondary Schools in Punch District (Jammu & Kashmir) (2005-2006)','0');" >Number of Teachers at Primary, Middle and Secondary/Higher Secondary Schools in Punch District (Jammu & Kashmir) (2005-2006)</a><a href ='javascript:ShowText('Message')' onmouseover="ShowText('Message','View Data Table Format'); return true;" onmouseout=" HideText('Message'); return true; " style=" text-decoration:none;cursor:pointer" onclick ="DataTableTemplate('8466','15','1511','07','0','','Number of Teachers at Primary, Middle and Secondary/Higher Secondary Schools in Punch District (Jammu & Kashmir) (2005-2006)','0')" class='stytle5' title='View Sample Data Format'>&nbsp;<img src='/Content/images/v_image_1.jpg'  border='0'></a><div id='Message' class='box'></div></li><li><a href="/DataTable.aspx?hid=8465&sc=15&dc=1511&sd=0" onclick="javascript:return DataTable('8465','15','1511','07','0','0','Number of Primary, Middle and Secondary/Higher Secondary Schools in Punch District (Jammu & Kashmir) (2005-2006)','0');" >Number of Primary, Middle and Secondary/Higher Secondary Schools in Punch District (Jammu & Kashmir) (2005-2006)</a><a href ='javascript:ShowText('Message')' onmouseover="ShowText('Message','View Data Table Format'); return true;" onmouseout=" HideText('Message'); return true; " style=" text-decoration:none;cursor:pointer" onclick ="DataTableTemplate('8465','15','1511','07','0','','Number of Primary, Middle and Secondary/Higher Secondary Schools in Punch District (Jammu & Kashmir) (2005-2006)','0')" class='stytle5' title='View Sample Data Format'>&nbsp;<img src='/Content/images/v_image_1.jpg'  border='0'></a><div id='Message' class='box'></div></li><li><a href="/DataTable.aspx?hid=3645&sc=15&dc=1511&sd=0" onclick="javascript:return DataTable('3645','15','1511','07','0','0','Literacy Rate by Sex and Area in Punch District (Jammu & Kashmir) (2001)','0');" >Literacy Rate by Sex and Area in Punch District (Jammu & Kashmir) (2001)</a><a href ='javascript:ShowText('Message')' onmouseover="ShowText('Message','View Data Table Format'); return true;" onmouseout=" HideText('Message'); return true; " style=" text-decoration:none;cursor:pointer" onclick ="DataTableTemplate('3645','15','1511','07','0','','Literacy Rate by Sex and Area in Punch District (Jammu & Kashmir) (2001)','0')" class='stytle5' title='View Sample Data Format'>&nbsp;<img src='/Content/images/v_image_1.jpg'  border='0'></a><div id='Message' class='box'></div></li><li><a href="/DataTable.aspx?hid=30903&sc=15&dc=1511&sd=0" onclick="javascript:return DataTable('30903','15','1511','07','0','0','Literacy Rate of Scheduled Caste (SC) and Scheduled Tribe (ST) (Person/Male/Female/Total/Rural/Urban) in Punch District (Jammu & Kashmir) (2001)','0');" >Literacy Rate of Scheduled Caste (SC) and Scheduled Tribe (ST) (Person/Male/Female/Total/Rural/Urban) in Punch District (Jammu & Kashmir) (2001)</a><a href ='javascript:ShowText('Message')' onmouseover="ShowText('Message','View Data Table Format'); return true;" onmouseout=" HideText('Message'); return true; " style=" text-decoration:none;cursor:pointer" onclick ="DataTableTemplate('30903','15','1511','07','0','','Literacy Rate of Scheduled Caste (SC) and Scheduled Tribe (ST) (Person/Male/Female/Total/Rural/Urban) in Punch District (Jammu & Kashmir) (2001)','0')" class='stytle5' title='View Sample Data Format'>&nbsp;<img src='/Content/images/v_image_1.jpg'  border='0'></a><div id='Message' class='box'></div></li><li><a href="/DataTable.aspx?hid=8721&sc=15&dc=1511&sd=0" onclick="javascript:return DataTable('8721','15','1511','07','0','0','Number of Houses used for Schools, Colleges etc. in Punch District (Jammu & Kashmir) (2001)','0');" >Number of Houses used for Schools, Colleges etc. in Punch District (Jammu & Kashmir) (2001)</a><a href ='javascript:ShowText('Message')' onmouseover="ShowText('Message','View Data Table Format'); return true;" onmouseout=" HideText('Message'); return true; " style=" text-decoration:none;cursor:pointer" onclick ="DataTableTemplate('8721','15','1511','07','0','','Number of Houses used for Schools, Colleges etc. in Punch District (Jammu & Kashmir) (2001)','0')" class='stytle5' title='View Sample Data Format'>&nbsp;<img src='/Content/images/v_image_1.jpg'  border='0'></a><div id='Message' class='box'></div></li><li><a href="/DataTable.aspx?hid=978&sc=15&dc=1511&sd=0" onclick="javascript:return DataTable('978','15','1511','07','0','0','Total Number of Literates (Person/Male/Female/Total/Rural/Urban) in Punch  District (Jammu & Kashmir) (2001)','0');" >Total Number of Literates (Person/Male/Female/Total/Rural/Urban) in Punch  District (Jammu & Kashmir) (2001)</a><a href ='javascript:ShowText('Message')' onmouseover="ShowText('Message','View Data Table Format'); return true;" onmouseout=" HideText('Message'); return true; " style=" text-decoration:none;cursor:pointer" onclick ="DataTableTemplate('978','15','1511','07','0','','Total Number of Literates (Person/Male/Female/Total/Rural/Urban) in Punch  District (Jammu & Kashmir) (2001)','0')" class='stytle5' title='View Sample Data Format'>&nbsp;<img src='/Content/images/v_image_1.jpg'  border='0'></a><div id='Message' class='box'></div></li><li><a href="/DataTable.aspx?hid=4421&sc=15&dc=1511&sd=0" onclick="javascript:return DataTable('4421','15','1511','07','0','0','Religion-wise Number of Literates (Person/Male/Female//Total/Rural/Urban) in Punch District (Jammu & Kashmir) (2001)','0');" >Religion-wise Number of Literates (Person/Male/Female//Total/Rural/Urban) in Punch District (Jammu & Kashmir) (2001)</a><a href ='javascript:ShowText('Message')' onmouseover="ShowText('Message','View Data Table Format'); return true;" onmouseout=" HideText('Message'); return true; " style=" text-decoration:none;cursor:pointer" onclick ="DataTableTemplate('4421','15','1511','07','0','','Religion-wise Number of Literates (Person/Male/Female//Total/Rural/Urban) in Punch District (Jammu & Kashmir) (2001)','0')" class='stytle5' title='View Sample Data Format'>&nbsp;<img src='/Content/images/v_image_1.jpg'  border='0'></a><div id='Message' class='box'></div></li><li><a href="/DataTable.aspx?hid=981&sc=15&dc=1511&sd=0" onclick="javascript:return DataTable('981','15','1511','07','0','0','Total Number of Illiterates (Person/Male/Female/Total/Rural/Urban) in Punch  District (Jammu & Kashmir) (2001)','0');" >Total Number of Illiterates (Person/Male/Female/Total/Rural/Urban) in Punch  District (Jammu & Kashmir) (2001)</a><a href ='javascript:ShowText('Message')' onmouseover="ShowText('Message','View Data Table Format'); return true;" onmouseout=" HideText('Message'); return true; " style=" text-decoration:none;cursor:pointer" onclick ="DataTableTemplate('981','15','1511','07','0','','Total Number of Illiterates (Person/Male/Female/Total/Rural/Urban) in Punch  District (Jammu & Kashmir) (2001)','0')" class='stytle5' title='View Sample Data Format'>&nbsp;<img src='/Content/images/v_image_1.jpg'  border='0'></a><div id='Message' class='box'></div></li></ul></div>
+     
+ </div>
+
+ <div id="divSSUNError" style="display:none;height:auto;width:300px;top:50%;left:50%;margin-left:-150px;margin-top:-50px;position:fixed;z-index:101;padding:15px;background-color:#f6f6f6;">
+<center>
+<div id="divSSUNVal" style="background-color:#e0f0f8;" ></div></center>
+</div>
+</div>
+  
+ <div id="divMainloader" style="top:50%;left:50%;width:70px;height:70px;margin-left:-35px;margin-top:-35px;position:fixed;display:none;"><img src="/Content/images/bigblueloader.GIF" height="70" width="70" /></div>
+
+  
+        <div id="divCheck" style="position: fixed; top: 50%; left: 50%; width: 400px;display: none;margin-left:-200px;margin-top:-150px;">
+            <div style="float: left; background-color: #E1F5F4; padding: 10px; border: 1px solid #000000;
+                font-family: Verdana">
+                <br />
+                <br />
+                <div align="center" style="font-family: Verdana; font-size: 12px; vertical-align: top">
+                    Sorry ! you are not authorized to access this information.<br />
+                    In case of further assistance, please submit your query at
+                    <br />
+                    <a id="hyper1" href="/Contactus.aspx">Contact us</a>
+                </div>
+                <br />
+                <div align="center">
+                    <input id="Button1" type="button" value="Close" onclick="javascript: return closediv('divCheck');"
+                        class="normaltext" /></div>
+            </div>
+        </div>
+
+<div class="browse"  style=" margin-top:30px">Browse District by State</div>
+ <div class="states"><a href="http://www.districtsofindia.com/andhrapradesh/statedistrict.aspx" target="_blank">Andhra Pradesh</a> <a href="http://www.districtsofindia.com/arunachalpradesh/statedistrict.aspx" target="_blank">Arunachal Pradesh</a>  <a href="http://www.districtsofindia.com/assam/statedistrict.aspx" target="_blank">Assam</a>  <a href="http://www.districtsofindia.com/bihar/statedistrict.aspx" target="_blank">Bihar</a>  <a href="http://www.districtsofindia.com/chhattisgarh/statedistrict.aspx" target="_blank">Chhattisgarh</a>  <a href="http://www.districtsofindia.com/goa/statedistrict.aspx" target="_blank">Goa</a>  <a href="http://www.districtsofindia.com/gujarat/statedistrict.aspx">Gujarat</a>  <a href="http://www.districtsofindia.com/haryana/statedistrict.aspx" target="_blank">Haryana</a>  <a href="http://www.districtsofindia.com/himachalpradesh/statedistrict.aspx" target="_blank">Himachal Pradesh</a>  <a href="http://www.districtsofindia.com/jammuandkashmir/statedistrict.aspx" target="_blank">Jammu & Kashmir</a>  <a href="http://www.districtsofindia.com/jharkhand/statedistrict.aspx" target="_blank">Jharkhand</a>  <a href="http://www.districtsofindia.com/karnataka/statedistrict.aspx" target="_blank">Karnataka</a>  <a href="/kerala/statedistrict.aspx" target="_blank">Kerala</a>  <a href="http://www.districtsofindia.com/madhyapradesh/statedistrict.aspx" target="_blank">Madhya Pradesh</a>  <a href="http://www.districtsofindia.com/maharashtra/statedistrict.aspx" target="_blank">Maharashtra</a>  <a href="http://www.districtsofindia.com/manipur/statedistrict.aspx" target="_blank">Manipur</a>  <a href="http://www.districtsofindia.com/meghalaya/statedistrict.aspx" target="_blank">Meghalaya</a>  <a href="http://www.districtsofindia.com/mizoram/statedistrict.aspx" target="_blank">Mizoram</a>  <a href="http://www.districtsofindia.com/nagaland/statedistrict.aspx" target="_blank">Nagaland</a>  <a href="http://www.districtsofindia.com/odisha/statedistrict.aspx" target="_blank">Odisha</a>  <a href="http://www.districtsofindia.com/punjab/statedistrict.aspx" target="_blank">Punjab</a>  <a href="http://www.districtsofindia.com/rajasthan/statedistrict.aspx" target="_blank">Rajasthan</a>  <a href="http://www.districtsofindia.com/sikkim/statedistrict.aspx" target="_blank">Sikkim</a>  <a href="http://www.districtsofindia.com/tamilnadu/statedistrict.aspx" target="_blank">Tamil Nadu</a>  <a href="http://www.districtsofindia.com/telangana/statedistrict.aspx" target="_blank">Telangana</a>  <a href="http://www.districtsofindia.com/tripura/statedistrict.aspx" target="_blank">Tripura</a>  <a href="http://www.districtsofindia.com/uttarpradesh/statedistrict.aspx" target="_blank">Uttar Pradesh</a>  <a href="http://www.districtsofindia.com/uttarakhand/statedistrict.aspx" target="_blank">Uttarakhand</a>  <a href="http://www.districtsofindia.com/westbengal/statedistrict.aspx" target="_blank">West Bengal</a></div>
+ 
+ 
+ 
+ 
+ <div class="browse">Browse District by Sector</div>
+ <div class="states"><a href="http://www.districteconomystat.com/index.aspx" target="_blank">Economy</a> <a href="http://www.districtbankandfinancestat.com/index.aspx" target="_blank">Bank and Finance</a> <a href="http://www.districtagristat.com/index.aspx" target="_blank">Agriculture</a> <a href="http://www.districtdemographicstat.com/index.aspx" target="_blank">Demographics</a> <a href="http://www.districtcrimeandlawstat.com/index.aspx" target="_blank">Crime and Law</a> <a href="http://www.districteducationstat.com/index.aspx" target="_blank">Education</a> <a href="http://www.districtenvironmentstat.com/index.aspx" target="_blank">Environment</a> <a href="http://www.districthealthstat.com/index.aspx" target="_blank">Health</a> <a href="http://www.districtindustrystat.com/index.aspx" target="_blank">Industry</a> <a href="http://www.districtinfrastructurestat.com/index.aspx" target="_blank">Infrastructure</a> <a href="http://www.districtlabourandworkforcestat.com/index.aspx" target="_blank">Labour and Workforce</a> </div>
+
+
+   <div class="body_left"  style=" margin-left:120px">
+      
+    
+  </div>
+</div>
+</div>
+       
+      
+         
+
+
+
+<!-- Start ScrollTop -->
+<script type="text/javascript">
+    $(document).ready(function () {
+
+        //Check to see if the window is top if not then display button
+        $(window).scroll(function () {
+            if ($(this).scrollTop() > 100) {
+                $('.scrollToTop').fadeIn();
+            } else {
+                $('.scrollToTop').fadeOut();
+            }
+        });
+
+        //Click event to scroll to top
+        $('.scrollToTop').click(function () {
+            $('html, body').animate({ scrollTop: 0 }, 800);
+            return false;
+        });
+
+    });
+    function loadDivIPNotMatch(ipas) {
+        document.getElementById('divIPNotMatch').style.display = "block";
+        document.getElementById('lblClientIP').innerText = ipas;
+    }
+    function unloadDivIPNotMatch() {
+        document.getElementById('divIPNotMatch').style.display = "none";
+
+    }
+    function hideiplog() {
+        document.getElementById('liiplogin').style.display = "none";
+    }
+</script>
+
+<style type="text/css">
+.scrollToTop{
+	width:auto; 
+	height:auto;
+	padding:0px; 
+	text-align:center; 
+	background: whiteSmoke;
+	font-weight: bold;
+	color: #444;
+	text-decoration: none;
+	position:fixed; text-transform:uppercase;
+	bottom:25px;
+	right:10px;
+	display:none;
+	background: url(/Content/images/Arrow-Up-1.png) no-repeat 0px 30px; background-position:center;
+}
+.scrollToTop:hover{
+	text-decoration:none;
+}
+.category{background:#eee; padding:0px 5px 0px 5px;color:#005195;}
+.category a{color:#005195;}
+</style>
+<!-- End ScrollTop -->
+<script type="text/javascript">
+    $(document).ready(function () {
+        $("#election").mouseover(function () {
+            $(".election_pop").show();
+        });
+        $("#election").mouseout(function () {
+            $(".election_pop").hide();
+        });
+        $("#indiastat").mouseover(function () {
+            $(".indiastat_pop").show();
+        });
+        $("#indiastat").mouseout(function () {
+            $(".indiastat_pop").hide();
+        });
+        $("#doi").mouseover(function () {
+            $(".doi_pop").show();
+        });
+        $("#doi").mouseout(function () {
+            $(".doi_pop").hide();
+        });
+
+        $("#top10").mouseover(function () {
+            $(".top10_pop").show();
+        });
+        $("#top10").mouseout(function () {
+            $(".top10_pop").hide();
+        });
+
+        $("#ebook").mouseover(function () {
+            $(".ebook_pop").show();
+        });
+        $("#ebook").mouseout(function () {
+            $(".ebook_pop").hide();
+        });
+        $("#limca").mouseover(function () {
+            $(".limca_pop").show();
+        });
+        $("#limca").mouseout(function () {
+            $(".limca_pop").hide();
+        });
+
+
+    });
+
+
+</script>
+<div style="width:100%; background:#fff; float:left; margin-bottom:2px">
+    <div class="wraper">
+<div class="bottom_ad">
+     
+
+    <script async src="//pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
+<!-- Districtsofindia Bottom Ad -->
+<ins class="adsbygoogle"
+     style="display:block"
+     data-ad-client="ca-pub-5804483449323119"
+     data-ad-slot=""
+     data-ad-format="auto"></ins>
+<script>
+    (adsbygoogle = window.adsbygoogle || []).push({});
+</script>
+
+    
+ 
+        
+   
+</div>
+    </div></div>
+<div class="bottom">
+<div class="wraper">
+          
+             
+     <div class="datanet" style="margin:5px 0px 5px 0px;"><img src="/Content/images/left_line.png" style=""><a href="http://datanetindia.com/" target="_blank">Datanet India Initiatives</a><img src="/Content/images/right_line.png" /></div>
+ 
+                   <div class="other_int">
+                     
+                      <div class="indiastat">
+                        <div class="pop_container">
+        <div class="indiastat_pop"><img src="/Content/images/indiastat_home.gif" ></div>
+ </div> <a href="https://www.indiastat.com" target="_blank" id="indiastat"><img src="/Content/images/indiastat_logo.png" border="0" style="width:120px;height:17px;" /></a><br />
+                        <span style="font:normal 12px arial; clear:both;">India's most comprehensive<br>e-resource of socio-economic data</span>
+                        <br />
+      <span><a href="https://www.indiastat.com/aboutus/ourwebsites.aspx" target="_blank" style="font:normal 12px arial;">A Cluster of 56 Associate Websites</a></span></div>
+      <div class="doi">
+                        <div class="pop_container">
+        <div class="doi_pop"><img src="/Content/images/doi_home.gif"></div>
+ </div> <a href="http://www.districtsofindia.com/index.aspx" target="_blank" id="doi"><img src="/Content/images/DOI_logo.png" width="180" height="17"  / border="0"></a><br />
+                        <span style="font:normal 12px arial; clear:both;">A storehouse of socio-economic statistical information of 620 districts of India</span>
+                        <br />
+      <span><a href="/districtlevel.aspx" target="_blank" style="font:normal 12px arial;">A Cluster of 660 Associate Websites</a></span></div> 
+                       <div class="election">
+                        <div class="pop_container">
+  	<div class="election_pop"><img src="/Content/images/election_home.gif"></div>
+ </div><a href="http://www.electionsinindia.com/Index.aspx" target="_blank" id="election"><img src="/Content/images/election_logo.png" width="180" / border="0"></a><br />
+      <span style="font:normal 12px arial;">Provides constituency-wise election data for all 543 parliamentary and 4120 state assembly constituencies, since independence</span>
+      </div>
+                        
+                         
+                        
+                       
+                        
+                        <div class="ebook">
+                        <div class="pop_container">
+        <div class="ebook_pop"><img src="/Content/images/ebook_home.gif"></div>
+ </div>
+<a href="http://www.datanetindia-ebooks.com/" target="_blank" style="border-left:0px;" id="ebook"><img src="/Content/images/eBooks_logo.png" width="220" / border="0"></a><br />
+                        <span style="font:normal 12px arial;">A collection of election & reference books in print, eBook and Web based access formats</span></div>
+                        </div>
+                        
+                        
+              
+                        </div>
+     <div style="width: 100%;float: left;clear: both;text-align: center; padding: 10px 0px 5px 0px;background-color: #faf9f9;
+    border-top: thin solid #ccc;font-size:13px;">17 years of serving socio-economic & electoral research fraternity in India and abroad<br />
+                        Recognized by<div class="limca">
+                        <div class="pop_container">
+  	<div class="limca_pop"><img src="/Content/images/limca_record.gif" alt=""></div>
+ </div></div> <a href="https://www.indiastat.com/Limca_Record.html" target="_blank" id="limca"><img src="/Content/images/limca.gif" border="0"></a> for having the largest cluster of 717 websites providing socio&minus;economic statistical data
+          <div style="margin-top:10px;clear:both;"><span style="position:relative; bottom:8px">Follow us on </span><a href="https://www.facebook.com/datanetind" target="_blank"><img src="/images/facebook.png" style="width:25px;"></a> <a href="https://twitter.com/DatanetIndia" target="_blank"><img src="/images/twitter.png" style="width:25px;"></a> <a href="https://www.linkedin.com/company/datanet-india" target="_blank"><img src="/images/linkedin.png" style="width:25px;"></a></div>
+     </div>
+   
+                         <div style="width:100%; position:relative; height:20px; padding:7px 0px 0px 0px; margin:0px; clear:both; background:#063b6d; float:left; border-top:0px solid #f66149;">
+                                <div  style="float:left; position:relative;"><a href="/SITEMAP.ASPX">Site Map</a></div>
+      
+              <div><a href="http://datanetindia.com/" target="_blank">&copy; Datanet India Pvt. Ltd.</a></div>
+              <div class="scrollToTop" style="float:right; position:relative;"><a href="#"><img src="/Content/images/Arrow-Up-1.png" border="0" /></a></div>
+              
+              </div></div>
+     
+   
+</body>
+</html>

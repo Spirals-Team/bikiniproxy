@@ -1,0 +1,117 @@
+/* gestion de la publicité SHARED
+
+*/
+
+function INSIDE_SHARED_ADVERT(_nom) {
+	this.objets = new Array();
+	this.durees = new Array();
+	this.osize = 0;
+	this.position = 0;
+	this.nom = _nom;
+}
+
+
+INSIDE_SHARED_ADVERT.prototype.initialise=function(_nom) {
+	nom = _nom;
+	objets = new Array();
+	durees = new Array();	
+	osize=0;
+	position=0;	
+}
+
+
+	
+INSIDE_SHARED_ADVERT.prototype.newAdvert=function(objet, duree) {			
+	// ajoute un objet a faire tourner
+	this.objets[this.osize] = objet;
+	this.durees[this.osize] = duree;	
+	this.osize = this.osize+1;
+}
+	
+	
+INSIDE_SHARED_ADVERT.prototype.run=function(intervalle) {
+	// lance la process à intervalle secondes
+	// si on trouve une ancienne valeur on l'utilise pour faire des rotations equitables
+	
+	
+	
+	function lit_cook(nom) {
+		var deb,fin;
+		deb = document.cookie.indexOf(nom + "=");
+		if (deb >= 0) {
+		deb += nom.length + 1;
+		fin = document.cookie.indexOf(";",deb);
+    if (fin < 0) fin = document.cookie.length;
+    	return unescape(document.cookie.substring(deb,fin));
+    }
+    return "";
+  }
+
+ 	var position = lit_cook(this.nom)
+  if(position != "") this.position = parseInt(position);
+	if (this.position >= this.osize) this.position = 0;  
+	$('#' + this.objets[0])[0].style.display='none';
+	$('#' + this.objets[this.position])[0].style.display='block';
+	if (this.durees[this.position] > 0) intervalle=this.durees[this.position];	
+	pe = new PeriodicalExecuter(this.schedule, intervalle); 
+	pe.iadv = this;
+	
+}
+	
+INSIDE_SHARED_ADVERT.prototype.schedule=function() {	
+	$("#"+this.iadv.objets[this.iadv.position])[0].style.display='none';
+	this.iadv.position = this.iadv.position + 1;
+	if (this.iadv.position >= this.iadv.osize) this.iadv.position = 0;
+	
+	$("#"+this.iadv.objets[this.iadv.position] + ' img').each(function() {
+		var t = this.src;
+		this.src="";
+		this.src=t;
+	});
+	
+	$("#"+this.iadv.objets[this.iadv.position])[0].style.display='block';
+	this.stop();
+	this.frequency = this.iadv.durees[this.iadv.position];	
+	this.registerCallback();
+	
+	var expDate = new Date();
+  expDate.setTime(expDate.getTime() + (30 * 24 * 3600 * 1000)); // 30 jours
+	document.cookie = this.iadv.nom + "=" + this.iadv.position + ";expires=" + expDate.toGMTString()
+}
+	
+/* gestion de la publicité */
+
+function PeriodicalExecuter(callback, frequency) {
+  this.callback = callback;
+  this.frequency = frequency;
+  this.currentlyExecuting = false;
+  this.registerCallback();
+}
+ 
+PeriodicalExecuter.prototype = {
+  registerCallback: function() {
+    var me = this;
+    this.timer = setInterval(function() { me.onTimerEvent() }, this.frequency * 1000);
+  },
+ 
+  execute: function() {
+    this.callback(this);
+  },
+ 
+  stop: function() {
+    if (!this.timer) return;
+    clearInterval(this.timer);
+    this.timer = null;
+  },
+ 
+  onTimerEvent: function() {
+    if (!this.currentlyExecuting) {
+      try {
+        this.currentlyExecuting = true;
+        this.execute();
+      } finally {
+        this.currentlyExecuting = false;
+      }
+    }
+  }
+};

@@ -1,0 +1,273 @@
+/*
+bam.dateSelector version 2.02
+Requires jQuery for DOM operations.
+
+Aleksandar Kolundzija
+*/
+
+bam.extend({
+					 
+	dateSelector: (function(){
+		
+		var _dateLimits = {start:null, end:null};
+					
+		var _self = {
+
+			divId : "dateSelector",
+			$elem : null,
+			
+			month : null,
+			year  : null,
+			today : null,
+			
+			showResetLink: true,
+			
+			curDateField: null, // reference to currently selected "date" form field
+			
+			months:   {"1":"January", "2":"February", "3":"March", "4":"April", "5":"May", "6":"June", "7":"July", "8":"August", "9":"September", "10":"October", "11":"November", "12":"December"},
+			weekdays: ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"],
+			selectedDates: [],
+			
+			existsInDom: function(){
+				return ($("#"+_self.divId).length);
+			},		
+			
+			appendToDom: function(){
+				$("<div id='"+_self.divId+"'></div>").appendTo("body"); 
+				_self.$elem = $("#"+_self.divId);
+			},
+			
+			setMonthAndYear: function(month,year){
+				var today   = new Date();
+				_self.month = (month!=null && month>0 && month<13) ? month : today.getMonth()+1;
+				_self.year  = year || today.getFullYear();
+			},
+	
+			setToday: function(today){
+				_self.today = today;
+			},
+			
+			setDateLimits: function(startDate, endDate){
+				_dateLimits.start = startDate || _dateLimits.start;
+				_dateLimits.end   = endDate   || _dateLimits.end;
+			},
+			
+			show: function(month,year){
+				if (!_self.existsInDom()){ _self.appendToDom(); }
+				_self.setMonthAndYear(month,year);
+				_self.$elem.html(_self.getCalendarHtml()).fadeIn("fast");
+				_self.highlightSelectedDays();
+			},
+			
+			hide: function(){
+				_self.$elem.fadeOut("fast");
+			},
+			
+			toggle: function(){
+				_self.$elem.toggle();
+			},
+			
+			reset: function(){
+				_self.selectedDates = [];
+				_self.show();
+			},
+			
+			addDate: function(date){
+				_self.selectedDates.push(date);
+			},
+			
+			removeDate: function(date){
+				var remainingDates = [];
+				$.each(_self.selectedDates, function(i,n){
+					if (_self.selectedDates[i] != date) remainingDates.push(_self.selectedDates[i]);
+				});
+				_self.selectedDates = remainingDates;
+			},
+			
+			highlightSelectedDays: function(){
+				$.each(_self.selectedDates, function(i,n){
+					if (_self.getTwoDigit(_self.month) == _self.selectedDates[i].substr(4,2) && _self.year == _self.selectedDates[i].substr(0,4)){
+						_self.toggleCell("cell" + _self.selectedDates[i].substr(6,2),_self.selectedDates[i],true);
+					}
+				});
+			},
+			
+			getDaysInMonth: function(){
+				var month = arguments[0] || _self.month-1;
+				return 32 - new Date(_self.year, month, 32).getDate();
+			},
+			
+			getWeekdayIndexFirstOfMonth: function(){
+				var firstOfMonth = new Date(_self.year, _self.month-1, 1);
+				return firstOfMonth.getDay();
+			},
+			
+			getTwoDigit: function(num){
+				num = num.toString();
+				if (num.length == 2) return num;
+				else return "0" + num;
+			},
+			
+			removeLeadingZero: function(num){
+				var numStr = num.toString();
+				if (numStr.charAt(0) == 0) return numStr.charAt(1);
+				else return numStr;
+			},
+
+			/* expects dateVal in form YYYYMMDD */
+			getDateObj: function(dateVal){
+				if (!dateVal) return false;
+				dateVal   = dateVal.toString();
+				var year  = dateVal.substr(0,4);
+				var month = _self.removeLeadingZero(dateVal.substr(4,2));
+				var day   = _self.removeLeadingZero(dateVal.substr(6,2));
+				return new Date(year,(month-1),day);
+			},
+			
+			/* expects dateVal in form YYYYMMDD */
+			getDateString: function(dateVal, customFunction){
+				var date = _self.getDateObj(dateVal);
+				if (date){
+					if (customFunction){ return date['customFunction'].apply(null,[]); }
+					return date.toDateString();
+				}
+			},
+			
+			getMonthName: function(){
+				var month = _self.month.toString();
+				if (month.charAt(0) == 0) {
+					return _self.months[month.charAt(1)];
+				}
+				else {
+					return _self.months[month];
+				}
+			},
+			
+			getPrevMonthLink: function(){
+				var prevMonth, year;
+				if (_self.month == 1){
+					prevMonth = 12; 
+					year      = _self.year-1;
+				}
+				else {
+					prevMonth = _self.month-1;
+					year      = _self.year;
+				}
+				return "<a href='javascript:void(0)' onclick='bam.dateSelector.show(" + prevMonth + "," + year + ")'>" + "&laquo; Prev" + "</a>";
+			},
+			
+			getNextMonthLink: function(){
+				var nextMonth, year;
+				if (_self.month == 12){
+					nextMonth = 1; 
+					year = _self.year+1;
+				} 
+				else { 
+					nextMonth = _self.month+1; 
+					year = _self.year;
+				}
+				return "<a href='javascript:void(0)' onclick='bam.dateSelector.show(" + nextMonth + "," + year + ")'>" + "Next &raquo;" + "</a>";
+			},
+			
+			isToday: function(curDate){
+				return (_self.today != null && curDate == _self.today);
+			},
+			
+			getCalendarHtml: function(){
+				
+				var curDay        = 1;
+				var curDate       = null;
+				var weekdayIndex  = _self.getWeekdayIndexFirstOfMonth();
+				var isFirstWeek   = true;
+				var isDateInRange = true;
+				
+				var out = "\
+					<table id='monthNav'>\
+					<tr>\
+						<td class='monthLink'>" + _self.getPrevMonthLink() + "</td>\
+						<td class='curMonth'>" + _self.getMonthName() + " " + _self.year + "</div>\
+						<td class='monthLink' align='right'>" + _self.getNextMonthLink() + "</td>\
+					</tr>\
+					</table>\
+					<table id='monthDays' cellspacing='1'>\
+					<thead><tr>";
+					
+				for (var i=0; i<_self.weekdays.length; i++) out += "<td>" + _self.weekdays[i] + "</td>\n";
+				out += "</tr></thead><tbody>\n";
+							
+				while (curDay <= _self.getDaysInMonth()){
+					// draw blank days in first week
+					if (isFirstWeek && weekdayIndex != 0){
+						out += "<tr>";
+						for (var i=1; i<=weekdayIndex; i++){ out += "<td class='blank'>&nbsp;</td>\n"; }
+						isFirstWeek = false;
+					}
+					else {
+						isFirstWeek = false;
+					}
+			
+					if (weekdayIndex==0) out += "<tr>\n"; // if weekday is Sunday, open new table row
+					out += "<td id='cell"+_self.getTwoDigit(curDay)+"' class='day"+(( _self.isToday(_self.year + _self.getTwoDigit(_self.month) + _self.getTwoDigit(curDay)) )?" today":"")+"'>";
+					
+					curDate = new Date(_self.year, _self.month-1, curDay);
+					
+					isDateInRange = (_dateLimits.start) ? (curDate >= _dateLimits.start) : isDateInRange; // if start date is set, check if curDate is after it
+					isDateInRange = (_dateLimits.end)   ? (curDate <= _dateLimits.end)   : isDateInRange; // if end date is set, check if curDate is before it
+					isDateInRange = (_dateLimits.start && _dateLimits.end) ? (curDate >= _dateLimits.start && _dateLimits.end) : isDateInRange; // if range is set, check if curDate is within it
+					
+					if (isDateInRange){
+						out += "<a href='javascript:void(0)' onclick=\"bam.dateSelector.toggleCell('cell"+_self.getTwoDigit(curDay)+"','"+_self.year+_self.getTwoDigit(_self.month)+_self.getTwoDigit(curDay)+"',false); this.blur();\">" + curDay + "</a>";
+					}
+					else {
+						out += "<div class=\"outOfRange\">" + curDay + "</div>";
+					}
+
+					out += "</td>";
+					if (weekdayIndex==6) out += "</tr>\n"; // if weekday is Saturday, close table row
+			
+					weekdayIndex++;
+					weekdayIndex = weekdayIndex % 7;
+					curDay++;
+				}
+				
+				// draw blank days in last week
+				while (weekdayIndex < 7 && weekdayIndex != 0){
+					out += "<td class='blank'>&nbsp;</td>\n";
+					weekdayIndex++;
+				}
+				out += "</tr></tbody></table>\n";
+				
+				out += "<table id='subLinks'>\n";
+				out += "<tr><td>";
+				if (_self.showResetLink) { out += "<a href='javascript:bam.dateSelector.reset()'>Reset</a>"; }
+				out += "</td><td align='right'><a href='javascript:bam.dateSelector.hide()'>Close</a></td></tr>\n";
+				out += "</table>\n";
+				return out;
+			},
+			
+			toggleCell: function(cellId,dateString,onlyChangeCellColor){
+				var cell = $("#"+cellId);
+				if (cell.attr("class") == "day" || cell.attr("class") == "day today"){
+					cell.attr("class","selectedDay");
+					if (!onlyChangeCellColor){
+						_self.addDate(dateString);
+					}
+				}
+				else {
+					cell.attr("class","day");
+					if (!onlyChangeCellColor) _self.removeDate(dateString);
+				}
+				if (!onlyChangeCellColor) _self.processSelection();
+			},
+			
+			processSelection: function(){
+				// override this method for actual response
+				alert("bam.dateSelector.processSelection() hasn't been re-defined as needed.");
+			}
+		}
+		
+		return _self;	
+	
+	})()
+	
+});

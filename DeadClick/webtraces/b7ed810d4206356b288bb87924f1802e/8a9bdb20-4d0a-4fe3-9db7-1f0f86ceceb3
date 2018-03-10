@@ -1,0 +1,229 @@
+$(document).ready(function () {
+    $(document).on('mouseenter', '.categoryTileContainer .column', function () {
+        // $(".categoryTileContainer .column").on("mouseenter", function (e) {
+        // $(".categoryTileContainer .column").hover(function(){
+        if ($(this).hasClass("opaGrey")) {
+            $(".categoryPopup").removeAttr("style");
+            $(".expand").removeClass("open");
+            /* $(".categoryTileContainer .column").removeClass("leftBorder"); */
+        }
+        $(".categoryTileContainer .column").addClass("opaGrey");
+        $(this).removeClass("opaGrey");
+        if ($(this).children().children(".bottomDiv").children(".collapsetxt").html() == "SHOW LESS" && $(".categoryPopup").css('display')=='none') {
+            $(this).children().children(".bottomDiv").children(".collapsetxt").html("SHOW MORE");
+            //if ($(this).children().children(".bottomDiv").children(".collapsetxt").html() == "COLLAPSE") {
+            //    $(this).children().children(".bottomDiv").children(".collapsetxt").html("EXPAND");
+        }
+    });
+    $("body").on('mouseover', function (e) {
+        var $categoryTilesClass = $(e.target).parents('.categoryTileContainer');
+        if ($categoryTilesClass.length == 0) {
+            $(".categoryTileContainer .column").removeClass("opaGrey");
+            $(".categoryPopup").removeAttr("style");
+        }
+    });
+    //oldmethod
+    //$(document).on('click', '.bottomDiv', function () {
+    //    $(this).children(".expand").toggleClass('open');
+    //    var outerheightVal = $(this).parent().parent().outerHeight();
+    //    var $clicker = $(this).parent().parent();
+    //    var pos = $clicker.position();
+    //    var totalValue = (parseInt(outerheightVal) + pos.top);
+
+    //    totalValue = parseInt(totalValue) - 11;
+
+    //    if (window.innerWidth < 767) {
+    //        totalValue = parseInt(totalValue) + 8;
+    //    }
+
+    //    if ($(".categoryPopup").css('display') == "none") {
+    //        $(".categoryPopup").removeAttr("style");
+
+    //    }
+    //    if ($(this).children(".collapsetxt").html() == "SHOW MORE")
+    //        $(this).children(".collapsetxt").html("SHOW LESS");
+    //    else
+    //        $(this).children(".collapsetxt").html("SHOW MORE");
+    //    //if ($(this).children(".collapsetxt").html() == "EXPAND")
+    //    //    $(this).children(".collapsetxt").html("COLLAPSE");
+    //    //else
+    //    //    $(this).children(".collapsetxt").html("EXPAND");
+    //    $(".categoryPopup").toggle().css('top', totalValue + "px");
+
+    //    //Fill Category popup details based on product
+    //    $('.para')[0].innerHTML = $(this).parent().children(".divProductFeaturesBenifits").html();
+    //    //$('.categoryPopupbody .subheading_24')[0].innerHTML = "CODE-" + $(this).parent().children(".divProductCode").html
+    //    $('.categoryPopupbody .subheading_24')[0].innerHTML = $(this).parent().children(".divProductName").html();
+    //    $('.categoryPopupbody .viewDetails').attr("href", $(this).parent().children(".divProductURL").html());
+    //    $('.categoryPopupbody .pdpRatings').attr("href", $(this).parent().children(".divProductURL").html());
+    //    $('.categoryPopupbody .imgProduct').attr("src", $(this).parent().children().find("img.product_image").attr('src'));
+    //});
+    //new method
+    $(document).on('click', '.bottomDiv', function () {
+        //var Product_Family = $(this).parent().children(".divProductFamilyID").html();
+        //var ORDERSKU = $(this).parent().children(".divORDERSKU").html();
+        //var currentPageID = $('#divCurrentPageID').text();
+        
+        var currentProductID = $(this).closest('.column').find('.divProductID').text();
+        GetProductStyleColorVarients(currentProductID);
+        $(this).children(".expand").toggleClass('open');
+        var outerheightVal = $(this).parent().parent().outerHeight();
+        var $clicker = $(this).parent().parent();
+        var pos = $clicker.position();
+        var totalValue = (parseInt(outerheightVal) + pos.top);
+
+        totalValue = parseInt(totalValue) - 11;
+
+        if (window.innerWidth < 767) {
+            totalValue = parseInt(totalValue) + 8;
+        }
+
+        if ($(".categoryPopup").css('display') == "none") {
+            $(".categoryPopup").removeAttr("style");
+
+        }
+        if ($(this).children(".collapsetxt").html() == "SHOW MORE")
+            $(this).children(".collapsetxt").html("SHOW LESS");
+        else {
+            $(this).children(".collapsetxt").html("SHOW MORE");
+            if (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
+                $(".categoryTileContainer .column").removeClass("opaGrey");
+            }
+        }
+        //if ($(this).children(".collapsetxt").html() == "EXPAND")
+        //    $(this).children(".collapsetxt").html("COLLAPSE");
+        //else
+        //    $(this).children(".collapsetxt").html("EXPAND");
+        $(".categoryPopup").toggle().css('top', totalValue + "px");
+
+        //Fill Category popup details based on product
+        $('.para')[0].innerHTML = $(this).parent().children(".divProductFeaturesBenifits").html();
+        $('.categoryPopupbody .subheading_24')[0].innerHTML = $(this).parent().children(".divProductName").html();
+        $('.categoryPopupbody .viewDetails').attr("href", $(this).parent().children(".divProductURL").html());
+        $('.categoryPopupbody .pdpRatings').attr("href", $(this).parent().children(".divProductURL").html() + "?tab=3");
+        $('.categoryPopupbody .imgProduct').attr("src", $(this).parent().children().find("img.product_image").attr('src'));
+    });
+    $(document).on('click', '.toggleContainer', function () {
+        $(this).toggleClass("reverse");
+        FilterProductsByBrands();
+    });
+    $(document).on('click', '.gotop', function () {
+        $('html,body').animate({
+            scrollTop: 0
+        }, 2000);
+    });
+    $('#spanResults').html($('#divResults').html());
+    FilterProductsByBrands();
+});
+function GetProductStyleColorVarients(currentProductID) {
+    $.ajax({
+        type: "POST",
+        url: "/api/Sitecore/ProductSubCategory/GetStyleColorVarients",
+        data: JSON.stringify({
+            currentProductId: currentProductID
+        }),
+        contentType: "application/json; charset=utf-8",
+        dataType: "text",
+        context: this,
+        success: function (data) {
+            $('.bottomHighlight').replaceWith(data);
+        },
+        error: function (data, thrownError) {
+            //console.log("error", data);
+        }
+    });
+}
+function InitPagination() {
+    /* pagination script */
+    var totPages = Math.floor($("#spanResults").html() / 12);
+    if ($("#spanResults").html() % 12 != 0)
+        totPages = totPages + 1;
+    var visiblepages = 3;
+    if (parseInt(totPages) < 6)
+        visiblepages = parseInt(totPages);
+
+    if (parseInt(totPages) <= 1) {
+        $('#pagination-demo').hide();
+    }
+    else {
+        $('#pagination-demo').twbsPagination({
+            totalPages: totPages,
+            // the current page that show on start
+            startPage: 1,
+
+            // maximum visible pages
+            visiblePages: visiblepages,
+
+            initiateStartPageClick: true,
+
+            // template for pagination links
+            href: false,
+
+            // variable name in href template for page number
+            hrefVariable: '{{number}}',
+
+            // Text labels
+            first: 'First',
+            prev: 'Previous',
+            next: 'Next',
+            last: 'Last',
+
+            // carousel-style pagination
+            loop: false,
+
+            // callback function
+            onPageClick: function (event, page) {
+                $('.page-active').removeClass('page-active');
+                $('#page' + page).addClass('page-active');
+                FilterProductsByBrands();
+            },
+
+            // pagination Classes
+            paginationClass: 'pagination',
+            nextClass: 'next',
+            prevClass: 'prev',
+            lastClass: 'last',
+            firstClass: 'first',
+            pageClass: 'page',
+            activeClass: 'active',
+            disabledClass: 'disabled'
+        });
+    }
+}
+function FilterProductsByBrands() {
+    var SelectedBrandProducts = [];
+    var brand = $('input#brand').val();
+    var selectedSubCategory = brand;
+    var sortOption = "default";
+    if ($('.toggleContainer').hasClass("reverse")) {
+        sortOption = "reverse";
+    }
+
+    var page = 1;
+    if ($('.pagination .active')[0] != null)
+        page = $('.pagination .active')[0].innerText;
+    //alert(selectedSubCategory);
+    $.ajax({
+        type: "POST",
+        url: "/api/Sitecore/BrandDetail/FilterProductsByBrandCategory",
+        data: JSON.stringify({ BrandSelected: selectedSubCategory, sortOption: sortOption, page: page }),
+        contentType: "application/json; charset=utf-8",
+        dataType: "text",
+        context: this,
+        success: function (data) {
+            $('.categoryTileContainer').replaceWith(data);
+            $('#spanResults').html($('#divResults').html());
+            if (sortOption === 'reverse') {
+                $('.toggleContainer').addClass("toggleContainer reverse");
+            }
+            //Hide go to top if rows less than 2
+            if (parseInt($('.categoryTileContainer .column').length) <= 6)
+                $(".gotop").hide();
+            else
+                $(".gotop").show();
+
+            InitPagination();
+        }
+    });
+
+};

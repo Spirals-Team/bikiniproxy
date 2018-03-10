@@ -1,0 +1,176 @@
+// ILC Allground scripts - http://demo.themesrobot.com/allground/
+;var ILC_Allground;
+
+(function($){
+
+	ILC_Allground = {
+
+		init: function(){
+			this.parseArgs();
+		},
+
+		parseArgs: function(){
+			$.each(allgroundjs, function(index, value) {
+				if( '0' == value || '1' == value ){
+					allgroundjs[index] = '0' != value;
+				} else if( typeof value === 'string' && ! value.match(/[a-z]/i) && parseInt( value ) ){
+					allgroundjs[index] = parseInt(value);
+				} else if( typeof value === 'string' && ! value.match(/[a-z]/i) && parseFloat(value) ){
+					allgroundjs[index] = parseFloat(value);
+				}
+			});
+		},
+
+		load: function(){
+			var $body = $('body');
+			if('images' == allgroundjs.bgtype) {
+				if ( typeof $.fn.backstretch !== 'undefined' ) {
+					if ( 'random_single' == allgroundjs.mode ) {
+						var	index = Math.floor(Math.random() * allgroundjs.images.length),
+							savedIndex = this.readCookie( allgroundjs.agid+'cookie' );
+						if ( savedIndex != null && index == savedIndex ) {
+							index = Math.abs( (allgroundjs.images.length - 1) - savedIndex );
+						}
+						this.setCookie( allgroundjs.agid+'cookie', index );
+
+						allgroundjs.images = [allgroundjs.images[index]];
+						allgroundjs.links = [allgroundjs.links[index]];
+						allgroundjs.captions = [allgroundjs.captions[index]];
+						allgroundjs.targets = [allgroundjs.targets[index]];
+					}
+					$.backstretch(allgroundjs.images, {
+						duration: allgroundjs.duration,
+						fade: allgroundjs.fade,
+						links: allgroundjs.links,
+						captions: allgroundjs.captions,
+						targets: allgroundjs.targets
+					});
+					if(allgroundjs.navigation){
+						$body.append('<a class="ag-prev ag-link" href="#">&laquo;</a>').on('click', '.ag-prev', function(e){
+							e.preventDefault();
+							$body.data('backstretch').prev();
+						});
+						$body.append('<a class="ag-next ag-link" href="#">&raquo;</a>').on('click', '.ag-next', function(e){
+							e.preventDefault();
+							$body.data('backstretch').next();
+						});
+					}
+					$body.trigger( 'allground.image', [$body.data('backstretch')] );
+				}
+			}
+			if('videos' == allgroundjs.bgtype) {
+				if ( this.isTouch() ) {
+					if ( typeof $.fn.backstretch !== 'undefined' ) {
+						$.backstretch(allgroundjs.poster);
+						$body.trigger( 'allground.selfHostedVideoImage', [$body.data('backstretch')] );
+					}
+				} else {
+					if ( typeof $.BigVideo !== 'undefined' ) {
+					    var BV = new $.BigVideo( { $node: $(allgroundjs.node) } );
+					    BV.init();
+						var options = {
+							ambient:true,
+							controls: false,
+							useFlashForFirefox: true,
+							doLoop: true
+						};
+						var ua = navigator.userAgent.toLowerCase();
+						if('undefined' != allgroundjs.altVideo && ( ua.indexOf('opera') > -1 || ua.indexOf('opr') > -1 )){
+							$body.addClass('allground-opr');
+							BV.show(allgroundjs.altVideo, options);
+						} else {
+							BV.show(allgroundjs.video, options);
+						}
+						$body.trigger( 'allground.selfHostedVideo', [BV, options] );
+					}
+				}
+			}
+		},
+
+		ready: function(){
+			var $body = $('body');
+			if('youtube' == allgroundjs.bgtype) {
+				if ( this.isTouch() ) {
+					if ( typeof $.fn.backstretch !== 'undefined' ) {
+						$.backstretch(allgroundjs.poster);
+						$body.trigger( 'allground.youTubeVideoImage', [$body.data('backstretch')] );
+					}
+				} else {
+					if ( typeof $.fn.alltube !== 'undefined' ) {
+						var options = {
+								videoId: allgroundjs.video,
+								mute: allgroundjs.mute,
+								videoVolume: allgroundjs.volume,
+								playlist: allgroundjs.playlist,
+								showplay: allgroundjs.showplay,
+								showmute: allgroundjs.showmute,
+								start: allgroundjs.start,
+								repeat: 'norepeat' != allgroundjs.repeat,
+								related: 'related' == allgroundjs.related? 1 : 0
+							},
+							$node = $(allgroundjs.node);
+						$node.append('<div id="tr-yt" />');
+						$('#tr-yt').alltube(options, $node).remove();
+						$body.trigger( 'allground.youTubeVideo' );
+					}
+				}
+			}
+			if('maps' == allgroundjs.bgtype) {
+				if ( typeof $.fn.allmap !== 'undefined' && typeof google !== 'undefined' ) {
+					var options = {
+							mapAddress: allgroundjs.address,
+							mapZoom: allgroundjs.zoom,
+							mapType: allgroundjs.type,
+							mapControls: 'no' == allgroundjs.controls,
+							mapTilt: 'yes' == allgroundjs.tilt
+						},
+						$node = $(allgroundjs.node);
+
+					if ( '' != allgroundjs.style ) {
+						options.mapStyle = JSON && JSON.parse(allgroundjs.style) || $.parseJSON(allgroundjs.style);
+					}
+					if ( '' != allgroundjs.markerImage ) {
+						options.markerImage = allgroundjs.markerImage;
+					}
+
+					$node.append('<div id="allground-map" />');
+					$('#allground-map').allmap(options, $node).remove();
+					$body.trigger( 'allground.googleMaps' );
+				} else {
+					if ( typeof $.fn.backstretch !== 'undefined' ) {
+						$.backstretch(allgroundjs.poster);
+						$body.trigger( 'allground.googleMapsImage', [$body.data('backstretch')] );
+					}
+				}
+			}
+		},
+
+		isTouch: function() {
+			return 'true' == allgroundjs.isMobile;
+		},
+
+		setCookie: function(name,value) {
+			document.cookie = name+"="+value+"; path=/";
+		},
+		readCookie: function(name) {
+			name = name + "=";
+			var ca = document.cookie.split(';');
+			for(var i=0;i < ca.length;i++) {
+				var c = ca[i];
+				while (c.charAt(0)==' ') c = c.substring(1,c.length);
+				if (c.indexOf(name) == 0) return c.substring(name.length,c.length);
+			}
+			return null;
+		}
+	};
+
+	$(window).load(function() {
+		ILC_Allground.load();
+	});
+
+	$(document).ready(function() {
+		ILC_Allground.init();
+		ILC_Allground.ready();
+	});
+
+}(jQuery));

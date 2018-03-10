@@ -1,0 +1,20 @@
+/* Version: 7.6.0 */
+
+var image_pending = 0;
+
+function newCaptcha(type) {
+	if (image_pending) return;
+	image_pending = 1;
+	get_object('ajax_wait').style.display = "";
+    	var url = script + "?ubb=captcha&init=1&t=" + type;
+    	var ajax = new ubbtAJAX(url, updateCaptcha);
+    	ajax.sendData("GET");
+}
+
+function updateCaptcha(responseXML) {
+	id = responseXML;
+	obj = get_object('captcha_image');
+	obj.src = script + "?ubb=captcha&id=" + id;
+	image_pending = 0;
+	get_object('ajax_wait').style.display = "none";
+}

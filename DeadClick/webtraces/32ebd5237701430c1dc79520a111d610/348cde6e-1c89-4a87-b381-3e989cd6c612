@@ -1,0 +1,18 @@
+
+$(document).ready(function()
+{$("#new-email-to-friend").dialog({'modal':true,'resizable':false,'autoOpen':false,'draggable':false,'width':500,'height':320,'stack':false,'overlay':0.8,'title':'Email to friend','closeOnEscape':false,'open':function(ev,ui)
+{$("#email-to-friend-submit").unbind("click");$('#email-to-friend-submit').removeAttr("disabled");$('#email-to-friend-submit').click(function(){$(this).attr("disabled",true);submitEmailToFriend();return false;});}});});function showEmail2FriendDialog()
+{$('#new-email-to-friend').dialog("open");$('#e2f-fname').val('');$('#e2f-femail').val('');return false;}
+function submitEmailToFriend()
+{var error_message='';var focus=false;if($('#e2f-yname').val().length<3)
+{error_message=error_message+' - '+msg.your_name+"\n";if(!focus)focus='#e2f-yname';}
+if(!isEmail($('#e2f-yemail').val()))
+{error_message=error_message+' - '+msg.your_email_address+"\n";if(!focus)focus='#e2f-yemail';}
+if($('#e2f-fname').val().length<3)
+{error_message=error_message+' - '+msg.your_friend_name+"\n";if(!focus)focus='#e2f-fname';}
+if(!isEmail($('#e2f-femail').val()))
+{error_message=error_message+' - '+msg.your_friend_email_address+"\n";if(!focus)focus='#e2f-femail';}
+if(parseInt(error_message.length))
+{alert(msg.to_continue_please_check+'\n'+error_message);if(focus)$(focus).focus();$('#email-to-friend-submit').removeAttr("disabled");return false;}
+var pid=$("input[name='pid']").val();$.post(site_ajax_url+'&p=email2friend',{'pid':pid,'yname':$('#e2f-yname').val(),'yemail':$('#e2f-yemail').val(),'fname':$('#e2f-fname').val(),'femail':$('#e2f-femail').val(),'action':'send'},function()
+{$('#email-to-friend-submit').removeAttr("disabled");$("#new-email-to-friend").dialog("close");});}

@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html>
+<head>
+<script type="text/javascript">
+
+// attach event listener
+if (window.addEventListener) {
+  window.addEventListener("message", onMessage, false);
+} else if (window.attachEvent) {
+  window.attachEvent("onmessage", onMessage);
+}
+
+function onMessage(event) {
+  var msg = null;
+  try { msg = JSON.parse(event.data); } catch(e) {} //do nothing, will be caught by next line
+
+  if (!msg || !msg.method || !msg.callback || !msg.arguments) { return; }
+
+  var result = null;
+  try { result = window.localStorage[msg.method].apply(window.localStorage, msg.arguments); } catch(e) {}
+
+  if (window.localStorage[msg.method]) {
+    event.source.postMessage(JSON.stringify({
+      callback: msg.callback,
+      result: result
+    }), "*");
+  }
+}
+
+// LocalStorage PolyFill (from Mozilla https://developer.mozilla.org/en-US/docs/DOM/Storage)
+if (!window.localStorage) {
+  window.localStorage = {
+    getItem: function (sKey) {
+      if (!sKey || !this.hasOwnProperty(sKey)) { return null; }
+      return unescape(document.cookie.replace(new RegExp("(?:^|.*;\\s*)" + escape(sKey).replace(/[\-\.\+\*]/g, "\\$&") + "\\s*\\=\\s*((?:[^;](?!;))*[^;]?).*"), "$1"));
+    },
+    key: function (nKeyId) {
+      return unescape(document.cookie.replace(/\s*\=(?:.(?!;))*$/, "").split(/\s*\=(?:[^;](?!;))*[^;]?;\s*/)[nKeyId]);
+    },
+    setItem: function (sKey, sValue) {
+      if(!sKey) { return; }
+      document.cookie = escape(sKey) + "=" + escape(sValue) + "; expires=Tue, 19 Jan 2038 03:14:07 GMT; path=/";
+      this.length = document.cookie.match(/\=/g).length;
+    },
+    length: 0,
+    removeItem: function (sKey) {
+      if (!sKey || !this.hasOwnProperty(sKey)) { return; }
+      document.cookie = escape(sKey) + "=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/";
+      this.length--;
+    },
+    hasOwnProperty: function (sKey) {
+      return (new RegExp("(?:^|;\\s*)" + escape(sKey).replace(/[\-\.\+\*]/g, "\\$&") + "\\s*\\=")).test(document.cookie);
+    }
+  };
+  window.localStorage.length = (document.cookie.match(/\=/g) || window.localStorage).length;
+}
+
+// JSON Polyfill (from https://developer.mozilla.org/en-US/docs/JavaScript/Reference/Global_Objects/JSON)
+if (!window.JSON) {
+  window.JSON = {
+    parse: function (sJSON) { return eval("(" + sJSON + ")"); },
+    stringify: function (vContent) {
+      if (vContent instanceof Object) {
+        var sOutput = "";
+        if (vContent.constructor === Array) {
+          for (var nId = 0; nId < vContent.length; sOutput += this.stringify(vContent[nId]) + ",", nId++);
+          return "[" + sOutput.substr(0, sOutput.length - 1) + "]";
+        }
+        if (vContent.toString !== Object.prototype.toString) { return "\"" + vContent.toString().replace(/"/g, "\\$&") + "\""; }
+        for (var sProp in vContent) { sOutput += "\"" + sProp.replace(/"/g, "\\$&") + "\":" + this.stringify(vContent[sProp]) + ","; }
+        return "{" + sOutput.substr(0, sOutput.length - 1) + "}";
+      }
+      return typeof vContent === "string" ? "\"" + vContent.replace(/"/g, "\\$&") + "\"" : String(vContent);
+    }
+  };
+}
+
+//send Loaded event
+parent.postMessage("LOADED", "*");
+</script>
+</head>
+<html>

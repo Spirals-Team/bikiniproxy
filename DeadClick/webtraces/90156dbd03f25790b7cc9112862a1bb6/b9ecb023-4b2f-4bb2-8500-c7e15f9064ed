@@ -1,0 +1,240 @@
+function slide()
+
+{ 	
+
+	var cnt = 1;
+
+	var cnt_2 = 1;
+
+	$.ajax({  
+
+		url: Drupal.settings.basePath + 'themes/catacombes/slider/musee_en.php', 
+
+		cache: false, 
+
+		success:function(result){ 
+
+				
+
+				var text_content_left = '';
+
+				var text_content_right = '';
+
+				var content_all = '';
+
+				var nb_musee = 1;
+
+			
+
+				text_content_left += '<ul id="liens_musees">';
+
+					$(result).find("#musee").each(function(){
+
+						nb_musee += 1;
+
+					});
+
+					
+
+					
+
+					var col_left = Math.floor(nb_musee/2);
+
+					
+
+					
+
+					$(result).find("#musee").each(function(){
+
+						if(cnt <= col_left)
+
+						{
+
+							text_content_left += '<li><a onmouseover="mon_musee('+cnt_2+');" href="http://'+$(this).find("#lien").html()+'" target="_blank" onclick="return trackClick(this, \'/Liens_Externes/'+$(this).find("#gn").html()+'\');">'+$(this).find("#titre").html()+'</a></li>';
+
+						}
+
+						cnt ++;
+
+					});
+
+				text_content_left +='</ul>';
+
+				
+
+				text_content_right += '<ul id="liens_musees">';
+
+					$(result).find("#musee").each(function(){
+
+						if(cnt_2 > col_left && cnt_2 < nb_musee)
+
+						{
+
+							text_content_right += '<li><a onmouseover="mon_musee('+cnt_2+');" href="http://'+$(this).find("#lien").html()+'" target="_blank" onclick="return trackClick(this, \'/Liens_Externes/'+$(this).find("#gn").html()+'\');">'+$(this).find("#titre").html()+'</a></li>';
+
+						}
+
+						cnt_2 ++;
+
+					});
+
+				text_content_right += '</ul>';	
+
+				
+
+				
+
+				
+
+				content_all +='<div id="text_content_left">'+text_content_left+'</div>';
+
+				content_all +='<div id="text_content_right">'+text_content_right+'</div>';				
+
+				
+
+				$("#content_head").css({backgroundColor:'#252525'});
+
+				
+
+				//$("#div_google_map_slide").html('');
+
+				
+
+				$("#text_content").html(content_all);
+
+				
+
+				if($("#etat").html() == '+')
+
+				{
+
+					$("#content_head").slideDown('slow');
+
+					$("#etat").html('-');
+
+				}
+
+				else if($("#etat").html() == '-')
+
+				{	
+
+					//$("#google_map").html('');
+
+					
+
+					$("#content_head").slideUp('slow');
+
+					$("#etat").html('+');
+
+					
+
+				}
+
+		}
+
+	});
+
+}
+
+
+
+function mon_musee(param)
+
+{
+
+	var titre = null;
+
+	var adresse = null;
+
+	var lien = null;
+
+	var image = null;
+
+	var id = null;
+
+	
+
+	$.ajax({ 
+
+		url: Drupal.settings.basePath + 'themes/catacombes/slider/musee_en.php', 
+
+		cache: false,  
+
+		success:function(result){ 
+
+			
+
+			$(result).find('#musee').each(function(){
+
+				if($(this).find('#id').text() == param)
+
+				{
+
+					titre = $(this).find('#titre').text();
+
+					adresse = $(this).find('#adresse').text();
+
+					lien = $(this).find('#lien').text();
+
+					image = $(this).find('#image').text();
+
+					id = $(this).find('#id').text();
+
+				}
+
+			});	
+
+			
+
+			//$("#map_google").css({display:'none'});
+
+			
+
+			$("#content_musee").html('<div id="image_musee"></div><div id="titre_musee"></div><div id="adresse_musee"></div><div id="lien_musee"></div>');
+
+			$("#image_musee").html('<img src="'+Drupal.settings.basePath+image+'" align="left">');
+
+			$("#titre_musee").html(titre);
+
+			$("#adresse_musee").html(adresse);		
+
+			//$("#lien_musee").html(lien);				
+
+			
+
+			//$("#content_musee").fadeIn();
+
+		}
+
+	});	
+
+}
+
+
+
+function ext_div()
+
+{
+
+	$("#content_musee").hide();
+
+	$("#div_google_map_slide").show();
+
+}
+
+
+
+function in_div()
+
+{
+
+	$("#div_google_map_slide").hide();
+
+	$("#content_musee").show();
+
+}
+
+	
+
+
+

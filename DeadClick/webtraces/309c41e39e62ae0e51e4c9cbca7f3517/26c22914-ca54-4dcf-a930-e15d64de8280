@@ -1,0 +1,520 @@
+function detectTouch()
+{
+    var hastouch = false;
+    try {    
+        document.createEvent('TouchEvent'); 
+        hastouch = true;   
+    } catch (e) {    
+        hastouch = false;    
+    }
+    return hastouch;
+}
+
+function win(fileName)
+{
+    myFloater = window.open('', 'myWindow', 'scrollbars=auto, status=no, width=500, height=400')
+    myFloater.location.href = fileName;
+}
+
+// Opens Popup Window via Discount Icon on "pcShowCatDiscIcon.asp"
+function discWin(fileName)
+{
+    myFloater = window.open('', 'myWindow', 'scrollbars=auto, status=no, width=300, height=200')
+    myFloater.location.href = fileName;
+}
+
+// Opens jQueryUI Dialog
+function openDialog(buttons, msg, title, bg) 
+{
+    $pc("#pcDialogMessage").html(msg);
+    $pc("#pcDialogTitle").html(title);
+    $pc("#pcDialogButtons").html(buttons);
+    $pc('#GlobalMsgDialog').appendTo("body").modal({ show: true, backdrop: bg });
+}
+
+// Opens Bootstrap Remote Page in Modal
+function openbrowser(url) {
+    $pc('#QuickViewDialog').appendTo("body").modal({
+        show: true,
+        remote: url
+    });
+}
+
+// Additional views in viewPrdCode.asp
+function setMainImg(img, largeImg, alt)
+{
+
+	if (largeImg !== undefined) {
+		$pc("#mainimg").attr('src', img);
+        if (pcv_strUseEnhancedViews) {
+			$pc("#mainimg").attr("href", largeImg);
+			$pc("#mainimg").parent().attr("href", largeImg);
+			$pc("#mainimg").attr("alt", alt);
+		} else {
+			$pc("#mainimg").parent().attr("href", largeImg);
+			$pc("#zoombutton").attr("href", largeImg);
+			$pc("#mainimg").attr("alt", alt);
+		}
+
+		if (pcv_strIsMojoZoomEnabled) {
+			mainImgMakeZoomable(largeImg);
+		}
+	} else {
+        $pc("#mainimg").attr('src', img);
+		mainImgMakeZoomable(img);
+	}
+}
+
+function mainImgMakeZoomable(setLink)
+{
+	var tmpimg = new Image();
+	
+	tmpimg.src=document.getElementById("mainimg").src;
+
+	tmpimg.onload = function(){
+		
+	var defaultWidth = 256;
+	var defaultHeight = 256;
+	
+	var imageWidth = $pc("#mainimg").outerWidth();
+	var imageHeight = $pc("#mainimg").outerHeight();
+	
+	zoomWidth = defaultWidth;
+	zoomHeight = defaultHeight;
+	
+	if (imageWidth < defaultWidth && imageHeight < defaultHeight && imageWidth > 0 && imageHeight > 0) {
+		if (imageWidth < imageHeight) {
+			zoomWidth = imageWidth;
+			zoomHeight = imageWidth;
+		} else {
+			zoomWidth = imageHeight;
+			zoomHeight = imageHeight;
+		}
+	}
+
+	$pc(".mojozoom_imgctr").remove();
+
+	MojoZoom.makeZoomable(document.getElementById("mainimg"), setLink, '', zoomWidth, zoomHeight, false, pcv_strMojoZoomOrientation);
+	
+	}
+}
+
+function mainImgClick(item)
+{
+	if (pcv_strIsMojoZoomEnabled) {
+		$pc(".mojozoom_marker").parent().css('display', 'none');
+		$pc(".mojozoom_imgctr").css('visibility', 'hidden');
+	}
+
+	if (pcv_strUseEnhancedViews) {
+		var imageURL = ($pc("#mainimg").attr("href"));
+	    if (imageURL) {
+			hs.expand(null, { src: imageURL }); 
+	      } else {
+			if (pcv_hasAdditionalImages) {
+				$pc("#" + CurrentImg).click();
+			} else
+			{
+                if (item) {
+				    hs.expand(item);
+                } else {
+                    if (!imageURL) var imageURL = ($pc("#mainimg").attr("src"));
+                    hs.expand(null, { src: imageURL });
+                }
+			}
+		}
+	} else {
+		enlrge($pc(item).attr("href"));
+	}
+
+	return false;
+}
+
+// START: Save Cart
+var SavedCartName = $pc("#SavedCartName"); 
+var allFields = $pc([]).add(SavedCartName);
+var tips = $pc(".validateTips");
+        
+function saveCart()
+{
+    updateTips('', '');    
+    var bValid = true;
+    bValid = bValid && checkLength(SavedCartName, SaveCart_3, 3, 100);
+    bValid = bValid && checkRegexp(SavedCartName, /^[a-z]([0-9a-z_ ])+$/i, SaveCart_4);
+    if (bValid) {
+    
+        $pc.ajax({
+            type: "GET",
+            url: "viewcart.asp?SaveCart=1&SavedCartName=" + SavedCartName.val(),
+            data: "{}",
+            timeout: 45000,
+            success: function (data, textStatus) {
+                updateTips(SaveCart_5, 'pcSuccessMessage');   
+                setTimeout(function () { $pc("#pcSavedCartModal").modal("hide") }, 2000);
+            }
+        });
+    }   
+}
+function checkLength(o, n, min, max) {
+    if (o.val().length > max || o.val().length < min) {
+        updateTips("Length of " + n + " must be between " + min + " and " + max + ".", "pcErrorMessage");
+        return false;
+    } else {
+        return true;
+    }
+}
+function checkRegexp(o, regexp, n) {
+    if (!(regexp.test(o.val()))) {
+        o.addClass("ui-state-error");
+        updateTips(n);
+        return false;
+    } else {
+        return true;
+    }
+}
+function updateTips(t, c) {
+    tips.removeClass('pcErrorMessage')
+    tips.removeClass('pcSuccessMessage')
+    tips.text(t).addClass(c);
+}
+$pc('#save-cart').click(function () {
+    updateTips('', '');
+    SavedCartName.val('');
+    $pc('#pcSavedCartModal').appendTo("body").modal({ show: true });      
+});
+// END: Save Cart
+
+
+// Create an AJAX object
+var pcAJAXConn = new XHConn();
+if (!pcAJAXConn) alert("XMLHTTP is not available with this browser. Please consider upgrading.");
+
+
+// START: AJAX Request to "xml_srcImgs.asp" via "srcImgs.asp" via "imageDir.asp"
+var srcImgsComplete = function (oXML) {
+    var xmldoc = oXML.responseXML;
+    var root_node = xmldoc.getElementsByTagName('data0').item(0);
+    var tmpcount=parseInt(root_node.firstChild.data);
+    var tmpdata="";
+    if (tmpcount>0)
+    {
+        for (i=1;i<=tmpcount;i++)
+        {
+            var root_node = xmldoc.getElementsByTagName('data'+i).item(0);
+            tmpdata=tmpdata+root_node.firstChild.data;
+        }
+        document.getElementById("resultarea").innerHTML=tmpdata;
+    }
+    
+    document.getElementById("runmsg").innerHTML="";
+    document.body.style.cursor='';
+    if (iPageCount>1) {
+        document.getElementById("currentpage").innerHTML=document.ajaxSearch.iPageCurrent.value;
+    }
+};
+function srcImgs()
+{
+    document.getElementById("runmsg").innerHTML = ShowSearch_2;
+    document.body.style.cursor='progress';
+    pcAJAXConn.connect("xml_srcImgs.asp", "POST", GetAllValues(document.ajaxSearch), srcImgsComplete);
+}
+// END: AJAX Request to "xml_srcImgs.asp" via "srcImgs.asp" via "imageDir.asp"
+
+
+
+// START: AJAX Request to "xml_srcPrdsCount.asp" via "search.asp"
+var srcPrdsCountComplete = function (oXML) 
+{
+    var xmldoc = oXML.responseXML;
+    var root_node = xmldoc.getElementsByTagName('count').item(0);
+    document.getElementById("totalresults").innerHTML = ShowSearch_3 + root_node.firstChild.data + ShowSearch_4;
+    document.body.style.cursor='';
+};
+function srcPrdsCount()
+{
+    document.getElementById("totalresults").innerHTML = ShowSearch_2; 
+    document.body.style.cursor='progress';
+    pcAJAXConn.connect("xml_srcPrdsCount.asp", "POST", GetAllValues(document.ajaxSearch), srcPrdsCountComplete);
+}
+// END: AJAX Request to "xml_srcPrdsCount.asp" via "search.asp"      
+
+
+
+// START: AJAX Request to "xml_srcImgsCount.asp" via "inc_srcImgs.asp" via "imageDir.asp"
+var srcImgsCountComplete = function (oXML) 
+{
+    var xmldoc = oXML.responseXML;
+    var root_node = xmldoc.getElementsByTagName('count').item(0);
+    document.getElementById("totalresults").innerHTML = ShowSearch_3 + root_node.firstChild.data + ShowSearch_4;
+    document.body.style.cursor='';
+};
+function srcImgsCount()
+{
+    document.getElementById("totalresults").innerHTML = ShowSearch_2;
+    document.body.style.cursor='progress';
+    pcAJAXConn.connect("xml_srcImgsCount.asp", "POST", GetAllValues(document.ajaxSearch), srcImgsCountComplete);
+}
+// END: AJAX Request to "xml_srcImgsCount.asp" via "inc_srcImgs.asp" via "imageDir.asp"
+
+
+
+// START: Collect form values
+function GetAllValues(theForm){
+
+    var ValueStr="";
+
+	var els = theForm.elements; 
+
+	for(i=0; i<els.length; i++){ 
+
+		switch(els[i].type){
+
+			case "select-one" :
+			
+				if (ValueStr!="") ValueStr=ValueStr + "&";
+				ValueStr=ValueStr + els[i].name + "=" + URLEncode(els[i].value);
+				break;
+
+			case "text":
+
+				if (ValueStr!="") ValueStr=ValueStr + "&";
+				ValueStr=ValueStr + els[i].name + "=" + URLEncode(els[i].value);	
+				break;
+
+			case "textarea":
+
+				if (ValueStr!="") ValueStr=ValueStr + "&";
+				ValueStr=ValueStr + els[i].name + "=" + URLEncode(els[i].value);	
+				break;
+				
+			case "hidden":
+				if (ValueStr!="") ValueStr=ValueStr + "&";
+				ValueStr=ValueStr + els[i].name + "=" + URLEncode(els[i].value);	
+				break;
+
+			case "checkbox":
+
+				if (els[i].checked == true)
+				{
+				if (ValueStr!="") ValueStr=ValueStr + "&";
+				ValueStr=ValueStr + els[i].name + "=" + URLEncode(els[i].value);	
+				}
+				break;
+				
+
+			case "radio":
+
+				if (els[i].checked == true)
+				{
+				if (ValueStr!="") ValueStr=ValueStr + "&";
+				ValueStr=ValueStr + els[i].name + "=" + URLEncode(els[i].value);	
+				}
+				break;
+
+		}
+
+	}
+	return(ValueStr);
+
+}
+// END: Collect form values
+
+
+
+// START: Opens Quick View Modal via "inc_QuickViewFooter.asp"
+function CallQuickView(tmpIdPrd)
+{
+	$pc('#QuickViewDialog').appendTo("body").modal({ show: true, remote: 'quickview.asp?idproduct=' + tmpIdPrd }); 
+}
+function ClearViewedPrdList()
+{
+	$pc('#pcRecentProducts').hide();
+	$pc('#clearViewedPrdListCookie').load("clearViewedPrdsList.asp?action=clear");
+}
+
+
+// Close highslide on Bootstrap modal close
+$pc('body').on('hide.bs.modal', '.modal', function () {
+	try 
+	{
+		hs.close();
+	}
+	catch (err) 
+	{
+		//ignore error since highslide wasn't available
+	}
+});
+
+$pc('body').on('hidden.bs.modal', '.modal', function () {
+	$pc(this).removeData('bs.modal');
+});
+
+// END: Opens Quick View Modal via "inc_QuickViewFooter.asp"
+
+			function getURLParam(strParamName){
+				var strReturn = "";
+				var strHref = window.location.href;
+				if ( strHref.indexOf("?") > -1 ){
+					var strQueryString = strHref.substr(strHref.indexOf("?")).toLowerCase();
+					var aQueryString = strQueryString.split("&");
+					for ( var iParam = 0; iParam < aQueryString.length; iParam++ ){
+						if ( 
+							aQueryString[iParam].indexOf(strParamName.toLowerCase() + "=") > -1 ){
+							var aParam = aQueryString[iParam].split("=");
+							strReturn = aParam[1];
+							break;
+						}
+					}
+				}
+				return unescape(strReturn);
+			} 
+
+// ====================================================================
+// URLEncode Functions
+// Copyright Albion Research Ltd. 2002
+// http://www.albionresearch.com/
+// ====================================================================
+function URLEncode(eStr)
+{
+// The Javascript escape and unescape functions do not correspond
+// with what browsers actually do...
+var SAFECHARS = "0123456789" +					// Numeric
+                "ABCDEFGHIJKLMNOPQRSTUVWXYZ" +	// Alphabetic
+                "abcdefghijklmnopqrstuvwxyz" +
+                "-_.!~*'()";					// RFC2396 Mark characters
+var HEX = "0123456789ABCDEF";
+
+var plaintext = eStr;
+var encoded = "";
+for (var i = 0; i < plaintext.length; i++ ) {
+    var ch = plaintext.charAt(i);
+        if (ch == " ") {
+            encoded += "+";				// x-www-urlencoded, rather than %20
+    } else if (SAFECHARS.indexOf(ch) != -1) {
+            encoded += ch;
+    } else {
+            var charCode = ch.charCodeAt(0);
+        if (charCode > 255) {
+                alert( "Unicode Character '" 
+                                            + ch 
+                                            + "' cannot be encoded using standard URL encoding.\n" +
+                                "(URL encoding only supports 8-bit characters.)\n" +
+                        "A space (+) will be substituted." );
+            encoded += "+";
+        } else {
+            encoded += "%";
+            encoded += HEX.charAt((charCode >> 4) & 0xF);
+            encoded += HEX.charAt(charCode & 0xF);
+        }
+    }
+} // for
+
+    return encoded;
+};
+
+$pc(document).ready(function () {
+
+	var dateFormat = "mm/dd/yyyy";
+
+	// Convert to a format that works with Bootstrap Datepicker
+	if (typeof (scDateFrmt) !== 'undefined') {
+		if (scDateFrmt == "DD/MM/YY") {
+			dateFormat = "dd/mm/yyyy";
+		}
+	}
+
+	// Hide datepicker when changing the date
+	$pc(".datepicker").datepicker({
+		format: dateFormat
+	}).on('changeDate', function () {
+		$pc(this).datepicker('hide');
+	});
+	
+	// Highslide must always display above Bootstrap modal
+	try { hs.zIndexCounter = 2050; } catch (err) { /* Ignore errors */ } 
+    
+    // Attach QuickView Trigger Event
+    if (!detectTouch()) {
+        $pc(".pcShowProductImageH, .pcShowProductImageP").hover(function() {
+            $pc('.pcQuickViewTrigger',this).show();
+        },function() {
+            $pc('.pcQuickViewTrigger',this).hide();
+        });  
+    }
+    // Smooth and Scroll OPC collapse
+    $pc("#acc1").on('shown.bs.collapse', function() {
+        var currentPanel = $pc(".panel-collapse.in").attr('id');
+        scrollHere('#' + currentPanel);
+    });     
+    function scrollHere(destination) {
+        var breakpoint = $pc(destination).offset().top - 80;
+        $pc('body, html').animate({scrollTop: breakpoint}, 500);
+    }
+    // Check we are still on Facebook
+    if (facebookActive) {
+        if (window.location == top.window.location) {
+            window.location = 'facebookLO.asp'; // clear facebook session
+        }   
+    }
+});
+/** XHConn - Simple XMLHTTP Interface - bfults@gmail.com - 2005-04-08        **
+ ** Code licensed under Creative Commons Attribution-ShareAlike License      **
+ ** http://creativecommons.org/licenses/by-sa/2.0/                           **/
+function XHConn()
+{
+  var xmlhttp, bComplete = false;
+  try { xmlhttp = new ActiveXObject("Msxml2.XMLHTTP"); }
+  catch (e) { try { xmlhttp = new ActiveXObject("Microsoft.XMLHTTP"); }
+  catch (e) { try { xmlhttp = new XMLHttpRequest(); }
+  catch (e) { xmlhttp = false; }}}
+  if (!xmlhttp) return null;
+  this.connect = function(sURL, sMethod, sVars, fnDone)
+  {
+    if (!xmlhttp) return false;
+    bComplete = false;
+    sMethod = sMethod.toUpperCase();
+
+    try {
+      if (sMethod == "GET")
+      {
+        xmlhttp.open(sMethod, sURL+"?"+sVars, true);
+        sVars = "";
+      }
+      else
+      {
+        xmlhttp.open(sMethod, sURL, true);
+        xmlhttp.setRequestHeader("Method", "POST "+sURL+" HTTP/1.1");
+        xmlhttp.setRequestHeader("Content-Type","application/x-www-form-urlencoded");
+      }
+      xmlhttp.onreadystatechange = function(){
+      if (xmlhttp.readyState == 4 && !bComplete)
+      {
+		  
+		try {
+			if(xmlhttp.status !== undefined && xmlhttp.status != 0) {
+					xmlhttpStatus = xmlhttp.status;
+				} else {
+					xmlhttpStatus = 0;
+				}
+			} catch(e){
+
+			xmlhttpStatus = 0;
+		}
+		  
+	  if (xmlhttpStatus == 200)
+		{
+			bComplete = true;
+			fnDone(xmlhttp);
+		}
+	  else
+	  {
+	    return null;
+	  }
+        }};
+      xmlhttp.send(sVars);
+    }
+    catch(z) { return false; }
+    return true;
+  };
+  return this;
+}

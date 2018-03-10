@@ -1,0 +1,307 @@
+/**
+* 
+* @TODO:
+*
+* documentation 
+*
+*/
+
+
+;(function (window, document, $, bam) {
+
+	var $doc = $(document),
+		CORE = bam.mediawall,	
+		_compName, //populated at init from CORE	
+		_panels, //populated at init from CORE
+		_numPanels, //populated at init from CORE
+		_currentPanel = 1, // current panel index. populated from CORE after every rotation
+		_initialized = false,
+		_counter = 0,
+		_isclick = false; // used to disabled autorotation tracking on rotationEnd if it was the result of a click
+			
+		/*
+		* bind to dataLoaded event
+		*/
+		CORE.one("dataLoaded",function(){
+			_panels = CORE.getConfig("panels");
+			_numPanels = _panels.length;
+			_compName = CORE.getConfig("compname");	
+			// Pass # of panels into prop57 
+			bam.tracking.track({ async:{ mw_panels: CORE.getConfig("numpanels") } });
+		});	
+		
+		/*
+		* bind to rotationEnd event
+		* use one() so that the tracking function doesn't fire until after the first rotation. 
+		* @sneaky
+		* AUTO ROTATION		
+		*/		
+		CORE.one("rotationEnd",function(){		
+			CORE.bind("rotationEnd",function(){				
+				_currentPanel = CORE.getCurrentPanelIndex();				
+				var autorun = CORE.getConfig("autorun"),
+					idx = (_currentPanel >= _numPanels) ? 0 : _currentPanel,
+					contentID = _panels[idx].contentid,
+					trackingObj = {
+						isDynamic: 		true,
+						compName: 		_compName,	
+						compActivity:	"Auto Rotate Panel " + (_currentPanel+1),
+						actionGen: 		false,
+						mwContentId:	contentID	
+					};								
+				if(autorun && !_isclick){
+					_counter++;					
+					// Pass "Third Mediawall Auto Rotation" into prop56 on every 3rd auto-rotation
+					if(_counter>2){						
+						_counter=0;
+						trackingObj.mw_counter = "Third Mediawall Auto Rotation";
+					}						
+					bam.tracking.track({
+						async:trackingObj
+					});											
+				}
+				_isclick = false;		
+			});	
+		});		
+		
+		/*
+		* VIDEO PLAY BUTTON
+		*/				
+		$doc.selector = "#mwContainer div.mw_video_play";  
+		$doc.live("click", function(event) {		
+			bam.tracking.track({
+				async:{
+					isDynamic: 		false,
+					compName: 		_compName,	
+					compActivity:	"Embedded Video Click",
+					actionGen: 		true
+				}
+			});
+		});			
+		
+		/*
+		* CIRCLE NAVIGATION
+		*/
+		$doc.selector = "#mw_nav li.mw_nav_circle, #mw_nav li.mw_nav_circle_on";  
+		$doc.live("click", function(e) {				
+			var idx = $(this).closest("ul").find("li[class^=mw_nav_circle]").index(e.target),
+				contentID = _panels[idx].contentid;
+			++idx;				
+			if(idx!==_currentPanel) _isclick = true;								
+			bam.tracking.track({
+				async:{
+					isDynamic: 		true,
+					compName: 		_compName,	
+					compActivity:	"Circle " + idx + " Click",
+					actionGen: 		true,
+					mwContentId:	contentID						
+				}
+			});		
+		});	
+		
+		/*
+		* PREV BUTTON
+		*/
+		$doc.selector = "#mw_nav li.mw_nav_prev";  
+		$doc.live("click", function(e) {		
+			var previous = (_currentPanel <= 1) ? _numPanels-1 : _currentPanel-2,
+				contentID = _panels[previous].contentid;	
+			_isclick = true;				
+			bam.tracking.track({
+				async:{
+					isDynamic: 		true,
+					compName: 		_compName,	
+					compActivity:	"Previous Click",
+					actionGen: 		true,
+					mwContentId:	contentID						
+				}
+			});		
+		});			
+		
+		/*
+		* NEXT BUTTON
+		*/
+		$doc.selector = "#mw_nav li.mw_nav_next";  
+		$doc.live("click", function(e) {		
+			var next = (_currentPanel >= _numPanels) ? 0 : _currentPanel,
+				contentID = _panels[next].contentid;			
+			_isclick = true;				
+			bam.tracking.track({
+				async:{
+					isDynamic: 		true,
+					compName: 		_compName,	
+					compActivity:	"Next Click",
+					actionGen: 		true,
+					mwContentId:	contentID						
+				}
+			});		
+		});						
+		
+		/*
+		* PHOTO
+		*/
+		$doc.selector = "#media_wall div.mw_photo a";  
+		$doc.live("click", function(e) {			
+			var contentID = _panels[_currentPanel-1].contentid;
+			bam.tracking.track({
+				async:{
+					isDynamic: 		false,
+					compName: 		_compName,	
+					compActivity:	"Panel " + _currentPanel + " - Photo Click",
+					actionGen: 		true,
+					mwContentId:	contentID						
+				}
+			});										
+		});
+		
+		/*
+		* KICKER
+		*/
+		$doc.selector = "#media_wall div.mw_kicker a";  
+		$doc.live("click", function(e) {				
+			var contentID = _panels[_currentPanel-1].contentid;
+			bam.tracking.track({
+				async:{
+					isDynamic: 		false,
+					compName: 		_compName,	
+					compActivity:	"Panel " + _currentPanel + " - Kicker Click",
+					actionGen: 		true,
+					mwContentId:	contentID						
+				}
+			});	
+		});			
+		
+		/*
+		* BLURB
+		*/
+		$doc.selector = "#media_wall div.mw_blurb > a";  		
+		$doc.live("click", function(e) {		
+			var contentID = _panels[_currentPanel-1].contentid;
+			bam.tracking.track({
+				async:{
+					isDynamic: 		false,
+					compName: 		_compName,	
+					compActivity:	"Panel " + _currentPanel + " - Blurb Click",
+					actionGen: 		true,
+					mwContentId:	contentID						
+				}
+			});		
+		});
+		
+		/*
+		* RELATED LINKS
+		*/
+		$doc.selector = "#media_wall div.mw_related_links a";  
+		$doc.live("click", function(e) {		
+			var contentID = _panels[_currentPanel-1].contentid;
+			bam.tracking.track({
+				async:{
+					isDynamic: 		false,
+					compName: 		_compName,	
+					compActivity:	"Panel " + _currentPanel + " - Related Link Click",
+					actionGen: 		true,
+					mwContentId:	contentID						
+				}
+			});		
+		});		
+	
+		/*
+		* PRODUCT BUTTONS
+		*/
+		$doc.selector = "#mwContainer .mw_live_banner a.mw_button";
+		$doc.live("click", function(e) {		
+			var $target = $(e.target).closest(".mw_button"),   // make sure we have the right hook
+				$container = $("#mwContainer"),
+				tracking = $target.text();
+			bam.tracking.track({
+				async:{
+					isDynamic: 		false,
+					compName: 		_compName,	
+					compActivity:	_compName + ": " + tracking + " Click",
+					actionGen: 		true
+				}
+			});		
+		});
+		
+		
+		/*
+		* LINESCORE
+		*/
+		$doc.selector = "#mwContainer .mw_linescore a, #mwContainer .mw_linescore_short a";
+		$doc.live("click", function(e) {		
+			bam.tracking.track({
+				async:{
+					isDynamic: 		false,
+					compName: 		_compName,	
+					compActivity:	_compName + ": Linescore Click",
+					actionGen: 		true
+				}
+			});		
+		});
+
+		
+		/*
+		* SCREEN READER KICKER		
+		*/
+		$doc.selector = "#mwContainer_accessible div.mw_kicker_accessible a";  
+		$doc.live("click", function(e) {			
+			var $target = $(e.target),
+				$parent = $target.closest("div.mw_panels_accessible"),
+				contentID = $parent.attr("content_id"),
+				idx = $("#mwContainer_accessible").find("div.mw_panels_accessible").index($parent);	
+			idx++;			
+			bam.tracking.track({
+				async:{
+					isDynamic: 		false,
+					compName: 		_compName,	
+					compActivity:	"Accessible Panel " + idx + " - Kicker Click",
+					actionGen: 		true,
+					mwContentId:	contentID						
+				}				
+			});			
+		});			
+		
+		/*
+		* SCREEN READER BLURB
+		*/
+		$doc.selector = "#mwContainer_accessible div.mw_blurb_accessible > a";  		
+		$doc.live("click", function(e) {				
+			var $target = $(e.target),
+				$parent = $target.closest("div.mw_panels_accessible"),
+				contentID = $parent.attr("content_id"),
+				idx = $("#mwContainer_accessible").find("div.mw_panels_accessible").index($parent);		
+			idx++;
+			bam.tracking.track({
+				async:{
+					isDynamic: 		false,
+					compName: 		_compName,	
+					compActivity:	"Accessible Panel " + idx + " - Blurb Click",
+					actionGen: 		true,
+					mwContentId:	contentID						
+				}
+			});		
+		});
+				
+		/*
+		* SCREEN READER RELATED LINKS
+		*/
+		$doc.selector = "#mwContainer_accessible div.mw_related_links a";  		
+		$doc.live("click", function(e) {	
+			var $target = $(e.target),
+				$parent = $target.closest("div.mw_panels_accessible"),
+				contentID = $parent.attr("content_id"),
+				idx = $("#mwContainer_accessible").find("div.mw_panels_accessible").index($parent);		
+			idx++;
+			bam.tracking.track({
+				async:{
+					isDynamic: 		false,
+					compName: 		_compName,	
+					compActivity:	"Accessible Panel " + idx + " - Related Link Click",
+					actionGen: 		true,
+					mwContentId:	contentID						
+				}
+			});		
+		});	
+			
+		
+})(this, this.document, this.jQuery, this.bam);

@@ -1,0 +1,23 @@
+var delay = setTimeout(function(){var pixelDataObject = new Object();
+if (window.location.href.indexOf('/lot.') !== -1) {
+	if (window.location.href.indexOf('?') !== -1) {
+		var cb_tmpSegId = window.location.href.split('?')[0];
+	} else {
+		var cb_tmpSegId = window.location.href;
+	}
+	
+	cb_tmpSegId = cb_tmpSegId.replace("https://www.sothebys.com/","");
+	cb_tmpSegId = cb_tmpSegId.replace("http://www.sothebys.com/","");
+	cb_tmpSegId = cb_tmpSegId.replace(".html","");
+	//console.log(cb_tmpSegId);
+	pixelDataObject.segment_ids = cb_tmpSegId
+}
+
+if (typeof ECAT !== 'undefined') {
+	if (typeof ECAT.saleNumber !== 'undefined') {
+		pixelDataObject.super_segment_1 = ECAT.saleNumber.toLowerCase();
+		//console.log(pixelDataObject.super_segment_1);
+	}
+}
+var pd = JSON.stringify(pixelDataObject);loadPx(location.protocol+"//dynamic.cannedbanners.com/pixel/?pixelData="+encodeURIComponent(pd)+"&clientId=15&campaignId=1325",1,1);
+},500);function loadPx(s,w,h) {var px = document.createElement("img");px.src = s;px.width = w;px.height = h;px.style.display = "none";document.body.appendChild(px);}

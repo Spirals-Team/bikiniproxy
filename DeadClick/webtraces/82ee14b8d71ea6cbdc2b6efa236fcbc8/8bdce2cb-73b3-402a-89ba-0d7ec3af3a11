@@ -1,0 +1,89 @@
+/* from mlb.com/scripts/cookie.js */
+
+//test if browser enables cookies
+function TestCookie(errmsg){
+  SetCookie("testcookie", "test");
+  var the_cookie = GetCookie("testcookie");
+  //alert("testcookie: " + the_cookie);
+  if(the_cookie == null || the_cookie == "null") {
+    alert(errmsg);
+  }
+  DeleteCookie("testcookie");
+  return false;
+} 
+// function to set cookies. parameters in addition to name and value are optional, of course.
+function SetCookie (name, value, daysexpire, path, domain, secure) {
+	if (daysexpire){
+		expire = new Date();
+		expire.setTime(expire.getTime() + daysexpire*24*60*60*1000);
+	}
+	document.cookie = name + "=" + urlEncode(value) +
+		((daysexpire) ? "; expires=" + expire.toGMTString() : "") +
+		((path) ? "; path=" + path : "") +
+		((domain) ? "; domain=" + domain : "") +
+		((secure) ? "; secure" : "");
+}
+// function to set cookies so that it expire on a certain date (not number of days.
+//expire is a date object here.
+function SetDateCookie (name, value, dateexpire, path, domain, secure) {
+	document.cookie = name + "=" + urlEncode(value) +
+        ((dateexpire) ? "; expires=" + dateexpire.toGMTString() : "") +
+        ((path) ? "; path=" + path : "") +
+        ((domain) ? "; domain=" + domain : "") +
+        ((secure) ? "; secure" : "");
+}
+
+// function to set session cookies. parameters optional. cookie expires after session ends.
+function SetSessionCookie (name, value, path, domain, secure) {
+	document.cookie = name + "=" + urlEncode(value) + 
+        ((path) ? "; path=" + path : "") +
+        ((domain) ? "; domain=" + domain : "") +
+        ((secure) ? "; secure" : "");
+}
+
+//  Function to correct for 2.x Mac date bug.  Call this function to
+//  fix a date object prior to passing it to SetCookie.
+//  IMPORTANT:  This function should only be called *once* for
+//  any given date object!  See example at the end of this document.
+function FixCookieDate (date) {
+  var base = new Date(0);
+  var skew = base.getTime(); // dawn of (Unix) time - should be 0
+  if (skew > 0)  // Except on the Mac - ahead of its time
+    date.setTime (date.getTime() - skew);
+}
+
+//  Function to delete a cookie. (Sets expiration date to start of epoch)
+// if you specify path and domain when you set cookie, you must specify them to delete
+function DeleteCookie (name,path,domain) {
+	if (GetCookie(name)) {
+		document.cookie = name + "=" +
+			((path) ? "; path=" + path : "") +
+			((domain) ? "; domain=" + domain : "") +
+			"; expires=Thu, 01-Jan-70 00:00:01 GMT";
+	}
+}
+
+// "Internal" function to return the decoded value of a cookie
+function GetCookieVal (offset) {
+	var endstr = document.cookie.indexOf (";", offset);
+	if (endstr == -1) endstr = document.cookie.length;
+	var val=document.cookie.substring(offset, endstr);
+	return urlDecode(val);
+}
+
+
+//  Function to return the value of the cookie specified by "name" or null otherwise.
+function GetCookie (name) {
+	var arg = name + "=";
+	var alen = arg.length;
+	var clen = document.cookie.length;
+	var i = 0;
+	while (i < clen) {
+		var j = i + alen;
+		if (document.cookie.substring(i, j) == arg) { return GetCookieVal (j); }
+		i = document.cookie.indexOf(" ", i) + 1;
+		if (i == 0) break; 
+	}
+	return null;
+}
+

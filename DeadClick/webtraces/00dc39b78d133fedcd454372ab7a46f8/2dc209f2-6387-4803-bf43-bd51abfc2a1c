@@ -1,0 +1,56 @@
+(function ($){
+
+	$(function(){
+	
+		var Mylog = {
+			
+			toConsole :	 function ( text , groupname , collapsed ){
+			
+				if (typeof text			=== 'undefined' )  text = '';
+				if (typeof groupname	=== 'undefined' )  groupname = false;
+				if (typeof collapsed	=== 'undefined' )  collapsed = true;
+			
+				if ( groupname != undefined ){
+					this.openGroup( groupname , collapsed );
+				}
+				window.console.log( text );
+			},
+
+			openGroup : function ( groupname , collapsed  ){
+
+				if (typeof groupname	=== 'undefined' )  groupname = false;
+				if (typeof collapsed	=== 'undefined' )  collapsed = true;
+/*			
+				if ( groupname != false ){
+					this.closeGroup();
+				}
+				*/
+				if ( groupname != false ){
+					window.console.group ( groupname );
+				}
+			},
+
+			closeGroup: function (){
+				window.console.groupEnd();
+			}
+		};
+		window.MyLog = Mylog;
+	});
+})(jQuery.noConflict());
+/*
+setTimeout( 
+	function (){
+		MyLog.toConsole( 'level0'  );
+		MyLog.toConsole( 'example', 'testCall', true );
+		MyLog.toConsole( 'level1'  );
+		MyLog.toConsole( 'exampleSubgroup', 'Subgroup', true );
+		MyLog.toConsole( 'level2'  );
+		MyLog.toConsole( 'exampleSubgroup', 'Subgroup2', true );
+		MyLog.toConsole( 'level3'  );
+		MyLog.closeGroup();
+		MyLog.closeGroup();
+		MyLog.closeGroup();
+	},
+	1500
+	);
+*/

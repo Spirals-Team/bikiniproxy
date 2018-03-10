@@ -1,0 +1,119 @@
+/*globals jQuery, ChromerApp, window */
+
+(function ($) {
+    'use strict';
+
+    var defaults = {
+            locale: {
+                territory: "us",
+                language: "en"
+            }
+        },
+
+        buildContentForDropdown = function () {
+            var $dropdown = this,
+                className = "oneColDD";
+
+            if ($dropdown.data().content.primary !== false && $dropdown.data().content.secondary !== false) {
+                className = "twoColDD";
+            }
+
+            if ($dropdown.data().content.tertiary !== false) {
+                $dropdown.data().content.tertiary.addClass("promoColDD").prependTo($dropdown);
+            }
+
+            if ($dropdown.data().content.secondary !== false) {
+                $dropdown.data().content.secondary.addClass(className).prependTo($dropdown);
+            }
+
+            if ($dropdown.data().content.primary !== false) {
+                $dropdown.data().content.primary.addClass(className).prependTo($dropdown);
+            }
+        },
+
+        determineNextSteps = function () {
+            var $dropdown = this,
+                blocks = ["primary", "secondary", "tertiary"],
+                buildContent = true,
+                destroyBlock = true,
+                prop = null;
+
+            $(blocks).each(function () {
+                var block = this;
+
+                if (!$dropdown.data().content.hasOwnProperty(block)) {
+                    buildContent = false;
+                    return false;
+                }
+            });
+
+            if (buildContent) {
+                for (prop in $dropdown.data().content) {
+                    if ($dropdown.data().content.hasOwnProperty(prop)) {
+                        if ($dropdown.data().content[prop] !== false) {
+                            destroyBlock = false;
+                        }
+                    }
+                }
+
+                if (destroyBlock) {
+                    $dropdown.remove();
+                    return;
+                }
+
+                buildContentForDropdown.call($dropdown);
+            }
+        },
+
+        processContentBlock = function (block, name) {
+            var $dropdown = this,
+                language = $dropdown.data().settings.locale.language,
+                territory = $dropdown.data().settings.locale.territory,
+                url = "//" + window.location.hostname + "/cmsinternal/" + territory.toLowerCase() + "/" + language.toLowerCase() + "/promo/static/chrome/dropdown/" + name + "/" + block + "/";
+
+            $.ajax({
+                url: url,
+                success: function (data) {
+                    $dropdown.data().content[block] = $("<div>").html(data);
+                    determineNextSteps.call($dropdown, block);
+                },
+                error: function () {
+                    $dropdown.data().content[block] = false;
+                    determineNextSteps.call($dropdown, block);
+                }
+            });
+        },
+
+        runAjaxRequests = function () {
+            var $dropdown = this,
+                name = this.attr("id").replace("LnkDD", "");
+
+            processContentBlock.call($dropdown, "primary", name);
+            processContentBlock.call($dropdown, "secondary", name);
+            processContentBlock.call($dropdown, "tertiary", name);
+        },
+
+        methods = {
+            init: function (options) {
+                var $dropdown = $(this),
+                    settings = $.extend({}, defaults, options);
+
+                $dropdown.data({settings: settings, content: {}});
+
+                runAjaxRequests.call($dropdown);
+            }
+        };
+
+    $.fn.navcontent = function (method) {
+        if (methods[method]) {
+            return methods[method].apply(this, Array.prototype.slice.call(arguments, 1));
+        }
+
+        if (typeof method === 'object' || !method) {
+            return methods.init.apply(this, arguments);
+        }
+
+        $.error('Method ' + method + ' does not exist on JQuery.navcontent');
+        return this;
+    };
+}(jQuery));

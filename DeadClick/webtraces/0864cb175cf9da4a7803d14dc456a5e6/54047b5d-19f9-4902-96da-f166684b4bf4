@@ -1,0 +1,1434 @@
+/******/ (function(modules) { // webpackBootstrap
+/******/ 	// The module cache
+/******/ 	var installedModules = {};
+/******/
+/******/ 	// The require function
+/******/ 	function __webpack_require__(moduleId) {
+/******/
+/******/ 		// Check if module is in cache
+/******/ 		if(installedModules[moduleId]) {
+/******/ 			return installedModules[moduleId].exports;
+/******/ 		}
+/******/ 		// Create a new module (and put it into the cache)
+/******/ 		var module = installedModules[moduleId] = {
+/******/ 			i: moduleId,
+/******/ 			l: false,
+/******/ 			exports: {}
+/******/ 		};
+/******/
+/******/ 		// Execute the module function
+/******/ 		modules[moduleId].call(module.exports, module, module.exports, __webpack_require__);
+/******/
+/******/ 		// Flag the module as loaded
+/******/ 		module.l = true;
+/******/
+/******/ 		// Return the exports of the module
+/******/ 		return module.exports;
+/******/ 	}
+/******/
+/******/
+/******/ 	// expose the modules object (__webpack_modules__)
+/******/ 	__webpack_require__.m = modules;
+/******/
+/******/ 	// expose the module cache
+/******/ 	__webpack_require__.c = installedModules;
+/******/
+/******/ 	// define getter function for harmony exports
+/******/ 	__webpack_require__.d = function(exports, name, getter) {
+/******/ 		if(!__webpack_require__.o(exports, name)) {
+/******/ 			Object.defineProperty(exports, name, {
+/******/ 				configurable: false,
+/******/ 				enumerable: true,
+/******/ 				get: getter
+/******/ 			});
+/******/ 		}
+/******/ 	};
+/******/
+/******/ 	// getDefaultExport function for compatibility with non-harmony modules
+/******/ 	__webpack_require__.n = function(module) {
+/******/ 		var getter = module && module.__esModule ?
+/******/ 			function getDefault() { return module['default']; } :
+/******/ 			function getModuleExports() { return module; };
+/******/ 		__webpack_require__.d(getter, 'a', getter);
+/******/ 		return getter;
+/******/ 	};
+/******/
+/******/ 	// Object.prototype.hasOwnProperty.call
+/******/ 	__webpack_require__.o = function(object, property) { return Object.prototype.hasOwnProperty.call(object, property); };
+/******/
+/******/ 	// __webpack_public_path__
+/******/ 	__webpack_require__.p = "/static/";
+/******/
+/******/ 	// Load entry module and return exports
+/******/ 	return __webpack_require__(__webpack_require__.s = "../src/Project/dj/code/common/components/popup/_dfr-popup.lazy.js");
+/******/ })
+/************************************************************************/
+/******/ ({
+
+/***/ "../src/Project/dj/code/common/components/popup/_dfr-popup-content.directive.js":
+/*!**************************************************************************************!*\
+  !*** ../src/Project/dj/code/common/components/popup/_dfr-popup-content.directive.js ***!
+  \**************************************************************************************/
+/*! no static exports found */
+/*! all exports used */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+exports.__esModule = true;
+exports.default = content;
+
+var _dfrPopup = __webpack_require__(/*! ./_dfr-popup.scss */ "../src/Project/dj/code/common/components/popup/_dfr-popup.scss");
+
+var _dfrPopup2 = _interopRequireDefault(_dfrPopup);
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+function content() {
+    'ngInject';
+
+    var Popup = function () {
+        Popup.$inject = ['$transclude', '$compile', '$interpolate', '$scope', '$dfrUtil', '$element', '$attrs', '$document', '$parse', '$rootScope', '$dfrPopup'];
+
+        function Popup($transclude, $compile, $interpolate, $scope, $dfrUtil, $element, $attrs, $document, $parse, $rootScope, $dfrPopup) {
+            'ngInject';
+            // grab injectables
+
+            var _this = this;
+
+            _classCallCheck(this, Popup);
+
+            this.$document = $document;
+            this.$parse = $parse;
+            this.$rootScope = $rootScope;
+            this.$transclude = $transclude, this.$compile = $compile;
+            this.$interpolate = $interpolate;
+            this.$scope = $scope;
+            this.$dfrUtil = $dfrUtil;
+            this.$element = $element;
+            this.$attrs = $attrs;
+            this.$dfrPopup = $dfrPopup;
+
+            this.$scope._id = this.$interpolate(this.$attrs.id)(this.$scope);
+            this.$scope.options = angular.isDefined(this.$attrs.options) ? this.$interpolate(this.$attrs.options)(this.$scope) : {};
+
+            // if we dont' have an ID attribute, no point continuing 
+            if (!this.$scope._id) return;
+            // just check if we're already registed, if we are just abort.
+            this.ID = 'popup-' + this.$scope._id;
+            // never re-register the same popup, just abort if we match this statement
+            if (this.$dfrPopup.isRegistered(this.ID)) {
+                // console.log(`Trying to re register popup with id: ${this.ID}`);
+                return;
+            }
+
+            $dfrUtil.nextTick(function () {
+                // start creating our base data
+                _this.generatePopupContext();
+                // now that we have a base data, use it to form our template
+                _this.setupTemplate();
+                // move the element to the body
+                document.body.appendChild(_this.$element[0]);
+            });
+
+            this.$scope.$on('$destroy', function () {
+                _this.$dfrPopup.deregister(_this.ID);
+                // remove the element as we no longer need it
+                _this.$element.remove();
+            });
+        }
+        /**
+         * @function
+         * @name generatePopupContext
+         * @description - This generates a unique instance bound to the popup so we don't end up with conflicting
+         * scopes/values/methods for an individual popup
+         * @returns {undefined} no return value
+         */
+
+
+        Popup.prototype.generatePopupContext = function generatePopupContext() {
+            var _this2 = this;
+
+            // start defining our options object
+            this.defaults = {
+                invert: false,
+                immediate: false,
+                type: 'modal'
+            };
+            var $options = this.getOptions();
+            var options = angular.extend(this.defaults, $options);
+            // when you don't want the request to happen when the popup is clicked, but rather when the popup
+            // is initiated, then add the attribute load-content-immediately
+            var loadContentImmediately = options.immediate || false;
+            // creating our new context object
+            var popup = {
+                id: this.ID,
+                $attrs: this.$attrs,
+                $scope: this.$scope,
+                data: {
+                    url: this.$attrs.url || '',
+                    id: this.ID,
+                    loadContentImmediately: loadContentImmediately
+                }
+            };
+            // will assign methods to the data object so we can request them at any time,
+            // it will also bind the context of each method to the current instance so data is re-usable for
+            // each scoped popup
+            ['getType', 'getPopupClass', 'isInvert', 'getOptions', 'hasParent', 'getContentWrapperClass', 'isAlternateCloseButton', 'hasBackdrop', 'isTransparent'].forEach(function (fn) {
+                return popup.data[fn] = _this2[fn].bind(angular.extend(_this2, { data: popup.data }));
+            });
+
+            this.popup = popup;
+        };
+        /**
+         * @function
+         * @name setupTemplate
+         * @description - This simply generates our custom template for the popup.
+         * It's completely dymaic except for the data url and if the popup should load immediately.
+         * @returns {undefined} no return value
+         */
+
+
+        Popup.prototype.setupTemplate = function setupTemplate() {
+            // start our popup registration.
+            this.$scope.$dfrPopup = this.$dfrPopup.registerPopup(this.popup, this.$scope, this.$transclude);
+        };
+
+        /**
+         * @function
+         * @name getType
+         * @description - We can have multiple types for a popup, this will return the type back to the template
+         * @returns {string} the 'content wrapper' can also receive a class
+         */
+
+
+        Popup.prototype.getType = function getType() {
+            var type = angular.isDefined(this.$attrs.type) ? this.$attrs.type : this.$attrs.$set('type', 'modal');
+            // when no type specified or found, default to modal.
+            if (!type) type = this.$attrs.type || 'modal';
+            var options = this.getOptions();
+            // if type came through the options object, set it as an attribute as well and update internals
+            if (options.type) {
+                type = options.type;
+            } else {
+                options.type = type;
+            }
+            // update the attribute if neccessary
+            this.$attrs.$set('type', options.type);
+            return options.type;
+        };
+        /**
+         * @function
+         * @name getContentWrapperClass
+         * @description - used to expose values to the template/popup
+         * @returns {string} the 'content wrapper' can also receive a class
+         */
+
+
+        Popup.prototype.getContentWrapperClass = function getContentWrapperClass() {
+            return this.data.getOptions().contentWrapperClass || '';
+        };
+        /**
+         * @function
+         * @name getPopupClass
+         * @description - used to expose values to the template/popup
+         * @returns {string} returns the parent popup class as a string
+         */
+
+
+        Popup.prototype.getPopupClass = function getPopupClass() {
+            return this.data.getOptions().popupClass || '';
+        };
+        /**
+         * @function
+         * @name isInvert
+         * @description - used to expose values to the template/popup
+         * @returns {bool} matching if the invert settings was set
+         */
+
+
+        Popup.prototype.isInvert = function isInvert() {
+            return this.data.getOptions().invert || false;
+        };
+        /**
+         * @function
+         * @name getOptions
+         * @description - used to expose values to the template/popup
+         * @returns {object} returns options attribute value as an object
+         */
+
+
+        Popup.prototype.getOptions = function getOptions() {
+            return angular.isDefined(this.$attrs.options) ? this.$parse(this.$attrs.options)(this.$scope.$parent) : {};
+        };
+        /**
+         * @function
+         * @name hasParent
+         * @description - used to expose values to the template/popup
+         * @returns {bool} matching if the popup does have a parent popup
+         */
+
+
+        Popup.prototype.hasParent = function hasParent() {
+            return angular.element(this.$dfrUtil.getClosest(this.$element.parent(), 'dfr-popup-content')).length > 0;
+        };
+        /**
+         * @function
+         * @name isAlternateCloseButton
+         * @description - used to expose values to the template/popup
+         * @returns {bool} matching if the close button is specified as alternate
+         */
+
+
+        Popup.prototype.isAlternateCloseButton = function isAlternateCloseButton() {
+            return angular.isDefined(this.$attrs.isAltCloseBtn) || this.getOptions().closeButton == 'alternate';
+        };
+
+        /**
+         * @function
+         * @name hasBackdrop
+         * @description - If we're to display the backdrop or not (default == true)
+         * @returns {bool} if show or not
+         */
+
+
+        Popup.prototype.hasBackdrop = function hasBackdrop() {
+            return this.getOptions().hasBackdrop !== false;
+        };
+
+        /**
+         * @function
+         * @name isTransparent
+         * @description - Will remove the background and shadow from the popup content container.
+         * @returns {bool} if is transparent or not, (default == false)
+         */
+
+
+        Popup.prototype.isTransparent = function isTransparent() {
+            return this.getOptions().isTransparent === true;
+        };
+
+        return Popup;
+    }();
+
+    return {
+        restrict: 'EA',
+        replace: false,
+        scope: true,
+        template: function template($element, $attrs) {
+            return '\n            <div id="{{::\'popup-\' + _id }}"\n                ' + (true ? ' ng-if="$dfrPopup.isPopupOpen(_id)" ' : ' ng-show="$dfrPopup.isPopupOpen(_id)" ') + '\n                ng-init="\n                    $dfrPopupInstance = $dfrPopup.$init(\'popup-\' + _id); \n                    $dfrPopupInstance.$$data = $dfrPopupInstance.getData(); \n                    $dfrPopupInstance.$$options = $dfrPopupInstance.getData().getOptions();"\n                class="\n                    ' + _dfrPopup2.default.popup + '\n                    dfr-popup \n                    dfr-popup-in-body \n                    {{ $dfrPopupInstance.$$data.hasParent() ? \'has-parent-popup\' : \'\' }}\n                    {{ $dfrPopupInstance.$$data.isInvert() ? \'inverse\' : \'\' }}\n                    {{ $dfrPopupInstance.$$data.isTransparent() ? \'is-transparent\' : \'\' }}\n                    {{ $dfrPopupInstance.$$data.hasBackdrop() ? \'has-backdrop\' : \'\' }}\n                    {{ $dfrPopupInstance.$$data.getPopupClass() }}\n                    is-{{ $dfrPopupInstance.$$data.getType() }}" \n                role="dialog" \n                aria-hidden="true" \n                ' + ($element.attr('url') ? ' data-url="' + $element.attr('url') + '" ' : '') + '                                    \n                ng-class="{\'is-active\' : $dfrPopup.isPopupOpen(_id)}" \n                ng-click="$dfrPopupInstance.close()">\n                <div class="popup-inner no-outline" ng-click="$dfrPopup.propagate($event)" tabindex="-1">\n                    <div class="popup-content" ng-class="{\'is-active\' : $dfrPopup.isPopupOpen(_id)}">\n                        <span ng-if="$dfrPopupInstance.$$data.isAlternateCloseButton();" class="is-alt-close-btn"></span>\n                        <div \n                            ng-click="$dfrPopupInstance.close();"\n                            aria-label="{{$dfrPopupInstance.$$options.closeText ? $dfrPopupInstance.$$options.closeText : \'Close\'}}"\n                            title="{{$dfrPopupInstance.$$options.closeText ? $dfrPopupInstance.$$options.closeText : \'Close\'}}"\n                            button \n                            theme="fab-mini" \n                            class="close-btn {{ $dfrPopupInstance.$$data.isAlternateCloseButton() ?  \'is-alt-close-btn\' : \'\' }}">\n                            <dfr-svg icon="cross" size="20"></dfr-svg>                            \n                        </div>\n                        <span ng-click="$dfrPopupInstance.close();" class="close-btn-text no-outline {{ $dfrPopupInstance.$$data.isAlternateCloseButton() ?  \'is-alt-close-text\' : \'\' }}" ng-if="$dfrPopupInstance.$$options.closeText" ng-bind="$dfrPopupInstance.$$options.closeText"></span>\n                        <main class="popup-contents-wrapper dfr-scroll-bar dfr-scrollable {{ $dfrPopupInstance.$$data.getContentWrapperClass() }}"></main>\n                    </div>\n                </div>\n            </div>\n        ';
+        },
+
+        transclude: true,
+        controller: Popup
+    };
+}
+
+/***/ }),
+
+/***/ "../src/Project/dj/code/common/components/popup/_dfr-popup-custom-compiler.filter.js":
+/*!*******************************************************************************************!*\
+  !*** ../src/Project/dj/code/common/components/popup/_dfr-popup-custom-compiler.filter.js ***!
+  \*******************************************************************************************/
+/*! no static exports found */
+/*! all exports used */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+exports.__esModule = true;
+exports.default = filter;
+filter.$inject = ['$compile'];
+function filter($compile) {
+    'ngInject';
+
+    return function (value, type) {
+        var newElement = angular.element('<div>').append(value);
+        var popupElement = document.getElementById(type.$dfrPopupInstance.id);
+        $compile(newElement)(type);
+        angular.element(popupElement.querySelector('.popup-contents-wrapper')).append(newElement.contents());
+        return '';
+    };
+}
+
+/***/ }),
+
+/***/ "../src/Project/dj/code/common/components/popup/_dfr-popup-launcher.directive.js":
+/*!***************************************************************************************!*\
+  !*** ../src/Project/dj/code/common/components/popup/_dfr-popup-launcher.directive.js ***!
+  \***************************************************************************************/
+/*! no static exports found */
+/*! all exports used */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+popup.$inject = ['$dfrPopup'];
+module.exports = popup;
+
+function popup($dfrPopup) {
+    'ngInject';
+
+    return {
+        restrict: 'A',
+        replace: false,
+        controllerAs: '$dfrPopupLauncher',
+        controller: ['$scope', '$element', '$attrs', function controller($scope, $element, $attrs) {
+            'ngInject';
+
+            $scope.$dfrPopupLauncher = $dfrPopup.registerHandle($element);
+        }]
+    };
+}
+
+/***/ }),
+
+/***/ "../src/Project/dj/code/common/components/popup/_dfr-popup.factory.js":
+/*!****************************************************************************!*\
+  !*** ../src/Project/dj/code/common/components/popup/_dfr-popup.factory.js ***!
+  \****************************************************************************/
+/*! no static exports found */
+/*! all exports used */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+factory.$inject = ['$dfrUtil', '$document', '$dfrAnimations', '$timeout', '$q', '$window'];
+module.exports = factory;
+
+/* @ngInject */
+function factory($dfrUtil, $document, $dfrAnimations, $timeout, $q, $window) {
+
+    var popups = [];
+
+    var popupQueue = [];
+    var zIndex = 1039;
+    var tempData = {};
+    var validateId = function validateId(id) {
+        return id = !id.startsWith('popup-') ? 'popup-' + id : id;
+    };
+
+    // bind keyup once,
+    // bind keyup event to use later
+    $document.on('keyup', onKeyup);
+
+    return {
+        registerPopup: registerPopup,
+        registerHandle: registerHandle,
+        deregister: deregister,
+        isRegistered: isRegistered,
+        set: set,
+        open: open,
+        close: close,
+        closeAll: closeAll,
+        getInstance: getInstance,
+        getPopupElements: getPopupElements
+    };
+
+    /**
+     * @function
+     * @name getInstance
+     * @description - Returns the current object delegated to the first invokation
+     * of this modal, referenced by and id
+     * @param {[string]} [id] - The ID of the popup
+     * @returns - Returns an object or null it returns the first instance, because you
+     * can't currrenty save more than once instance with the same id.
+     * 
+     */
+
+    function getInstance(id) {
+        var result = popups.filter(function (e) {
+            return e.id === validateId(id);
+        });
+        return result.length ? result[0] : null;
+    }
+
+    /**
+     * @function
+     * @name isRegistered
+     * @description - Checks if the popup is defined yet
+     * @param {[string]} [id] - The ID of the popup
+     * @returns - Returns true if the instance is available.
+     */
+
+    function isRegistered(id) {
+        return getInstance(id) !== null;
+    }
+
+    /**
+        * @function
+        * @name isPopupOpen
+        * @description - Checks if the current popup is open.
+        * @param {[string]} [id] - The ID of the popup
+        * @returns - Will return the current instance, and if the isOpen 
+        * property is set to true.
+        */
+
+    function isPopupOpen(id) {
+        var instance = getInstance(id);
+        return instance !== null && instance.scope['isOpen' + validateId(id)];
+    }
+
+    /**
+     * @function
+     * @name propagate
+     * @description - Used to stop bubble events from backdrop
+     */
+
+    function propagate(event) {
+        event.stopPropagation();
+    }
+
+    /**
+        * @function
+        * @name registerHandle
+        * @description - Used to automatically assign a button to a popup, the popup element should have the registerPopup event
+        * called, and the tigger should call registerHandle.
+        * @param {[$element]} [$element] - The current element that is attempting to launch popup.
+        * @example 
+    	
+          $dfrPopup.registerHandle(element);
+           
+        * @returns - {undefined} - no return value
+        */
+
+    function registerHandle($element) {
+        $element[0].addEventListener('click', getId, false);
+    }
+
+    /** 
+     * @function 
+     * @name onKeyUp
+     * @description - What happens when any key has been pressed on the keyboard. In this case we're
+     * only checking the escape key and closing the popup if we have detected it.
+     */
+
+    function onKeyup($event) {
+        if ($event && $event.keyCode === 27) closeAll($event);
+    }
+
+    /**
+     * @function
+     * @name get
+     * @description - This should return the value of the keyname on the data
+     * object if it's present, else, undefined.
+     * @param {any} id - the id of the popup when registered.
+     * @param {any} keyName - the key name of the value expected to return
+     * @returns {any} - the value expeceted, else undefined
+     */
+    function get(id, keyName) {
+        if (!id || !keyName) return;
+        var instance = getInstance(id);
+        if (!instance || !instance.data || !instance.data[keyName]) return;
+        return instance.data[keyName];
+    }
+
+    /**
+     * @function
+     * @name set
+     * @description - Provides the ability to send data to a popup via the factory by ID
+     * @param {any} id - the id of the popup when registered.
+     * @param {any} keyName - the key name of the value expected to return
+     * @param {any} value - The value you want to store, from the popup you can retreive the values by running $dfrPopupInstance.getData()
+     * @example
+     *      // html
+     *      <button ng-click="$ctrl.doSomething('my-custom-popup')"></div>
+     *      <dfr-popup-content id="my-custom-popup">
+     *          {{ $dfrPopupInstance.getData().something | json }}
+     *      </dfr-popup-content>
+     *      // controller     
+     *      $dfrPopup.set('my-custom-popup', 'something', { voodoo: true });
+     *      $dfrPopup.doSomething = id => {
+     *          $dfrPopup.open(id);
+     *      }
+     * @returns {undefined} -  no value returns
+     */
+
+    function set(id, keyName, value) {
+        if (angular.isUndefined(id) || angular.isUndefined(keyName) || angular.isUndefined(value)) return;
+        id = validateId(id);
+        var instance = getInstance(id);
+        if (instance === null) {
+            tempData[id] = tempData[id] || {};
+            tempData[id].data = tempData[id].data || {};
+            tempData[id].data[keyName] = value;
+        } else {
+            instance.data = instance.data || {};
+            instance.data[keyName] = value;
+        }
+        console.log('setting', id, keyName, value);
+    }
+
+    function getPopupElements(id) {
+        id = validateId(id);
+        var popupWrapper = $document[0].getElementById(id);
+        return {
+            popupWrapper: popupWrapper,
+            popupContent: popupWrapper.querySelector('.popup-contents-wrapper')
+        };
+    }
+
+    /**
+     * @function
+     * @name deregister
+     * @description - Will strip out a popup object from the popups array if it's there, 
+     * this will not remove the actual element from the dom, this is handled from he 'dfr-popup-content' directive.
+     * @param {[string]} [id] The current id of the popup id
+     * @example 
+    		$dfrPopup.deregister('asdfasfd-asdfasf', scope);
+       * @returns - {undefined} no return value
+     */
+
+    function deregister(id) {
+        popups.forEach(function (popup, i) {
+            return validateId(popup.id) == validateId(id) ? popups.splice(i, 1) : angular.noop();
+        });
+    }
+
+    /**
+        * @function
+        * @name registerPopup
+        * @description - Will create an object, stored in this factory for later retreival,
+        * storing inside the factory allows us to never destroy the first instance, and never have to re-create
+        * the same instance again.
+        * @param {[Object]} [opts] - The object should always contain an ID property, and a url if you want the page to re-direct
+        * on iphones (iPhones can't cater for iframes in popups)
+        * @example 
+    	
+    	let scope = $rootScope.$new();
+    	scope.popup = $dfrPopup.registerPopup({
+    		id : 'unique-id',
+    		url : 'http://google.com'
+    	}, scope);
+    
+    
+        * @returns - Will return an object, containing internal methods to expose to the scope of
+        * the template you're registering the modal in.
+        */
+
+    function registerPopup(opts, scope, $transclude) {
+        if (!opts.id) return;
+        var id = validateId(opts.id);
+
+        if (!isRegistered(id)) {
+            var popup = {
+                id: id,
+                data: opts.data,
+                scope: scope,
+                loadContentWhenOpen: opts.loadContentWhenOpen
+            };
+
+            if (angular.isDefined(tempData[id]) && angular.isDefined(tempData[id].data)) {
+                popup.data = angular.extend({}, popup.data, tempData[id].data);
+                delete tempData[id];
+            }
+            popups.push(popup);
+        }
+        if (popupQueue.length) {
+            $dfrUtil.nextTick(function () {
+                popupQueue.forEach(function (queuedPopup) {
+                    open(queuedPopup.id, undefined, queuedPopup);
+                    popupQueue.shift();
+                });
+            });
+        }
+        return {
+            $init: function $init(id) {
+
+                $dfrUtil.nextTick(function () {
+                    var elements = getPopupElements(id);
+                    var $popup = angular.element(elements.popupWrapper);
+                    if ($popup.length) {
+                        $popup.css({
+                            zIndex: zIndex + countOpenPopups()
+                        });
+                    }
+                    $transclude(scope.$$childTail, function (clone, cloneScope) {
+                        angular.element(elements.popupContent).append(clone);
+                    });
+                });
+                return {
+                    id: id,
+                    $close: close,
+                    closeAll: closeAll,
+                    open: open,
+                    getData: function getData() {
+                        return getInstance(this.id).data;
+                    },
+                    close: function close($event, id) {
+                        id = id || this.id;
+                        if (!id) return;
+                        return this.$close($event, id);
+                    }
+                };
+            },
+
+            get: get,
+            closeAll: closeAll,
+            propagate: propagate,
+            isPopupOpen: isPopupOpen
+        };
+    }
+
+    /**
+     * @function
+     * @name open
+     * @description - Will attempt to open the current modal. The trigger element will receive a toggled state class
+     * to style differently if need be.
+     * @param {[string]} [id] The current id of the modal to open
+     * @param {[element]} [trigger] The button or element that 'triggered' the open event.
+     * @returns {promise} - a promise for when the animations will be finished and the popup is definitely open
+     */
+
+    function open(id, trigger, queuedPopupObject) {
+        id = validateId(id);
+        // attempt to retreive the instance.
+        var instance = getInstance(id);
+        var deferred = $q.defer();
+        if (angular.isDefined(queuedPopupObject)) deferred = queuedPopupObject.deferred;
+
+        if (instance === null) {
+            popupQueue.push({
+                id: id,
+                deferred: deferred
+            });
+            return deferred.promise;
+            // throw new Error(`$dfrPopup Opening: Couldn't locate the <dfr-popup-content> element with the id of ${ id }`);
+        }
+        var options = instance.data.getOptions();
+        if (angular.isFunction(options.onPreOpen)) {
+            var shouldContinue = options.onPreOpen(instance);
+            if (angular.isDefined(shouldContinue) && shouldContinue === false) return;
+        }
+
+        instance.trigger = angular.element(trigger);
+        // toggle state on trigger if it's still available.
+        if (instance.trigger.length) instance.trigger.addClass('popup-trigger-is-active');
+
+        // if modal is not open yet, disable scrolling and update the instance variables.
+        if (!instance.scope['isOpen' + id]) {
+            if (instance.data.url && /iPhone/.test(navigator.userAgent)) {
+                $window.location.href = instance.data.url;
+                return;
+            }
+            $dfrUtil.disableScrolling();
+            angular.element($document[0].documentElement).addClass('hide-scroll');
+            instance.scope['isOpen' + id] = true;
+        }
+        $dfrUtil.nextTick(function () {
+            $dfrAnimations.waitTransitionEnd(angular.element($document[0].getElementById(id))).then(function () {
+                if (angular.isFunction(options.onPostOpen)) options.onPostOpen(instance);
+                deferred.resolve();
+            }, deferred.reject);
+        });
+        return deferred.promise;
+    }
+
+    function countOpenPopups() {
+        return angular.element($document[0].querySelectorAll('.dfr-popup-in-body')).length;
+    }
+
+    /**
+     * @function
+     * @name closeAll
+     * @description - Will simply call close() and pass in the correct params
+     * @description - Will simply call close() and pass in the correct params
+     */
+
+    function closeAll(event) {
+        $dfrUtil.nextTick(function () {
+            angular.forEach(popups, function (popup) {
+                if (popup.scope['isOpen' + popup.id]) close(null, popup);
+            });
+        });
+    }
+
+    /**
+     * @function
+     * @name close
+     * @description - Will attempt to close the current modal. The trigger element will receive a toggled state class
+     * to style differently if need be.
+     * @param {[element]} [event] The click event from the button that actioned it.
+     * @param {[string]} [idOrInstance] The current id of the modal to open
+     */
+
+    function close(event, idOrInstance) {
+        // disable any default states on the button click event.
+        if (event && !angular.isString(event)) {
+            event.preventDefault();
+            event.stopImmediatePropagation();
+        }
+
+        // if only first argument is passed, assume it's the id
+        if (angular.isUndefined(idOrInstance) && angular.isString(event)) idOrInstance = event;
+        if (angular.isString(idOrInstance)) idOrInstance = validateId(idOrInstance);
+        // try to retrieve the popup instance.
+        var instance = angular.isString(idOrInstance) ? getInstance(idOrInstance) : idOrInstance;
+        var actualID = angular.isString(idOrInstance) ? idOrInstance : idOrInstance.id;
+
+        var options = instance.data.getOptions() || {};
+        if (angular.isFunction(options.onPreClose)) {
+            var shouldContinue = options.onPreClose(instance);
+            if (angular.isDefined(shouldContinue) && shouldContinue === false) return;
+        }
+        if (instance === null) {
+            throw new Error('$dfrPopup Closing: Couldn\'t locate the <dfr-popup-content> element with the idOrInstance of ' + actualID);
+        }
+
+        // toggle state on trigger if it's still available.
+        if (instance.trigger && instance.trigger.length) instance.trigger.removeClass('popup-trigger-is-active');
+
+        /**
+         * make sure the modal__bg or modal__close was clicked, we don't want to be able to click
+         * inside the modal and have it close.
+         */
+        if (isPopupOpen(actualID)) {
+            $dfrUtil.enableScrolling();
+            var openPopups = countOpenPopups();
+            if (openPopups == 1 || openPopups == 0) angular.element($document[0].documentElement).removeClass('hide-scroll');
+            instance.scope['isOpen' + actualID] = false;
+        }
+
+        var deferred = $q.defer();
+        $dfrUtil.nextTick(function () {
+            $dfrAnimations.waitTransitionEnd(angular.element($document[0].getElementById(actualID))).then(function () {
+                if (angular.isFunction(options.onPostClose)) options.onPostClose(instance);
+                deferred.resolve();
+            }, deferred.reject);
+        });
+        return deferred.promise;
+    }
+
+    /**
+     * @function
+     * @name getId
+     * @description - Simply retreives the ID from the target element that was clicked
+     * and then launches the popup
+     * @param {[element]} [event] The click event from the button that actioned it.
+     * @returns {undefined} no return value
+     */
+
+    function getId(event) {
+        event.preventDefault();
+        var trigger = event.currentTarget;
+        // get the value of the data-modal attribute from the button
+        var id = angular.element(trigger).attr('dfr-popup-launcher') || '';
+        if (!id) {
+            throw new Error('$dfrPopup getId: The \'dfr-popup-launcher\' attribute must have an value to match the \'id\' attribute on the <dfr-popup-content> element');
+        }
+        if (angular.element(trigger).attr('dfr-popup-disabled') === "true") return;
+        $dfrUtil.nextTick(function () {
+            open('popup-' + id, trigger);
+        });
+    }
+}
+
+/***/ }),
+
+/***/ "../src/Project/dj/code/common/components/popup/_dfr-popup.lazy.js":
+/*!*************************************************************************!*\
+  !*** ../src/Project/dj/code/common/components/popup/_dfr-popup.lazy.js ***!
+  \*************************************************************************/
+/*! no static exports found */
+/*! all exports used */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+var _dfrPopupContentDirective = __webpack_require__(/*! ./_dfr-popup-content.directive.js */ "../src/Project/dj/code/common/components/popup/_dfr-popup-content.directive.js");
+
+var _dfrPopupContentDirective2 = _interopRequireDefault(_dfrPopupContentDirective);
+
+var _dfrPopupFactory = __webpack_require__(/*! ./_dfr-popup.factory.js */ "../src/Project/dj/code/common/components/popup/_dfr-popup.factory.js");
+
+var _dfrPopupFactory2 = _interopRequireDefault(_dfrPopupFactory);
+
+var _dfrPopupLauncherDirective = __webpack_require__(/*! ./_dfr-popup-launcher.directive.js */ "../src/Project/dj/code/common/components/popup/_dfr-popup-launcher.directive.js");
+
+var _dfrPopupLauncherDirective2 = _interopRequireDefault(_dfrPopupLauncherDirective);
+
+var _dfrPopupCustomCompilerFilter = __webpack_require__(/*! ./_dfr-popup-custom-compiler.filter.js */ "../src/Project/dj/code/common/components/popup/_dfr-popup-custom-compiler.filter.js");
+
+var _dfrPopupCustomCompilerFilter2 = _interopRequireDefault(_dfrPopupCustomCompilerFilter);
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+angular.module('dfr-popup-module', []).directive('dfrPopupLauncher', _dfrPopupLauncherDirective2.default).factory('$dfrPopup', _dfrPopupFactory2.default).directive('dfrPopupContent', _dfrPopupContentDirective2.default).filter('compiler', _dfrPopupCustomCompilerFilter2.default);
+
+/***/ }),
+
+/***/ "../src/Project/dj/code/common/components/popup/_dfr-popup.scss":
+/*!**********************************************************************!*\
+  !*** ../src/Project/dj/code/common/components/popup/_dfr-popup.scss ***!
+  \**********************************************************************/
+/*! no static exports found */
+/*! all exports used */
+/***/ (function(module, exports, __webpack_require__) {
+
+// style-loader: Adds some css to the DOM by adding a <style> tag
+
+// load the styles
+var content = __webpack_require__(/*! !../../../../../../../architecture/node_modules/css-loader??ref--6-1!../../../../../../../architecture/node_modules/postcss-loader??ref--6-2!../../../../../../../architecture/node_modules/sass-loader??ref--6-3!./_dfr-popup.scss */ "./node_modules/css-loader/index.js?{\"localIdentName\":\"[hash:base64:8]\"}!./node_modules/postcss-loader/index.js?{\"config\":\"C:/projects/dfr/dj/architecture/configuration/postcss.config.js\"}!./node_modules/sass-loader/index.js?{\"sourceComments\":false,\"outputStyle\":\"expanded\",\"includePaths\":[\"C:/projects/dfr/dj/src/Project/dj/code/core/styles\"]}!../src/Project/dj/code/common/components/popup/_dfr-popup.scss");
+if(typeof content === 'string') content = [[module.i, content, '']];
+// Prepare cssTransformation
+var transform;
+
+var options = {}
+options.transform = transform
+// add the styles to the DOM
+var update = __webpack_require__(/*! ../../../../../../../architecture/node_modules/style-loader/addStyles.js */ "./node_modules/style-loader/addStyles.js")(content, options);
+if(content.locals) module.exports = content.locals;
+// Hot Module Replacement
+if(false) {
+	// When the styles change, update the <style> tags
+	if(!content.locals) {
+		module.hot.accept("!!../../../../../../../architecture/node_modules/css-loader/index.js??ref--6-1!../../../../../../../architecture/node_modules/postcss-loader/index.js??ref--6-2!../../../../../../../architecture/node_modules/sass-loader/index.js??ref--6-3!./_dfr-popup.scss", function() {
+			var newContent = require("!!../../../../../../../architecture/node_modules/css-loader/index.js??ref--6-1!../../../../../../../architecture/node_modules/postcss-loader/index.js??ref--6-2!../../../../../../../architecture/node_modules/sass-loader/index.js??ref--6-3!./_dfr-popup.scss");
+			if(typeof newContent === 'string') newContent = [[module.id, newContent, '']];
+			update(newContent);
+		});
+	}
+	// When the module is disposed, remove the <style> tags
+	module.hot.dispose(function() { update(); });
+}
+
+/***/ }),
+
+/***/ "./node_modules/css-loader/index.js?{\"localIdentName\":\"[hash:base64:8]\"}!./node_modules/postcss-loader/index.js?{\"config\":\"C:/projects/dfr/dj/architecture/configuration/postcss.config.js\"}!./node_modules/sass-loader/index.js?{\"sourceComments\":false,\"outputStyle\":\"expanded\",\"includePaths\":[\"C:/projects/dfr/dj/src/Project/dj/code/core/styles\"]}!../src/Project/dj/code/common/components/popup/_dfr-popup.scss":
+/*!******************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************!*\
+  !*** ./node_modules/css-loader?{"localIdentName":"[hash:base64:8]"}!./node_modules/postcss-loader?{"config":"C://projects//dfr//dj//architecture//configuration//postcss.config.js"}!./node_modules/sass-loader?{"sourceComments":false,"outputStyle":"expanded","includePaths":["C://projects//dfr//dj//src//Project//dj//code//core//styles"]}!../src/Project/dj/code/common/components/popup/_dfr-popup.scss ***!
+  \******************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************/
+/*! no static exports found */
+/*! all exports used */
+/***/ (function(module, exports, __webpack_require__) {
+
+exports = module.exports = __webpack_require__(/*! ../../../../../../../architecture/node_modules/css-loader/lib/css-base.js */ "./node_modules/css-loader/lib/css-base.js")(undefined);
+// imports
+
+
+// module
+exports.push([module.i, "html.hide-scroll body {\n  overflow: -moz-scrollbars-none;\n  overflow-y: visible !important;\n}\n\nhtml.hide-scroll body::-webkit-scrollbar {\n  width: 0;\n}\n\n.bp-md .popup-content .close-btn {\n  margin-top: 3.125rem;\n}\n\n.bp-md .popup-content .close-btn-text {\n  margin-top: 2.8125rem;\n}\n\n._1P67g2Cz {\n  will-change: visibility, opacity;\n  display: -webkit-box;\n  display: -ms-flexbox;\n  display: -webkit-flex;\n  -js-display: flex;\n  display: flex;\n  -webkit-box-align: center;\n  -ms-flex-align: center;\n  -webkit-align-items: center;\n          align-items: center;\n  -webkit-box-pack: center;\n  -ms-flex-pack: center;\n  -webkit-justify-content: center;\n          justify-content: center;\n  position: fixed;\n  top: 0;\n  left: 0;\n  right: 0;\n  bottom: 0;\n  z-index: 1039;\n  cursor: pointer;\n}\n\n._1P67g2Cz.has-backdrop {\n  background: rgba(0, 0, 0, 0.7);\n}\n\n._1P67g2Cz.ng-enter {\n  transition: all 0.5s cubic-bezier(0.35, 0, 0.25, 1);\n  opacity: 0;\n}\n\n._1P67g2Cz.ng-enter .popup-inner {\n  -webkit-transform: translateY(-20%);\n          transform: translateY(-20%);\n  -webkit-transform: translate3d(0, -20%, 0);\n          transform: translate3d(0, -20%, 0);\n}\n\n._1P67g2Cz.ng-enter-active {\n  opacity: 1;\n}\n\n._1P67g2Cz.ng-enter-active .popup-inner {\n  -webkit-transform: translateY(0%);\n          transform: translateY(0%);\n  -webkit-transform: translate3d(0, 0%, 0);\n          transform: translate3d(0, 0%, 0);\n}\n\n._1P67g2Cz.ng-leave {\n  transition: all 0.5s cubic-bezier(0.35, 0, 0.25, 1);\n  opacity: 1;\n}\n\n._1P67g2Cz.ng-leave .popup-inner {\n  -webkit-transform: translateY(0%);\n          transform: translateY(0%);\n  -webkit-transform: translate3d(0, 0%, 0);\n          transform: translate3d(0, 0%, 0);\n}\n\n._1P67g2Cz.ng-leave.ng-leave-active {\n  opacity: 0;\n}\n\n._1P67g2Cz.ng-leave.ng-leave-active .popup-inner {\n  -webkit-transform: translateY(-20%);\n          transform: translateY(-20%);\n  -webkit-transform: translate3d(0, -20%, 0);\n          transform: translate3d(0, -20%, 0);\n}\n\n._1P67g2Cz .popup-contents-wrapper {\n  transition: all 5s cubic-bezier(0.35, 0, 0.25, 1);\n  transition-delay: 5s;\n  height: 100%;\n  overflow-y: auto;\n  overflow-x: hidden;\n  padding: 0 2rem;\n}\n\n._1P67g2Cz .popup-contents-wrapper.ng-enter {\n  transition: all 0.5s cubic-bezier(0.35, 0, 0.25, 1);\n  transition-delay: 5s;\n  opacity: 0;\n}\n\n._1P67g2Cz .popup-contents-wrapper.ng-enter-active {\n  opacity: 1;\n}\n\n._1P67g2Cz .popup-contents-wrapper.ng-leave {\n  transition: all 0.5s cubic-bezier(0.35, 0, 0.25, 1);\n  transition-delay: 5s;\n  opacity: 1;\n}\n\n._1P67g2Cz .popup-contents-wrapper.ng-leave.ng-leave-active {\n  opacity: 0;\n}\n\n._1P67g2Cz .popup-inner {\n  cursor: default;\n  max-width: 95%;\n  height: 90vh;\n  width: 79.75rem;\n  padding: 1.2rem;\n  transition: all 0.5s cubic-bezier(0.35, 0, 0.25, 1);\n}\n\n._1P67g2Cz .popup-content {\n  will-change: transform, opacity;\n  position: relative;\n  padding: 0;\n  opacity: 0;\n  transition: all 300ms cubic-bezier(0.23, 1, 0.32, 1);\n  transition-delay: 0.5s;\n  height: 100%;\n}\n\n.bp-sm ._1P67g2Cz .popup-content {\n  padding: 0;\n}\n\n._1P67g2Cz .popup-content.is-active {\n  opacity: 1;\n}\n\n._1P67g2Cz:not(.is-transparent) .popup-content {\n  background: #ffffff;\n  box-shadow: 0 0.75rem 0.9375rem 0 rgba(0, 0, 0, 0.25);\n  background-clip: padding-box;\n}\n\n._1P67g2Cz .close-btn {\n  z-index: 2;\n  cursor: pointer;\n  position: absolute;\n  top: -1.5rem;\n  right: -1.5rem;\n  transition: border-color 0.5s cubic-bezier(0.35, 0, 0.25, 1);\n  background-clip: border-box;\n  background-color: #ffffff;\n  color: #000000;\n  border: 0.125rem solid #b5b5b5;\n  margin: 0.5rem;\n}\n\n._1P67g2Cz .close-btn:hover, ._1P67g2Cz .close-btn:focus {\n  border-color: #333333;\n}\n\n._1P67g2Cz .close-btn-text {\n  cursor: pointer;\n  position: absolute;\n  top: 0.5rem;\n  right: 4rem;\n  line-height: 2.5rem;\n  color: #000000;\n}\n\n._1P67g2Cz .close-btn-text.is-alt-close-text {\n  right: 6.5rem;\n  top: 0;\n  line-height: 5rem;\n}\n\n._1P67g2Cz span.is-alt-close-btn {\n  position: absolute;\n  top: 0;\n  right: 0.3125rem;\n  width: 5rem;\n  height: 5rem;\n  display: block;\n  background-color: #333333;\n  z-index: 2;\n}\n\n.bp-sm ._1P67g2Cz span.is-alt-close-btn {\n  right: 0;\n}\n\n._1P67g2Cz .close-btn.is-alt-close-btn {\n  width: 3.0625rem;\n  height: 3.0625rem;\n  background-color: #1a1a1a;\n  color: #ffffff;\n  top: 0.45rem;\n  right: 0.6rem;\n  border: solid 0.125rem #595959;\n}\n\n._1P67g2Cz.is-modal .close-btn-text {\n  top: -0.0625rem;\n  right: 2.125rem;\n}\n\n._1P67g2Cz.is-fullscreen .popup-inner {\n  width: 100vw;\n  height: 100vh;\n  max-width: 100vw;\n  padding: 0;\n}\n\n._1P67g2Cz.is-fullscreen .popup-inner .popup-contents-wrapper {\n  padding: 0;\n}\n\n._1P67g2Cz.is-fullscreen .popup-inner .popup-contents-wrapper .inner {\n  height: 100%;\n}\n\n._1P67g2Cz.is-fullscreen .popup-inner .close-btn {\n  position: absolute;\n  top: 0;\n}\n\n._1P67g2Cz.is-fullscreen .popup-inner .close-btn.is-alt-close-btn {\n  top: 0.45rem;\n}\n\n.bp-sm ._1P67g2Cz.is-fullscreen .popup-inner .close-btn {\n  right: 0;\n}\n\n._1P67g2Cz.is-dialog .popup-inner {\n  width: 30.75rem;\n  height: auto;\n}\n\n._1P67g2Cz.is-dialog .popup-content {\n  padding-top: 3.5rem;\n  padding-bottom: 3.5rem;\n}\n\n._1P67g2Cz.is-dialog .close-btn {\n  top: 0;\n  right: 0;\n  margin-right: 1rem;\n  margin-top: 1rem;\n}\n\n._1P67g2Cz.is-dialog .close-btn-text {\n  top: 1rem;\n}\n\n._1P67g2Cz.inverse:not(.is-transparent) .popup-content {\n  background: #000000;\n}\n\n._1P67g2Cz.inverse .close-btn {\n  background-color: #000000;\n  color: #d8d8d8;\n  border-color: #b5b5b5;\n}\n\n._1P67g2Cz.inverse .close-btn:hover, ._1P67g2Cz.inverse .close-btn:focus {\n  border-color: #ffffff;\n}\n\n._1P67g2Cz.inverse .close-btn-text {\n  color: #ffffff;\n}\n", ""]);
+
+// exports
+exports.locals = {
+	"popup": "_1P67g2Cz"
+};
+
+/***/ }),
+
+/***/ "./node_modules/css-loader/lib/css-base.js":
+/*!*************************************************!*\
+  !*** ./node_modules/css-loader/lib/css-base.js ***!
+  \*************************************************/
+/*! no static exports found */
+/*! all exports used */
+/***/ (function(module, exports) {
+
+/*
+	MIT License http://www.opensource.org/licenses/mit-license.php
+	Author Tobias Koppers @sokra
+*/
+// css base code, injected by the css-loader
+module.exports = function(useSourceMap) {
+	var list = [];
+
+	// return the list of modules as css string
+	list.toString = function toString() {
+		return this.map(function (item) {
+			var content = cssWithMappingToString(item, useSourceMap);
+			if(item[2]) {
+				return "@media " + item[2] + "{" + content + "}";
+			} else {
+				return content;
+			}
+		}).join("");
+	};
+
+	// import a list of modules into the list
+	list.i = function(modules, mediaQuery) {
+		if(typeof modules === "string")
+			modules = [[null, modules, ""]];
+		var alreadyImportedModules = {};
+		for(var i = 0; i < this.length; i++) {
+			var id = this[i][0];
+			if(typeof id === "number")
+				alreadyImportedModules[id] = true;
+		}
+		for(i = 0; i < modules.length; i++) {
+			var item = modules[i];
+			// skip already imported module
+			// this implementation is not 100% perfect for weird media query combinations
+			//  when a module is imported multiple times with different media queries.
+			//  I hope this will never occur (Hey this way we have smaller bundles)
+			if(typeof item[0] !== "number" || !alreadyImportedModules[item[0]]) {
+				if(mediaQuery && !item[2]) {
+					item[2] = mediaQuery;
+				} else if(mediaQuery) {
+					item[2] = "(" + item[2] + ") and (" + mediaQuery + ")";
+				}
+				list.push(item);
+			}
+		}
+	};
+	return list;
+};
+
+function cssWithMappingToString(item, useSourceMap) {
+	var content = item[1] || '';
+	var cssMapping = item[3];
+	if (!cssMapping) {
+		return content;
+	}
+
+	if (useSourceMap && typeof btoa === 'function') {
+		var sourceMapping = toComment(cssMapping);
+		var sourceURLs = cssMapping.sources.map(function (source) {
+			return '/*# sourceURL=' + cssMapping.sourceRoot + source + ' */'
+		});
+
+		return [content].concat(sourceURLs).concat([sourceMapping]).join('\n');
+	}
+
+	return [content].join('\n');
+}
+
+// Adapted from convert-source-map (MIT)
+function toComment(sourceMap) {
+	// eslint-disable-next-line no-undef
+	var base64 = btoa(unescape(encodeURIComponent(JSON.stringify(sourceMap))));
+	var data = 'sourceMappingURL=data:application/json;charset=utf-8;base64,' + base64;
+
+	return '/*# ' + data + ' */';
+}
+
+
+/***/ }),
+
+/***/ "./node_modules/style-loader/addStyles.js":
+/*!************************************************!*\
+  !*** ./node_modules/style-loader/addStyles.js ***!
+  \************************************************/
+/*! no static exports found */
+/*! all exports used */
+/***/ (function(module, exports, __webpack_require__) {
+
+/*
+	MIT License http://www.opensource.org/licenses/mit-license.php
+	Author Tobias Koppers @sokra
+*/
+var stylesInDom = {},
+	memoize = function(fn) {
+		var memo;
+		return function () {
+			if (typeof memo === "undefined") memo = fn.apply(this, arguments);
+			return memo;
+		};
+	},
+	isOldIE = memoize(function() {
+		// Test for IE <= 9 as proposed by Browserhacks
+		// @see http://browserhacks.com/#hack-e71d8692f65334173fee715c222cb805
+		// Tests for existence of standard globals is to allow style-loader 
+		// to operate correctly into non-standard environments
+		// @see https://github.com/webpack-contrib/style-loader/issues/177
+		return window && document && document.all && !window.atob;
+	}),
+	getElement = (function(fn) {
+		var memo = {};
+		return function(selector) {
+			if (typeof memo[selector] === "undefined") {
+				memo[selector] = fn.call(this, selector);
+			}
+			return memo[selector]
+		};
+	})(function (styleTarget) {
+		return document.querySelector(styleTarget)
+	}),
+	singletonElement = null,
+	singletonCounter = 0,
+	styleElementsInsertedAtTop = [],
+	fixUrls = __webpack_require__(/*! ./fixUrls */ "./node_modules/style-loader/fixUrls.js");
+
+module.exports = function(list, options) {
+	if(false) {
+		if(typeof document !== "object") throw new Error("The style-loader cannot be used in a non-browser environment");
+	}
+
+	options = options || {};
+	options.attrs = typeof options.attrs === "object" ? options.attrs : {};
+
+	// Force single-tag solution on IE6-9, which has a hard limit on the # of <style>
+	// tags it will allow on a page
+	if (typeof options.singleton === "undefined") options.singleton = isOldIE();
+
+	// By default, add <style> tags to the <head> element
+	if (typeof options.insertInto === "undefined") options.insertInto = "head";
+
+	// By default, add <style> tags to the bottom of the target
+	if (typeof options.insertAt === "undefined") options.insertAt = "bottom";
+
+	var styles = listToStyles(list, options);
+	addStylesToDom(styles, options);
+
+	return function update(newList) {
+		var mayRemove = [];
+		for(var i = 0; i < styles.length; i++) {
+			var item = styles[i];
+			var domStyle = stylesInDom[item.id];
+			domStyle.refs--;
+			mayRemove.push(domStyle);
+		}
+		if(newList) {
+			var newStyles = listToStyles(newList, options);
+			addStylesToDom(newStyles, options);
+		}
+		for(var i = 0; i < mayRemove.length; i++) {
+			var domStyle = mayRemove[i];
+			if(domStyle.refs === 0) {
+				for(var j = 0; j < domStyle.parts.length; j++)
+					domStyle.parts[j]();
+				delete stylesInDom[domStyle.id];
+			}
+		}
+	};
+};
+
+function addStylesToDom(styles, options) {
+	for(var i = 0; i < styles.length; i++) {
+		var item = styles[i];
+		var domStyle = stylesInDom[item.id];
+		if(domStyle) {
+			domStyle.refs++;
+			for(var j = 0; j < domStyle.parts.length; j++) {
+				domStyle.parts[j](item.parts[j]);
+			}
+			for(; j < item.parts.length; j++) {
+				domStyle.parts.push(addStyle(item.parts[j], options));
+			}
+		} else {
+			var parts = [];
+			for(var j = 0; j < item.parts.length; j++) {
+				parts.push(addStyle(item.parts[j], options));
+			}
+			stylesInDom[item.id] = {id: item.id, refs: 1, parts: parts};
+		}
+	}
+}
+
+function listToStyles(list, options) {
+	var styles = [];
+	var newStyles = {};
+	for(var i = 0; i < list.length; i++) {
+		var item = list[i];
+		var id = options.base ? item[0] + options.base : item[0];
+		var css = item[1];
+		var media = item[2];
+		var sourceMap = item[3];
+		var part = {css: css, media: media, sourceMap: sourceMap};
+		if(!newStyles[id])
+			styles.push(newStyles[id] = {id: id, parts: [part]});
+		else
+			newStyles[id].parts.push(part);
+	}
+	return styles;
+}
+
+function insertStyleElement(options, styleElement) {
+	var styleTarget = getElement(options.insertInto)
+	if (!styleTarget) {
+		throw new Error("Couldn't find a style target. This probably means that the value for the 'insertInto' parameter is invalid.");
+	}
+	var lastStyleElementInsertedAtTop = styleElementsInsertedAtTop[styleElementsInsertedAtTop.length - 1];
+	if (options.insertAt === "top") {
+		if(!lastStyleElementInsertedAtTop) {
+			styleTarget.insertBefore(styleElement, styleTarget.firstChild);
+		} else if(lastStyleElementInsertedAtTop.nextSibling) {
+			styleTarget.insertBefore(styleElement, lastStyleElementInsertedAtTop.nextSibling);
+		} else {
+			styleTarget.appendChild(styleElement);
+		}
+		styleElementsInsertedAtTop.push(styleElement);
+	} else if (options.insertAt === "bottom") {
+		styleTarget.appendChild(styleElement);
+	} else {
+		throw new Error("Invalid value for parameter 'insertAt'. Must be 'top' or 'bottom'.");
+	}
+}
+
+function removeStyleElement(styleElement) {
+	styleElement.parentNode.removeChild(styleElement);
+	var idx = styleElementsInsertedAtTop.indexOf(styleElement);
+	if(idx >= 0) {
+		styleElementsInsertedAtTop.splice(idx, 1);
+	}
+}
+
+function createStyleElement(options) {
+	var styleElement = document.createElement("style");
+	options.attrs.type = "text/css";
+
+	attachTagAttrs(styleElement, options.attrs);
+	insertStyleElement(options, styleElement);
+	return styleElement;
+}
+
+function createLinkElement(options) {
+	var linkElement = document.createElement("link");
+	options.attrs.type = "text/css";
+	options.attrs.rel = "stylesheet";
+
+	attachTagAttrs(linkElement, options.attrs);
+	insertStyleElement(options, linkElement);
+	return linkElement;
+}
+
+function attachTagAttrs(element, attrs) {
+	Object.keys(attrs).forEach(function (key) {
+		element.setAttribute(key, attrs[key]);
+	});
+}
+
+function addStyle(obj, options) {
+	var styleElement, update, remove, transformResult;
+
+	// If a transform function was defined, run it on the css
+	if (options.transform && obj.css) {
+	    transformResult = options.transform(obj.css);
+	    
+	    if (transformResult) {
+	    	// If transform returns a value, use that instead of the original css.
+	    	// This allows running runtime transformations on the css.
+	    	obj.css = transformResult;
+	    } else {
+	    	// If the transform function returns a falsy value, don't add this css. 
+	    	// This allows conditional loading of css
+	    	return function() {
+	    		// noop
+	    	};
+	    }
+	}
+
+	if (options.singleton) {
+		var styleIndex = singletonCounter++;
+		styleElement = singletonElement || (singletonElement = createStyleElement(options));
+		update = applyToSingletonTag.bind(null, styleElement, styleIndex, false);
+		remove = applyToSingletonTag.bind(null, styleElement, styleIndex, true);
+	} else if(obj.sourceMap &&
+		typeof URL === "function" &&
+		typeof URL.createObjectURL === "function" &&
+		typeof URL.revokeObjectURL === "function" &&
+		typeof Blob === "function" &&
+		typeof btoa === "function") {
+		styleElement = createLinkElement(options);
+		update = updateLink.bind(null, styleElement, options);
+		remove = function() {
+			removeStyleElement(styleElement);
+			if(styleElement.href)
+				URL.revokeObjectURL(styleElement.href);
+		};
+	} else {
+		styleElement = createStyleElement(options);
+		update = applyToTag.bind(null, styleElement);
+		remove = function() {
+			removeStyleElement(styleElement);
+		};
+	}
+
+	update(obj);
+
+	return function updateStyle(newObj) {
+		if(newObj) {
+			if(newObj.css === obj.css && newObj.media === obj.media && newObj.sourceMap === obj.sourceMap)
+				return;
+			update(obj = newObj);
+		} else {
+			remove();
+		}
+	};
+}
+
+var replaceText = (function () {
+	var textStore = [];
+
+	return function (index, replacement) {
+		textStore[index] = replacement;
+		return textStore.filter(Boolean).join('\n');
+	};
+})();
+
+function applyToSingletonTag(styleElement, index, remove, obj) {
+	var css = remove ? "" : obj.css;
+
+	if (styleElement.styleSheet) {
+		styleElement.styleSheet.cssText = replaceText(index, css);
+	} else {
+		var cssNode = document.createTextNode(css);
+		var childNodes = styleElement.childNodes;
+		if (childNodes[index]) styleElement.removeChild(childNodes[index]);
+		if (childNodes.length) {
+			styleElement.insertBefore(cssNode, childNodes[index]);
+		} else {
+			styleElement.appendChild(cssNode);
+		}
+	}
+}
+
+function applyToTag(styleElement, obj) {
+	var css = obj.css;
+	var media = obj.media;
+
+	if(media) {
+		styleElement.setAttribute("media", media)
+	}
+
+	if(styleElement.styleSheet) {
+		styleElement.styleSheet.cssText = css;
+	} else {
+		while(styleElement.firstChild) {
+			styleElement.removeChild(styleElement.firstChild);
+		}
+		styleElement.appendChild(document.createTextNode(css));
+	}
+}
+
+function updateLink(linkElement, options, obj) {
+	var css = obj.css;
+	var sourceMap = obj.sourceMap;
+
+	/* If convertToAbsoluteUrls isn't defined, but sourcemaps are enabled
+	and there is no publicPath defined then lets turn convertToAbsoluteUrls
+	on by default.  Otherwise default to the convertToAbsoluteUrls option
+	directly
+	*/
+	var autoFixUrls = options.convertToAbsoluteUrls === undefined && sourceMap;
+
+	if (options.convertToAbsoluteUrls || autoFixUrls){
+		css = fixUrls(css);
+	}
+
+	if(sourceMap) {
+		// http://stackoverflow.com/a/26603875
+		css += "\n/*# sourceMappingURL=data:application/json;base64," + btoa(unescape(encodeURIComponent(JSON.stringify(sourceMap)))) + " */";
+	}
+
+	var blob = new Blob([css], { type: "text/css" });
+
+	var oldSrc = linkElement.href;
+
+	linkElement.href = URL.createObjectURL(blob);
+
+	if(oldSrc)
+		URL.revokeObjectURL(oldSrc);
+}
+
+
+/***/ }),
+
+/***/ "./node_modules/style-loader/fixUrls.js":
+/*!**********************************************!*\
+  !*** ./node_modules/style-loader/fixUrls.js ***!
+  \**********************************************/
+/*! no static exports found */
+/*! all exports used */
+/***/ (function(module, exports) {
+
+
+/**
+ * When source maps are enabled, `style-loader` uses a link element with a data-uri to
+ * embed the css on the page. This breaks all relative urls because now they are relative to a
+ * bundle instead of the current page.
+ *
+ * One solution is to only use full urls, but that may be impossible.
+ *
+ * Instead, this function "fixes" the relative urls to be absolute according to the current page location.
+ *
+ * A rudimentary test suite is located at `test/fixUrls.js` and can be run via the `npm test` command.
+ *
+ */
+
+module.exports = function (css) {
+  // get current location
+  var location = typeof window !== "undefined" && window.location;
+
+  if (!location) {
+    throw new Error("fixUrls requires window.location");
+  }
+
+	// blank or null?
+	if (!css || typeof css !== "string") {
+	  return css;
+  }
+
+  var baseUrl = location.protocol + "//" + location.host;
+  var currentDir = baseUrl + location.pathname.replace(/\/[^\/]*$/, "/");
+
+	// convert each url(...)
+	/*
+	This regular expression is just a way to recursively match brackets within
+	a string.
+
+	 /url\s*\(  = Match on the word "url" with any whitespace after it and then a parens
+	   (  = Start a capturing group
+	     (?:  = Start a non-capturing group
+	         [^)(]  = Match anything that isn't a parentheses
+	         |  = OR
+	         \(  = Match a start parentheses
+	             (?:  = Start another non-capturing groups
+	                 [^)(]+  = Match anything that isn't a parentheses
+	                 |  = OR
+	                 \(  = Match a start parentheses
+	                     [^)(]*  = Match anything that isn't a parentheses
+	                 \)  = Match a end parentheses
+	             )  = End Group
+              *\) = Match anything and then a close parens
+          )  = Close non-capturing group
+          *  = Match anything
+       )  = Close capturing group
+	 \)  = Match a close parens
+
+	 /gi  = Get all matches, not the first.  Be case insensitive.
+	 */
+	var fixedCss = css.replace(/url\s*\(((?:[^)(]|\((?:[^)(]+|\([^)(]*\))*\))*)\)/gi, function(fullMatch, origUrl) {
+		// strip quotes (if they exist)
+		var unquotedOrigUrl = origUrl
+			.trim()
+			.replace(/^"(.*)"$/, function(o, $1){ return $1; })
+			.replace(/^'(.*)'$/, function(o, $1){ return $1; });
+
+		// already a full url? no change
+		if (/^(#|data:|http:\/\/|https:\/\/|file:\/\/\/)/i.test(unquotedOrigUrl)) {
+		  return fullMatch;
+		}
+
+		// convert the url to a full url
+		var newUrl;
+
+		if (unquotedOrigUrl.indexOf("//") === 0) {
+		  	//TODO: should we add protocol?
+			newUrl = unquotedOrigUrl;
+		} else if (unquotedOrigUrl.indexOf("/") === 0) {
+			// path should be relative to the base url
+			newUrl = baseUrl + unquotedOrigUrl; // already starts with '/'
+		} else {
+			// path should be relative to current directory
+			newUrl = currentDir + unquotedOrigUrl.replace(/^\.\//, ""); // Strip leading './'
+		}
+
+		// send back the fixed url(...)
+		return "url(" + JSON.stringify(newUrl) + ")";
+	});
+
+	// send back the fixed css
+	return fixedCss;
+};
+
+
+/***/ })
+
+/******/ });

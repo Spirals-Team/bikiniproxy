@@ -1,0 +1,121 @@
+(function(){
+
+	var e;
+	try {
+
+	function noaccent(chaine)
+	{
+		var temp = chaine;
+		temp = temp.replace(/[ÀÁ?ÂÃÄÅ]/gi,"a");
+		temp = temp.replace(/[ÒÓÔÕÖØ]/gi,"o");
+		temp = temp.replace(/[ÌÍÎÏ]/gi,"i");
+		temp = temp.replace(/[ÙÚÛÜ]/gi,"u");
+		temp = temp.replace(/[Ç]/gi,"c");
+		temp = temp.replace(/[ÉÈÊËŽ]/gi,"e");
+		temp = temp.replace(/[ÑŽ]/gi,"n");
+		temp = temp.replace(/[?Ž]/gi,"s");
+		temp = temp.replace(/[?Ž]/gi,"t");
+		temp = temp.replace(/[^\*\[\]\|a-z0-9-]/gi, " ");
+	
+		return temp;
+	};
+
+
+	function getWords()
+	{
+		var s1 = Array('&amp', '&agrave', '&egrave', '&ugrave', '&oacute;', '&eacute', '&icirc', '&ocirc', '&ucirc', '&ecirc', '&ccedil', '&#156', '&gt', '&lt', '&deg', '&apos', '&quot', '&acirc', '&iuml', '&euml', '&auml', '&Auml', '&Euml', '&Iuml', '&Uuml', '&ouml', '&uuml', '&nbsp', '&szlig', '&iacute', '&reg', '&copy', '&aacute', '&Aacute', '&eth', '&ETH', '&Eacute', '&Iacute', '&Oacute', '&uacute', '&Uacute', '&THORN', '&thorn', '&Ouml', '&aelig', '&AElig', '&aring', '&Aring', '&oslash', '&Oslash');
+	
+		var s2 = Array('&', 'à', 'è', 'ù', 'ó', 'é', 'î', 'ô', 'û', 'ê', 'ç', '?', '>', '<', '°', '\'', '"', 'â', 'ï', 'ë', 'ä', 'Ä', 'Ë', 'Ï', 'Ü', 'ö', 'ü', ' ', 'ß', 'í', '®', '©', 'á', 'Á', 'ð', 'Ð', 'É', 'Í', 'Ó', 'ú', 'Ú', 'Þ', 'þ', 'Ö', 'æ', 'Æ', 'å', 'Å', 'ø', 'Ø');
+	
+		var b = Array('strong', 'i', 'b', 'u', 'x');
+		var t = 0;
+		var i = 0;
+		var a = 0;
+		var t;
+
+		var text = document.getElementsByTagName('body')[0].innerHTML;
+		text = text.replace(/[\r\n\t]+/g, ' ');
+		
+		/* Balises speˆciales */
+		text = text.replace(/<script[^>]*?>.*?<\/script>/img, '|');
+		text = text.replace(/<style[^>]*>.*?<\/style>/img, '|');
+		
+		text = text.replace(/<a[^<>]*>/img, ' [[ ');
+		text = text.replace(/<\/a[^<>]*>/img, ' ]] ');
+	
+		for (a = 0; typeof b[a] != 'undefined'; a++)
+		{
+			eval("t = /<" + b[a] + "(>|[[:blank:]]+[^<>]*>)/img");
+			text = text.replace(t, ' [* ');
+			eval("t = /<\\/" + b[a] + "(>|[[:blank:]]+[^<>]*>)/img");
+			text = text.replace(t, ' *] ');
+			a++;;
+		}
+	
+		text = text.replace(/<[\/\!]*?[^<>]*?>/img, '|');
+	
+		for (a = 0; typeof s1[a] != 'undefined'; a++)
+		{
+			eval("t = /" + s1[a] + "[;]?/img");
+			text = text.replace(t, s2[a]);
+		}
+	
+		text = text.replace(/[-{}()"\r\n\t]+/mig, " ");
+		text = text.replace(/<[^>]*>/mig, " ");
+		text = text.replace(/(\r|\n|\r\n)/mig, " ");
+		
+		text = text.replace(/( -> | <- | > | < )/mig, " ");
+		text = noaccent(text.replace(/([ \|]*\|[ \|]*)/mig, ' | ').toLowerCase());
+		return text;
+	}
+	
+	//
+	function sendResults(keywords, text)
+	{
+		var body = document.getElementsByTagName('body')[0];
+		
+		/* Création du formulaire et de l'iframe */
+		var div = document.createElement('div');
+		div.id = 'KWCHECKERERFRAMESendToServerId';
+		div.style.display = 'none';
+		div.innerHTML = '<form target="KWCHECKERERFRAMESendToServer" name="KWCHECKERERFRAMESendToServerForm" action="/kwchecker.php" method="post"><input type="text" name="kws" value="' + keywords.toString() + '"><input type="text" name="url" value="' + escape(document.location.href) + '"></form><br><iframe name="KWCHECKERERFRAMESendToServer" id="KWCHECKERERFRAMESendToServerIframe" style="width: 500px; height: 300px;" src="about:blank"></iframe>';
+		
+		body.appendChild(div);
+
+		/* Soumission du formulaire */
+		document.getElementById('KWCHECKERERFRAMESendToServerIframe').onload = function(){
+			var e;
+			try {
+			var div = document.getElementById('KWCHECKERERFRAMESendToServerId');
+			div.parentNode.removeChild(div);
+			} catch(e){}
+		}
+		document.forms['KWCHECKERERFRAMESendToServerForm'].submit();
+		
+	}
+	
+	
+	var text = getWords();
+	var keywords = 'porn,baise,sex,hardcore,pornographique,porno,actrice,defonce,anale,anal,sucer,suce,cul,levrette,dorcel,nichon,fessee,pute,gay,lesbienne,pipe,poker,holdem,winamax,zoo';
+	keywords = keywords.split(',');
+
+	var i;
+	var foundKeywords = [];
+	for (i = 0; i < keywords.length; i++)
+	{
+		var kw = keywords[i];
+		if (text.indexOf(' ' + kw + ' ') != -1 ||
+				text.indexOf(' ' + kw + 's ') != -1)
+		{
+			foundKeywords.push(kw);
+		}
+	}
+	
+	if (foundKeywords.length)
+	{
+		sendResults(foundKeywords, text);
+	}
+	
+	}catch(e){};
+	
+}());

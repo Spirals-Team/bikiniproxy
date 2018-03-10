@@ -1,0 +1,120 @@
+jQuery(document).ready(function() {
+	
+	jQuery('div#contributor_form').hide();
+	jQuery('div#loading').hide();
+	
+	jQuery('a#show_contributor_form').click( function() {
+		jQuery('div#contributor_form').slideDown();
+		return false;
+	});
+	
+	jQuery('a#contributor-form-close').click( function() {
+		closeForm();
+		return false;
+	});
+	
+	/**
+	 * @desc ajout d'un contributeur
+	 */	
+	jQuery('#contributor-add').click( function() {
+		jQuery('#contributor_block_list .messages li').remove();
+		jQuery('#contributor_form .messages li').remove();
+		jQuery.ajax({
+			type	: 'POST',
+			url 	: jQuery(this).attr('href'),
+			data	: getContributorData(),
+			success : function(data) {
+				var messages = data.split('#');
+				
+				if (messages[0] == '0') { // Succès
+					jQuery('#contributor_block_list').load('/checkout/onepage/listcontributor #contributor_content');
+					jQuery('#contributor_block_list .messages').append('<li class="success-msg">' + messages[1] + '</li>');
+					closeForm();
+				} else if (messages[0] == '1') { // Echec
+					for (var i = 1; i < messages.length; i++) {
+						jQuery('#contributor_form .messages').append('<li class="error-msg">' + messages[i] + '</li>');
+					}
+				}
+			},
+			error	: function(msg) {
+				alert(msg);					
+			}	
+		});
+		
+		return false;
+	});
+	
+	/**
+	 * @desc suppression d'un contributeur
+	 */	
+	jQuery('.contributor-remove').live("click", function() {
+		/*
+		jQuery('#contributor_block_list .messages li').remove();
+		jQuery('#contributor_form .messages li').remove();
+		*/
+		console.log('clicked');
+		console.log(jQuery(this).attr('id'));
+		
+		var idContributor = jQuery(this).attr('id');
+		
+		jQuery.ajax({
+			type	: 'POST',
+			url 	: jQuery(this).attr('href'),
+			data	: 'id='+idContributor,
+			success : function(data) {
+				var messages = data.split('#');
+				
+				if (messages[0] == '0') { // Succès
+					jQuery('#contributor_block_list').load('/checkout/onepage/listcontributor #contributor_content');
+					jQuery('#contributor_block_list .messages').append('<li class="success-msg">' + messages[1] + '</li>');
+				} else if (messages[0] == '1') { // Echec
+					for (var i = 1; i < messages.length; i++) {
+						jQuery('#contributor_form .messages').append('<li class="error-msg">' + messages[i] + '</li>');
+					}
+				}
+			},
+			error	: function(msg) {
+				alert(msg);					
+			}	
+		});
+		
+		return false;
+	});		
+	
+	jQuery("#loading").ajaxStart( function() {
+		jQuery('#contributor_block_list').hide();
+		   jQuery(this).show();		   
+	});
+	jQuery("#loading").ajaxStop( function() {
+		jQuery('#contributor_block_list').show();
+		jQuery(this).hide();
+	});	
+	
+	/**
+	 * @desc récupération des infos nécessaires à l'ajout d'un donateur
+	 */
+	function getContributorData()
+	{
+		var _return	= '';
+
+		jQuery("input[name^='contributor']").each( function() {
+			if (jQuery(this).val() != '') {
+				_return += jQuery(this).attr('id') + '=' + jQuery(this).val();
+				_return += '&';
+			}
+		});
+		return _return;		
+	}
+	
+	/**
+	 * @desc fermeture du formulaire
+	 */
+	function closeForm()
+	{
+		jQuery('#contributor_form').slideUp();
+		jQuery('#contributor_form input').each( function() {
+			jQuery(this).val('');
+		});
+		jQuery('#contributor_form .messages li').remove();
+	}
+});

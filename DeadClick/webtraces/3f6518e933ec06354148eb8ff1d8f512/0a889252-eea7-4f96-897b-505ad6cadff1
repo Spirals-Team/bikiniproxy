@@ -1,0 +1,82 @@
+/*
+Yet another carousel
+*/
+
+//(function($) {
+
+	$.fn.carousel = function(options) {
+		
+		var settings = {slider: "> :first-child", tableCell: true, slideSpeed: 250};
+		
+		return this.each(function() {
+		
+			var $this = $(this);
+
+			$.extend(settings, $this.data('options-carousel') || {});
+			$.extend(settings, options || {});
+
+			// the main container
+			var $parent = $this.find('.carousel'),
+				// the element which will slide (container of the slides)
+				$slider = $parent.find(settings.slider),
+				// the slides
+				$slides = $slider.children(),
+				// container inner width
+				cw = $parent.width(),
+				// slide outher width
+				sw = $slides.outerWidth(true),
+				// number of slides in total
+				ss = $slides.length,
+				// number of slides the container can show
+				st = $slides.filter(function() { return ($(this).index() * sw) < cw; }).length,
+				// current slides-set index
+				cs = 1,
+				//slide method			
+				slide = function(e) {
+			
+					e.preventDefault();
+					
+					var $curr = $(this);
+					var $prev = $this.find('.slider-arrows .slider-prev');
+					var $next = $this.find('.slider-arrows .slider-next');
+					
+					// the prev button has been clicked
+					if ($curr.parent('.slider-prev').length > 0)
+					{
+						if (cs > 1)
+						{
+							cs--;
+							$slider.animate({ 'left' : '+=' + (sw * st) }, settings.slideSpeed);
+						}
+					}
+					// the next button has been clicked
+					if ($curr.parent('.slider-next').length > 0)
+					{
+						if (cs < ss / st)
+						{
+							cs++;
+							$slider.animate({ 'left' : '-=' + (sw * st) }, settings.slideSpeed, function() {});
+						}
+					}
+
+					$prev.toggleClass('disabled', cs <= 1);
+					$next.toggleClass('disabled', cs >= ss / st);
+				},
+			
+				// slider computed width
+				slcw = sw * ss;
+
+				if ($slider.width() < slcw) $slider.width(slcw);
+				
+				// slider total height
+				var sloh = $slider.outerHeight(true);
+				if ($parent.height() < sloh) $parent.height(sloh);
+				if (settings.tableCell) $slides.height($parent.height());
+				
+				if (ss > st) {
+					$this.addClass('carousel-active');
+					$('<div class="slider-arrows clearfix"><span class="slider-prev disabled"><a>Previous</a></span><span class="slider-next"><a>Next</a></span></div>').appendTo($this).find('a').bind('click.carousel', slide);
+				}
+		});
+	};
+//})(jQuery);

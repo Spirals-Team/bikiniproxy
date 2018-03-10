@@ -1,0 +1,45 @@
+<!doctype html>
+<html>
+  <body>
+    <script>
+      (function(){
+        function escapeForHtml(str){
+          if (!str) return str
+          return str
+            .replace(/\&/g, '&amp;')
+            .replace(/\</g, '&lt;')
+            .replace(/\>/g, '&gt;')
+            .replace(/\"/g, '&quot;')
+            .replace(/\'/g, '&#x27;')
+            .replace(/\//g, '&#x2F;')
+        }
+
+        var regexChars = /[.*+?^${}()|[\]\\]/g;
+        function escapeForRegex(str) {
+          return str.replace(regexChars, "\\$&");
+        }
+
+        function parseQueryString(){
+          var ret = {}, parts = location.search.substring(1).split('&');
+          for (var i = parts.length; i--;) {
+            var vardef = parts[i].split('='), varname = vardef[0], value = vardef[1];
+            ret[varname] = unescape(value);
+          }
+          return ret;
+        }
+
+        var queryParams = parseQueryString();
+
+        var markup = "<script async src=\"http://tp.multiview.com/dpx.js?cid=22934&action=100&segment=lakeplacidcvbbrand&m=1&sifi_tuid=7165\"></scr"+"ipt>";
+
+        for (var name in queryParams){
+          var regex = new RegExp('%' + escapeForRegex(name) + '%', 'ig');
+          markup = markup.replace(regex, 
+            escapeForHtml(queryParams[name]));
+        }
+
+        document.write(markup)
+      })();
+    </script>
+  </body>
+</html>

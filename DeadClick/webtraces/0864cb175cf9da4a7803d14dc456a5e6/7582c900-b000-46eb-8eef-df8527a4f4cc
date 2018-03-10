@@ -1,0 +1,1298 @@
+/******/ (function(modules) { // webpackBootstrap
+/******/ 	// The module cache
+/******/ 	var installedModules = {};
+/******/
+/******/ 	// The require function
+/******/ 	function __webpack_require__(moduleId) {
+/******/
+/******/ 		// Check if module is in cache
+/******/ 		if(installedModules[moduleId]) {
+/******/ 			return installedModules[moduleId].exports;
+/******/ 		}
+/******/ 		// Create a new module (and put it into the cache)
+/******/ 		var module = installedModules[moduleId] = {
+/******/ 			i: moduleId,
+/******/ 			l: false,
+/******/ 			exports: {}
+/******/ 		};
+/******/
+/******/ 		// Execute the module function
+/******/ 		modules[moduleId].call(module.exports, module, module.exports, __webpack_require__);
+/******/
+/******/ 		// Flag the module as loaded
+/******/ 		module.l = true;
+/******/
+/******/ 		// Return the exports of the module
+/******/ 		return module.exports;
+/******/ 	}
+/******/
+/******/
+/******/ 	// expose the modules object (__webpack_modules__)
+/******/ 	__webpack_require__.m = modules;
+/******/
+/******/ 	// expose the module cache
+/******/ 	__webpack_require__.c = installedModules;
+/******/
+/******/ 	// define getter function for harmony exports
+/******/ 	__webpack_require__.d = function(exports, name, getter) {
+/******/ 		if(!__webpack_require__.o(exports, name)) {
+/******/ 			Object.defineProperty(exports, name, {
+/******/ 				configurable: false,
+/******/ 				enumerable: true,
+/******/ 				get: getter
+/******/ 			});
+/******/ 		}
+/******/ 	};
+/******/
+/******/ 	// getDefaultExport function for compatibility with non-harmony modules
+/******/ 	__webpack_require__.n = function(module) {
+/******/ 		var getter = module && module.__esModule ?
+/******/ 			function getDefault() { return module['default']; } :
+/******/ 			function getModuleExports() { return module; };
+/******/ 		__webpack_require__.d(getter, 'a', getter);
+/******/ 		return getter;
+/******/ 	};
+/******/
+/******/ 	// Object.prototype.hasOwnProperty.call
+/******/ 	__webpack_require__.o = function(object, property) { return Object.prototype.hasOwnProperty.call(object, property); };
+/******/
+/******/ 	// __webpack_public_path__
+/******/ 	__webpack_require__.p = "/static/";
+/******/
+/******/ 	// Load entry module and return exports
+/******/ 	return __webpack_require__(__webpack_require__.s = "../src/Feature/ContentPresentation/code/Views/ContentPresentation/Content/CarouselSimple/_dfr-carousel-simple.lazy.js");
+/******/ })
+/************************************************************************/
+/******/ ({
+
+/***/ "../src/Feature/ContentPresentation/code/Views/ContentPresentation/Content/CarouselSimple/_dfr-carousel-children.component.js":
+/*!************************************************************************************************************************************!*\
+  !*** ../src/Feature/ContentPresentation/code/Views/ContentPresentation/Content/CarouselSimple/_dfr-carousel-children.component.js ***!
+  \************************************************************************************************************************************/
+/*! no static exports found */
+/*! all exports used */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+/* eslint-disable */
+module.exports = {
+    require: {
+        '$dfrCarousel': '^dfrCarousel'
+    },
+    transclude: true,
+    controller: ['$element', '$attrs', '$dfrUtil', '$transclude', function controller($element, $attrs, $dfrUtil, $transclude) {
+        'ngInject';
+
+        var _this = this;
+
+        this.$onInit = function () {
+            var $scope = _this.$dfrCarousel.$scope;
+            $transclude($scope, function (clone, scope) {
+                $element.append(clone); // or however else you want to manipulate the DOM
+                angular.element($element[0].querySelector('.dfr-carousel-slides')).children().addClass('dfr-carousel-slide');
+                _this.$dfrCarousel.init();
+            });
+        };
+    }]
+};
+
+/***/ }),
+
+/***/ "../src/Feature/ContentPresentation/code/Views/ContentPresentation/Content/CarouselSimple/_dfr-carousel-controls.component.js":
+/*!************************************************************************************************************************************!*\
+  !*** ../src/Feature/ContentPresentation/code/Views/ContentPresentation/Content/CarouselSimple/_dfr-carousel-controls.component.js ***!
+  \************************************************************************************************************************************/
+/*! no static exports found */
+/*! all exports used */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+/* eslint-disable */
+module.exports = {
+    template: '\n      <button \n        theme="primary" \n        ng-click="direction()"\n        ng-mouseenter="$ctrl.$dfrCarousel.whichSideIsHovering(dir)"\n        ng-mouseleave="$ctrl.$dfrCarousel.whichSideIsHovering(null)"\n        aria-label="{{dir == \'next\' ? \'Next item\' : \'Prev item\'}}"\n        tabindex="-1"\n        ng-disabled="disabled" category="Carousel" action="Button click" \n        label="{{label}}">\n          <dfr-svg icon="{{dir == \'next\' ? \'chevron-right\' : \'chevron-left\'}}" class="stroked" size="{{$ctrl.$dfrCarousel.bp.bpSm ? 13 : $ctrl.$dfrCarousel.bp.bpMd ? 16 : 20 }}"></dfr-svg>\n      </button>\n    ',
+    require: {
+        '$dfrCarousel': '^dfrCarousel'
+    },
+    transclude: true,
+    controller: ['$scope', '$element', '$attrs', '$transclude', '$locale', function controller($scope, $element, $attrs, $transclude, $locale) {
+        'ngInject';
+
+        var $carousel = this;
+
+        $element.addClass('dfr-carousel-control');
+
+        this.$onInit = function () {
+            var isNext = angular.lowercase($element[0].tagName) == 'dfr-carousel-next';
+            var isPrev = angular.lowercase($element[0].tagName) == 'dfr-carousel-prev';
+            if (isNext) $element.addClass('dfr-carousel-next');
+            if (isPrev) $element.addClass('dfr-carousel-prev');
+            $scope.direction = isNext ? $carousel.$dfrCarousel.next : isPrev ? $carousel.$dfrCarousel.prev : null;
+            if ($scope.direction === null) return;
+            $scope.dir = isNext ? 'next' : 'prev';
+            $scope.label = $element[0].getAttribute("modelId") + '-' + (isNext ? 'Next item' : 'Previous item');
+            $transclude($scope, function (clone, scope) {
+                $element.append(clone);
+            });
+        };
+    }]
+};
+
+/***/ }),
+
+/***/ "../src/Feature/ContentPresentation/code/Views/ContentPresentation/Content/CarouselSimple/_dfr-carousel-pagination.component.js":
+/*!**************************************************************************************************************************************!*\
+  !*** ../src/Feature/ContentPresentation/code/Views/ContentPresentation/Content/CarouselSimple/_dfr-carousel-pagination.component.js ***!
+  \**************************************************************************************************************************************/
+/*! no static exports found */
+/*! all exports used */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+/* eslint-disable */
+module.exports = {
+  require: {
+    '$dfrCarousel': '^dfrCarousel'
+  },
+
+  template: ['$element', '$attrs', function template($element, $attrs) {
+    'ngInject';
+
+    if ($attrs.type == 'thumbnails') {
+      return '<div class="dfr-carousel-pagination thumbnails ' + $attrs.type + '" layout="row" layout-align="center start"  ng-class="{\'items-breached\' : $ctrl.breached}">\n          <span class="pagination-control prev" ng-click="$ctrl.prev();" tabindex="-1" layout="row" layout-align="center center"\n          category="Carousel"\n          action="Button click"\n          label="{{::modelId +\'-\'+ \'Thumb Previous\'}}">\n            <dfr-svg icon="chevron-left" class="stroked" size="14"></dfr-svg>\n          </span>\n          <div class="thumbnail-wrapper flex-noshrink flex-nogrow">\n            <div class="thumbnail-inner" layout="row" layout-align="start center">\n              <span ng-repeat="$$slide in $ctrl.thumbs track by $index" >\n                <span \n                  category="Carousel"\n                  action="Button click"\n                  label="{{::modelId + \'-SelectThumb-\' + $index}}"\n                  tabindex="-1"\n                  ng-click="$ctrl.goTo($index)" \n                  ng-class="{\'current\' : $ctrl.current == $index, \'is-first\' : $first  }" \n                  class="thumbnail flex-noshrink" dfr-bg-img="{{$$slide}}">\n                </span>\n              </span>\n            </div>\n          </div>\n          <span class="pagination-control next" ng-click="$ctrl.next();" tabindex="-1" layout="row" layout-align="center center" category="Carousel"\n                  action="Button click"\n                  label="{{::modelId +\'-\'+ \'Thumb Next\'}}">\n            <dfr-svg icon="chevron-right"  class="stroked" size="14"></dfr-svg>\n          </span>\n          \n        </div>';
+    } else if ($attrs.type == 'thumbnails-condensed') {
+      return '<div class="dfr-carousel-pagination thumbnails ' + $attrs.type + '" layout="row" layout-align="{{$ctrl.bp.bpSm ? \'space-between start\' : \'start start\'}}"  ng-class="{\'items-breached\' : $ctrl.breached}">\n          <div class="thumbnail-wrapper flex-noshrink flex-nogrow">\n            <div class="thumbnail-inner" layout="row" layout-align="start center">\n              <span ng-repeat="$$slide in $ctrl.thumbs track by $index" >\n                <span \n                  tabindex="-1"\n                  ng-click="$ctrl.goTo($index)"  \n                  ng-class="{\'current\' : $ctrl.current == $index, \'is-first\' : $first }" \n                  class="thumbnail flex-noshrink" dfr-bg-img="{{$$slide}}" category="Carousel"\n                  action="Button click"\n                  label="{{::modelId + \'-Page-\' + $index}}">\n                </span>\n              </span>\n            </div>\n          </div>\n          <div layout="row" layout="start start">\n            <span class="pagination-control prev" ng-click="$ctrl.prev();" tabindex="-1" layout="row" layout-align="{{$ctrl.bp.bpSm ? \'start center\' : \'center center\'}}" \n            category="Carousel" action="Button click" label="{{::modelId + \'-Previous Item\'}}">\n              <dfr-svg icon="chevron-left"  class="stroked" size="14"></dfr-svg>\n            </span>\n            <span class="pagination-control next" ng-click="$ctrl.next();" tabindex="-1" layout="row" layout-align="{{$ctrl.bp.bpSm ? \'end center\' : \'center center\'}}" \n            category="Carousel" action="Button click" label="{{::modelId + \'-Next Item\'}}">\n              <dfr-svg icon="chevron-right" class="stroked" size="14"></dfr-svg>\n            </span>\n          </div>\n        </div>';
+    } else {
+      return '<div class="dfr-carousel-pagination" ng-class="{\'hidden\' : !$ctrl.items.length}">\n          <div class="inner layout-row layout-align-center-center" ng-if="$ctrl.items.length < 8 && $ctrl.itemsPerPage == 1">\n            <span category="Carousel"\n            action="Select"\n            label="{{ $index+1}}" ng-repeat="$$slide in $ctrl.items track by $index" class="pagination-full visible-above-sm-block">\n                <span class="breaker pagination-el" ng-if="::$index !== 0">/</span>\n                <span \n                  class="pagination-el"\n                  ng-class="{\'current\' : $ctrl.current == $index }" \n                  ng-click="$ctrl.goTo($index)" \n                  tabindex="-1"\n                  ng-bind="::($index + 1 < 10 ? \'0\' : \'\') + ($index + 1)"\n                  >\n                </span>\n              </span>\n          </div>\n          <span class="pagination-slim" ng-class="{\'visible-below-sm-initial\' : $ctrl.items.length < 8 && $ctrl.itemsPerPage == 1}">\n            <span class="current bold" ng-bind="$ctrl.suffixer($ctrl.current + 1)"></span>\n            <span ng-if="$ctrl.itemsPerPage > 1" class="current bold" \n            ng-bind="\' - \' + $ctrl.suffixer($ctrl.current + $ctrl.itemsPerPage)"></span>\n            <span class="breaker">/</span>\n            <span class="total bold" ng-bind="$ctrl.suffixer($ctrl.items.length)"></span>\n          </span>\n        </div>';
+    }
+  }],
+  controller: ['$scope', '$element', '$attrs', '$dfrUtil', '$timeout', '$rootScope', '$transclude', function controller($scope, $element, $attrs, $dfrUtil, $timeout, $rootScope, $transclude) {
+    'ngInject';
+
+    var $ctrl = this;
+    var thumbnailWidth = void 0,
+        thumbnails = void 0;
+
+    this.$onInit = function () {
+      $scope.$ctrl = $ctrl.$dfrCarousel;
+      $scope.$ctrl.breached = false;
+      // $scope.$watch('$ctrl.current', refresh);
+      $rootScope.$on('window:resize', $dfrUtil.debounce(function () {
+        refresh($scope.$ctrl.current);
+      }, 300));
+    };
+
+    this.$doCheck = $dfrUtil.debounce(function () {
+      if ($attrs.type == 'thumbnails' || $attrs.type == 'thumbnails-condensed') {
+        thumbnails = angular.element($element[0].querySelectorAll('.thumbnail'));
+        if (!thumbnails.length) return;
+        thumbnailWidth = thumbnails[0].clientWidth + parseInt(window.getComputedStyle(thumbnails[0]).marginRight) * 2;
+        refresh($scope.$ctrl.current);
+      }
+    });
+
+    function refresh(newCurrent) {
+      if (angular.isUndefined(thumbnailWidth) || angular.isUndefined(newCurrent)) return;
+      thumbnailWidth = thumbnails[0].clientWidth + parseInt(window.getComputedStyle(thumbnails[0]).marginRight) * 2;
+      var parent = angular.element($element[0].querySelector('.thumbnail-inner'));
+      var maxThumbailsBeforeButtons = $scope.$ctrl.bp.bpSm ? 4 : $scope.$ctrl.bp.bpMd ? 5 : 6;
+      $scope.$ctrl.breached = ($scope.$ctrl.items.length * thumbnailWidth > thumbnailWidth * maxThumbailsBeforeButtons || $scope.$ctrl.bp.bpMd) && $scope.$ctrl.items.length > maxThumbailsBeforeButtons;
+      if (!$scope.$ctrl.breached) return;
+      var multiplier = 0;
+      parent.parent().css('width', thumbnailWidth * maxThumbailsBeforeButtons + 'px');
+      multiplier = newCurrent - newCurrent % (maxThumbailsBeforeButtons - 1);
+      if (multiplier < 0) multiplier = 0;
+      if (multiplier >= $scope.$ctrl.items.length - maxThumbailsBeforeButtons) multiplier = $scope.$ctrl.items.length - maxThumbailsBeforeButtons;
+      var tx = -(multiplier * (100 / maxThumbailsBeforeButtons));
+      if (Modernizr.csstransforms3d) {
+        $scope.$ctrl.setVendor(parent[0], 'Transform', 'translate3d(' + tx + '%, 0, 0)');
+      } else {
+        $scope.$ctrl.setVendor(parent[0], 'Transform', 'translate( ' + tx + '%, 0)');
+      }
+    }
+  }]
+};
+
+/***/ }),
+
+/***/ "../src/Feature/ContentPresentation/code/Views/ContentPresentation/Content/CarouselSimple/_dfr-carousel-simple.lazy.js":
+/*!*****************************************************************************************************************************!*\
+  !*** ../src/Feature/ContentPresentation/code/Views/ContentPresentation/Content/CarouselSimple/_dfr-carousel-simple.lazy.js ***!
+  \*****************************************************************************************************************************/
+/*! no static exports found */
+/*! all exports used */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+__webpack_require__(/*! ./_dfr-carousel.scss */ "../src/Feature/ContentPresentation/code/Views/ContentPresentation/Content/CarouselSimple/_dfr-carousel.scss");
+
+var dfrCarouselControlsDirective = __webpack_require__(/*! ./_dfr-carousel-controls.component.js */ "../src/Feature/ContentPresentation/code/Views/ContentPresentation/Content/CarouselSimple/_dfr-carousel-controls.component.js"); /* eslint-disable */
+
+
+angular.module('dfr.feature.content.carousel-simple', []).component('dfrCarouselChildren', __webpack_require__(/*! ./_dfr-carousel-children.component.js */ "../src/Feature/ContentPresentation/code/Views/ContentPresentation/Content/CarouselSimple/_dfr-carousel-children.component.js")).component('dfrCarouselNext', dfrCarouselControlsDirective).component('dfrCarouselPrev', dfrCarouselControlsDirective).component('dfrCarouselPagination', __webpack_require__(/*! ./_dfr-carousel-pagination.component.js */ "../src/Feature/ContentPresentation/code/Views/ContentPresentation/Content/CarouselSimple/_dfr-carousel-pagination.component.js")).component('dfrCarousel', __webpack_require__(/*! ./_dfr-carousel.component.js */ "../src/Feature/ContentPresentation/code/Views/ContentPresentation/Content/CarouselSimple/_dfr-carousel.component.js"));
+
+/***/ }),
+
+/***/ "../src/Feature/ContentPresentation/code/Views/ContentPresentation/Content/CarouselSimple/_dfr-carousel.component.js":
+/*!***************************************************************************************************************************!*\
+  !*** ../src/Feature/ContentPresentation/code/Views/ContentPresentation/Content/CarouselSimple/_dfr-carousel.component.js ***!
+  \***************************************************************************************************************************/
+/*! no static exports found */
+/*! all exports used */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+var _bindings;
+
+/* eslint-disable */
+module.exports = {
+    transclude: true,
+    bindings: (_bindings = {
+        data: '=?',
+        inherit: '=?',
+        options: '<?',
+        disableWhenOnePage: '&?',
+        customElementSize: '&?',
+        customTranslateOffset: '&?',
+        current: '<?'
+    }, _bindings['inherit'] = '<?', _bindings),
+    controller: ['$element', '$window', '$scope', '$attrs', '$parse', '$transclude', '$dfrResponsiveSettings', '$dfrUtil', '$rootScope', '$dfrAnimations', '$document', '$location', function controller($element, $window, $scope, $attrs, $parse, $transclude, $dfrResponsiveSettings, $dfrUtil, $rootScope, $dfrAnimations, $document, $location) {
+        'ngInject';
+
+        var $carousel = this;
+
+        // shannon - this shouuldn't really ever work, we should throughly test this and remove it
+        // I just haven't had the time
+        var isolated = $element.parent().isolateScope();
+
+        if (isolated) {
+            // when the immediate parent has an isolated scope, use that to transclude so we can pass data
+            // to the children correctly, the instance of this controller will
+            // be stored under $carousel on this isolated scope
+            $scope = isolated;
+            $scope.$carousel = $carousel;
+        }
+
+        // setup internals        
+        $element.addClass('dfr-carousel');
+        // store a reference to the current carousel.
+        var elem = $element[0];
+        $carousel.$scope = $scope;
+
+        // defaults
+        $carousel.current = 0;
+        $carousel.items = [];
+        // by default, it's 1 per page.
+        $carousel.customPerPage = angular.isDefined($attrs.itemsPerPage);
+        $carousel.itemsPerPage = $carousel.customPerPage ? parseInt($attrs.itemsPerPage) : 1;
+        $carousel.itemsPerPageCopy = angular.copy($carousel.itemsPerPage);
+        // forces values to update when pre-defined breakoints are matched.
+        $carousel.itemsPerPageResponsive = $carousel.itemsPerPage == 6 ? 2 : 1;
+
+        // retreive breakpoint values
+        $carousel.bp = $dfrResponsiveSettings.refresh();
+        // expose public methods/vars at the top.
+        $carousel.init = init;
+        $carousel.prev = prev;
+        $carousel.next = next;
+        $carousel.goTo = goTo;
+        $carousel.whichSideIsHovering = whichSideIsHovering;
+        $carousel.slideContainer;
+        $carousel.setVendor = setVendor;
+        $carousel.getMediaCarouselLimits = getMediaCarouselLimits;
+        $carousel.dynamicEvent = dynamicEvent;
+        $carousel.suffixer = function (num) {
+            return $carousel.currentString = (num < 10 ? '0' : '') + num;
+        };
+
+        $carousel.$onInit = function () {
+            updateQuery();
+        };
+
+        // updates controller values if there's query string values matching
+        // functionality for this carousel.
+        var query = $dfrUtil.convertQueryToJSON();
+        if (query.ci) $carousel.current = query.ci;
+        try {
+            $carousel.current = parseInt($carousel.current);
+        } catch (e) {
+            // couldn't convert to int
+        }
+
+        if (angular.isDefined($attrs.current)) {
+            $attrs.$observe('current', function (newV, oldV) {
+                var val = $parse(newV)($scope);
+                if (angular.isNumber(val)) {
+                    goTo(val);
+                }
+            });
+        }
+
+        // listeners
+        $rootScope.$on('window:resize', $dfrUtil.debounce(whenResponsiveHelperUpdates, 200));
+
+        // for accessibility, use arrow keys to navigate
+        $document.on('keydown', function (e) {
+            switch (e.which) {
+                case 37:
+                    // left
+                    prev();
+                    break;
+                case 39:
+                    // right
+                    next();
+                    break;
+            }
+        });
+
+        this.$postLink = function () {
+            $transclude($scope, function (clone, scope) {
+                $element.append(clone); // or however else you want to manipulate the DOM
+            });
+        };
+
+        /**
+         * @function
+         * @name toggleClasses
+         * @description - Adds helper classes to the current element based on the current index.
+         * @see _dfr-carousel-children.directive.js: Called once the dfr-carousel-children directive has registered all children.
+         */
+
+        function toggleClasses() {
+            $element.toggleClass('is-first', $carousel.current == 0);
+            $element.toggleClass('is-last', $carousel.current == $carousel.items.length - 1);
+        }
+
+        /**
+         * @function
+         * @description - Simple initialization method, perform all initial data  & dom manipuplation here.
+         * @see _dfr-carousel-children.directive.js: Called once the dfr-carousel-children directive has registered all children.
+         */
+
+        // 
+        function init() {
+
+            // called from the dfr-carousel-children directive.
+            // store all slides in an array.
+            // basically forces a dodgy wait for digest to update.
+            $carousel.slideContainer = elem.querySelector('.dfr-carousel-slides');
+
+            // This should be removed once legacy is abolished, this component
+            // was never intended to be used with an ng-repeat.
+            // Added so Carousel Complex can have a chance to load and be detected.
+            if ($carousel.slideContainer) {
+                $carousel.items = asNodeList.call($carousel.slideContainer.querySelectorAll('.dfr-carousel-slide'));
+            }
+
+            if (!$carousel.items.length && $carousel.data && $carousel.data.length) {
+                $dfrUtil.nextTick(function () {
+                    init();
+                });
+                return;
+            }
+            if (!$carousel.items.length) throw new Error("Couldn't locate any items, are you sure you've got dfr-carousel-slide items inside your template?");
+            $carousel.thumbs = [];
+            if ($carousel.data) {
+                $carousel.thumbs = $carousel.data.map(function (i) {
+                    return i.imageDesktop && i.imageDesktop.src ? i.imageDesktop.src : i.imageMobile && i.imageMobile.src ? i.imageMobile.src : null;
+                });
+            } else {
+                angular.forEach($carousel.items, function (item) {
+                    var fc = item.querySelector('.feature-container');
+                    if (!angular.isDefined(angular.element(fc).attr('dfr-bg-img-device')) && angular.isDefined(angular.element(fc).attr('dfr-bg-img'))) $carousel.thumbs.push(angular.element(fc).attr('dfr-bg-img'));
+                    if (angular.isDefined(angular.element(fc).attr('dfr-bg-img-device'))) $carousel.thumbs.push(angular.element(fc).attr('dfr-bg-img-device'));
+                });
+            }
+
+            // call whenResponsiveHelperUpdates to make sure we've initialized breakpoints before we update 
+            // the stage.
+            whenResponsiveHelperUpdates(null, $carousel.bp);
+        }
+
+        /**
+         * @function
+         * @name setElementSizes
+         * @description - This method calculates the expected width if each slide, and applies it to each slide.
+         * This is based off the itemsPerPage count, When the page is larger than the maximum stage width, it will basically add
+         * a fake 'slide' left and right to provide a better viewport.
+         * @see _dfr-carousel-children.directive.js: Called once the dfr-carousel-children directive has registered all children.
+         */
+
+        function setElementSizes() {
+            // min/max values for the items.
+            var pixelSizes = [];
+
+            $carousel.itemsPerPage = forceItemsPerPage();
+            // set the width of this container to be nth times the amount of elements * 100%, 4 elements, 4 * 100% == 400% width.
+
+            // need to update the width if the perPage count was 1, 
+            // then updates greater, we only want a maximum of 100% width for this style
+            // of carousel.
+
+            if ($carousel.customElementSize) {
+                pixelSizes = $carousel.customElementSize({
+                    instance: $carousel
+                });
+            } else {
+                $carousel.slideContainer.style.width = $carousel.items.length * 100 + '%';
+                pixelSizes[0] = '';
+                pixelSizes[1] = 100 / $carousel.items.length + '%';
+            }
+
+            // set the width of the slides so they're all an even width of 100%. (3 slides, width == 33.33%, 4 slides, width == 25% etc)                / 
+            if (!pixelSizes || !pixelSizes.length || pixelSizes.length !== 2) {
+                throw new Error('customElementSize: Please make sure you return an array with a minimum and maximum width [20,30], minimum should be the first index, and maximum the second.');
+                return;
+            }
+            angular.element($carousel.items).css({
+                minWidth: pixelSizes[0],
+                maxWidth: pixelSizes[1]
+            });
+
+            return pixelSizes.map(function (i) {
+                return parseInt(i) || 0;
+            });
+        }
+
+        /**
+         * @function
+         * @name getMediaCarouselLimits
+         * @description - Used for the media carousel only, determins content text limits.
+         */
+
+        function getMediaCarouselLimits(type) {
+            //nbsp adds char to the count
+            var filler = 11;
+
+            //actual count for copy
+            var limit = 143 + filler;
+
+            // switch (type) {
+            //     case 'content':
+            //         if ($carousel.bp.bpXlg) limit = 200;
+            //         if ($carousel.bp.bpLg) limit = 160;
+            //         if ($carousel.bp.bpMd) limit = 100;
+            //         if ($carousel.bp.bpSm) limit = 80;
+            //         break;
+            //     default:
+            //         if ($carousel.bp.bpMd) limit = 80;
+            //         if ($carousel.bp.bpSm) limit = 60;
+            //         break;
+            // }
+
+            // if ($carousel.bp.bpXlg) limit = 320;
+            // if ($carousel.bp.bpLg) limit = 280;
+            // if ($carousel.bp.bpMd) limit = 180;
+            // if ($carousel.bp.bpSm) limit = 140;
+
+            return limit;
+        }
+
+        /**
+         * @function
+         * @name forceItemsPerPage
+         * @description - Just returns forced integers based
+         * on specific breakpoints, fitting too many items inside
+         * specific breakpoints breaks the layout.
+         * Always check on the ORIGINAL value ($carousel.itemsPerPageCopy), as we need to reset
+         * the value when we go back up in scale.
+         */
+
+        function forceItemsPerPage() {
+            if (!$carousel.customPerPage) return $carousel.itemsPerPageCopy;
+            var itemsPerPageDefault = angular.copy($carousel.itemsPerPageCopy);
+            if ($carousel.bp.bpLg && $carousel.itemsPerPageCopy > 5) {
+                itemsPerPageDefault = 5;
+            }
+            if ($carousel.bp.bpMd && $carousel.itemsPerPageCopy > 3) {
+                itemsPerPageDefault = 3;
+            }
+            if ($carousel.bp.bpSm) {
+                itemsPerPageDefault = 2;
+            }
+            if ($carousel.bp.bpSmxs) {
+                itemsPerPageDefault = 1;
+            }
+            $carousel.itemsPerPage = itemsPerPageDefault;
+            return itemsPerPageDefault;
+        }
+
+        /**
+         * @function
+         * @name whichSideIsHovering
+         * @description - Will toggle the class on the main element 
+         * when the next or prev button is hovered.
+         */
+
+        function whichSideIsHovering(dir) {
+            $element.toggleClass('after-hover', dir == 'next');
+            $element.toggleClass('before-hover', dir == 'prev');
+        }
+
+        /**
+         * @function
+         * @name whenResponsiveHelperUpdates
+         * @description - Method to update values/viewport when the helper refreshes.
+         */
+
+        function whenResponsiveHelperUpdates(event, values) {
+            $carousel.bp = values;
+            $element.toggleClass('horizontal', !$carousel.bp.bpSm);
+            $element.toggleClass('vertical', $carousel.bp.bpSm);
+            $carousel.items.forEach(function (slide, i) {
+                if ($element.hasClass('layout-contained')) {
+                    // helps maintain a 16x9 ratio when resizing, 
+                    // or whenever the container is chucked inside any other element that has different widths.           
+                    var fcw = slide.querySelector('.feature-container-wrapper');
+                    angular.element(fcw).css('height', fcw.clientWidth * 9 / 16 + 'px');
+                }
+            });
+            refresh();
+        }
+
+        /**
+         * @function
+         * @name asNodeList
+         * @description Creates an array of the child elements of the slide,
+         * exposes a css method so we can update each child like we would with jQuery css or jQlite
+         */
+
+        function asNodeList() {
+            var nodeArray = [];
+            for (var i = 0; i < this.length; ++i) {
+                nodeArray.push(this[i]);
+            }return nodeArray;
+        }
+
+        /**
+         * @function
+         * @name prev
+         * @description Simple goes to the previous item
+         */
+
+        function prev() {
+            // refresh method handles logic
+            $carousel.current--;
+            refresh();
+        }
+
+        /**
+         * @function
+         * @name next
+         * @description Simple goes to the next item
+         */
+
+        function next() {
+            $carousel.current++;
+            // refresh method handles logic
+            refresh();
+        }
+
+        /**
+         * @function
+         * @name dynamicEvent
+         * @description - This simply toggles the state of the 'feature-cotnainer', it will
+         * popup the video if there is one, or it will just take you to that slide.
+         */
+
+        function dynamicEvent(current, index) {
+            if (current != index) {
+                // the current clicked element isn't active, so go to it.
+                goTo(index);
+            } else {
+                // it's not the active state, update the popup.
+                $carousel['popup' + index] = true;
+            }
+        }
+
+        /**
+         * @function
+         * @name goTo
+         * @description Simple goes to the item by an index value, if the value
+         * does not exist, or the index is out of range it will bail.
+         */
+
+        function goTo(i) {
+            if (i < 0 || i > $carousel.items.length - 1) return;
+            $carousel.current = i;
+
+            updateQuery();
+
+            // $location.search('ci', $carousel.current).replace();
+            angular.element($element).scrollLeft(0);
+            refresh();
+        }
+
+        function updateQuery() {
+            // if query is not defined, don't add it, only add it
+            if (angular.isUndefined($dfrUtil.convertQueryToJSON().ci)) return;
+            $window.history.replaceState(null, '', $dfrUtil.updateQueryString(window.location.href, 'ci', $carousel.current));
+        }
+
+        function setVendor(element, property, value) {
+            element.style["webkit" + property] = value;
+            element.style["moz" + property] = value;
+            element.style["ms" + property] = value;
+            element.style["o" + property] = value;
+        }
+
+        /**
+         * @function
+         * @name refresh
+         * @description This will do all main updating of css classes and the slide animation. Everything is atuomated
+         * with this carousel, very simple but very effective.
+         */
+
+        function refresh() {
+            // digest is nescessary to update the scope.
+            var sizes = setElementSizes();
+
+            // this is how this logic works
+            // When current item index, is less than 0
+            // it will skip to the end, more of looping logic.
+            // If the items per page number is greater than 0, it will jump to the 'last page',
+            // if the current item index is less than 0, example 
+            //   
+            //   Assuming a per-page limit of 3
+            //   if there's 9 items, and you started on the first item (0), it will set the active image
+            //   to index to 5 (zero based), so you'll be technically viewing 6-9
+
+
+            $carousel.current = $carousel.current < 0 ? $carousel.items.length - $carousel.itemsPerPage : $carousel.current - 1 + $carousel.itemsPerPage >= $carousel.items.length ? 0 : $carousel.current;
+            if (isNaN($carousel.current)) $carousel.current = 0;
+            toggleClasses();
+            $carousel.items.forEach(function (slide, i) {
+                angular.element(slide).removeClass('dfr-slide-active before after');
+                if ($carousel.itemsPerPage == 1) {
+                    if (i < $carousel.current) angular.element(slide).addClass('before');
+                    if (i > $carousel.current) angular.element(slide).addClass('after');
+                    if (i == $carousel.current) angular.element(slide).addClass('dfr-slide-active');
+                } else {
+                    if (i >= $carousel.current && i <= $carousel.current + ($carousel.itemsPerPage - 1)) angular.element(slide).addClass('dfr-slide-active');
+                }
+            });
+
+            var tx = $carousel.current * (100 / $carousel.items.length) * -1;
+
+            if ($carousel.customTranslateOffset) {
+                tx = $carousel.customTranslateOffset({
+                    instance: $carousel,
+                    sizes: sizes
+                });
+                if (!tx.custom) {
+                    if (angular.isUndefined(tx) || !angular.isNumber(tx)) {
+                        throw new Error('customTranslateOffset: translate value returned is not a number or not defined.');
+                        return;
+                    }
+                }
+            }
+
+            var onlyOnePage = $carousel.items.length <= $carousel.itemsPerPage;
+            $element.toggleClass('only-one-page', onlyOnePage);
+
+            // provide a value to disable-when-one-page, and it will add that value as classes
+            // to the slide container.
+
+
+            if ($carousel.disableWhenOnePage) {
+                $carousel.disableWhenOnePage({
+                    onlyOnePage: onlyOnePage
+                });
+            }
+            // no point continuing if we only have one page.
+            if (angular.isDefined($attrs.disableWhenOnePage) && onlyOnePage) {
+                setVendor($carousel.slideContainer, 'Transform', '');
+                return;
+            }
+            if (Modernizr.csstransforms3d) {
+                setVendor($carousel.slideContainer, 'Transform', 'translate3d(' + (tx.custom ? tx.custom : tx + '%') + ', 0, 0)');
+            } else {
+                setVendor($carousel.slideContainer, 'Transform', 'translate( ' + (tx.custom ? tx.custom : tx + '%') + ', 0)');
+            }
+            $dfrAnimations.waitTransitionEnd(angular.element($carousel.slideContainer), {
+                timeout: 700 // fallback
+            }).then(function () {
+                $rootScope.$emit('lazyload:images');
+                $rootScope.$emit('viewport:update');
+            });
+        }
+    }]
+};
+
+/***/ }),
+
+/***/ "../src/Feature/ContentPresentation/code/Views/ContentPresentation/Content/CarouselSimple/_dfr-carousel.scss":
+/*!*******************************************************************************************************************!*\
+  !*** ../src/Feature/ContentPresentation/code/Views/ContentPresentation/Content/CarouselSimple/_dfr-carousel.scss ***!
+  \*******************************************************************************************************************/
+/*! no static exports found */
+/*! all exports used */
+/***/ (function(module, exports, __webpack_require__) {
+
+// style-loader: Adds some css to the DOM by adding a <style> tag
+
+// load the styles
+var content = __webpack_require__(/*! !../../../../../../../../architecture/node_modules/css-loader??ref--6-1!../../../../../../../../architecture/node_modules/postcss-loader??ref--6-2!../../../../../../../../architecture/node_modules/sass-loader??ref--6-3!./_dfr-carousel.scss */ "./node_modules/css-loader/index.js?{\"localIdentName\":\"[hash:base64:8]\"}!./node_modules/postcss-loader/index.js?{\"config\":\"C:/projects/dfr/dj/architecture/configuration/postcss.config.js\"}!./node_modules/sass-loader/index.js?{\"sourceComments\":false,\"outputStyle\":\"expanded\",\"includePaths\":[\"C:/projects/dfr/dj/src/Project/dj/code/core/styles\"]}!../src/Feature/ContentPresentation/code/Views/ContentPresentation/Content/CarouselSimple/_dfr-carousel.scss");
+if(typeof content === 'string') content = [[module.i, content, '']];
+// Prepare cssTransformation
+var transform;
+
+var options = {}
+options.transform = transform
+// add the styles to the DOM
+var update = __webpack_require__(/*! ../../../../../../../../architecture/node_modules/style-loader/addStyles.js */ "./node_modules/style-loader/addStyles.js")(content, options);
+if(content.locals) module.exports = content.locals;
+// Hot Module Replacement
+if(false) {
+	// When the styles change, update the <style> tags
+	if(!content.locals) {
+		module.hot.accept("!!../../../../../../../../architecture/node_modules/css-loader/index.js??ref--6-1!../../../../../../../../architecture/node_modules/postcss-loader/index.js??ref--6-2!../../../../../../../../architecture/node_modules/sass-loader/index.js??ref--6-3!./_dfr-carousel.scss", function() {
+			var newContent = require("!!../../../../../../../../architecture/node_modules/css-loader/index.js??ref--6-1!../../../../../../../../architecture/node_modules/postcss-loader/index.js??ref--6-2!../../../../../../../../architecture/node_modules/sass-loader/index.js??ref--6-3!./_dfr-carousel.scss");
+			if(typeof newContent === 'string') newContent = [[module.id, newContent, '']];
+			update(newContent);
+		});
+	}
+	// When the module is disposed, remove the <style> tags
+	module.hot.dispose(function() { update(); });
+}
+
+/***/ }),
+
+/***/ "./node_modules/css-loader/index.js?{\"localIdentName\":\"[hash:base64:8]\"}!./node_modules/postcss-loader/index.js?{\"config\":\"C:/projects/dfr/dj/architecture/configuration/postcss.config.js\"}!./node_modules/sass-loader/index.js?{\"sourceComments\":false,\"outputStyle\":\"expanded\",\"includePaths\":[\"C:/projects/dfr/dj/src/Project/dj/code/core/styles\"]}!../src/Feature/ContentPresentation/code/Views/ContentPresentation/Content/CarouselSimple/_dfr-carousel.scss":
+/*!***************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************!*\
+  !*** ./node_modules/css-loader?{"localIdentName":"[hash:base64:8]"}!./node_modules/postcss-loader?{"config":"C://projects//dfr//dj//architecture//configuration//postcss.config.js"}!./node_modules/sass-loader?{"sourceComments":false,"outputStyle":"expanded","includePaths":["C://projects//dfr//dj//src//Project//dj//code//core//styles"]}!../src/Feature/ContentPresentation/code/Views/ContentPresentation/Content/CarouselSimple/_dfr-carousel.scss ***!
+  \***************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************/
+/*! no static exports found */
+/*! all exports used */
+/***/ (function(module, exports, __webpack_require__) {
+
+exports = module.exports = __webpack_require__(/*! ../../../../../../../../architecture/node_modules/css-loader/lib/css-base.js */ "./node_modules/css-loader/lib/css-base.js")(undefined);
+// imports
+
+
+// module
+exports.push([module.i, "dfr-carousel-children {\n  display: block;\n}\n\n.no-flick {\n  -webkit-perspective: 1000;\n          perspective: 1000;\n  -webkit-backface-visibility: hidden;\n          backface-visibility: hidden;\n  -webkit-transform: translate3d(0, 0, 0);\n          transform: translate3d(0, 0, 0);\n  -webkit-transform-style: preserve-3d;\n          transform-style: preserve-3d;\n}\n\n.dfr-content-carousel-simple.has-content .title-wrapper, .dfr-content-carousel-media.has-content .title-wrapper {\n  padding-top: 7rem;\n}\n\n.dfr-content-carousel-simple.has-content .dfr-carousel, .dfr-content-carousel-media.has-content .dfr-carousel {\n  padding-top: 4rem;\n}\n\n.bp-md .dfr-content-carousel-simple.has-content .dfr-carousel, .bp-md .dfr-content-carousel-media.has-content .dfr-carousel {\n  padding-top: 2rem;\n}\n\n.dfr-content-carousel-simple.has-background-colour:not(.has-content):not([class*=\"space-\"]) .dfr-carousel, .dfr-content-carousel-media.has-background-colour:not(.has-content):not([class*=\"space-\"]) .dfr-carousel {\n  padding-top: 7.5rem;\n}\n\n.dfr-play-button {\n  position: relative;\n  width: 5.5rem;\n  height: 5.5rem;\n  background-color: #000000;\n  color: #ffffff;\n  border-radius: 100%;\n  display: -webkit-flex;\n  display: -ms-flexbox;\n  -js-display: flex;\n  display: flex;\n  z-index: 9;\n}\n\n.bp-md .dfr-play-button {\n  width: 3.625rem;\n  height: 3.625rem;\n}\n\n.dfr-play-button .dfr-svg-icon {\n  position: relative;\n  z-index: 1;\n}\n\n.dfr-play-button:hover > div:before, .dfr-play-button-container:hover .dfr-play-button > div:before {\n  -webkit-transform: scale(1.05);\n          transform: scale(1.05);\n}\n\n.dfr-play-button > div:before {\n  content: \"\";\n  position: absolute;\n  left: 50%;\n  top: 50%;\n  z-index: 0;\n  display: block;\n  width: 6.5rem;\n  height: 6.5rem;\n  margin-left: -3.25rem;\n  margin-top: -3.25rem;\n  background-color: rgba(0, 0, 0, 0.5);\n  border-radius: 100%;\n  -webkit-transform: scale(1);\n          transform: scale(1);\n  transition: -webkit-transform 0.5s cubic-bezier(0.35, 0, 0.25, 1);\n  transition: transform 0.5s cubic-bezier(0.35, 0, 0.25, 1);\n  transition: transform 0.5s cubic-bezier(0.35, 0, 0.25, 1), -webkit-transform 0.5s cubic-bezier(0.35, 0, 0.25, 1);\n}\n\n.bp-md .dfr-play-button > div:before {\n  width: 4.375rem;\n  height: 4.375rem;\n  margin-left: -2.1875rem;\n  margin-top: -2.1875rem;\n}\n\n.dfr-play-button:hover:after {\n  background-color: #1a1a1a;\n}\n\n.dfr-carousel {\n  text-align: left;\n  overflow-x: hidden;\n  padding-top: 1.375rem;\n  padding-bottom: 7.5rem;\n  display: block;\n  position: relative;\n  color: #000000;\n  width: 100vw;\n  max-width: 100%;\n  font-size: 0;\n}\n\n.dfr-carousel.only-one-page .dfr-carousel-control, .dfr-carousel.only-one-page .dfr-carousel-pagination {\n  display: none;\n}\n\n.dfr-carousel.has-single-item {\n  padding-bottom: 0;\n  overflow: visible;\n}\n\n.bp-md .dfr-carousel {\n  padding-top: 1.4375rem;\n}\n\n.bp-sm .dfr-carousel {\n  padding-bottom: 3.125rem;\n}\n\n.dfr-carousel .dfr-carousel-frame {\n  max-width: 100%;\n  width: 100%;\n  position: relative;\n  white-space: nowrap;\n  margin-left: auto;\n  margin-right: auto;\n}\n\n.dfr-carousel .dfr-carousel-slides {\n  display: block;\n  width: 100%;\n  margin: 0;\n  transition: -webkit-transform 0.7s cubic-bezier(0.35, 0, 0.25, 1);\n  transition: transform 0.7s cubic-bezier(0.35, 0, 0.25, 1);\n  transition: transform 0.7s cubic-bezier(0.35, 0, 0.25, 1), -webkit-transform 0.7s cubic-bezier(0.35, 0, 0.25, 1);\n  -webkit-transform: translate(0, 0);\n          transform: translate(0, 0);\n  -webkit-transform: translate3d(0, 0, 0);\n          transform: translate3d(0, 0, 0);\n  -webkit-transform-origin: center left;\n          transform-origin: center left;\n  position: relative;\n  font-size: 0;\n}\n\n.dfr-carousel .dfr-carousel-slides > * {\n  width: 100%;\n  margin: 0;\n  position: relative;\n  display: inline-block;\n  vertical-align: middle;\n}\n\n.dfr-carousel .dfr-carousel-slide:focus {\n  outline: 0;\n}\n\n.dfr-carousel .dfr-carousel-pagination {\n  position: relative;\n  z-index: 8;\n  text-align: center;\n  line-height: 1.75rem;\n  font-size: 1rem;\n  margin-bottom: 0.25rem;\n  padding-top: 0.5rem;\n}\n\n.dfr-carousel .dfr-carousel-pagination span.pagination-el, .dfr-carousel .dfr-carousel-pagination span.pagination-slim span {\n  cursor: pointer;\n  color: #595959;\n}\n\n.dfr-carousel .dfr-carousel-pagination span.pagination-el.breaker, .dfr-carousel .dfr-carousel-pagination span.pagination-slim span.breaker {\n  padding: 0 0.25rem;\n  color: #b5b5b5;\n}\n\n.dfr-carousel .dfr-carousel-pagination span.pagination-el.current, .dfr-carousel .dfr-carousel-pagination span.pagination-slim span.current {\n  font-weight: bold;\n  color: #000000;\n}\n\n.dfr-carousel .dfr-carousel-pagination .pagination-control {\n  width: 5rem;\n  height: 5rem;\n  cursor: pointer;\n}\n\n.dfr-carousel .dfr-carousel-pagination .thumbnail-wrapper {\n  overflow-x: hidden;\n  display: inline-block;\n}\n\n.dfr-carousel .dfr-carousel-pagination .thumbnail-inner {\n  transition: -webkit-transform 0.7s cubic-bezier(0.35, 0, 0.25, 1);\n  transition: transform 0.7s cubic-bezier(0.35, 0, 0.25, 1);\n  transition: transform 0.7s cubic-bezier(0.35, 0, 0.25, 1), -webkit-transform 0.7s cubic-bezier(0.35, 0, 0.25, 1);\n  -webkit-transform: translate3d(0, 0, 0);\n          transform: translate3d(0, 0, 0);\n}\n\n.dfr-carousel .dfr-carousel-pagination .thumbnail {\n  width: 5rem;\n  height: 5rem;\n  display: block;\n  margin: 0 0.75rem;\n  position: relative;\n  background-position: center center;\n  background-size: cover;\n  background-repeat: no-repeat;\n  transition: box-shadow 0.7s cubic-bezier(0.35, 0, 0.25, 1);\n  box-shadow: none;\n  cursor: pointer;\n}\n\n.dfr-carousel .dfr-carousel-pagination .thumbnail.is-first {\n  margin-left: 0.125rem;\n}\n\n.dfr-carousel .dfr-carousel-pagination .thumbnail:before {\n  position: absolute;\n  content: '';\n  top: -0.125rem;\n  left: -0.125rem;\n  width: 4.875rem;\n  height: 4.875rem;\n  border: 0.25rem solid transparent;\n  -webkit-transform: scale(0.95);\n          transform: scale(0.95);\n  transition: all 0.7s cubic-bezier(0.35, 0, 0.25, 1);\n}\n\n.dfr-carousel .dfr-carousel-pagination .thumbnail.current {\n  box-shadow: 0px 5px 6px -3px rgba(0, 0, 0, 0.1), 0px 9px 12px 1px rgba(0, 0, 0, 0.07), 0px 3px 16px 2px rgba(0, 0, 0, 0.08);\n}\n\n.dfr-carousel .dfr-carousel-pagination .thumbnail.current:before {\n  -webkit-transform: scale(1);\n          transform: scale(1);\n}\n\n.triservice .dfr-carousel .dfr-carousel-pagination .thumbnail.current:before {\n  border-color: #f29129;\n}\n\n.triservice-force .dfr-carousel .dfr-carousel-pagination .thumbnail.current:before {\n  border-color: #f29129 !important;\n}\n\n.army .dfr-carousel .dfr-carousel-pagination .thumbnail.current:before {\n  border-color: #edb41e;\n}\n\n.army-force .dfr-carousel .dfr-carousel-pagination .thumbnail.current:before {\n  border-color: #edb41e !important;\n}\n\n.navy .dfr-carousel .dfr-carousel-pagination .thumbnail.current:before {\n  border-color: #1e74f7;\n}\n\n.navy-force .dfr-carousel .dfr-carousel-pagination .thumbnail.current:before {\n  border-color: #1e74f7 !important;\n}\n\n.air-force .dfr-carousel .dfr-carousel-pagination .thumbnail.current:before {\n  border-color: #6895bc;\n}\n\n.air-force-force .dfr-carousel .dfr-carousel-pagination .thumbnail.current:before {\n  border-color: #6895bc !important;\n}\n\n.reserves .dfr-carousel .dfr-carousel-pagination .thumbnail.current:before {\n  border-color: #f29129;\n}\n\n.reserves-force .dfr-carousel .dfr-carousel-pagination .thumbnail.current:before {\n  border-color: #f29129 !important;\n}\n\n.dfr-carousel .dfr-carousel-pagination.thumbnails-condensed .thumbnail {\n  transition: box-shadow 0.7s cubic-bezier(0.35, 0, 0.25, 1), opacity 0.7s cubic-bezier(0.35, 0, 0.25, 1);\n  margin: 0 0.375rem;\n  width: 3.625rem;\n  height: 3.625rem;\n  opacity: 0.5;\n}\n\n.dfr-carousel .dfr-carousel-pagination.thumbnails-condensed .thumbnail:before {\n  width: 3.5rem;\n  height: 3.5rem;\n}\n\n.dfr-carousel .dfr-carousel-pagination.thumbnails-condensed .thumbnail.current {\n  opacity: 1;\n}\n\n.dfr-carousel .dfr-carousel-pagination.thumbnails-condensed .pagination-control {\n  margin: 0.5rem 0px 0;\n  width: 3.625rem;\n  height: 3.625rem;\n}\n\n.dfr-carousel .dfr-carousel-pagination.thumbnails-condensed .pagination-control.prev {\n  margin-left: 0.375rem;\n  margin-right: 0.0625rem;\n}\n\nbody:not(.bp-sm) .dfr-carousel .dfr-carousel-pagination.thumbnails-condensed .pagination-control {\n  background-color: #333333;\n  color: #b5b5b5;\n  transition: background-color 0.7s cubic-bezier(0.35, 0, 0.25, 1), color 0.7s cubic-bezier(0.35, 0, 0.25, 1);\n}\n\nbody:not(.bp-sm) .dfr-carousel .dfr-carousel-pagination.thumbnails-condensed .pagination-control:hover {\n  background-color: #000000;\n  color: #ffffff;\n}\n\n.bp-sm .dfr-carousel .dfr-carousel-pagination.thumbnails-condensed .pagination-control {\n  margin: 0.25rem 0px 0;\n  width: 2.25rem;\n  height: 2.5rem;\n}\n\n.bp-sm .dfr-carousel .dfr-carousel-pagination.thumbnails-condensed .pagination-control .dfr-svg-icon {\n  margin: 0;\n}\n\n.dfr-carousel .inverse .dfr-carousel-pagination .thumbnail {\n  box-shadow: 0px 5px 6px -3px rgba(0, 0, 0, 0.2), 0px 9px 12px 1px rgba(0, 0, 0, 0.17), 0px 3px 16px 2px rgba(0, 0, 0, 0.16);\n}\n\n.dfr-carousel .inverse .dfr-carousel-pagination span.pagination-el, .dfr-carousel .inverse .dfr-carousel-pagination span.pagination-slim span {\n  color: #b5b5b5;\n}\n\n.dfr-carousel .inverse .dfr-carousel-pagination span.pagination-el.breaker, .dfr-carousel .inverse .dfr-carousel-pagination span.pagination-slim span.breaker {\n  color: #d8d8d8;\n}\n\n.dfr-carousel .inverse .dfr-carousel-pagination span.pagination-el.current, .dfr-carousel .inverse .dfr-carousel-pagination span.pagination-slim span.current {\n  color: #ffffff;\n}\n\n.dfr-carousel .dfr-carousel-slides {\n  display: -webkit-box;\n  display: -moz-box;\n  display: -webkit-flexbox;\n  display: -ms-flexbox;\n  display: -webkit-flex;\n  -js-display: flex;\n  display: flex;\n}\n\n.dfr-carousel .dfr-carousel-slides > * {\n  vertical-align: top;\n  position: static;\n  -webkit-box-flex: 1;\n  -moz-box-flex: 1;\n  -webkit-flex: 1;\n  -ms-flex: 1;\n  flex: 1;\n}\n\n.dfr-carousel .carousel-slide-inner {\n  height: 100%;\n}\n\n.dfr-carousel .carousel-slide-inner .content-container-wrapper {\n  position: relative;\n}\n\n.dfr-carousel .carousel-slide-inner .content-container-wrapper .content-container {\n  position: absolute;\n  width: 100%;\n}\n\n.dfr-carousel.horizontal .pagination-control {\n  margin: 0.5rem 0 0;\n}\n\n.dfr-carousel.horizontal .thumbnail-wrapper {\n  padding: 0.5rem 0 7.5rem;\n}\n\n.dfr-carousel.horizontal.is-first .dfr-carousel-prev {\n  opacity: 0.2;\n}\n\n.dfr-carousel.horizontal.is-last .dfr-carousel-next {\n  opacity: 0.2;\n}\n\n.dfr-carousel.horizontal .dfr-carousel-control {\n  position: absolute;\n  top: 50%;\n  margin-top: -6.75rem;\n  z-index: 3;\n  opacity: 1;\n  transition: opacity 0.7s cubic-bezier(0.35, 0, 0.25, 1);\n}\n\n.dfr-carousel.horizontal .dfr-carousel-control .dfr-button {\n  height: 6rem;\n  width: 6rem;\n  line-height: 6rem;\n  margin: 0;\n  text-align: center;\n  padding: 0;\n  background-color: #ffffff;\n  color: #595959;\n}\n\n.dfr-carousel.horizontal .dfr-carousel-control .dfr-button:hover, .dfr-carousel.horizontal .dfr-carousel-control .dfr-button:focus {\n  color: #000000;\n}\n\n.bp-lg .dfr-carousel.horizontal .dfr-carousel-control {\n  margin-top: -6rem;\n}\n\n.bp-lg .dfr-carousel.horizontal .dfr-carousel-control .dfr-button {\n  height: 4.5rem;\n  width: 4.5rem;\n  line-height: 4.5rem;\n}\n\n.bp-md .dfr-carousel.horizontal .dfr-carousel-control {\n  margin-top: -5.625rem;\n}\n\n.bp-md .dfr-carousel.horizontal .dfr-carousel-control .dfr-button {\n  height: 3.75rem;\n  width: 3.75rem;\n  line-height: 3.75rem;\n}\n\n.dfr-carousel.horizontal .dfr-carousel-prev {\n  left: 0px;\n}\n\n.dfr-carousel.horizontal .dfr-carousel-next {\n  right: 0px;\n}\n\n.dfr-carousel.horizontal .dfr-carousel-pagination {\n  margin: 0 auto;\n  padding-top: 3.75rem;\n  width: 81rem;\n  max-width: 100%;\n}\n\n.dfr-carousel.horizontal .carousel-slide-inner {\n  width: 100%;\n  max-width: 100%;\n  margin: 0 auto;\n  box-shadow: none;\n  transition: width 0.7s cubic-bezier(0.35, 0, 0.25, 1), box-shadow 0.7s cubic-bezier(0.35, 0, 0.25, 1), max-width 0.7s cubic-bezier(0.35, 0, 0.25, 1);\n  transition-delay: 0s, 0s;\n}\n\n.dfr-carousel.vertical {\n  text-align: center;\n  vertical-align: top;\n}\n\n.dfr-carousel.vertical .dfr-carousel-pagination {\n  width: 54%;\n  max-width: 11.25rem;\n  display: inline-block;\n  padding-top: 0.125rem;\n  margin-top: 1.875rem;\n}\n\n.bp-md .dfr-carousel.vertical .dfr-carousel-pagination {\n  margin-top: 0;\n  top: 32px;\n}\n\n.dfr-carousel.vertical .pagination-control {\n  width: 2.5rem;\n  height: 2.5rem;\n  margin: 0.25rem 0 0;\n}\n\n.dfr-carousel.vertical .thumbnail-wrapper {\n  padding: 0.25rem 0 3.75rem;\n}\n\n.dfr-carousel.vertical .thumbnails-condensed .pagination-control {\n  margin: 0.25rem 0 3.75rem;\n}\n\n.dfr-carousel.vertical .thumbnails-condensed .pagination-control.prev {\n  margin-left: 0.375rem;\n  margin-right: 0.0625rem;\n}\n\n.dfr-carousel.vertical .thumbnail {\n  width: 2.5rem;\n  height: 2.5rem;\n  display: block;\n  margin: 0 0.5rem;\n}\n\n.dfr-carousel.vertical .thumbnail:before {\n  top: -0.0625rem;\n  left: -0.0625rem;\n  width: 2.4375rem;\n  height: 2.4375rem;\n  border: 0.125rem solid transparent;\n}\n\n.bp-sm .dfr-carousel.vertical .thumbnails-condensed {\n  top: 0;\n}\n\n.dfr-carousel.vertical .thumbnails-condensed .thumbnail {\n  margin: 0 0.1875rem;\n  width: 2.5rem;\n  height: 2.5rem;\n}\n\n.dfr-carousel.vertical .thumbnails-condensed .thumbnail:before {\n  top: -0.125rem;\n  left: -0.125rem;\n  width: 2.5rem;\n  height: 2.5rem;\n}\n\n.dfr-carousel.vertical .thumbnails-condensed .thumbnail-wrapper {\n  padding-bottom: 0.9375rem;\n}\n\n.dfr-carousel.vertical .dfr-carousel-control {\n  width: 15%;\n  max-width: 3.125rem;\n  position: relative;\n  left: auto;\n  top: auto;\n  margin: 0;\n  box-shadow: none;\n  display: inline-block;\n  margin-top: 1.875rem;\n  text-align: center;\n  vertical-align: top;\n}\n\n.dfr-carousel.vertical .dfr-carousel-control .dfr-button {\n  background-color: transparent;\n  min-height: 2rem;\n  line-height: 2rem;\n  padding: 0;\n  text-align: center;\n  margin: 0;\n  width: 100%;\n}\n\n.dfr-carousel.vertical .dfr-carousel-control .dfr-button:hover, .dfr-carousel.vertical .dfr-carousel-control .dfr-button:focus {\n  color: #000000;\n}\n\n.dfr-carousel.vertical .dfr-carousel-slide {\n  -webkit-transform: translateX(0px);\n          transform: translateX(0px);\n  transition: -webkit-transform 0.7s cubic-bezier(0.35, 0, 0.25, 1);\n  transition: transform 0.7s cubic-bezier(0.35, 0, 0.25, 1);\n  transition: transform 0.7s cubic-bezier(0.35, 0, 0.25, 1), -webkit-transform 0.7s cubic-bezier(0.35, 0, 0.25, 1);\n}\n\n.dfr-carousel.simple .dfr-carousel-slide .feature-container {\n  background-size: cover;\n  background-position: center center;\n  background-repeat: no-repeat;\n  background-color: #333333;\n  margin-left: 0;\n  -webkit-filter: none;\n          filter: none;\n  position: absolute;\n}\n\n.dfr-carousel.simple .dfr-carousel-slide .feature-container[ng-click] {\n  cursor: pointer;\n}\n\n.dfr-carousel.simple .dfr-carousel-slide .feature-container .dfr-fab-feature .dfr-svg-play {\n  margin-left: 0.25rem;\n}\n\n.dfr-carousel.simple .dfr-carousel-slide .content-container {\n  white-space: normal;\n}\n\n.dfr-carousel.simple .dfr-carousel-slide .content-container .copy,\n.dfr-carousel.simple .dfr-carousel-slide .content-container .carousel-title {\n  margin: 0;\n  padding: 0;\n}\n\n.dfr-carousel.simple .dfr-carousel-slide .content-container .carousel-pre-title {\n  line-height: 1.5rem;\n  font-size: 1rem;\n  margin-bottom: 0.5rem;\n  padding-top: 0.25rem;\n  margin-bottom: 0;\n}\n\n.dfr-carousel.simple .dfr-carousel-slide .content-container .carousel-title {\n  text-transform: none;\n  margin-bottom: 2.25rem;\n  font-weight: bold;\n  color: #000000;\n}\n\n.dfr-carousel.simple .dfr-carousel-slide .content-container .dfr-primary {\n  margin-left: 0;\n  margin-bottom: 0;\n}\n\n.dfr-carousel.simple .dfr-carousel-slide:not(.dfr-slide-active) .feature-container {\n  -webkit-filter: grayscale(1);\n  -webkit-filter: grayscale(100%);\n  filter: gray;\n  filter: grayscale(100%);\n}\n\n.dfr-carousel.simple .dfr-carousel-slide:not(.dfr-slide-active) .feature-container:hover {\n  -webkit-filter: none;\n          filter: none;\n}\n\n.dfr-carousel.simple .dfr-carousel-slide:not(.dfr-slide-active) .feature-container:hover:after {\n  opacity: 0.2;\n}\n\n.dfr-carousel.simple .dfr-carousel-slide.dfr-slide-active .content-container-wrapper {\n  opacity: 1;\n  transition-delay: 0s, 0.35s;\n}\n\nbody:not(.bp-sm) .dfr-carousel.simple.after-hover .dfr-carousel-slide:not(.dfr-slide-active).after .feature-container {\n  -webkit-filter: none;\n          filter: none;\n  transition-delay: 0s;\n}\n\nbody:not(.bp-sm) .dfr-carousel.simple.after-hover .dfr-carousel-slide:not(.dfr-slide-active).after .feature-container:after {\n  opacity: 0.2;\n}\n\nbody:not(.bp-sm) .dfr-carousel.simple.before-hover .dfr-carousel-slide:not(.dfr-slide-active).before .feature-container {\n  -webkit-filter: none;\n          filter: none;\n  transition-delay: 0s;\n}\n\nbody:not(.bp-sm) .dfr-carousel.simple.before-hover .dfr-carousel-slide:not(.dfr-slide-active).before .feature-container:after {\n  opacity: 0.2;\n}\n\n.dfr-carousel.horizontal.simple .dfr-carousel-frame {\n  z-index: 2;\n}\n\n.dfr-carousel.horizontal.simple .footer-container {\n  display: none;\n}\n\n.dfr-carousel.horizontal.simple .dfr-carousel-control {\n  top: 46%;\n}\n\n.has-background-colour:not(.has-content):not([class*=\"space-\"]) .dfr-carousel.horizontal.simple .dfr-carousel-control {\n  top: calc(46% + 3.75rem);\n}\n\n.bp-lg .dfr-carousel.horizontal.simple .dfr-carousel-slide.dfr-slide-active .carousel-slide-inner {\n  max-width: calc(100% - 5rem);\n}\n\n.dfr-carousel.horizontal.simple .dfr-carousel-slide .feature-container-wrapper,\n.dfr-carousel.horizontal.simple .dfr-carousel-slide .content-container-wrapper {\n  width: 50%;\n}\n\n.dfr-carousel.horizontal.simple .dfr-carousel-slide .feature-container-wrapper {\n  -webkit-transform: translate(0, 0);\n          transform: translate(0, 0);\n  -webkit-transform: translate3d(0, 0, 0);\n          transform: translate3d(0, 0, 0);\n  background-color: transparent;\n  transition: margin 0.7s cubic-bezier(0.35, 0, 0.25, 1), width 0.7s cubic-bezier(0.35, 0, 0.25, 1), background-color 0.7s cubic-bezier(0.35, 0, 0.25, 1), -webkit-transform 0.7s cubic-bezier(0.35, 0, 0.25, 1);\n  transition: margin 0.7s cubic-bezier(0.35, 0, 0.25, 1), transform 0.7s cubic-bezier(0.35, 0, 0.25, 1), width 0.7s cubic-bezier(0.35, 0, 0.25, 1), background-color 0.7s cubic-bezier(0.35, 0, 0.25, 1);\n  transition: margin 0.7s cubic-bezier(0.35, 0, 0.25, 1), transform 0.7s cubic-bezier(0.35, 0, 0.25, 1), width 0.7s cubic-bezier(0.35, 0, 0.25, 1), background-color 0.7s cubic-bezier(0.35, 0, 0.25, 1), -webkit-transform 0.7s cubic-bezier(0.35, 0, 0.25, 1);\n  z-index: 3;\n}\n\n.dfr-carousel.horizontal.simple .dfr-carousel-slide .feature-container {\n  height: 100%;\n  -webkit-transform: translate(0, 0);\n          transform: translate(0, 0);\n  -webkit-transform: translate3d(0, 0, 0);\n          transform: translate3d(0, 0, 0);\n  transition: margin 0.7s cubic-bezier(0.35, 0, 0.25, 1), opacity 0.7s cubic-bezier(0.35, 0, 0.25, 1), height 0.7s cubic-bezier(0.35, 0, 0.25, 1), background-image 0.7s cubic-bezier(0.35, 0, 0.25, 1), -webkit-transform 0.7s cubic-bezier(0.35, 0, 0.25, 1), -webkit-filter 1.4s cubic-bezier(0.35, 0, 0.25, 1), -webkit-transform-origin 0.7s cubic-bezier(0.35, 0, 0.25, 1);\n  transition: margin 0.7s cubic-bezier(0.35, 0, 0.25, 1), transform 0.7s cubic-bezier(0.35, 0, 0.25, 1), filter 1.4s cubic-bezier(0.35, 0, 0.25, 1), transform-origin 0.7s cubic-bezier(0.35, 0, 0.25, 1), opacity 0.7s cubic-bezier(0.35, 0, 0.25, 1), height 0.7s cubic-bezier(0.35, 0, 0.25, 1), background-image 0.7s cubic-bezier(0.35, 0, 0.25, 1);\n  transition: margin 0.7s cubic-bezier(0.35, 0, 0.25, 1), transform 0.7s cubic-bezier(0.35, 0, 0.25, 1), filter 1.4s cubic-bezier(0.35, 0, 0.25, 1), transform-origin 0.7s cubic-bezier(0.35, 0, 0.25, 1), opacity 0.7s cubic-bezier(0.35, 0, 0.25, 1), height 0.7s cubic-bezier(0.35, 0, 0.25, 1), background-image 0.7s cubic-bezier(0.35, 0, 0.25, 1), -webkit-transform 0.7s cubic-bezier(0.35, 0, 0.25, 1), -webkit-filter 1.4s cubic-bezier(0.35, 0, 0.25, 1), -webkit-transform-origin 0.7s cubic-bezier(0.35, 0, 0.25, 1);\n  transition-delay: 0s, 0.4s, 0.35s, 0s, 0s, 0s, 0s;\n  max-width: 40.5rem;\n}\n\n.dfr-carousel.horizontal.simple .dfr-carousel-slide .feature-container:after {\n  content: '';\n  position: absolute;\n  top: 0;\n  left: 0;\n  right: 0;\n  bottom: 0;\n  background-color: #000000;\n  transition: opacity 0.7s cubic-bezier(0.35, 0, 0.25, 1);\n  opacity: 0.7;\n}\n\n.dfr-carousel.horizontal.simple .dfr-carousel-slide .content-container-wrapper {\n  transition: margin 0.7s cubic-bezier(0.35, 0, 0.25, 1), opacity 0.35s cubic-bezier(0.35, 0, 0.25, 1), background-color 0.7s cubic-bezier(0.35, 0, 0.25, 1);\n  transition-delay: 0s, 0.35s;\n  z-index: 1;\n  min-height: 34.375rem;\n}\n\n.dfr-carousel.horizontal.simple .dfr-carousel-slide .content-container {\n  padding: 5.625rem 6.25rem;\n}\n\n.dfr-carousel.horizontal.simple .dfr-carousel-slide .content-container .copy {\n  padding-right: 3.125rem;\n}\n\n.bp-md .dfr-carousel.horizontal.simple .dfr-carousel-slide .content-container .copy {\n  padding-right: 0;\n}\n\n.dfr-carousel.horizontal.simple .dfr-carousel-slide .content-container .dfr-primary {\n  margin-top: 3.75rem;\n}\n\n.bp-lg .dfr-carousel.horizontal.simple .dfr-carousel-slide .content-container {\n  padding: 2.8125rem 3.75rem;\n}\n\n.bp-md .dfr-carousel.horizontal.simple .dfr-carousel-slide .content-container {\n  padding: 2.25rem;\n}\n\n.bp-md .dfr-carousel.horizontal.simple .dfr-carousel-slide .outer {\n  max-width: 100%;\n}\n\n.dfr-carousel.horizontal.simple .dfr-carousel-slide:not(.dfr-slide-active) .content-container-wrapper {\n  opacity: 0;\n  background-color: transparent;\n}\n\n.dfr-carousel.horizontal.simple .dfr-carousel-slide:not(.dfr-slide-active) .feature-container-wrapper {\n  transition-delay: 0s, 0s, 0s, 0.5s;\n  background-color: #ffffff;\n}\n\n.dfr-carousel.horizontal.simple .dfr-carousel-slide:not(.dfr-slide-active) .feature-container {\n  transition-delay: 0s, 0s, 0s, 0.35s, 0s, 0.175s, 0s;\n}\n\n.dfr-carousel.horizontal.simple .dfr-carousel-slide.dfr-slide-active {\n  z-index: 4;\n}\n\n.dfr-carousel.horizontal.simple .dfr-carousel-slide.dfr-slide-active .carousel-slide-inner {\n  width: 81rem;\n  box-shadow: 0px 11px 15px -7px rgba(0, 0, 0, 0.1), 0px 24px 38px 3px rgba(0, 0, 0, 0.07), 0px 9px 46px 8px rgba(0, 0, 0, 0.08);\n}\n\n.dfr-carousel.horizontal.simple .dfr-carousel-slide.dfr-slide-active .content-container-wrapper {\n  background-color: #ffffff;\n  margin-left: 0;\n  z-index: 3;\n}\n\n.dfr-carousel.horizontal.simple .dfr-carousel-slide.dfr-slide-active .feature-container:focus {\n  outline: none;\n  height: calc(100% + 0.75rem);\n  -webkit-transform: translate3d(0, -0.75rem, 0);\n          transform: translate3d(0, -0.75rem, 0);\n}\n\n.dfr-carousel.horizontal.simple .dfr-carousel-slide.dfr-slide-active .feature-container:after {\n  opacity: 0;\n}\n\n.dfr-carousel.horizontal.simple .dfr-carousel-slide.before {\n  z-index: 5;\n}\n\n.dfr-carousel.horizontal.simple .dfr-carousel-slide.before .carousel-slide-inner {\n  width: 100%;\n}\n\n.dfr-carousel.horizontal.simple .dfr-carousel-slide.before .content-container-wrapper {\n  transition-delay: 0s, 0.175s;\n  opacity: 0;\n}\n\n.dfr-carousel.horizontal.simple .dfr-carousel-slide.before .feature-container-wrapper {\n  position: relative;\n  margin-left: 0;\n  -webkit-transform: translateX(calc(100% + (100vw + (-81rem)) / 2 - 2.5rem));\n          transform: translateX(calc(100% + (100vw + (-81rem)) / 2 - 2.5rem));\n  -webkit-transform: translate3d(calc(100% + (100vw + (-81rem)) / 2 - 2.5rem), 0, 0);\n          transform: translate3d(calc(100% + (100vw + (-81rem)) / 2 - 2.5rem), 0, 0);\n  z-index: 6;\n}\n\n.bp-lg .dfr-carousel.horizontal.simple .dfr-carousel-slide.before .feature-container-wrapper {\n  -webkit-transform: translateX(calc(100% + 1.25rem));\n          transform: translateX(calc(100% + 1.25rem));\n  -webkit-transform: translate3d(calc(100% + 1.25rem), 0, 0);\n          transform: translate3d(calc(100% + 1.25rem), 0, 0);\n}\n\n.dfr-carousel.horizontal.simple .dfr-carousel-slide.before .feature-container {\n  margin-left: calc(100% - 40.5rem);\n}\n\n.dfr-carousel.horizontal.simple .dfr-carousel-slide.after {\n  z-index: 4;\n}\n\n.dfr-carousel.horizontal.simple .dfr-carousel-slide.after .carousel-slide-inner {\n  width: 100%;\n}\n\n.dfr-carousel.horizontal.simple .dfr-carousel-slide.after .content-container-wrapper {\n  opacity: 0;\n}\n\n.dfr-carousel.horizontal.simple .dfr-carousel-slide.after .feature-container-wrapper {\n  width: 100%;\n  -webkit-transform: translateX(calc((-100vw - (-81rem)) / 2 + 2.5rem));\n          transform: translateX(calc((-100vw - (-81rem)) / 2 + 2.5rem));\n  -webkit-transform: translate3d(calc((-100vw - (-81rem)) / 2 + 2.5rem), 0, 0);\n          transform: translate3d(calc((-100vw - (-81rem)) / 2 + 2.5rem), 0, 0);\n  margin-left: 0%;\n}\n\n.bp-lg .dfr-carousel.horizontal.simple .dfr-carousel-slide.after .feature-container-wrapper {\n  -webkit-transform: translateX(-1.25rem);\n          transform: translateX(-1.25rem);\n  -webkit-transform: translate3d(-1.25rem, 0, 0);\n          transform: translate3d(-1.25rem, 0, 0);\n}\n\n.dfr-carousel.horizontal.simple .dfr-carousel-slide.after .feature-container {\n  -webkit-transform-origin: center left;\n          transform-origin: center left;\n}\n\n.dfr-carousel.horizontal.simple.callout .dfr-carousel-slide {\n  max-height: 29.375rem;\n}\n\n.dfr-carousel.horizontal.simple.callout .dfr-carousel-slide .carousel-slide-inner {\n  width: 79.375rem;\n}\n\n.dfr-carousel.horizontal.simple.callout .dfr-carousel-slide .content-container-wrapper {\n  min-height: 29.375rem;\n}\n\n.dfr-carousel.horizontal.simple.callout .dfr-carousel-slide .content-container-wrapper .content-container {\n  padding: 4.875rem 6.25rem;\n}\n\n.bp-lg .dfr-carousel.horizontal.simple.callout .dfr-carousel-slide .content-container-wrapper .content-container {\n  padding: 4.0625rem 2.5rem;\n}\n\n.bp-md .dfr-carousel.horizontal.simple.callout .dfr-carousel-slide .content-container-wrapper .content-container {\n  padding: 5rem 2.5rem;\n}\n\n.dfr-carousel.horizontal.simple.callout .dfr-carousel-slide .content-container-wrapper .content-container > div {\n  position: relative;\n  height: 100%;\n}\n\n.dfr-carousel.horizontal.simple.callout .dfr-carousel-slide .content-container-wrapper dfr-svg.dfr-svg-quote {\n  margin-bottom: 2.5rem;\n}\n\n.bp-md .dfr-carousel.horizontal.simple.callout .dfr-carousel-slide .content-container-wrapper dfr-svg.dfr-svg-quote {\n  margin-bottom: 1.25rem;\n}\n\n.dfr-carousel.horizontal.simple.callout .dfr-carousel-slide .content-container-wrapper blockquote p {\n  border-left: 0;\n  padding-left: 0;\n  font-size: 1.875rem;\n  font-style: normal;\n  padding-bottom: 0;\n  margin-bottom: 0;\n}\n\n.bp-md .dfr-carousel.horizontal.simple.callout .dfr-carousel-slide .content-container-wrapper blockquote p {\n  font-size: 1.3125rem;\n}\n\n.dfr-carousel.horizontal.simple.callout .dfr-carousel-slide .content-container-wrapper blockquote p:before {\n  display: none;\n}\n\n.dfr-carousel.horizontal.simple.callout .dfr-carousel-slide .content-container-wrapper .author {\n  border-left: 0.1875rem solid #d8d8d8;\n  padding-left: 1rem;\n  position: absolute;\n  bottom: 0;\n}\n\n.dfr-carousel.horizontal.simple.callout .dfr-carousel-slide .content-container-wrapper .author h4 {\n  padding-top: 0;\n}\n\n.dfr-carousel.horizontal.simple.callout .dfr-carousel-slide .content-container-wrapper .author p {\n  font-size: 0.875rem;\n  letter-spacing: 0.0625rem;\n  text-transform: uppercase;\n  line-height: 1rem;\n}\n\n.dfr-carousel.simple.vertical .carousel-slide-inner {\n  margin: 0 auto;\n  width: 100%;\n  max-width: 18rem;\n  box-shadow: 0px 3px 5px -1px rgba(0, 0, 0, 0.1), 0px 6px 10px 0px rgba(0, 0, 0, 0.07), 0px 1px 18px 0px rgba(0, 0, 0, 0.08);\n  transition: -webkit-transform 0.7s cubic-bezier(0.35, 0, 0.25, 1);\n  transition: transform 0.7s cubic-bezier(0.35, 0, 0.25, 1);\n  transition: transform 0.7s cubic-bezier(0.35, 0, 0.25, 1), -webkit-transform 0.7s cubic-bezier(0.35, 0, 0.25, 1);\n}\n\n.device-ios .dfr-carousel.simple.vertical .carousel-slide-inner {\n  height: auto;\n}\n\n.dfr-carousel.simple.vertical .dfr-carousel-slide {\n  display: -webkit-flex;\n  display: -ms-flexbox;\n  -js-display: flex;\n  display: flex;\n}\n\n.dfr-carousel.simple.vertical .dfr-carousel-slide .feature-container-wrapper,\n.dfr-carousel.simple.vertical .dfr-carousel-slide .content-container-wrapper {\n  position: relative;\n  width: 100%;\n  transition: margin 0.7s cubic-bezier(0.35, 0, 0.25, 1);\n}\n\n.dfr-carousel.simple.vertical .dfr-carousel-slide .feature-container {\n  width: 100%;\n  height: 10.125rem;\n  transition: opacity 0.7s cubic-bezier(0.35, 0, 0.25, 1), -webkit-filter 1.4s cubic-bezier(0.35, 0, 0.25, 1);\n  transition: opacity 0.7s cubic-bezier(0.35, 0, 0.25, 1), filter 1.4s cubic-bezier(0.35, 0, 0.25, 1);\n  transition: opacity 0.7s cubic-bezier(0.35, 0, 0.25, 1), filter 1.4s cubic-bezier(0.35, 0, 0.25, 1), -webkit-filter 1.4s cubic-bezier(0.35, 0, 0.25, 1);\n  transition-delay: 0.175s, 0s;\n  z-index: 3;\n  position: relative;\n}\n\n.dfr-carousel.simple.vertical .dfr-carousel-slide .content-container-wrapper {\n  background-color: #ffffff;\n  padding: 1.875rem 1.5rem 2.5rem;\n  z-index: 4;\n  -webkit-flex: 1;\n      -ms-flex: 1;\n          flex: 1;\n}\n\n.dfr-carousel.simple.vertical .dfr-carousel-slide .footer-container {\n  display: block;\n}\n\n.dfr-carousel.simple.vertical .dfr-carousel-slide .footer-container .dfr-primary {\n  margin: 0;\n  width: 100%;\n  padding: 0;\n  text-align: center;\n}\n\n.dfr-carousel.simple.vertical .dfr-carousel-slide .content-container {\n  position: relative;\n  -webkit-align-items: flex-start;\n      -ms-flex-align: start;\n          align-items: flex-start;\n  text-align: center;\n}\n\n.dfr-carousel.simple.vertical .dfr-carousel-slide .content-container .outer {\n  width: 100%;\n  display: block;\n}\n\n.dfr-carousel.simple.vertical .dfr-carousel-slide .content-container .dfr-primary {\n  display: none;\n}\n\n.dfr-carousel.simple.vertical .dfr-carousel-slide .content-container .carousel-quote p {\n  font-size: 1rem;\n  line-height: 1.375rem;\n  margin-bottom: 0.625rem;\n  color: #000000;\n  padding: 0;\n  border: 0;\n}\n\n.dfr-carousel.simple.vertical .dfr-carousel-slide .content-container .carousel-pre-title {\n  font-size: 0.75rem;\n  line-height: 1.25rem;\n  margin-bottom: 0.625rem;\n}\n\n.dfr-carousel.simple.vertical .dfr-carousel-slide .content-container .carousel-title {\n  color: #000000;\n  font-size: 1.125rem;\n  line-height: 1.5rem;\n  margin-bottom: 0.625rem;\n}\n\n.dfr-carousel.simple.vertical .dfr-carousel-slide .content-container h4.author-title {\n  margin-bottom: 0;\n  font-size: 0.875rem;\n  line-height: 1.375rem;\n}\n\n.dfr-carousel.simple.vertical .dfr-carousel-slide .content-container .copy {\n  font-size: 0.875rem;\n  line-height: 1.25rem;\n}\n\n.dfr-carousel.simple.vertical .dfr-carousel-slide .content-container .quote-copy {\n  font-size: 0.75rem;\n  line-height: 1.125rem;\n  color: #000000;\n}\n\n.dfr-carousel.simple.vertical .dfr-carousel-slide.dfr-slide-active {\n  z-index: 5;\n}\n\n.dfr-carousel.simple.vertical .dfr-carousel-slide.dfr-slide-active .feature-container {\n  transition-delay: 0s;\n}\n\n.dfr-carousel.simple.vertical .dfr-carousel-slide.before {\n  z-index: 4;\n}\n\n.dfr-carousel.simple.vertical .dfr-carousel-slide.before .carousel-slide-inner {\n  -webkit-transform: translateX(calc( 100vw - 100% - 1.5625rem));\n          transform: translateX(calc( 100vw - 100% - 1.5625rem));\n  -webkit-transform: translate3d(calc( 100vw - 100% - 1.5625rem), 0, 0);\n          transform: translate3d(calc( 100vw - 100% - 1.5625rem), 0, 0);\n}\n\n.dfr-carousel.simple.vertical .dfr-carousel-slide.before .feature-container-wrapper,\n.dfr-carousel.simple.vertical .dfr-carousel-slide.before .content-container-wrapper {\n  margin-right: 0;\n}\n\n.dfr-carousel.simple.vertical .dfr-carousel-slide.after {\n  z-index: 4;\n}\n\n.dfr-carousel.simple.vertical .dfr-carousel-slide.after .carousel-slide-inner {\n  -webkit-transform: translateX(calc( -100vw + 100% + 1.5625rem));\n          transform: translateX(calc( -100vw + 100% + 1.5625rem));\n  -webkit-transform: translate3d(calc( -100vw + 100% + 1.5625rem), 0, 0);\n          transform: translate3d(calc( -100vw + 100% + 1.5625rem), 0, 0);\n}\n\n.dfr-carousel.simple.vertical .dfr-carousel-slide.after .feature-container-wrapper,\n.dfr-carousel.simple.vertical .dfr-carousel-slide.after .content-container-wrapper {\n  margin-left: 0;\n}\n\n.dfr-carousel.simple.vertical.callout .dfr-carousel-slide {\n  max-height: 26.25rem;\n}\n\n.dfr-carousel.simple.vertical.callout .dfr-carousel-slide .content-container-wrapper {\n  padding: 1.625rem 1.25rem;\n}\n\n.dfr-carousel.simple.vertical.callout .dfr-carousel-slide .content-container-wrapper .dfr-svg-icon {\n  display: none;\n}\n\n.dfr-carousel.simple.vertical.callout .dfr-carousel-slide .content-container-wrapper .content-container .carousel-quote p {\n  font-size: 1.0625rem;\n  font-style: normal;\n}\n\n.dfr-carousel.media {\n  padding-bottom: 0;\n}\n\n.bp-sm .dfr-carousel.media {\n  padding-bottom: 3.125rem;\n}\n\n.dfr-carousel.media .dfr-carousel-pagination {\n  padding-top: 0;\n  width: 100%;\n  max-width: 100%;\n  margin-top: 0;\n  margin-bottom: 0;\n}\n\n.dfr-carousel.media .carousel-slide-inner {\n  overflow: hidden;\n  transition: box-shadow 0.7s cubic-bezier(0.35, 0, 0.25, 1), -webkit-transform 0.7s cubic-bezier(0.35, 0, 0.25, 1);\n  transition: transform 0.7s cubic-bezier(0.35, 0, 0.25, 1), box-shadow 0.7s cubic-bezier(0.35, 0, 0.25, 1);\n  transition: transform 0.7s cubic-bezier(0.35, 0, 0.25, 1), box-shadow 0.7s cubic-bezier(0.35, 0, 0.25, 1), -webkit-transform 0.7s cubic-bezier(0.35, 0, 0.25, 1);\n  transition-delay: 0s;\n  -webkit-transform: translate3d(0, 0, 0);\n          transform: translate3d(0, 0, 0);\n}\n\n.dfr-carousel.media .feature-container-wrapper {\n  width: 100%;\n  height: 100%;\n  background-color: #1a1a1a;\n}\n\n.dfr-carousel.media .feature-container {\n  opacity: 1;\n  transition: all 0.7s cubic-bezier(0.35, 0, 0.25, 1);\n  transition-delay: 0s;\n}\n\n.dfr-carousel.media .feature-container:focus {\n  outline: none;\n}\n\n.dfr-carousel.media .content-container-wrapper {\n  position: absolute;\n  bottom: 0;\n  left: 0;\n  width: 100%;\n  height: 4.5rem;\n  background-color: rgba(0, 0, 0, 0.8);\n  border-left: 0.375rem solid;\n  padding: 0 1.875rem;\n  transition-delay: 0s;\n  transition: all 0.7s cubic-bezier(0.35, 0, 0.25, 1);\n}\n\n.triservice .dfr-carousel.media .content-container-wrapper {\n  border-left-color: #f29129;\n}\n\n.triservice-force .dfr-carousel.media .content-container-wrapper {\n  border-left-color: #f29129 !important;\n}\n\n.army .dfr-carousel.media .content-container-wrapper {\n  border-left-color: #edb41e;\n}\n\n.army-force .dfr-carousel.media .content-container-wrapper {\n  border-left-color: #edb41e !important;\n}\n\n.navy .dfr-carousel.media .content-container-wrapper {\n  border-left-color: #1e74f7;\n}\n\n.navy-force .dfr-carousel.media .content-container-wrapper {\n  border-left-color: #1e74f7 !important;\n}\n\n.air-force .dfr-carousel.media .content-container-wrapper {\n  border-left-color: #6895bc;\n}\n\n.air-force-force .dfr-carousel.media .content-container-wrapper {\n  border-left-color: #6895bc !important;\n}\n\n.reserves .dfr-carousel.media .content-container-wrapper {\n  border-left-color: #f29129;\n}\n\n.reserves-force .dfr-carousel.media .content-container-wrapper {\n  border-left-color: #f29129 !important;\n}\n\n.dfr-carousel.media .content-container-wrapper p {\n  margin: 0;\n  padding: 0;\n  white-space: normal;\n  text-align: left;\n}\n\n.dfr-carousel.media .content-container-wrapper .layout-row {\n  height: 100%;\n  text-align: center;\n}\n\n.dfr-carousel.media .before .carousel-slide-inner {\n  -webkit-transform: translateX(calc(100vw - 100% - 3.5rem));\n          transform: translateX(calc(100vw - 100% - 3.5rem));\n  -webkit-transform: translate3d(calc(100vw - 100% - 3.5rem), 0, 0);\n          transform: translate3d(calc(100vw - 100% - 3.5rem), 0, 0);\n  transition-delay: 0.05s;\n  cursor: pointer;\n}\n\n.bp-lg .dfr-carousel.media .before .carousel-slide-inner {\n  -webkit-transform: translateX(calc(100vw - 100% - 2.5rem));\n          transform: translateX(calc(100vw - 100% - 2.5rem));\n  -webkit-transform: translate3d(calc(100vw - 100% - 2.5rem), 0, 0);\n          transform: translate3d(calc(100vw - 100% - 2.5rem), 0, 0);\n}\n\n.dfr-carousel.media .before .carousel-slide-inner .feature-container {\n  opacity: 0.3;\n  transition-delay: 0.05s;\n}\n\n.dfr-carousel.media .before .carousel-slide-inner .feature-container:hover {\n  opacity: 0.5;\n}\n\n.dfr-carousel.media .after .carousel-slide-inner {\n  cursor: pointer;\n  -webkit-transform: translateX(calc(-100vw + 100% + 3.5rem));\n          transform: translateX(calc(-100vw + 100% + 3.5rem));\n  -webkit-transform: translate3d(calc(-100vw + 100% + 3.5rem), 0, 0);\n          transform: translate3d(calc(-100vw + 100% + 3.5rem), 0, 0);\n  transition-delay: 0.05s;\n}\n\n.bp-lg .dfr-carousel.media .after .carousel-slide-inner {\n  -webkit-transform: translateX(calc(-100vw + 100% + 2.5rem));\n          transform: translateX(calc(-100vw + 100% + 2.5rem));\n  -webkit-transform: translate3d(calc(-100vw + 100% + 2.5rem), 0, 0);\n          transform: translate3d(calc(-100vw + 100% + 2.5rem), 0, 0);\n}\n\n.dfr-carousel.media .after .carousel-slide-inner .feature-container {\n  opacity: 0.3;\n  transition-delay: 0.05s;\n}\n\n.dfr-carousel.media .after .carousel-slide-inner .feature-container:hover {\n  opacity: 0.5;\n}\n\n.dfr-carousel.media.layout-contained {\n  opacity: 1;\n  overflow: hidden;\n}\n\n.dfr-carousel.media.layout-contained .dfr-carousel-slide {\n  transition: opacity 0.7s cubic-bezier(0.35, 0, 0.25, 1);\n  transition-delay: 0.7s;\n}\n\n.dfr-carousel.media.layout-contained .dfr-carousel-slides {\n  display: block;\n  transition: -webkit-transform 0s ease;\n  transition: transform 0s ease;\n  transition: transform 0s ease, -webkit-transform 0s ease;\n  transition-delay: 0.7s;\n}\n\n.dfr-carousel.media.layout-contained .dfr-carousel-control {\n  display: none;\n}\n\n.dfr-carousel.media.layout-contained .before, .dfr-carousel.media.layout-contained .after {\n  transition-delay: 0s;\n  opacity: 0;\n}\n\n.dfr-carousel.media.layout-contained .before .carousel-slide-inner, .dfr-carousel.media.layout-contained .after .carousel-slide-inner {\n  -webkit-transform: none;\n          transform: none;\n}\n\n.dfr-carousel.media.horizontal .carousel-slide-inner {\n  overflow: hidden;\n  margin: 0 auto 3.125rem;\n  width: 100%;\n}\n\n.dfr-carousel.media.horizontal:not(.layout-contained) .carousel-slide-inner {\n  max-width: calc(100% - 2.5rem);\n  height: calc(100% - 6.25rem);\n}\n\n.bp-xlg .dfr-carousel.media.horizontal:not(.layout-contained) .carousel-slide-inner {\n  max-width: 100%;\n}\n\n.bp-lg .dfr-carousel.media.horizontal:not(.layout-contained) .carousel-slide-inner {\n  max-width: calc(100% - 5rem);\n}\n\n.dfr-carousel.media.horizontal .dfr-carousel-control {\n  margin-top: 0;\n}\n\n.dfr-carousel.media.horizontal .content-container-wrapper {\n  opacity: 0;\n  -webkit-transform: translate3d(0, 100%, 0);\n          transform: translate3d(0, 100%, 0);\n}\n\n.dfr-carousel.media.horizontal .dfr-slide-active .carousel-slide-inner {\n  box-shadow: 0px 11px 15px -7px rgba(0, 0, 0, 0.1), 0px 24px 38px 3px rgba(0, 0, 0, 0.07), 0px 9px 46px 8px rgba(0, 0, 0, 0.08);\n}\n\n.dfr-carousel.media.horizontal .dfr-slide-active .carousel-slide-inner.inverse-shadow {\n  box-shadow: 0px 11px 15px -7px rgba(0, 0, 0, 0.2), 0px 24px 38px 3px rgba(0, 0, 0, 0.17), 0px 9px 46px 8px rgba(0, 0, 0, 0.16);\n}\n\n.dfr-carousel.media.horizontal .dfr-slide-active .content-container-wrapper {\n  opacity: 1;\n  transition-delay: 0.2s;\n  -webkit-transform: translate3d(0, 0%, 0);\n          transform: translate3d(0, 0%, 0);\n}\n\n.dfr-carousel.media.horizontal.layout-contained {\n  padding-top: 0;\n}\n\n.dfr-carousel.media.horizontal.layout-contained .carousel-slide-inner {\n  width: 100%;\n  height: 100%;\n  -webkit-transform: none;\n          transform: none;\n  transition: box-shadow 1.4s cubic-bezier(0.35, 0, 0.25, 1);\n  box-shadow: none;\n  margin-bottom: 0.25rem;\n}\n\n.dfr-carousel.media.horizontal.layout-contained .carousel-slide-inner.inverse-shadow {\n  box-shadow: none;\n}\n\n.bp-xlg .dfr-carousel.media.horizontal.layout-contained .carousel-slide-inner {\n  max-width: 67.1875rem;\n}\n\n.dfr-carousel.media.horizontal.layout-contained .carousel-slide-inner .feature-container-wrapper .dfr-button.dfr-fab.dfr-fab-feature {\n  line-height: 5.875rem;\n  width: 5.625rem;\n  height: 5.625rem;\n  min-height: 5.625rem;\n}\n\n.dfr-carousel.media.horizontal.layout-4x3-tall .carousel-slide-inner {\n  width: 79.75rem;\n  height: 44.6875rem;\n}\n\n.bp-lg .dfr-carousel.media.horizontal.layout-4x3-tall .carousel-slide-inner {\n  width: 100%;\n  height: 30rem;\n}\n\n.dfr-carousel.media.horizontal.layout-4x3-tall .dfr-carousel-control {\n  top: 22.34375rem;\n}\n\n.has-background-colour:not(.has-content):not([class*=\"space-\"]) .dfr-carousel.media.horizontal.layout-4x3-tall .dfr-carousel-control {\n  top: calc(22.34375rem + 3.75rem);\n}\n\n.dfr-carousel.media.horizontal.layout-4x3 .carousel-slide-inner {\n  width: 66.25rem;\n  height: 37.5rem;\n}\n\n.dfr-carousel.media.horizontal.layout-4x3 .dfr-carousel-control {\n  top: 18.75rem;\n}\n\n.has-background-colour:not(.has-content):not([class*=\"space-\"]) .dfr-carousel.media.horizontal.layout-4x3 .dfr-carousel-control {\n  top: calc(18.75rem + 3.75rem);\n}\n\n.dfr-carousel.media.horizontal.layout-16x9 .carousel-slide-inner {\n  width: 79.75rem;\n  height: 34.375rem;\n}\n\n.dfr-carousel.media.horizontal.layout-16x9 .dfr-carousel-control {\n  top: 17.1875rem;\n}\n\n.has-background-colour:not(.has-content):not([class*=\"space-\"]) .dfr-carousel.media.horizontal.layout-16x9 .dfr-carousel-control {\n  top: calc(17.1875rem + 3.75rem);\n}\n\n.dfr-carousel.media.vertical .dfr-carousel-pagination {\n  display: -webkit-flex;\n  display: -ms-flexbox;\n  -js-display: flex;\n  display: flex;\n}\n\n.dfr-carousel.media.vertical .dfr-carousel-control {\n  display: none;\n}\n\n.dfr-carousel.media.vertical .carousel-slide-inner {\n  overflow: initial;\n  margin: 1.5625rem auto;\n  width: 100%;\n}\n\n.dfr-carousel.media.vertical:not(.layout-contained) .carousel-slide-inner {\n  max-width: calc(100% - 2.5rem);\n  height: calc(100% - 3.125rem);\n}\n\n.dfr-carousel.media.vertical .dfr-slide-active .carousel-slide-inner {\n  box-shadow: 0px 5px 6px -3px rgba(0, 0, 0, 0.1), 0px 9px 12px 1px rgba(0, 0, 0, 0.07), 0px 3px 16px 2px rgba(0, 0, 0, 0.08);\n}\n\n.dfr-carousel.media.vertical .dfr-slide-active .carousel-slide-inner.inverse-shadow {\n  box-shadow: 0px 5px 6px -3px rgba(0, 0, 0, 0.2), 0px 9px 12px 1px rgba(0, 0, 0, 0.17), 0px 3px 16px 2px rgba(0, 0, 0, 0.16);\n}\n\n.dfr-carousel.media.vertical .dfr-button.dfr-fab.dfr-fab-feature {\n  line-height: 4rem;\n  width: 3.75rem;\n  height: 3.75rem;\n  min-height: 3.75rem;\n}\n\n.dfr-carousel.media.vertical .feature-container-wrapper {\n  height: 10rem;\n}\n\n.dfr-carousel.media.vertical .feature-container-wrapper.no-caption {\n  min-height: 10rem;\n  height: calc(100% + 3.125rem);\n}\n\n.device-ios .bp-sm .dfr-carousel.media.vertical .feature-container-wrapper.no-caption {\n  height: 10rem;\n}\n\n.dfr-carousel.media.vertical .content-container-wrapper {\n  padding: 0.5rem 1.25rem 0.5rem 0.9375rem;\n  position: relative;\n  min-height: 3rem;\n}\n\n.dfr-carousel.media.vertical .content-container-wrapper p {\n  font-size: 0.75rem;\n  line-height: 1rem;\n}\n\n.dfr-carousel.media.vertical .dfr-play-button {\n  bottom: 0;\n}\n\n.dfr-carousel.media.vertical.layout-contained .content-container-wrapper {\n  height: 3.125rem;\n}\n\n.dfr-carousel.media.vertical:not(.layout-contained) .before .carousel-slide-inner {\n  -webkit-transform: translateX(calc(100vw - 100% - 1.5625rem));\n          transform: translateX(calc(100vw - 100% - 1.5625rem));\n  -webkit-transform: translate3d(calc(100vw - 100% - 1.5625rem), 0, 0);\n          transform: translate3d(calc(100vw - 100% - 1.5625rem), 0, 0);\n}\n\n.dfr-carousel.media.vertical:not(.layout-contained) .after .carousel-slide-inner {\n  cursor: pointer;\n  -webkit-transform: translateX(calc(-100vw + 100% + 1.5625rem));\n          transform: translateX(calc(-100vw + 100% + 1.5625rem));\n  -webkit-transform: translate3d(calc(-100vw + 100% + 1.5625rem), 0, 0);\n          transform: translate3d(calc(-100vw + 100% + 1.5625rem), 0, 0);\n}\n\n[class*=\"col-\"] .dfr-carousel.media {\n  width: 100%;\n}\n\n[class*=\"col-\"] .dfr-carousel.media.vertical .dfr-slide-active .carousel-slide-inner {\n  box-shadow: none;\n}\n\n[class*=\"col-\"] .dfr-carousel.media.vertical .dfr-slide-active .carousel-slide-inner.inverse-shadow {\n  box-shadow: none;\n}\n", ""]);
+
+// exports
+
+
+/***/ }),
+
+/***/ "./node_modules/css-loader/lib/css-base.js":
+/*!*************************************************!*\
+  !*** ./node_modules/css-loader/lib/css-base.js ***!
+  \*************************************************/
+/*! no static exports found */
+/*! all exports used */
+/***/ (function(module, exports) {
+
+/*
+	MIT License http://www.opensource.org/licenses/mit-license.php
+	Author Tobias Koppers @sokra
+*/
+// css base code, injected by the css-loader
+module.exports = function(useSourceMap) {
+	var list = [];
+
+	// return the list of modules as css string
+	list.toString = function toString() {
+		return this.map(function (item) {
+			var content = cssWithMappingToString(item, useSourceMap);
+			if(item[2]) {
+				return "@media " + item[2] + "{" + content + "}";
+			} else {
+				return content;
+			}
+		}).join("");
+	};
+
+	// import a list of modules into the list
+	list.i = function(modules, mediaQuery) {
+		if(typeof modules === "string")
+			modules = [[null, modules, ""]];
+		var alreadyImportedModules = {};
+		for(var i = 0; i < this.length; i++) {
+			var id = this[i][0];
+			if(typeof id === "number")
+				alreadyImportedModules[id] = true;
+		}
+		for(i = 0; i < modules.length; i++) {
+			var item = modules[i];
+			// skip already imported module
+			// this implementation is not 100% perfect for weird media query combinations
+			//  when a module is imported multiple times with different media queries.
+			//  I hope this will never occur (Hey this way we have smaller bundles)
+			if(typeof item[0] !== "number" || !alreadyImportedModules[item[0]]) {
+				if(mediaQuery && !item[2]) {
+					item[2] = mediaQuery;
+				} else if(mediaQuery) {
+					item[2] = "(" + item[2] + ") and (" + mediaQuery + ")";
+				}
+				list.push(item);
+			}
+		}
+	};
+	return list;
+};
+
+function cssWithMappingToString(item, useSourceMap) {
+	var content = item[1] || '';
+	var cssMapping = item[3];
+	if (!cssMapping) {
+		return content;
+	}
+
+	if (useSourceMap && typeof btoa === 'function') {
+		var sourceMapping = toComment(cssMapping);
+		var sourceURLs = cssMapping.sources.map(function (source) {
+			return '/*# sourceURL=' + cssMapping.sourceRoot + source + ' */'
+		});
+
+		return [content].concat(sourceURLs).concat([sourceMapping]).join('\n');
+	}
+
+	return [content].join('\n');
+}
+
+// Adapted from convert-source-map (MIT)
+function toComment(sourceMap) {
+	// eslint-disable-next-line no-undef
+	var base64 = btoa(unescape(encodeURIComponent(JSON.stringify(sourceMap))));
+	var data = 'sourceMappingURL=data:application/json;charset=utf-8;base64,' + base64;
+
+	return '/*# ' + data + ' */';
+}
+
+
+/***/ }),
+
+/***/ "./node_modules/style-loader/addStyles.js":
+/*!************************************************!*\
+  !*** ./node_modules/style-loader/addStyles.js ***!
+  \************************************************/
+/*! no static exports found */
+/*! all exports used */
+/***/ (function(module, exports, __webpack_require__) {
+
+/*
+	MIT License http://www.opensource.org/licenses/mit-license.php
+	Author Tobias Koppers @sokra
+*/
+var stylesInDom = {},
+	memoize = function(fn) {
+		var memo;
+		return function () {
+			if (typeof memo === "undefined") memo = fn.apply(this, arguments);
+			return memo;
+		};
+	},
+	isOldIE = memoize(function() {
+		// Test for IE <= 9 as proposed by Browserhacks
+		// @see http://browserhacks.com/#hack-e71d8692f65334173fee715c222cb805
+		// Tests for existence of standard globals is to allow style-loader 
+		// to operate correctly into non-standard environments
+		// @see https://github.com/webpack-contrib/style-loader/issues/177
+		return window && document && document.all && !window.atob;
+	}),
+	getElement = (function(fn) {
+		var memo = {};
+		return function(selector) {
+			if (typeof memo[selector] === "undefined") {
+				memo[selector] = fn.call(this, selector);
+			}
+			return memo[selector]
+		};
+	})(function (styleTarget) {
+		return document.querySelector(styleTarget)
+	}),
+	singletonElement = null,
+	singletonCounter = 0,
+	styleElementsInsertedAtTop = [],
+	fixUrls = __webpack_require__(/*! ./fixUrls */ "./node_modules/style-loader/fixUrls.js");
+
+module.exports = function(list, options) {
+	if(false) {
+		if(typeof document !== "object") throw new Error("The style-loader cannot be used in a non-browser environment");
+	}
+
+	options = options || {};
+	options.attrs = typeof options.attrs === "object" ? options.attrs : {};
+
+	// Force single-tag solution on IE6-9, which has a hard limit on the # of <style>
+	// tags it will allow on a page
+	if (typeof options.singleton === "undefined") options.singleton = isOldIE();
+
+	// By default, add <style> tags to the <head> element
+	if (typeof options.insertInto === "undefined") options.insertInto = "head";
+
+	// By default, add <style> tags to the bottom of the target
+	if (typeof options.insertAt === "undefined") options.insertAt = "bottom";
+
+	var styles = listToStyles(list, options);
+	addStylesToDom(styles, options);
+
+	return function update(newList) {
+		var mayRemove = [];
+		for(var i = 0; i < styles.length; i++) {
+			var item = styles[i];
+			var domStyle = stylesInDom[item.id];
+			domStyle.refs--;
+			mayRemove.push(domStyle);
+		}
+		if(newList) {
+			var newStyles = listToStyles(newList, options);
+			addStylesToDom(newStyles, options);
+		}
+		for(var i = 0; i < mayRemove.length; i++) {
+			var domStyle = mayRemove[i];
+			if(domStyle.refs === 0) {
+				for(var j = 0; j < domStyle.parts.length; j++)
+					domStyle.parts[j]();
+				delete stylesInDom[domStyle.id];
+			}
+		}
+	};
+};
+
+function addStylesToDom(styles, options) {
+	for(var i = 0; i < styles.length; i++) {
+		var item = styles[i];
+		var domStyle = stylesInDom[item.id];
+		if(domStyle) {
+			domStyle.refs++;
+			for(var j = 0; j < domStyle.parts.length; j++) {
+				domStyle.parts[j](item.parts[j]);
+			}
+			for(; j < item.parts.length; j++) {
+				domStyle.parts.push(addStyle(item.parts[j], options));
+			}
+		} else {
+			var parts = [];
+			for(var j = 0; j < item.parts.length; j++) {
+				parts.push(addStyle(item.parts[j], options));
+			}
+			stylesInDom[item.id] = {id: item.id, refs: 1, parts: parts};
+		}
+	}
+}
+
+function listToStyles(list, options) {
+	var styles = [];
+	var newStyles = {};
+	for(var i = 0; i < list.length; i++) {
+		var item = list[i];
+		var id = options.base ? item[0] + options.base : item[0];
+		var css = item[1];
+		var media = item[2];
+		var sourceMap = item[3];
+		var part = {css: css, media: media, sourceMap: sourceMap};
+		if(!newStyles[id])
+			styles.push(newStyles[id] = {id: id, parts: [part]});
+		else
+			newStyles[id].parts.push(part);
+	}
+	return styles;
+}
+
+function insertStyleElement(options, styleElement) {
+	var styleTarget = getElement(options.insertInto)
+	if (!styleTarget) {
+		throw new Error("Couldn't find a style target. This probably means that the value for the 'insertInto' parameter is invalid.");
+	}
+	var lastStyleElementInsertedAtTop = styleElementsInsertedAtTop[styleElementsInsertedAtTop.length - 1];
+	if (options.insertAt === "top") {
+		if(!lastStyleElementInsertedAtTop) {
+			styleTarget.insertBefore(styleElement, styleTarget.firstChild);
+		} else if(lastStyleElementInsertedAtTop.nextSibling) {
+			styleTarget.insertBefore(styleElement, lastStyleElementInsertedAtTop.nextSibling);
+		} else {
+			styleTarget.appendChild(styleElement);
+		}
+		styleElementsInsertedAtTop.push(styleElement);
+	} else if (options.insertAt === "bottom") {
+		styleTarget.appendChild(styleElement);
+	} else {
+		throw new Error("Invalid value for parameter 'insertAt'. Must be 'top' or 'bottom'.");
+	}
+}
+
+function removeStyleElement(styleElement) {
+	styleElement.parentNode.removeChild(styleElement);
+	var idx = styleElementsInsertedAtTop.indexOf(styleElement);
+	if(idx >= 0) {
+		styleElementsInsertedAtTop.splice(idx, 1);
+	}
+}
+
+function createStyleElement(options) {
+	var styleElement = document.createElement("style");
+	options.attrs.type = "text/css";
+
+	attachTagAttrs(styleElement, options.attrs);
+	insertStyleElement(options, styleElement);
+	return styleElement;
+}
+
+function createLinkElement(options) {
+	var linkElement = document.createElement("link");
+	options.attrs.type = "text/css";
+	options.attrs.rel = "stylesheet";
+
+	attachTagAttrs(linkElement, options.attrs);
+	insertStyleElement(options, linkElement);
+	return linkElement;
+}
+
+function attachTagAttrs(element, attrs) {
+	Object.keys(attrs).forEach(function (key) {
+		element.setAttribute(key, attrs[key]);
+	});
+}
+
+function addStyle(obj, options) {
+	var styleElement, update, remove, transformResult;
+
+	// If a transform function was defined, run it on the css
+	if (options.transform && obj.css) {
+	    transformResult = options.transform(obj.css);
+	    
+	    if (transformResult) {
+	    	// If transform returns a value, use that instead of the original css.
+	    	// This allows running runtime transformations on the css.
+	    	obj.css = transformResult;
+	    } else {
+	    	// If the transform function returns a falsy value, don't add this css. 
+	    	// This allows conditional loading of css
+	    	return function() {
+	    		// noop
+	    	};
+	    }
+	}
+
+	if (options.singleton) {
+		var styleIndex = singletonCounter++;
+		styleElement = singletonElement || (singletonElement = createStyleElement(options));
+		update = applyToSingletonTag.bind(null, styleElement, styleIndex, false);
+		remove = applyToSingletonTag.bind(null, styleElement, styleIndex, true);
+	} else if(obj.sourceMap &&
+		typeof URL === "function" &&
+		typeof URL.createObjectURL === "function" &&
+		typeof URL.revokeObjectURL === "function" &&
+		typeof Blob === "function" &&
+		typeof btoa === "function") {
+		styleElement = createLinkElement(options);
+		update = updateLink.bind(null, styleElement, options);
+		remove = function() {
+			removeStyleElement(styleElement);
+			if(styleElement.href)
+				URL.revokeObjectURL(styleElement.href);
+		};
+	} else {
+		styleElement = createStyleElement(options);
+		update = applyToTag.bind(null, styleElement);
+		remove = function() {
+			removeStyleElement(styleElement);
+		};
+	}
+
+	update(obj);
+
+	return function updateStyle(newObj) {
+		if(newObj) {
+			if(newObj.css === obj.css && newObj.media === obj.media && newObj.sourceMap === obj.sourceMap)
+				return;
+			update(obj = newObj);
+		} else {
+			remove();
+		}
+	};
+}
+
+var replaceText = (function () {
+	var textStore = [];
+
+	return function (index, replacement) {
+		textStore[index] = replacement;
+		return textStore.filter(Boolean).join('\n');
+	};
+})();
+
+function applyToSingletonTag(styleElement, index, remove, obj) {
+	var css = remove ? "" : obj.css;
+
+	if (styleElement.styleSheet) {
+		styleElement.styleSheet.cssText = replaceText(index, css);
+	} else {
+		var cssNode = document.createTextNode(css);
+		var childNodes = styleElement.childNodes;
+		if (childNodes[index]) styleElement.removeChild(childNodes[index]);
+		if (childNodes.length) {
+			styleElement.insertBefore(cssNode, childNodes[index]);
+		} else {
+			styleElement.appendChild(cssNode);
+		}
+	}
+}
+
+function applyToTag(styleElement, obj) {
+	var css = obj.css;
+	var media = obj.media;
+
+	if(media) {
+		styleElement.setAttribute("media", media)
+	}
+
+	if(styleElement.styleSheet) {
+		styleElement.styleSheet.cssText = css;
+	} else {
+		while(styleElement.firstChild) {
+			styleElement.removeChild(styleElement.firstChild);
+		}
+		styleElement.appendChild(document.createTextNode(css));
+	}
+}
+
+function updateLink(linkElement, options, obj) {
+	var css = obj.css;
+	var sourceMap = obj.sourceMap;
+
+	/* If convertToAbsoluteUrls isn't defined, but sourcemaps are enabled
+	and there is no publicPath defined then lets turn convertToAbsoluteUrls
+	on by default.  Otherwise default to the convertToAbsoluteUrls option
+	directly
+	*/
+	var autoFixUrls = options.convertToAbsoluteUrls === undefined && sourceMap;
+
+	if (options.convertToAbsoluteUrls || autoFixUrls){
+		css = fixUrls(css);
+	}
+
+	if(sourceMap) {
+		// http://stackoverflow.com/a/26603875
+		css += "\n/*# sourceMappingURL=data:application/json;base64," + btoa(unescape(encodeURIComponent(JSON.stringify(sourceMap)))) + " */";
+	}
+
+	var blob = new Blob([css], { type: "text/css" });
+
+	var oldSrc = linkElement.href;
+
+	linkElement.href = URL.createObjectURL(blob);
+
+	if(oldSrc)
+		URL.revokeObjectURL(oldSrc);
+}
+
+
+/***/ }),
+
+/***/ "./node_modules/style-loader/fixUrls.js":
+/*!**********************************************!*\
+  !*** ./node_modules/style-loader/fixUrls.js ***!
+  \**********************************************/
+/*! no static exports found */
+/*! all exports used */
+/***/ (function(module, exports) {
+
+
+/**
+ * When source maps are enabled, `style-loader` uses a link element with a data-uri to
+ * embed the css on the page. This breaks all relative urls because now they are relative to a
+ * bundle instead of the current page.
+ *
+ * One solution is to only use full urls, but that may be impossible.
+ *
+ * Instead, this function "fixes" the relative urls to be absolute according to the current page location.
+ *
+ * A rudimentary test suite is located at `test/fixUrls.js` and can be run via the `npm test` command.
+ *
+ */
+
+module.exports = function (css) {
+  // get current location
+  var location = typeof window !== "undefined" && window.location;
+
+  if (!location) {
+    throw new Error("fixUrls requires window.location");
+  }
+
+	// blank or null?
+	if (!css || typeof css !== "string") {
+	  return css;
+  }
+
+  var baseUrl = location.protocol + "//" + location.host;
+  var currentDir = baseUrl + location.pathname.replace(/\/[^\/]*$/, "/");
+
+	// convert each url(...)
+	/*
+	This regular expression is just a way to recursively match brackets within
+	a string.
+
+	 /url\s*\(  = Match on the word "url" with any whitespace after it and then a parens
+	   (  = Start a capturing group
+	     (?:  = Start a non-capturing group
+	         [^)(]  = Match anything that isn't a parentheses
+	         |  = OR
+	         \(  = Match a start parentheses
+	             (?:  = Start another non-capturing groups
+	                 [^)(]+  = Match anything that isn't a parentheses
+	                 |  = OR
+	                 \(  = Match a start parentheses
+	                     [^)(]*  = Match anything that isn't a parentheses
+	                 \)  = Match a end parentheses
+	             )  = End Group
+              *\) = Match anything and then a close parens
+          )  = Close non-capturing group
+          *  = Match anything
+       )  = Close capturing group
+	 \)  = Match a close parens
+
+	 /gi  = Get all matches, not the first.  Be case insensitive.
+	 */
+	var fixedCss = css.replace(/url\s*\(((?:[^)(]|\((?:[^)(]+|\([^)(]*\))*\))*)\)/gi, function(fullMatch, origUrl) {
+		// strip quotes (if they exist)
+		var unquotedOrigUrl = origUrl
+			.trim()
+			.replace(/^"(.*)"$/, function(o, $1){ return $1; })
+			.replace(/^'(.*)'$/, function(o, $1){ return $1; });
+
+		// already a full url? no change
+		if (/^(#|data:|http:\/\/|https:\/\/|file:\/\/\/)/i.test(unquotedOrigUrl)) {
+		  return fullMatch;
+		}
+
+		// convert the url to a full url
+		var newUrl;
+
+		if (unquotedOrigUrl.indexOf("//") === 0) {
+		  	//TODO: should we add protocol?
+			newUrl = unquotedOrigUrl;
+		} else if (unquotedOrigUrl.indexOf("/") === 0) {
+			// path should be relative to the base url
+			newUrl = baseUrl + unquotedOrigUrl; // already starts with '/'
+		} else {
+			// path should be relative to current directory
+			newUrl = currentDir + unquotedOrigUrl.replace(/^\.\//, ""); // Strip leading './'
+		}
+
+		// send back the fixed url(...)
+		return "url(" + JSON.stringify(newUrl) + ")";
+	});
+
+	// send back the fixed css
+	return fixedCss;
+};
+
+
+/***/ })
+
+/******/ });

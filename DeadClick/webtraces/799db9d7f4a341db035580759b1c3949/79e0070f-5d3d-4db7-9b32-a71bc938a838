@@ -1,0 +1,91 @@
+
+/**
+ * Switch image src based on screen size.
+ * Usage:
+ * 	The image must have a data-breakpoints attribute containing a JSON string of src URLs. See example for format:
+ * 	<img src="image_M" alt="" id="myImage"
+ * 		data-breakpoints='{"m":{"src":"image_M"},"t":{"src":"image_T"},"d":{"src":"image_D"}}' />
+ * 	<script>
+ * 		s7ImageSet(document.getElementById("myImage"));
+ * 	</script>
+ * 
+ * @param  {element} imgHandle The img element to be updated.
+ */
+function s7ImageSet(imgHandle){
+
+	if(!imgHandle) return;
+
+	// imgHandle.addEventListener('load', function(){
+	// 	this.width = this.naturalWidth;
+	// 	this.height = this.naturalHeight;
+	// });
+
+	function winResized(){
+		// get window width
+		var currentDeviceSize = getDeviceSize(getWindowWidth());
+		if(currentDeviceSize == device){
+			return;
+		}
+		device = currentDeviceSize;
+		// console.log("new device size",device);
+
+		var newSrc, newWidth, newHeight;
+		// update img src, width, height
+		switch(device){
+			case "largeDesktop":
+			case "smallDesktop":
+				newSrc = bp.d.src;
+				newWidth = bp.d.width;
+				newHeight = bp.d.height;
+				break;
+			case "tablet":
+				newSrc = bp.t.src;
+				newWidth = bp.t.width;
+				newHeight = bp.t.height;
+				break;
+			case "mobile":
+			default:
+				newSrc = bp.m.src;
+				newWidth = bp.m.width;
+				newHeight = bp.m.height;
+		}
+		if(newSrc)    imgHandle.src    = newSrc;
+		if(newWidth)  imgHandle.width  = newWidth;
+		if(newHeight) imgHandle.height = newHeight;
+	}
+	function getWindowWidth(){
+		// TODO: add scrollbar width if there is a scrollbar on body
+		return window.innerWidth;
+	}
+	function getDeviceSize(windowWidth){
+		if(!windowWidth){
+			windowWidth = getWindowWidth();
+		}
+		if(windowWidth >= app.constants.DESKTOP_LG_MIN_WIDTH){
+			return "largeDesktop";
+		}
+		if(windowWidth >= app.constants.DESKTOP_MIN_WIDTH){
+			return "smallDesktop";
+		}
+		if(windowWidth >= app.constants.TABLET_MIN_WIDTH){
+			return "tablet";
+		}
+		return "mobile";
+	}
+
+	var bp = {};
+	var device = null;
+
+	try{
+		bp = JSON.parse(imgHandle.getAttribute("data-breakpoints"));
+	}
+	catch(err){
+		console.error("bad JSON data");
+		return;
+	}
+	// call winResize to set the initial device size and image src
+	winResized();
+
+	// listen for a change in the window width
+	window.addEventListener('resize', winResized);
+}

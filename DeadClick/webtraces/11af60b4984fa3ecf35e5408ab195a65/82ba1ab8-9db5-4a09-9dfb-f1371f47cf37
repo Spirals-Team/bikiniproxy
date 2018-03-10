@@ -1,0 +1,564 @@
+// JavaScript Document
+var home_slide = 0;
+var home_max_slide = 1;
+var home_slide_suiv = "";
+var home_lecture_slide = true;
+var home_defile_auto = "";
+
+var prix_fiche = 0;
+
+function number_format (number, decimals, dec_point, thousands_sep) {
+    // Strip all characters but numerical ones.
+    number = (number + '').replace(/[^0-9+\-Ee.]/g, '');
+    var n = !isFinite(+number) ? 0 : +number,
+        prec = !isFinite(+decimals) ? 0 : Math.abs(decimals),        sep = (typeof thousands_sep === 'undefined') ? ',' : thousands_sep,
+        dec = (typeof dec_point === 'undefined') ? '.' : dec_point,
+        s = '',
+        toFixedFix = function (n, prec) {
+            var k = Math.pow(10, prec);            return '' + Math.round(n * k) / k;
+        };
+    // Fix for IE parseFloat(0.55).toFixed(0) = 0;
+    s = (prec ? toFixedFix(n, prec) : '' + Math.round(n)).split('.');
+    if (s[0].length > 3) {        s[0] = s[0].replace(/\B(?=(?:\d{3})+(?!\d))/g, sep);
+    }
+    if ((s[1] || '').length < prec) {
+        s[1] = s[1] || '';
+        s[1] += new Array(prec - s[1].length + 1).join('0');    }
+    return s.join(dec);
+}
+
+function isEmail(email){
+	var regEmail = new RegExp('^[0-9a-z._-]+@{1}[0-9a-z.-]{2,}[.]{1}[a-z]{2,5}$','i');
+	return regEmail.test(email);
+}
+
+function total_vehicule(){
+	var total_options = 0;
+	$("#liste_options input[type=checkbox]").each(function( ) {
+		if($(this).is(':checked')){
+			total_options += parseInt($(this).data("prix"));
+		}
+	});
+	console.log(total_options);
+	console.log(prix_fiche);
+	console.log(total_options+prix_fiche);
+	prix_final = total_options+prix_fiche;
+
+	$("#input_prix_options").val(total_options);
+	$("#prix_devis").html(number_format(prix_final, 0, ",", " ")+"€");
+}
+
+function home_slide_auto(){
+	if(home_max_slide>1){
+		if(home_slide<(home_max_slide-1)){
+			home_slide_suiv = home_slide+1;
+		}else{
+			home_slide_suiv = 0;
+		}
+		home_anim_slide();
+	}
+}
+
+function home_goto_slide(num){
+	home_lecture_slide = false;
+	clearTimeout(home_defile_auto);
+	home_slide_suiv = num;
+	home_anim_slide();
+}
+
+function home_anim_slide(){
+	if(home_slide_suiv!==""){
+		$("#btslide_"+home_slide).removeClass("active");
+		$("#btslide_"+home_slide_suiv).addClass("active");
+		$("#slide_"+home_slide).fadeOut(500);
+		$("#slide_"+home_slide_suiv).fadeIn(500, function() {
+    		home_slide = home_slide_suiv;
+			if(home_lecture_slide==true){
+				home_defile_auto = setTimeout("home_slide_auto();", 5000);
+			}
+  		});
+	}
+}
+
+function marques_select_ajax(carrosserie){
+	$.ajax({
+		url: base_url+"ajax/marques_select_ajax",
+		type: "get",
+		data: "carrosserie=" + carrosserie,
+
+		success: function(data) {
+			$("#select_marque").html(data);
+		}
+	});
+}
+function modeles_select_ajax(marque, carrosserie){
+	$.ajax({
+		url: base_url+"ajax/modeles_select_ajax/"+marque,
+		type: "get",
+		data: "carrosserie=" + carrosserie,
+
+		success: function(data) {
+			$("#select_modele").html(data);
+		}
+	});
+}
+
+
+function verif_form_devis(){
+	var erreurs = "";
+	if(document.form_devis.id_vehicule.value==""){
+		erreurs += "- véhicule\r\n";
+	}
+	if($('input[name=civilite]:checked').length == 0){
+		erreurs += "- civilite\r\n";
+	}
+	if(document.form_devis.nom.value==""){
+		erreurs += "- nom\r\n";
+	}
+	if(document.form_devis.prenom.value==""){
+		erreurs += "- prénom\r\n";
+	}
+	if(document.form_devis.email.value==""){
+		erreurs += "- votre email\r\n";
+	}else if(!isEmail(document.form_devis.email.value)){
+		erreurs += "- votre email doit être valide\r\n";
+	}
+	if(document.form_devis.tel.value==""){
+		erreurs += "- téléphone\r\n";
+	}
+	if(erreurs==""){
+		document.form_devis.submit();
+	}else{
+		alert("Les champs suivants sont requis : \r\n"+erreurs);
+	}
+}
+
+
+function valid_form_rdv(){
+	var erreurs = "";
+	
+	if(document.form_rdv.marque.value==""){
+		erreurs += "- marque\r\n";
+	}
+	if(document.form_rdv.modele.value==""){
+		erreurs += "- modèle\r\n";
+	}
+	if(document.form_rdv.energie.value==""){
+		erreurs += "- energie\r\n";
+	}
+	if(document.form_rdv.km.value==""){
+		erreurs += "- km\r\n";
+	}
+	if(document.form_rdv.annee.value==""){
+		erreurs += "- année\r\n";
+	}
+	if(document.form_rdv.immatriculation.value==""){
+		erreurs += "- immatriculation\r\n";
+	}
+	if(document.form_rdv.date_rdv.value==""){
+		erreurs += "- date du rendez-vous\r\n";
+	}
+	if($('input[name=demi_j]:checked').length == 0){
+		erreurs += "- demi-journée du rendez-vous\r\n";
+	}
+	if(document.form_rdv.intervention.value==""){
+		erreurs += "- intervention\r\n";
+	}
+	if(document.form_rdv.nom.value==""){
+		erreurs += "- nom\r\n";
+	}
+	if(document.form_rdv.prenom.value==""){
+		erreurs += "- prenom\r\n";
+	}
+	if(document.form_rdv.email.value==""){
+		erreurs += "- email\r\n";
+	}else if(!isEmail(document.form_rdv.email.value)){
+		erreurs += "- votre email doit être valide\r\n";
+	}
+	if(document.form_rdv.adresse.value==""){
+		erreurs += "- adresse\r\n";
+	}
+	if(document.form_rdv.cp.value==""){
+		erreurs += "- cp\r\n";
+	}
+	if(document.form_rdv.ville.value==""){
+		erreurs += "- ville\r\n";
+	}
+	if(document.form_rdv.tel1.value==""){
+		erreurs += "- numéro de téléphone\r\n";
+	}
+
+	if(erreurs==""){
+		document.form_rdv.submit();
+	}else{
+		alert("Les champs suivants sont requis : \r\n"+erreurs);
+	}
+	
+}
+
+function valid_form_evaluer(){
+	var erreurs = "";
+	
+	if(document.form_evaluer.marque.value==""){
+		erreurs += "- marque\r\n";
+	}
+	if(document.form_evaluer.modele.value==""){
+		erreurs += "- modèle\r\n";
+	}
+	if(document.form_evaluer.energie.value==""){
+		erreurs += "- energie\r\n";
+	}
+	if(document.form_evaluer.km.value==""){
+		erreurs += "- km\r\n";
+	}
+	if(document.form_evaluer.annee.value==""){
+		erreurs += "- année\r\n";
+	}
+	if(document.form_evaluer.puissance.value==""){
+		erreurs += "- puissance\r\n";
+	}
+	if(document.form_evaluer.prix.value==""){
+		erreurs += "- prix d'achat\r\n";
+	}
+	if(document.form_evaluer.infos.value==""){
+		erreurs += "- informations supplémentaires\r\n";
+	}
+	if(document.form_evaluer.nom.value==""){
+		erreurs += "- nom\r\n";
+	}
+	if(document.form_evaluer.prenom.value==""){
+		erreurs += "- prenom\r\n";
+	}
+	if(document.form_evaluer.email.value==""){
+		erreurs += "- email\r\n";
+	}else if(!isEmail(document.form_evaluer.email.value)){
+		erreurs += "- votre email doit être valide\r\n";
+	}
+	if(document.form_evaluer.adresse.value==""){
+		erreurs += "- adresse\r\n";
+	}
+	if(document.form_evaluer.cp.value==""){
+		erreurs += "- cp\r\n";
+	}
+	if(document.form_evaluer.ville.value==""){
+		erreurs += "- ville\r\n";
+	}
+	if(document.form_evaluer.tel1.value==""){
+		erreurs += "- numéro de téléphone\r\n";
+	}
+
+	if(erreurs==""){
+		document.form_evaluer.submit();
+	}else{
+		alert("Les champs suivants sont requis : \r\n"+erreurs);
+	}
+	
+}
+
+function valid_form_contact(){
+	var erreurs = "";
+	
+	if(document.form_contact.nom.value==""){
+		erreurs += "- nom\r\n";
+	}
+	if(document.form_contact.prenom.value==""){
+		erreurs += "- prenom\r\n";
+	}
+	if(document.form_contact.email.value==""){
+		erreurs += "- email\r\n";
+	}else if(!isEmail(document.form_contact.email.value)){
+		erreurs += "- votre email doit être valide\r\n";
+	}
+	if(document.form_contact.message.value==""){
+		erreurs += "- message\r\n";
+	}
+
+	if(erreurs==""){
+		document.form_contact.submit();
+	}else{
+		alert("Les champs suivants sont requis : \r\n"+erreurs);
+	}
+	
+}
+
+function valid_form_avis(){
+	var erreurs = "";
+	
+	if(document.form_avis.nom.value==""){
+		erreurs += "- nom\r\n";
+	}
+	if(document.form_avis.email.value==""){
+		erreurs += "- email\r\n";
+	}else if(!isEmail(document.form_avis.email.value)){
+		erreurs += "- votre email doit être valide\r\n";
+	}
+	if(document.form_avis.note.value==""){
+		erreurs += "- note\r\n";
+	}
+	if(document.form_avis.avis.value==""){
+		erreurs += "- avis\r\n";
+	}
+
+	if(erreurs==""){
+		document.form_contact.submit();
+	}else{
+		alert("Les champs suivants sont requis : \r\n"+erreurs);
+	}
+	
+}
+
+$(document).ready(function() {
+	//alert("♪┏(°.°)┛┗(°.°)┓┗(°.°)┛┏(°.°)┓ ♪");
+	$(".datepicker").datepicker();
+
+	$("#btn_menu").click(function(){
+		if($("#deroulant").css("display")=="none"){
+			//$("#sousmenu").css("display", "block");
+			$("#deroulant").addClass("actif");
+			$("#btn_menu").addClass("actif");
+		}else{
+			//$("#sousmenu").css("display", "none");
+			$("#deroulant").removeClass("actif");
+			$("#btn_menu").removeClass("actif");
+		}
+	})
+	$(".btn_souscat").click(function(){
+		if($(".ul_souscat").css("display")=="none"){
+			$(".ul_souscat").addClass("actif");
+		}else{
+			$(".ul_souscat").removeClass("actif");
+		}
+	})
+
+	/*** Slider home ***/
+	$("#slider ul > li > a").click(function(){
+		var num_clic = $(this).data("num");
+		home_goto_slide(num_clic);
+	});
+	if($("#slider").length) {
+		var home_defile_auto = setTimeout("home_slide_auto();", 5000);
+	}
+
+	/*Pagination*/
+	$.extend({
+		getUrlVars: function(){
+			var vars = [], hash;
+			var hashes = window.location.href.slice(window.location.href.indexOf('?') + 1).split('&');
+			for(var i = 0; i < hashes.length; i++)
+			{
+				hash = hashes[i].split('=');
+				vars.push(hash[0]);
+				vars[hash[0]] = hash[1];
+			}
+			return vars;
+		},
+		getUrlVar: function(name){
+			return $.getUrlVars()[name];
+		},
+		getUrlParameters: function(name){
+			var allVars = $.getUrlVars();
+			var getParameters = "";
+			if (allVars) {
+				var count = 1;
+				allVars.forEach(function(entry) {
+					var value = $.getUrlVar(entry);
+					if (typeof(value) === "undefined" || value.indexOf("/") > -1) {
+
+					} else {
+						if (count != 1) {
+							getParameters += "&"+entry+"="+value;	
+						} else {
+							getParameters += "?"+entry+"="+value;
+						}
+					}
+					count++;
+				});
+			};
+			return getParameters;
+		}
+	});
+
+	/*Remplissage du nombres de pages au total*/
+	if ($("#pagesTotales").length > 0 && $("#pagination select").length > 0) {
+		$("#pagesTotales").text($("#pagination select option").length);
+	};
+
+	/*Génération lien debut*/
+	if ($("#pagination_debut").length > 0 && typeof(url_without_pagination != 'undefined')) {
+		var page = $("#pagination option:disabled").val() - 1;
+		if(page>0){
+			var getParameters = $.getUrlParameters();
+			$("#pagination_debut").attr('href', url_without_pagination + getParameters);
+		}else{
+			$(".pagination_gauche").hide();
+		}
+	};
+	/*Génération lien fin*/
+	if ($("#pagination_fin").length > 0 && typeof(url_without_pagination != 'undefined') && $("#pagination select").length > 0) {
+		var page = $("#pagination option:disabled").val() - 1;
+		var page_total = $("#pagination select option").length-1;
+		console.log(page + "--" + page_total);
+		if(page<page_total){
+			var getParameters = $.getUrlParameters();
+			$("#pagination_fin").attr('href', url_without_pagination + '/' + $("#pagination select option").length + getParameters);
+		}else{
+			$(".pagination_droite").hide();
+		}
+	};
+	/*Génération lien precedent*/
+	if ($("#pagination_precedent").length > 0 && typeof(url_without_pagination != 'undefined') && $("#pagination option:disabled").length > 0) {
+		var page = $("#pagination option:disabled").val() - 1;
+		var getParameters = $.getUrlParameters();
+		if (page == 0 || page == 1) {
+			$("#pagination_precedent").attr('href', url_without_pagination + getParameters);
+		} else {
+			$("#pagination_precedent").attr('href', url_without_pagination + "/" + page + getParameters);
+		}
+	};
+
+	/*Génération lien suivant*/
+	if ($("#pagination_suivant").length > 0 && typeof(url_without_pagination != 'undefined') && $("#pagination option:disabled").length > 0) {
+		var page = ($("#pagination option:disabled").val()*1) + 1;
+		var getParameters = $.getUrlParameters();
+		if (page >= $("#pagination select option").length) {
+			$("#pagination_suivant").attr('href', url_without_pagination + "/" +  $("#pagination select option").length + getParameters);
+		} else {
+			$("#pagination_suivant").attr('href', url_without_pagination + "/" + page + getParameters);
+		}
+	};
+
+	$("#pagination select").change(function() {
+		//var allVars = $.getUrlVars();
+		var getParameters = $.getUrlParameters();
+		if($(this).find(":selected").text() == 0 || $(this).find(":selected").text() == 1){
+			document.location.href= url_without_pagination + getParameters;
+		}else{
+			document.location.href= url_without_pagination + '/' + $(this).find(":selected").text() + getParameters;
+		}
+	});
+
+
+	/*Box photo détails véhicule*/
+	$(".miniature_photo").click(function(e) {
+		e.preventDefault ? e.preventDefault() : e.returnValue = false;
+		var urlImage = $(this).find('img').attr('src');
+		var remplacement = urlImage.replace('w90h65', 'w490h330');
+		$("#main_img").attr('src', remplacement);
+	});
+
+	if ($("#types_recherche").length){
+		$("#types_recherche input[type=radio]").click(function(){
+			url = base_url + $(this).val() + "/";
+			if ($("#select_marque").val())
+				url += $("#select_marque").val();
+			$("#form_recherche_vehi").attr("action", url);
+		}).change();
+	}
+
+	/*Bloc recherche*/
+
+	if($("#select_carrosserie").length){
+		$("#select_carrosserie").change(function(){
+			marques_select_ajax($(this).val());
+			modeles_select_ajax("", "");
+		});
+	}
+	if($("#select_marque").length){
+		$("#select_marque").change(function(){
+			modeles_select_ajax($(this).val(), $("#select_carrosserie").val());
+			url = base_url + 'vehicules';
+			if ($("input[type]:checked").val()) 
+				url = base_url + $("input[type]:checked").val();
+			url += '/' + $(this).val()
+			$("#form_recherche_vehi").attr("action", url);
+
+		}).change();
+	}
+
+	$("#budget div.par").click(function(){
+		//alert($(this).data('type'));
+		if($(this).data('type') != $("#type_budget").val()){
+			var type_choisi = $(this).data('type');
+			$("#onglet_" + $("#type_budget").val()).removeClass("active");
+			$("#onglet_" + type_choisi).addClass("active");
+			$("#budget_" + $("#type_budget").val()).fadeOut(200, function(){
+				$("#budget_" + type_choisi).fadeIn(300);
+				$("#type_budget").val(type_choisi);
+			});
+		}
+	});
+
+	if($("#liste_options").length){
+		$("#liste_options input[type=checkbox]").click(function(){
+			total_vehicule();
+		});
+	}
+
+	$("#btn_ajout_comp").click(function(){
+		var id_vehicule = $(this).data("id");
+		//alert($(this).data("id"));
+		$.ajax({
+			url: base_url+"comparateur/add_delete/"+id_vehicule,
+			type: "get",
+	
+			success: function(data) {
+				//console.log(data);
+				var donnees = data.split("||");
+				if(donnees[0] == "ok"){
+					$("body").prepend("<div class='alert_message success'>"+donnees[1]+"</div>");
+				}else{
+					$("body").prepend("<div class='alert_message error'>"+donnees[1]+"</div>");
+				}
+				$("#btn_ajout_comp").html(donnees[2]);
+				$("#nb_comparateur").html(donnees[3]);
+				$('div.alert_message').delay(2000).fadeOut('slow', function() { $(this).remove(); });
+			}
+		});
+	});
+
+	$(".btn_supp.comparateur").click(function(){
+		if(confirm("Etes vous sûr de vouloir supprimer ce véhicule ?")){
+			//alert($(this).data("id"));
+			var id_vehicule = $(this).data("id");
+			$.ajax({
+				url: base_url+"comparateur/add_delete/"+id_vehicule,
+				type: "get",
+		
+				success: function(data) {
+					//console.log(data);
+					var donnees = data.split("||");
+					$(".infos_"+id_vehicule).fadeOut(500, function(){
+						$("#nb_comparateur").html(donnees[3]);
+						$(".infos_"+id_vehicule).remove();
+					});
+					
+				}
+			});
+		}
+	});
+
+	$("#btn_vider_comp").click(function(){
+		if(confirm("Etes vous sûr de vouloir vider le comparateur ?")){
+			document.location.href = base_url + "comparateur/vide";
+		}
+	});
+
+	if ($("div.alert_message").length > 0) {
+		$('div.alert_message').delay(4000).fadeOut('slow', function() { $(this).remove(); });
+	}
+
+});
+
+var contenu_en_cours="";
+
+function affiche_contenu(div){
+	if($("#"+div).css("display")=="none"){
+		$("#"+div).slideDown(1000);
+		if(contenu_en_cours!="" && contenu_en_cours!=div){
+			$("#"+contenu_en_cours).slideUp(1000);
+		}
+		contenu_en_cours=div;
+	}else{
+		$("#"+div).slideUp(1000);
+	}
+}

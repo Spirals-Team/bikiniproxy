@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<meta name="ad.size" content="width=728,height=90">
+	<title>PMU - ACQ</title>
+	<link rel="stylesheet" href="style.css" />
+	<script type="text/javascript" charset="UTF-8" src="scripts.min.js"></script>
+	<!-- script: greensock.js -->
+	<!-- script: reglages.js -->
+	<!-- script: moteur.js -->
+	<script type="text/javascript">
+		// initialisation des variables pour l'adserver
+		var clickTag = "";
+		function clicktrough() {
+			window.open(window.clickTag);
+		}
+	</script>
+<script type="text/javascript">
+    
+      (function() {
+        var relegateNavigation = '';
+        var handleClickTagMessage = function(e) {
+          try {
+            var eventData = JSON.parse(e.data);
+          } catch (err) {
+            return;
+          }
+          if (eventData.isInitClickTag) {
+            if (eventData.clickTags) {
+              for (var i = 0; i < eventData.clickTags.length; i++) {
+                var clkTag = eventData.clickTags[i];
+                window[clkTag.name] = clkTag.url;
+              }
+            } else if (eventData.clickTag) {
+              window.clickTag = eventData.clickTag;
+            }
+            relegateNavigation = eventData.relegateNavigation;
+          }
+        };
+
+        if (open.call) {
+          window.open = function(open) {
+            return function(url, name, features) {
+              if (relegateNavigation === 'parent') {
+                var message = {'clickTag': url, 'isPostClickTag': true};
+                parent.postMessage(JSON.stringify(message), '*');
+              } else {
+                var args = [url, name];
+                if (features) {
+                  args.push(features);
+                }
+                open.apply(window, args);
+              }
+            };
+          }(window.open);
+        }
+
+        if (window.addEventListener) {
+          window.addEventListener(
+              'message', handleClickTagMessage, false);
+        } else {
+          window.attachEvent('onmessage', handleClickTagMessage);
+        }
+      })();
+    
+  </script></head>
+<body>
+	<div id="stage">
+		<div id="container" data-bg-color="bg">
+
+			<!-- visuel -->
+			<div id="visuel" data-value="visuel">
+				<svg class="cache" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:a="http://ns.adobe.com/AdobeSVGViewerExtensions/3.0/" x="0px" y="0px" width="100px" height="100px" viewbox="0 0 100 100" style="enable-background:new 0 0 100 100;" xml:space="preserve">
+				<g><polygon data-fill-color="bg" points="0,100 0,0 100,0" /></g></svg>
+			</div>
+
+
+			<!-- step 1 -->
+			<div class="step step1">
+				<div class="groupe groupe-titre shadowed">
+					<div class="titre" data-scenario="nodata" data-nodata-msg="">ENTREZ EN JEU</div>
+					<div class="titre" data-scenario="prematch live" data-value="competition">COMPETITION</div>
+					<div class="soustitre" data-scenario="prematch live" data-value="nommatch">NOM MATCH</div>
+				</div>
+			</div>
+			<!-- /step 1 -->
+
+			<!-- step 2 -->
+			<div class="step step2" data-scenario="prematch live">
+				<div class="groupe groupe-live" data-scenario="live">EN DIRECT</div>
+				
+				<div class="groupe groupe-match">
+					<table cellpadding="0" cellspacing="0">
+						<tr class="ligne ligne-1">
+							<td class="col-equipe col-equipe-1">
+								<div class="nom-equipe" data-value="equipe1.nom"></div>
+							</td>
+							<td class="col-blason col-blason-1">
+								<div class="blason" data-src="equipe1.blason"></div>
+							</td>
+							<td class="col-milieu">
+								<div class="date" data-scenario="prematch"><span data-value="jour"></span><br> à <span data-value="heure"></span></div>
+
+								<div class="scores" data-scenario="live"><span class="score" data-value="score_equipe1"></span><span class="score" data-value="score_equipe2"></span></div>
+							</td>
+							<td class="col-blason col-blason-2">
+								<div class="blason" data-src="equipe2.blason"></div>
+							</td>
+							<td class="col-equipe col-equipe-2">
+								<div class="nom-equipe" data-value="equipe2.nom"></div>
+							</td>
+						</tr>
+						<tr class="ligne ligne-2">
+							<td class="col-equipe col-equipe-1">
+								 
+							</td>
+							<td class="col-blason col-blason-1">
+								<div class="cote" data-value="cote_1"></div>
+							</td>
+							<td class="col-milieu">
+							<div class="cote" data-value="cote_n"></div>
+								<div class="nul" data-value="text_n">NUL</div>
+							</td>
+							<td class="col-blason col-blason-2">
+								<div class="cote" data-value="cote_2"></div>
+							</td>
+							<td class="col-equipe col-equipe-2">
+								 
+							</td>
+						</tr>
+					</table>
+				</div>
+			</div>
+			<!-- /step 2 -->
+
+
+			<!-- branding (logo) -->
+			<div id="branding">
+				<img src="PMUfr-SPORT_N1duPari_vertical.svg">
+			</div>
+
+			<!-- bandeau statique -->
+			<div id="bandeau" data-bg-color="shadow">
+				<div class="bloc-offre" data-value="bloc-offre">
+					<div class="pre-offre"><span data-bg-color="shadow" data-value="pre-offre">TEXTE</span></div>
+					<div class="offre" data-value="offre">TEXTE</div>
+				</div>
+				<div class="btn-cta" data-text-color="shadow">
+					<svg class="chevron" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="7px" height="11px" viewbox="0 0 7 11"><defs><style>.cls-3{fill:#dc4605;}</style></defs><path class="cls-3XXXXX" fill-rule="evenodd" data-fill-color="shadow" d="M3.000,9.000 L0.000,9.000 L4.000,4.500 L0.000,-0.000 L3.000,-0.000 L7.000,4.500 L3.000,9.000 Z" /></svg>
+					<span data-value="cta">TEXTE</span>
+				</div>
+				<div class="mentions">*Voir conditions sur PMU.fr</div>
+			</div>
+			
+			<!-- ARJEL -->
+			<div id="arjel">
+				<div id="arjel1">JOUER COMPORTE DES RISQUES : </div>
+				<div id="arjel2">
+					<div class="risque">ENDETTEMENT, ISOLEMENT...</div>
+					<div class="risque">ISOLEMENT, DÉPENDANCE...</div>
+					<div class="risque">DÉPENDANCE, ENDETTEMENT...</div>
+				</div>
+				<div id="arjel3">APPELEZ LE 09 74 75 13 13 (APPEL NON SURTAXÉ)</div>
+			</div>
+
+			<!-- bouttons -->
+			<button id="btInv" class="btn" onclick="clicktrough();"></button>
+			<a id="btArjel" class="btn" href="http://www.joueurs-info-service.fr/" target="_blank"></a>
+
+
+
+		</div>
+	</div>
+</body>
+</html>

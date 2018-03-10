@@ -1,0 +1,291 @@
+var _isUserAuthenticated = false;
+var _numberPerPage = "10";
+var _pageNumber = "1";
+var _recordCount = "0";
+var _sort = 'Most Recent';
+var jumpToComments = false;
+
+function myCbnCommentsGet(pageURI, userName, numberPerPage, pageNumber, sort) {
+    myCbnCommentsMessageClear($("#info"));
+    $("#loading").show();
+
+    $.ajax({
+        type: "POST",
+        url: "/Global/WebServices/Comments.asmx/GetComments",
+        data: "{'pageURI':'" + pageURI + "', 'userName':'" + userName + "', 'numberPerPage':'" + numberPerPage + "', 'pageNumber':'" + pageNumber + "', 'sort':'" + sort + "', 'seed':'" + _seed + "'}",
+        contentType: "application/json; charset=utf-8",
+        dataType: "json",
+        timeout: 50000,
+        success: function(result) { OnGetCommentsSuccess(result, pageNumber); },
+        error: function(xhr) { OnGetCommentsFailed(xhr); }
+    });
+}
+
+function OnGetCommentsSuccess(result, pageNumber) {
+    if (result.d != null) {
+        _recordCount = result.d.RecordCount;
+        $(".pager").show();
+        myCbnCommentsLoad(result.d.CommentList, result.d.RecordCount, pageNumber);
+    }
+    else {
+        $(".pager").hide();
+        //myCbnCommentsMessage($("#info"), "There are no comments");
+    }
+
+    $("#toComments").html(_recordCount + " Comment(s)");
+    $("#commentTitle").html(_recordCount + " Comment(s)");
+}
+
+function OnGetCommentsFailed(error) {
+    //alert(error.responseText);
+}
+
+function myCbnCommentsViewMore(obj, fullTextId) {
+    obj.parentNode.innerHTML = document.getElementById("fulltext_" + fullTextId).innerHTML;
+}
+function myCbnCommentsShow(obj) {
+    divs = obj.parentNode.parentNode.getElementsByTagName("div");
+    for (var i = 0; i < divs.length; i++) {
+        if ((divs[i].id == "commentMessage") || (divs[i].id == "editComment")) {
+            divs[i].style.display = '';
+        }
+    }
+    obj.style.display = 'none';
+}
+function myCbnCommentsSort(sort) {
+    _sort = sort;
+    myCbnCommentsGet(getPageURI(), _userName, _numberPerPage, _pageNumber, _sort);
+}
+
+function myCbnCommentsLoad(commentList, recordCount, pageNumber) {
+    var totalPages = Math.ceil(recordCount / _numberPerPage);
+    var badRating = -3;
+    var goodRating = 5;
+    if (totalPages > 1)
+        $(".pager").pager({ pagenumber: pageNumber, pagecount: totalPages, buttonClickCallback: function(pageclickednumber) { myCbnCommentsGet(getPageURI(), _userName, _numberPerPage, pageclickednumber); myCbnCommentsScrollToPos($("#commentTitle")); } });
+    else
+        $(".pager").hide();
+
+    if (commentList.length > 0) {
+        var rows = "<a href = '#' onclick = 'myCbnCommentsSort(\"Most Recent\");return false'>Most Recent</a> · <a href = '#' onclick = 'myCbnCommentsSort(\"Earliest\");return false'>Earliest</a> · <a href = '#' onclick = 'myCbnCommentsSort(\"Highest Rated\");return false'>Highest Rated</a> <br /><br />";
+        for (var i = 0; i < commentList.length; i++) {
+            Rating = 0;
+            //Rating = commentList[i].Rating; //Math.floor(Math.random()*21) - 10;//
+
+            rows += "<div id=\"commentContainer\">";
+            if (Rating > badRating) {
+                rows += "<a href=\"" + commentList[i].ProfileLink + "\" target=\"_blank\"><img id=\"authorPhoto\" height=\"40\" width=\"40\" src=\"" + commentList[i].ProfileImageSrc + "\" alt=\"\" /></a>"
+            }
+            rows += "	<div id=\"commentInfo\">";
+            rows += "<span id=\"authorName\"><a href=\"" + commentList[i].ProfileLink + "\" target=\"_blank\">" + commentList[i].Name + "</a></span> ";
+            rows += "<span id=\"authorName\">" + commentList[i].FriendlyTime + "</span>";
+            rows += "&nbsp;"
+            /*if (_isUserAuthenticated) {
+				if (commentList[i].UserName!=_userName)
+				{
+					rows += "<a href=\"javascript:myCbnCommentsRate('" + commentList[i].CommentId + "', 'up')\" title = 'Helpful / Insightful'>";
+					if (typeof commentsThumbs != 'undefined')
+					{
+						rows += "<img src='/global/App_Themes/Default/Images/thumb_up.gif' />";
+					}
+					else
+					{
+						rows += "[+]";
+					}
+					rows += "</a>";
+					rows += "&nbsp;"
+					rows += "<a href=\"javascript:myCbnCommentsRate('" + commentList[i].CommentId + "', 'down')\" title = 'Not helpful / Impolite'>";
+					if (typeof commentsThumbs != 'undefined')
+					{
+						rows += "<img src='/global/App_Themes/Default/Images/thumb_down.gif' />";
+					}
+					else
+					{
+						rows += "[-]";
+					}
+					rows += "</a>";
+				}
+            }*/
+            rows += "&nbsp;"
+            RatingString = Rating;
+            if (Rating >= 0) {
+                RatingString = "+" + Rating;
+            }
+            if (Rating >= goodRating) {
+                //options = " style='color:#00529B' ";
+                options = " style='font-weight:bold' ";
+                RatingColor = 'green';
+            }
+            else if (Rating <= badRating) {
+                options = " style='display:none;color:#999999' ";
+                RatingColor = 'red';
+            }
+            else {
+                options = "";
+                RatingColor = 'black';
+            }
+            //rows += "(<span style='color:" + RatingColor + "'>" + RatingString + "</span>)";
+            if (Rating <= badRating) {
+                rows += "&nbsp;&nbsp;&nbsp;<a href = '#' onclick='myCbnCommentsShow(this);return false'>View Comment</a>"
+            }
+            rows += "	</div>";
+
+            if (commentList[i].Text.length > 300) {
+                rows += "	<div id=\"commentMessage\" " + options + ">";
+                rows += commentList[i].Text.substr(0, 300) + "... <a href='#' onclick='myCbnCommentsViewMore(this," + commentList[i].CommentId + ");return false;'>View More..</a>";
+                rows += "	</div>";
+                rows += "	<div id=\"fulltext_" + commentList[i].CommentId + "\" style='display:none'>";
+                rows += commentList[i].Text;
+                rows += "	</div>";
+            }
+            else {
+                rows += "	<div id=\"commentMessage\" " + options + ">";
+                rows += commentList[i].Text;
+                rows += "	</div>";
+            }
+            rows += "	<div id=\"editComment\" " + options.replace("font-weight:bold", "") + ">";
+            if (_isUserAuthenticated) {
+                if (commentList[i].CanDelete == "Yes") {
+                    rows += "<a href=\"javascript:myCbnCommentsDelete('" + commentList[i].CommentId + "')\"> <span>Delete</span></a>"; // · ";
+                }
+            }
+            rows += "	</div>";
+
+
+            rows += "</div>";
+        }
+    }
+    else {
+        //myCbnCommentsMessage($("#info"), "There are no comments");
+    }
+
+    $("#commentList").html("");
+    $("#commentList").append(rows);
+
+    $("#loading").hide();
+}
+
+function myCbnCommentsInsert() {
+    if (_isUserAuthenticated == false) {
+        cbnLoginOpen(250, 340);
+        return;
+    }
+
+    var comment = $("#comment").val();
+    comment = comment.replace(/'/gi, "\\'");
+    //alert("'pageURI':'" + getPageURI() + "', 'pageTitle':'" + getPageTitle() + "', 'userName':'" + _userName + "', 'comment':'" + comment + "'");
+
+    $.ajax({
+        type: "POST",
+        url: "/Global/WebServices/Comments.asmx/InsertComment",
+        data: "{'pageURI':'" + getPageURI() + "', 'pageTitle':'" + getPageTitle().replace("'","\\'") + "', 'userName':'" + _userName + "', 'comment':'" + comment + "', 'seed':'" + _seed + "'}",
+        contentType: "application/json; charset=utf-8",
+        dataType: "json",
+        timeout: 50000,
+        success: function(result) { OnInsertCommentSuccess(result); },
+        error: function(xhr) { OnInsertCommentFailed(xhr); }
+    });
+}
+
+function OnInsertCommentSuccess(result) {
+    if (result.d == "true") {
+        myCbnCommentsGet(getPageURI(), _userName, _numberPerPage, _pageNumber, _sort);
+        myCbnCommentsScrollToPos($("#commentTitle"));
+        $("#comment").val("");
+        myCbnCommentsMessage($("#success"), "Your comment has been added", 5000);
+    }
+    else {
+        myCbnCommentsMessage($("#failure"), "There was an error. Please try again.", 5000);
+    }
+}
+
+function OnInsertCommentFailed(error) {
+    //alert(error.status);
+}
+
+
+function myCbnCommentsRate(commentId, rating) {
+    $.ajax({
+        type: "POST",
+        url: "/Global/WebServices/Comments.asmx/RateComment",
+        data: "{'commentId':'" + commentId + "', 'userName':'" + _userName + "', 'rating':'" + rating + "', 'seed':'" + _seed + "'}",
+        contentType: "application/json; charset=utf-8",
+        dataType: "json",
+        timeout: 50000,
+        success: function(result) { OnRateCommentSuccess(result); },
+        error: function(xhr, textStatus, errorThrown) { OnRateCommentFailed(xhr); }
+    });
+}
+
+function OnRateCommentSuccess(result) {
+
+    myCbnCommentsGet(getPageURI(), _userName, _numberPerPage, _pageNumber, _sort);
+    //myCbnCommentsScrollToPos($("#commentTitle"));
+
+    //myCbnCommentsMessage($("#success"), "Comment Rated", 5000);
+}
+function OnRateCommentFailed(xhr, textStatus, errorThrown) {
+    alert(xhr.responseText);
+}
+
+function myCbnCommentsDelete(commentId) {
+    $.ajax({
+        type: "POST",
+        url: "/Global/WebServices/Comments.asmx/DeleteComment",
+        data: "{'commentId':'" + commentId + "', 'userName':'" + _userName + "', 'seed':'" + _seed + "'}",
+        contentType: "application/json; charset=utf-8",
+        dataType: "json",
+        timeout: 50000,
+        success: function(result) { OnDeleteCommentSuccess(result); },
+        error: function(xhr, textStatus, errorThrown) { OnDeleteCommentFailed(xhr); }
+    });
+}
+
+function OnDeleteCommentSuccess(result) {
+
+    myCbnCommentsGet(getPageURI(), _userName, _numberPerPage, _pageNumber, _sort);
+    myCbnCommentsScrollToPos($("#commentTitle"));
+
+    myCbnCommentsMessage($("#success"), "Comment Deleted", 5000);
+}
+function OnDeleteCommentFailed(xhr, textStatus, errorThrown) {
+    //alert(xhr.responseText);
+}
+
+function myCbnCommentsMessage(element, message, length) {
+    element.html(message);
+    element.show();
+
+    var func = function() {
+        myCbnCommentsMessageClear(element);
+    }
+
+    if (length != null)
+        setTimeout(func, length);
+}
+
+function myCbnCommentsMessageClear(element) {
+    element.slideUp();
+    element.hide();
+    element.html("");
+}
+
+function myCbnCommentsScrollToPos(element) {
+    var position = element.offset();
+    $('html, body').animate({ scrollTop: position.top }, 'slow');
+}
+
+
+function onCommentFocus() {
+    if (_isUserAuthenticated == true || isUserAuthenticated() == true) return;
+	if (typeof loginExists == 'undefined')
+	{
+		cbnLoginOpen(250, 340);
+		jumpToComments = true;
+	}
+	else
+	{
+		jumpToComments = true;
+		openMainLogin();
+	}
+}

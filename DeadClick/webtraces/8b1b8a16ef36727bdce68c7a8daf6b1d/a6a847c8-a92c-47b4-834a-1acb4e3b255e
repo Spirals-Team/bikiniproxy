@@ -1,0 +1,362 @@
+/*
+	Copyright (c) Xerox Corporation, 2008
+*/
+
+;(function($) {
+	$.addInstrument = function(e, opt)
+	{
+		if (e.inst) return false; //return if already exist
+
+		opt = $.extend({
+			persistMethod : null,
+			loadOnClient: false
+		}, opt);
+
+		var i = {
+			persistState: function()
+			{
+				if (! i.dashboard)
+				{
+					if (opt.persistMethod)
+					{
+						var data = i.getPersistData();
+						var param = [
+						{ name : 'xcom-ajax-request', value : 'instrument-persist' },
+						{ name : 'method-binding', value : opt.persistMethod },
+						{ name : 'config', value : data }
+								];
+
+						$.ajax({
+							type: 'POST',
+							url: window.location.href.replace(/#/, ''),
+							data: param,
+							dataType: 'html'
+						});
+					}
+				}
+				else
+				{
+					i.dashboard.persistState();
+				}
+			},
+
+			getPersistData: function()
+			{
+				return '<i id="' + $(i.div).attr('id') +
+						'" closed="' + ($(i.div).hasClass('closed')) +
+						'" collapsed="' + ($(i.div).hasClass('collapsed')) +
+						'"/>';
+			},
+
+			collapse: function()
+			{
+				if ($(i.div).hasClass('collapsed'))
+				{
+					$('.content', i.div).slideDown();
+					$(i.div).removeClass('collapsed');
+// *BT*					$('.collapser', i.div).text('[v]');
+					i.reload();
+				}
+				else
+				{
+					$('.content', i.div).slideUp();
+					$(i.div).addClass('collapsed');
+// *BT*					$('.collapser', i.div).text('[>]');
+				}
+				i.persistState();
+				if ('undefined' != typeof(adjustEmbedded)) adjustEmbedded();
+			},
+
+			close: function()
+			{
+				if ($(i.div).hasClass('closed'))
+				{
+					$(i.div).show().removeClass('closed', false);
+					i.reload();
+				}
+				else
+				{
+					$(i.div).hide().addClass('closed', true);
+				}
+				i.persistState();
+				if ('undefined' != typeof(adjustEmbedded)) adjustEmbedded();
+			},
+
+			reload: function(force)
+			{
+				if ($(i.div).attr('contentUrl') && (true==force || ($('.content', i.div).children().length == 0)))
+				{
+					try
+					{
+						$('.content', i.div).empty();
+						$('.content', i.div).append("<div class='waitAnimation'></div>");
+                        var cUrl = $(i.div).attr('contentUrl');
+                        cUrl = cUrl + (cUrl.match(/\?/) ? '&' : '?') +"nocache=" + Math.random()*999999;
+                        var content = $('.content', i.div);
+                        $.ajax({
+                            type: 'GET',
+                            url: cUrl,
+                            dataType: 'html',
+                            cache: true,
+                            success: function(data) {content.html(data);},
+                            error: function(data, textStatus) {content.html('<div>Load error: ' + textStatus + '</div>')}
+                        });
+					}
+					catch(e)
+					{
+						$('.content', i.div).html('<div>' + e + '</div>');
+					}
+				}
+			}
+		}
+
+		i.div = e;
+		i.id = e.id;
+		e.inst = i;
+
+		//$(i.div).wrap('<div class="dbdialog"></div>');
+		$('.header', i.div).wrapInner('<span class="title"></span>'); //.wrap('<div class="hd"><div class="c"></div></div>');
+		//$('.content', i.div).wrap('<div class="bd"><div class="c"></div></div>');
+		//$('.footer', i.div).wrap('<div class="ft"><div class="c"></div></div>');
+
+		// add collapse and close icons.
+		var sp;
+		if ($(i.div).hasClass('collapsible'))
+		{
+			sp = document.createElement('div');  // *BT* Changed to div
+			sp.className = 'collapser';
+// *BT*			sp.appendChild(document.createTextNode($(i.div).hasClass('collapsed') ? '[>]' : '[v]'));
+			$(sp).bind('click', i.collapse);
+			$('.header', i.div).prepend(sp);
+		}
+		if ($(i.div).hasClass('closable'))
+		{
+			sp = document.createElement('div'); // *BT* Changed to div
+			sp.className = 'closer';
+			sp.appendChild(document.createTextNode('X'));
+			$(sp).bind('click', i.close);
+			$('.header', i.div).append(sp);
+		}
+
+		if (opt.loadOnClient && !$(i.div).hasClass('closed') && !$(i.div).hasClass('collapsed'))
+		{
+			i.reload();
+		}
+	}
+
+	var docloaded = false;
+
+	$(document).ready(function () { docloaded = true; });
+
+	$.fn.instrument = function(opt)
+	{
+		return this.each(function()
+		{
+			if (!docloaded)
+			{
+				var t = this;
+				$(document).ready(function () {$.addInstrument(t, opt);});
+			}
+			else
+			{
+				$.addInstrument(this, opt);
+			}
+		});
+	};
+
+	$.fn.instCollapse = function()
+	{ // function to reload grid
+
+		return this.each(function()
+		{
+			if (this.inst) this.inst.collapse();
+		});
+	};
+
+	$.fn.instSetDashboard = function(db)
+	{
+		return this.each(function()
+		{
+			if (this.inst) this.inst.dashboard = db;
+		});
+	}
+
+})(jQuery);
+
+(function($) {
+	$.addDashboard = function(e, opt)
+	{
+		if (e.db) return false; //return if already exist
+
+		opt = $.extend({
+			configButtonTitle: 'Configure Dashboard',
+			configButtonId: null,
+			configCloseLinkName: 'X',
+			configCloseButtonUrl: '',
+			draggable: true,
+			persistMethod : null
+		}, opt);
+
+		var d = {
+			persistState: function()
+			{
+				if (opt.persistMethod)
+				{
+					var data = '<db id="' + d.id + '">';
+					$(".instrument", d.div).each(function() {
+						data += this.inst.getPersistData();
+					});
+					data += "</db>";
+					var param = [
+					{ name : 'xcom-ajax-request', value : 'dashboard-persist' },
+					{ name : 'method-binding', value : opt.persistMethod },
+					{ name : 'config', value : data }
+							];
+
+//					alert(data);
+					$.ajax({
+						type: 'POST',
+						url: window.location.href.replace(/#/, ''),
+						data: param,
+						dataType: 'html'
+					});
+				}
+			},
+
+			showConfigWin: function()
+			{
+				var dlg = $('.configDlg .mdinner_modal_content', d.div);
+				if (1 > dlg.size())
+				{
+					var dlgHtml = "<div class='configDlg dbmodal_instance modalData' style='display:none;width:200px'>" +
+								"<div class='mddialog' style='z-index:3101'>" +
+								"<div class='bd'>" +
+								"<div class='c'>" +
+								"<div class='content'>" +
+								"<div class='t'>" +
+								"</div>" +
+								"<div class='mdinner_modal_content' style='color:black'>" +
+								"</div>" +
+								"</div>" +
+								"</div>" +
+								"</div>" +
+								"<div class='b'>" +
+								"<div>" +
+								"</div>" +
+								"</div>" +
+								"</div>" +
+								"</div>"
+// BT: Added extra nested div for the 'b' div
+//					$(d.div).append('<div class="configDlg flora"></div>');
+					$(d.div).append(dlgHtml);
+					dlg = $('.configDlg .mdinner_modal_content', d.div)[0];
+				}
+				else
+				{
+					dlg.empty();
+					dlg = dlg[0];
+				}
+
+                if (opt.configCloseButtonUrl)
+                {
+                    $(dlg).append("<div style='text-align:right;margin-right:10px'>" +
+                                  "<a href='#' onclick='$.modal.close()'><img src='" +
+                                  opt.configCloseButtonUrl + "' alt='Close'/></a></div>");
+                }
+                else
+                {
+                    $(dlg).append("<div style='text-align:right;margin-right:10px'>" +
+                                  "<a href='#' onclick='$.modal.close()'>" +
+                                  opt.configCloseLinkName + "</a></div>");
+                }
+
+				$('.configDlg').modal();
+
+/*				$(dlg).dialog({modal: true, resizable: false, title: 'Dashboard Config',
+					buttons: {'Done': function()
+					{
+						$(this).dialog('close');
+					} }}).show();
+*/
+
+				$('.instrument', d.div).each(function()
+				{
+					var e = $(this);
+					var ckDiv = document.createElement("div");
+					var ckBtn = document.createElement("input");
+					ckBtn.type = "checkbox";
+					$(ckBtn).bind("click", this.inst.close);
+					ckDiv.appendChild(ckBtn);
+					ckDiv.appendChild(document.createTextNode($('.title', e).text()));
+					dlg.appendChild(ckDiv);
+					// Had to move this from before the appendChild for IE to work!
+					ckBtn.checked = !e.hasClass('closed');
+					ckBtn.disabled = !e.hasClass('closable');
+				});
+			},
+
+			configDlgClick: function(event)
+			{
+				$('.instrument:eq(' + event.data + ')', d.div).toggle();
+				d.persistState();
+				if (null != adjustEmbedded) adjustEmbedded();
+			}
+		};
+
+		d.id = e.id;
+		d.div = e;
+		e.db = d;
+
+/*
+		if (opt.draggable)
+		{
+			$(e).sortable({
+				handle: '.hd',
+				connectWith: ('div.dashboard'),
+				placeholder: 'sort_placeholder',
+				opacity: 0.7,
+				stop: d.persistState,
+				cursor: 'move'});
+		}
+*/
+
+		// inform all instruments who they belong to.
+		$('.instrument', d.div).instSetDashboard(d);
+		// add config window link
+		if (opt.configButtonId)
+		{
+//			$('#' + opt.configButtonId).dialogLink({width:200, height: 200, closeOnClick:true, onOpen: d.showConfigWin}); //bind('click', d.showConfigWin);
+//$('.mdmodal_iframe').replaceWith("<div style='width:300; height:300' class='mdmodal_iframe'>foo bar test</div>");
+						$('#' + opt.configButtonId).bind('click', d.showConfigWin);
+		}
+		else
+		{
+			var cb = document.createElement("input");
+			cb.type = "button";
+			cb.value = opt.configButtonTitle;
+			$(cb).bind('click', d.showConfigWin);
+			e.parentNode.insertBefore(cb, e.nextSibling);
+		}
+	};
+
+	var docloaded = false;
+
+	$(document).ready(function () {docloaded = true;});
+
+	$.fn.dashboard = function(opt)
+	{
+		return this.each(function()
+		{
+			if (!docloaded)
+			{
+				var t = this;
+				$(document).ready(function () {$.addDashboard(t, opt);});
+			}
+			else
+			{
+				$.addDashboard(this, opt);
+			}
+		});
+
+	};
+})(jQuery);

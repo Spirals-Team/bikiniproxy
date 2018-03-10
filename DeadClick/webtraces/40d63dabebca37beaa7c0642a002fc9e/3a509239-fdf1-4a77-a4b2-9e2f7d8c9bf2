@@ -1,0 +1,19 @@
+_satellite.pushAsyncScript(function(event, target, $variables){
+  
+function checkTracking() {
+    setTimeout(setTracking, 16);
+}
+function setTracking(){
+    var meta = document.querySelector('meta[data-track-manually]');
+    var content;
+    if (meta) {
+        content = JSON.parse(meta.dataset.content);
+        content.list2 = digitalData.page.pageInfo.author;
+        content.prop41 = digitalData.page.pageInfo.publishDate.split('T')[0];
+        meta.dataset.content = JSON.stringify(content);
+    } else {
+        checkTracking();
+    }
+}
+checkTracking();
+});

@@ -1,0 +1,3035 @@
+// -------------------------------------------------------------------------------------------
+// Bootstrap-extension.js
+// 25/07/2014 10:22 ----- v.4.0.3
+// ------------------------------------------------------------------------------------------
+$('body').addClass('js');
+var spinnerPath = '../../../img/ajax-loader-white.gif';
+var tmpEvent;
+if(typeof(FEF)=="undefined") {
+	/**
+	 Main FE-Framework controller AMD module. <br />
+	 All the application is enclosed to the FEF modules.
+	 @module FEF
+	 */
+	var FEF={};
+	(function (FEF) { }(FEF));
+}
+
+
+/**
+ * Data Store module
+ * Stores data, filters, sort and apply the sort and filter functions
+ * @module FEF
+ * @class FEF.data
+ */
+
+ 
+FEF.data = (function(){
+
+	var dataSources = [];
+	var updateURL = true;
+	var hasURLFiltersOnInit = false;
+	var initFilters = [];
+	var initSort = null;
+	//dataSources contains: {id,cardsData,dataFilters,dataSort}
+
+	/**
+	 * Gets the associated data source for the cards id
+	 * @method getData
+	 * @param {String} dataId the id for the data to be retrieved
+	 * @return {Object} The associated cards data source
+	 */
+	function getData(dataId) {
+		var a;
+		//perfomance http://jsperf.com/fastest-array-loops-in-javascript/32
+		var l = dataSources.length;
+		while(l--) {
+			if( dataSources[l].id == dataId) return dataSources[l].cardsData;
+		}
+		return null;
+	}
+	/**
+	 * Gets the associated data object for the cards id
+	 * @method getDataObject
+	 * @param {String} dataId the id for the data to be retrieved
+	 * @return {Object} The associated full cards data object including filters, sort and data source
+	 */
+	function getDataObject(dataId) {
+		var a;
+		//perfomance http://jsperf.com/fastest-array-loops-in-javascript/32
+
+		var l = dataSources.length;
+		while(l--) {
+			if( dataSources[l].id == dataId) return dataSources[l];
+		}
+		return null;
+	}
+	/**
+	 * Sets the associated data source for the cards id
+	 * @method setDataObject
+	 * @param {String} dataId the id for the data to be set
+	 * @param {Object} The object to be set
+	 */
+	function setDataObject(dataId, data) {
+		var l = dataSources.length;
+		while(l--) {
+			if( dataSources[l].id == dataId) dataSources[l] = data;
+		}
+	}
+
+	/**
+	 * Gets the associated data fields for the cards id
+	 * @method getDataFilters
+	 * @param {String} dataId the id for the filters to be retrieved
+	 * @return {Object} The filters object
+	 */
+	function getDataFilters(dataId) {
+		var l = dataSources.length;
+		while(l--) {
+			if( dataSources[l].id == dataId) return dataSources[l].dataFilters;
+		}
+		return [];
+	}
+
+	function filterShort(onDataSource,filter,reloadCards){
+
+		//get data
+		var datao = getDataObject(onDataSource);
+
+		var l = datao.dataFilters.length, hasFilter=false;
+
+		while(l--) {
+			if( filter.type=="search" ) {
+				if(datao.dataFilters[l].type == "search" && datao.dataFilters[l].field == filter.field)   {
+					datao.dataFilters[l].compareTo=filter.compareTo;
+					hasFilter=true;
+				}
+			}
+			else if(filter.type=="selectbox") {
+				if(datao.dataFilters[l].type == "selectbox" && JSON.stringify(datao.dataFilters[l].field) == JSON.stringify(filter.field))   {
+					datao.dataFilters[l].compareTo=filter.compareTo;
+					hasFilter=true;
+				}
+			}
+			else if(filter.type=="selectbox-group") {
+				if(datao.dataFilters[l].type == "selectbox-group" && JSON.stringify(datao.dataFilters[l].field) == JSON.stringify(filter.field))   {
+					datao.dataFilters[l].compareTo=filter.compareTo;
+					hasFilter=true;
+				}
+			}
+			else if(filter.type=="dateslider") {
+				if(datao.dataFilters[l].type == "dateslider" && JSON.stringify(datao.dataFilters[l].field) == JSON.stringify(filter.field))   {
+					datao.dataFilters[l].compareTo=filter.compareTo;
+					hasFilter=true;
+				}
+			}
+			else if(filter.type=="numericlider") {
+				if(datao.dataFilters[l].type == "numericslider" && JSON.stringify(datao.dataFilters[l].field) == JSON.stringify(filter.field))   {
+					datao.dataFilters[l].compareTo=filter.compareTo;
+					hasFilter=true;
+				}
+			}
+			else if(filter.type == "nullmatch") {
+				if(datao.dataFilters[l].type == "nullmatch" && JSON.stringify(datao.dataFilters[l].field) == JSON.stringify(filter.field))   {
+					datao.dataFilters[l].compareTo=filter.compareTo;
+					hasFilter=true;
+				}
+			}
+			else if(filter.type == "radio") {
+				if(datao.dataFilters[l].type == "radio" && JSON.stringify(datao.dataFilters[l].field) == JSON.stringify(filter.field))   {
+					datao.dataFilters[l].compareTo=filter.compareTo;
+					hasFilter=true;
+				}
+			}
+			else if(filter.type == "glossary") {
+				if(datao.dataFilters[l].type == "glossary" && datao.dataFilters[l].field == filter.field) {
+					if(datao.dataFilters[l].compareTo == filter.compareTo){
+						FEF.data.deleteFilter(datao.dataFilters[l].field , filter.compareTo, onDataSource, 'glossary', true);
+					}else{
+						datao.dataFilters[l].compareTo=filter.compareTo;
+					}
+					hasFilter=true;
+				}
+			}
+			else {
+				if( (datao.dataFilters[l].field == filter.field) && (datao.dataFilters[l].compareTo == filter.compareTo) )  {
+					datao.dataFilters[l].value=filter.value;
+					hasFilter=true;
+
+				}
+			}
+		}
+
+		if(!hasFilter) datao.dataFilters.push(filter);
+		//else has his value changed during the loop
+		//set back data
+		setDataObject(onDataSource, datao);
+
+		//set bookmark array
+		if(updateURL && datao.bookmark) FEF.data.updateHash(onDataSource,datao.dataFilters,datao.dataSort);
+		//window.location.hash = "cards-"+onDataSource+"="+JSON.stringify(datao.dataFilters)+"+"+JSON.stringify(datao.dataSort);
+		//force calls refresh
+		if(reloadCards) FEF.utils.displayCards(onDataSource);
+
+    }
+
+    /**
+	 * Adds a filter to the filters array for the cards id
+	 * @method filter
+	 * @param {String} field the data field(s) to apply the filter on
+	 * @param {String} compareTo the value to compare the field(s) to
+	 * @param {String} filterType the kind of filter to add
+	 * @param {String} filterValue the value for the filter
+	 * @param {Boolean} if the cards should or not be reloaded after adding the filter
+	 */
+	function filter(field, compareTo, onDataSource, filterType, filterValue, reloadCards, bookmarkFilter, dataRemove) {
+		//first set filters for the data source in case multiple sources
+		var filter = {}
+		filter.field = field;
+		filter.compareTo = compareTo;
+		filter.type=filterType;
+		filter.value=filterValue;
+		filter.bookmarkFilter=bookmarkFilter;
+		filter.dataRemove = dataRemove;
+
+		filterShort(onDataSource,filter,reloadCards);
+
+	}
+	/**
+	 * Adds a sort to the data object for the cards id
+	 * @method sorter
+	 * @param {String} field the data field to apply the sort on
+	 * @param {String} order the order for the sort, e.g. desc or asc
+	 * @param {String} dataType the kind of data source filed type. e.g. string, number, date
+	 * @param {String} onDataSource the cards id to apply the sort on
+	 * @param {Boolean} reloadCards if the cards should or not be reloaded after adding the filter
+	 */
+	function sorter(field, order, dataType, onDataSource, reloadCards, bookmarkFilter) {
+		//first set sort for the data source in case multiple sources
+		//sorts are toggled, onde removed, other added
+		var sorter = {}
+		sorter.field = field;
+		sorter.type=dataType;
+		sorter.order=order;
+		sorter.bookmarkFilter = bookmarkFilter;
+		//get data
+		var data = getDataObject(onDataSource);
+		if(data) data.dataSort = sorter;
+		//set bookmark array
+		if(data && updateURL && data.bookmark) FEF.data.updateHash(onDataSource,data.dataFilters,data.dataSort);
+		//window.location.hash = "cards-"+onDataSource+"="+JSON.stringify(data.dataFilters)+"+"+JSON.stringify(data.dataSort);
+
+		//force calls refresh
+		if(reloadCards) FEF.utils.displayCards(onDataSource);
+	}
+
+
+	/**
+	 * Apply the stored data filters on the data source and returns the filtered source object
+	 * @method applyFilters
+	 * @param {String} dataId The if of the cards
+	 * @param {Object} data The data source to apply the filters on
+	 * @return {Object} the filtered data source
+	 */
+	function applyFilters(dataId, data) {
+
+		var filters = getDataFilters(dataId);
+		var tempFieldValue;
+
+		//applies the filter using underscore_js
+		var filtered = _.filter(data, function(dataItem){
+			/*The data source is filtered using a queue, if there is one of the previous "general" matches
+			 * that is not satisfied, the remaining filters will not be applyed.
+			 * General filters are: search, select, date and numeric sliders
+			 */
+
+			var match=performTextSearchMatch(filters, dataItem, dataId);
+			if (match) match=performNullMatch(filters, dataItem);
+			if (match) match=performSelectboxMatch(filters, dataItem);
+			if (match) match=performSelectboxGroupMatch(filters, dataItem);
+			if (match) match=performDateSliderMatch(filters, dataItem);
+			if (match) match=performNumericSliderMatch(filters, dataItem);
+			if (match) match=performRadioMatch(filters,dataItem);
+			if (match) match=performToggleRemove(filters,dataItem);
+			if (match) match=performGlossary(filters,dataItem);
+
+			//only apply filters if we have a match on the search input
+			//we have all the cards now
+			if(match) {
+				_.forEach(filters, function(filter){
+					if(filter.type == "selectbox-group") $("#"+dataId).show(); //calls will be allways shown if there is a select box group
+					if(filter.type!="search" && filter.type!="selectbox" && filter.type!="selectbox-group" && filter.type!="dateslider" && filter.type!="numericslider" && filter.type!="nullmatch" && filter.type!="radio" &&  filter.type!="toggle") { //search is applyed first
+						tempFieldValue = getFieldValue(dataItem, filter.field);
+						if( tempFieldValue.indexOf(filter.compareTo.toLowerCase() ) != -1 && filter.value == false) match = false;
+					}
+				}, this);
+			}
+			return match;
+		}, this);
+
+		//update results counter
+		if( $("#"+dataId).css('display')!='none' ) $( "#" + $("#"+dataId).attr('data-counterElement') ).text(filtered.length);
+		else $( "#" + $("#"+dataId).attr('data-counterElement') ).text("0");
+
+		return filtered;
+	}
+	/**
+	 * Apply the stored data sort on the data source and returns the sorted source object
+	 * @method applySort
+	 * @param {String} dataId The if of the cards
+	 * @param {Object} data The data source to apply the filters on
+	 * @return {Object} the sorted data source
+	 */
+	function applySort(dataId, data) {
+		var sorter = getDataObject(dataId).dataSort;
+		//uses underscore js
+		var sorted = _.sortBy(data, function(dataItem){
+			if (sorter.type == "date") {
+				var dateStr = jsonPath(dataItem,"$."+sorter.field);
+
+				if (isNaN(dateStr[0])) {
+					var date = DPGlobal.parseDate(dateStr[0], DPGlobal.parseFormat('dd-MMM-yy'));
+					return date.valueOf();
+				} else {
+					return dateStr[0];
+				}
+			} else if (sorter.type == "string") {
+				var str = jsonPath(dataItem,"$."+sorter.field);
+				if(str instanceof Array){
+					var strLowerCase = str[0].toLowerCase();
+					return strLowerCase;
+				}
+				return str;
+			} else {
+				return jsonPath(dataItem,"$."+sorter.field);
+			}
+
+		}, this);
+
+		if(sorter.order && (sorter.order.toUpperCase() == "DESC") ) sorted = sorted.reverse();
+		return sorted;
+	}
+
+	function isWholeWordMatch(searchOnString, keyword) {
+		//remove special characters at the end
+		var searchText = keyword.replace(/[\)-]$/g, '');
+
+		//remove special characters at the beginning
+		searchText = searchText.replace(/^[\(-]/g, '');
+
+		searchText = searchText.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+
+		//match whole words
+		return searchOnString.match(new RegExp("\\b"+searchText+"\\b", "i")) != null;
+
+	}
+
+	/**
+	 * Checks if the data source item matches the search filter
+	 * @method performTextSearchMatch
+	 * @param {Object} filters the filters object for the data source
+	 * @param {Object} dataItem The data source item to check the match against to
+	 * @return {Boolean} if the data item matches the search
+	 * @param {Object} dataId The id for the items
+	 */
+	function performTextSearchMatch(filters, dataItem, dataId) {
+		var match = false;
+		var searchCounter = 0, matchcounter=0;
+		_.forEach(filters, function(filter){
+			if(filter.type=="search") {
+				searchCounter++;
+
+				if(filter.compareTo == "") match=true; //filter is empty
+				else {
+					if(filter.field.search(",") != -1) {
+						var fields = filter.field.split(",");
+						var l=fields.length;
+						while(l--) {
+
+							var fieldValue = getFieldValue(dataItem, fields[l]);
+							for (var i = 0; i < fieldValue.length; i++) {
+								if (isWholeWordMatch(fieldValue[i], filter.compareTo.toLowerCase())) {
+									match = true;
+									matchcounter++;
+									break;
+								}
+							}
+						}
+					}
+					else {
+						var fieldValue = getFieldValue(dataItem, filter.field)
+						for (var i = 0; i < fieldValue.length; i++) {
+							if (isWholeWordMatch(fieldValue[i], filter.compareTo.toLowerCase())) {
+								match = true;
+								matchcounter++;
+								break;
+							}
+						}
+					}
+				}
+			}
+
+
+
+		}, this);
+		if(searchCounter==0) match=true; //no search fiels set yet
+		//show the results
+		if(matchcounter>0 && $("#"+dataId).attr('data-hideInit')=="true") $("#"+dataId).show();
+
+		return match;
+	}
+
+	/**
+	 * Checks if the data source item matches any of the select box filter entries
+	 * @method performSelectboxMatch
+	 * @param {Object} filters the filters object for the data source
+	 * @param {Object} dataItem The data source item to check the match against to
+	 * @return {Boolean} if the data item matches the search
+	 */
+	function performSelectboxMatch(filters,dataItem) {
+		var match=false;
+		var selectCounter = 0;
+		var fields;
+		_.forEach(filters, function(filter){
+			if(filter.type=="selectbox") {
+				if(filter.compareTo==null) match=true;
+				else {
+					selectCounter++;
+					//for each selection compare to each field
+					fields = filter.field;
+					_.forEach(filter.compareTo, function(targetValue){
+						_.forEach(fields, function(filterField){
+							if(getFieldValue(dataItem, filterField).indexOf(targetValue.toLowerCase()) != -1) match=true;
+						},this) //end filter field
+					},this);//end for each target value
+				}
+			}
+		},this); //end for each
+		if(selectCounter==0) match=true; //no select filter, all values are valid
+		return match;
+	}
+
+	/**
+	 * Checks if the data source item matches any of the select box filter entries
+	 * @method performSelectboxMatch
+	 * @param {Object} filters the filters object for the data source
+	 * @param {Object} dataItem The data source item to check the match against to
+	 * @return {Boolean} if the data item matches the search
+	 */
+	function performSelectboxGroupMatch(filters,dataItem) {
+		var fields,
+			match = 0,
+			selectCounter = 0;
+
+		_.forEach(filters, function(filter){
+			if(filter.type == "selectbox-group") {
+
+
+				selectCounter++;
+
+				if(filter.compareTo == null || filter.compareTo == "") {
+					match++;
+
+				} else {
+					//for each selection compare to each field
+					fieldMatch = false;
+					fields = filter.field;
+					_.forEach(filter.compareTo, function(targetValue){
+						_.forEach(fields, function(filterField){
+							if(getFieldValue(dataItem, filterField).indexOf(targetValue.toLowerCase()) != -1) fieldMatch = true;
+						},this) //end filter field
+					},this);//end for each target value
+
+					if(fieldMatch) match++;
+				}
+			}
+		},this); //end for each
+
+		return (match == selectCounter);
+	}
+
+	/**
+	 * Checks if the data source item matches the date slider filter
+	 * @method performDateSliderMatch
+	 * @param {Object} filters the filters object for the data source
+	 * @param {Object} dataItem The data source item to check the match against to
+	 * @return {Boolean} if the data item matches the search
+	 */
+	function performDateSliderMatch(filters, dataItem) {
+		var match=false;
+		var filterCounter = 0;
+		var fields;
+
+		_.forEach(filters, function(filter){
+			if(filter.type=="dateslider"){
+				if(filter.compareTo==null || !$.isArray(filter.compareTo)) match=true;
+				else {
+					filterCounter++;
+					fields = filter.field;
+					_.forEach(fields, function(filterField){
+						if($.isNumeric(getFieldValue(dataItem, filterField))) {
+							if( parseInt(filter.compareTo[0]) < parseInt(getFieldValue(dataItem, filterField) ) && parseInt(filter.compareTo[1]) > parseInt( getFieldValue(dataItem, filterField) )) match=true;
+						}
+						else {
+							if( parseInt(filter.compareTo[0]) < parseInt( Date.parse(getFieldValue(dataItem, filterField)).getTime() ) && parseInt(filter.compareTo[1]) > parseInt( Date.parse(getFieldValue(dataItem, filterField)).getTime() )) match=true;
+						}
+
+					},this) //end filter field
+
+				}
+			}
+		},this); //end for each
+
+		if(filterCounter==0) match=true; //no select filter, all values are valid
+		return match;
+	}
+	/**
+	 * Checks if the data source item matches the numeric slider filter
+	 * @method performNumericSliderMatch
+	 * @param {Object} filters the filters object for the data source
+	 * @param {Object} dataItem The data source item to check the match against to
+	 * @return {Boolean} if the data item matches the search
+	 */
+	function performNumericSliderMatch(filters, dataItem) {
+		var match=false;
+		var filterCounter = 0;
+		var fields;
+
+		_.forEach(filters, function(filter){
+			if(filter.type=="numericslider"){
+				if(filter.compareTo==null || !$.isArray(filter.compareTo)) match=true;
+				else {
+					filterCounter++;
+					//for each selection compare to each field
+					fields = filter.field;
+					_.forEach(fields, function(filterField){
+						if( parseInt(filter.compareTo[0]) < parseInt(getFieldValue(dataItem, filterField)) && parseInt(filter.compareTo[1]) > parseInt(getFieldValue(dataItem, filterField))) match=true;
+					},this) //end filter field
+
+				}
+			}
+		},this); //end for each
+
+		if(filterCounter==0) match=true; //no select filter, all values are valid
+		return match;
+	}
+
+	/**
+	 * Performs a null match against a filter
+	 * @method performNullMatch
+	 * @param {Object} filters the filters object for the data source
+	 * @param {Object} dataItem The data source item to check the match against to
+	 */
+	function performNullMatch(filters, dataItem) {
+		var match=false;
+		var filterCounter = 0;
+		var fields;
+		_.forEach(filters, function(filter){
+			if(filter.type=="nullmatch"){
+				filterCounter++;
+				//for each selection compare to each field
+				fields = filter.field;
+				// * = have something
+				// -* = have nothing
+				if( filter.compareTo == "*") {
+					if( (getFieldValue(dataItem, filter.field) instanceof Object) || (getFieldValue(dataItem, filter.field).length > 0 && getFieldValue(dataItem, filter.field) != null) ) match=true;
+				}
+				else if(filter.compareTo=="-*") {
+					if( getFieldValue(dataItem, filter.field).length == 0 || getFieldValue(dataItem, filter.field) == null ||  getFieldValue(dataItem, filter.field) == "" ) match=true;
+				}
+				else return true;
+
+			}
+		},this); //end for each
+
+		if(filterCounter==0) match=true; //no select filter, all values are valid
+		return match;
+	}
+
+	/**
+	 * Performs a match for radio filters
+	 * @method performRadioMatch
+	 * @param {Object} filters the filters object for the data source
+	 * @param {Object} dataItem The data source item to check the match against to
+	 * @return {Boolean} if the data item matches the search
+	 */
+	function performRadioMatch(filters,dataItem) {
+		var match=false;
+		var filterCounter = 0;
+		var fields;
+		_.forEach(filters, function(filter){
+			if(filter.type=="radio"){
+				filterCounter++;
+				//for each selection compare to each field
+				fields = filter.field;
+				//value is allways true
+				if(getFieldValue(dataItem, filter.field).indexOf(filter.compareTo.toLowerCase()) != -1) match=true;
+
+			}
+		},this); //end for each
+
+		if(filterCounter==0) match=true; //no select filter, all values are valid
+		return match;
+
+	}
+
+	function ToggleGroupCounters() {
+		this.matchCounter = 0;
+		this.filterCounter = 0;
+		this.filterCounterRemove = 0;
+		this.matchFilterCounter = 0;
+		this.offCounter = 0;
+	}
+
+	/**
+	 * Performs a match for ToogleRemove filters
+	 * @method performToggleRemove
+	 * @param {Object} filters the filters object for the data source
+	 * @param {Object} dataItem The data source item to check the match against to
+	 * @return {Boolean} if the data item matches the search
+	 */
+	function performToggleRemove(filters, dataItem) {
+		//initialize helper filter map
+		dataItem._filterMap =  {};
+
+		//the groups of toggle buttons
+		var groups = {};
+
+		_.forEach(filters, function(filter){
+			var tempFieldValue = getFieldValue(dataItem, filter.field);
+
+			if(filter.type=="toggle") {
+
+				if (!groups[filter.toggleGroup]) {
+					groups[filter.toggleGroup] = new ToggleGroupCounters();
+				}
+				var gr = groups[filter.toggleGroup];
+
+				/* Distinction between the two toggle types (determined byt the presence of the data-remove flag */
+				if(filter.dataRemove == true) {
+					if(filter.value == true) {
+						gr.filterCounterRemove++;
+						if( tempFieldValue.indexOf(filter.compareTo.toLowerCase() ) != -1) {
+							gr.matchCounter++;
+						}
+					}
+				} else {
+					gr.filterCounter++;
+					if( tempFieldValue.indexOf(filter.compareTo.toLowerCase() ) != -1) {
+						gr.matchFilterCounter++;
+						if (filter.value == false) {
+							gr.offCounter++;
+						}
+					}
+				}
+			}
+		}, this); //end for each
+
+		var ret = true;
+
+		//all the groups must match
+		for (var key in groups) {
+			var match = true;
+			var c = groups[key];
+			//remove only if all filters of the matching group is off
+			if (c.offCounter == c.matchFilterCounter) {
+				match = false;
+			}
+
+			if (c.filterCounter == 0) match = true; //no select filter, all values are valid
+			if (c.filterCounterRemove == 0) c.matchCounter++;
+			ret = match && !!c.matchCounter;
+			if (!ret) {
+				break;
+			}
+		}
+
+        return ret;
+	}
+
+	/**
+	 * Performs a match for glossary filters
+	 * @method performGlossay
+	 * @param {Object} filters the filters object for the data source
+	 * @param {Object} dataItem The data source item to check the match against to
+	 * @return {Boolean} if the data item matches the search
+	 */
+	function performGlossary(filters, dataItem) {
+		var match = false;
+		var filterCounter = 0;
+
+		_.forEach(filters, function(filter){
+			if(filter.type == "glossary") {
+				filterCounter++;
+				tempFieldValue = getFieldValue(dataItem, filter.field);
+				_.forEach(tempFieldValue, function(value) {
+					//fix for IE 7
+					if( filter.compareTo == value.toLowerCase().substr(0,1)) match = true;
+				}, this);
+			}
+		}, this); //end for each
+
+		if(filterCounter==0) match=true; //no select filter, all values are valid
+		return !!match;
+
+	}
+
+
+	/**
+	 * Returns the data source field value from the data item. It uses jSON path to match the defined data source field.
+	 * @method getFieldValue
+	 * @param {Object} dataItem the data source item to retrieve the value form
+	 * @param {String} fieldName the field name / path to retrieve the data from. e.g. FieldParent.fieldChild or fieldName only.
+	 * @return {String} returns the field value
+	 */
+	function getFieldValue(dataItem, fieldName) {
+		//we use jsonPath to match the field definition /*Removed the [0]*/
+		var res = jsonPath(dataItem, "$."+fieldName);
+		if(!res) res="";
+		if(!$.isArray(res))  {
+			res = [res];
+		} else {
+			//flatten in case it's nested array
+			res = _.flatten(res);
+		}
+		return res.join('|').toLowerCase().split('|');
+	}
+
+	/**
+	 * Deletes a filter from the filters object defined for the data source. Used to delete similar filters on the data object
+	 * @method deleteFilter
+	 * @param {String} field the data field of the filter
+	 * @param {String} compareTo the compare to field(s) for the filter
+	 * @param {String} onDataSource the cards id to apply the sort on
+	 * @param {String} filterType the kind of data source filter type. e.g. string, number, date
+	 * @param {String} filterValue the actual filter value
+	 */
+	function deleteFilter(field, compareTo, onDataSource, filterType, filterValue) {
+		//first set filters for the data source in case multiple sources
+		//only usded for reset actions
+		var filter = {},
+			dataToCompare;
+
+		filter.field = field;
+		filter.type=filterType;
+		filter.value=filterValue;
+		var data = getDataObject(onDataSource);
+		var newFilters = [];
+		var l = data.dataFilters.length, hasFilter=false;
+
+		while(l--) {
+			dataToCompare = {};
+			dataToCompare.field = data.dataFilters[l].field;
+			dataToCompare.type = data.dataFilters[l].type;
+			dataToCompare.value = data.dataFilters[l].value;
+
+			if( JSON.stringify(dataToCompare) != JSON.stringify(filter))
+				newFilters.push(data.dataFilters[l]);
+		}
+		data.dataFilters = newFilters;
+		setDataObject(onDataSource, data);
+		FEF.utils.displayCards(onDataSource);
+		return;
+	}
+	/**
+	 * Deletes all filterss that ,match a specific type
+	 * @method deleteAllFilter s
+	 * @param {String} type The filter type to delete
+	 * @param {String} field The filed to help the identification. There can be many different field with the same filter type
+	 * @param {String} onDataSource the cards id to apply the sort on
+	 */
+	function deleteAllFilters(type, field, compareTo, onDataSource) {
+		var data = getDataObject(onDataSource);
+		var newFilters = [];
+		if(data) {
+			var l = data.dataFilters.length, hasFilter=false;
+			while(l--) {
+				if( data.dataFilters[l].type != type && JSON.stringify(data.dataFilters[l].field) != JSON.stringify(field)) newFilters.push(data.dataFilters[l]);
+			}
+
+			data.dataFilters = newFilters;
+			setDataObject(onDataSource, data);
+		}
+	}
+
+	/**
+	 * Parses the bookmarked filters and sort and creates the data object. Bookmark only works if a single cards layout is implemented on the page.
+	 * @method parseURLFilters
+	 * @param {Object} dataInside the datasource object
+	 */
+	function parseURLFilters(dataInside) {
+
+		if(window.location.hash) {
+			var cards;
+			$(".ec-cards").each(function(index, element) {
+				cards=$(element).attr('id');
+			});
+
+			if(window.location.hash.indexOf('c,'+cards) > -1) {
+				//last val is dataRemove
+
+				//#c,calls=Category/t/CALL_FOR_TENDERS/0/1&Category/t/CALL_FOR_PROPOSALS/1/1&CallIdentifier.Status/t/OPEN/1/1&CallIdentifier.Status/t/CLOSED/0/1&CallIdentifier.Status/t/FORTHCOMING/0/1&+field/order
+				var parts = decodeURI(window.location.hash).replace("#","").replace("c,","").split("="); // = "cards-dataId="+JSON.stringify(data.dataFilters)+"+"+JSON.stringify(data.dataSort);
+				var dataSource=parts[0];
+
+
+				var dataParts, dataFilters, dataSorters;
+
+				if( parts[1].indexOf("&+") != -1) {
+					if(parts[1].indexOf("&+")) dataParts = parts[1].split("&+");
+					else dataParts[0]=parts[1];
+
+					dataFilters = dataParts[0].split("&");
+
+					if( dataParts.lenght>1 && dataParts[1].indexOf("&")) {
+						dataSorters = dataParts[1].split("&");
+					}
+					else dataSorters = [dataParts[1]];
+				}
+				else {
+					dataSorters = [];
+					dataFilters = parts[1].split("&");
+				}
+
+
+
+				var filters = [];
+				var sorters = [];
+
+				for(k=0; k<dataFilters.length; k++) {
+					var spl = dataFilters[k].split("/");
+					var obj = {};
+
+					obj.type=getType(spl[1], true);
+
+					if(obj.type=="selectbox" || obj.type=="selectbox-group") {
+						if(spl[2].indexOf(",")) obj.compareTo=spl[2].split(",");
+						else obj.compareTo=[spl[2]];
+
+						if(spl[0].indexOf(",") > 0) obj.field=spl[0].split(",");
+						else obj.field=[spl[0]];
+					}
+					else {
+						obj.field= spl[0];
+						obj.compareTo=spl[2]
+					}
+					obj.value=(spl[3] == 1 ? true : false);
+					obj.bookmarkFilter= (spl[4] == 1 ? "true" : "false");
+					obj.dataRemove = (spl[5] == 1 ? true : false);
+					obj.toggleGroup = ((spl[6])? spl[6] : FEF.data.ToggleFilter.prototype.DEFAULT_GROUP);
+					filters.push(obj);
+					initFilters.push(obj);
+				}
+
+				if( dataSorters.length>0) {
+					dataSorters = dataSorters[0].split("/");
+					sorters.field= dataSorters[0];
+					sorters.order=dataSorters[1];
+					sorters.type="string";
+					sorters.bookmarkFilter="true";
+					sorters.value=true;
+				}
+
+
+				var data = getDataObject(dataSource);
+				data.dataFilters = filters;
+				data.dataSort = sorters;
+				setDataObject(dataSource, data);
+
+				//FEF.data.initFilters = filters.slice(0); //store the inital URL Filters, makes a copy using slice(0);
+				FEF.data.initSort = sorters;
+				//console.log(initFilters)
+
+				FEF.events.dispatcher.dispatchEvent("FILTERS_SETUP", dataSource);
+			}
+			else FEF.events.dispatcher.dispatchEvent("NO_URL_FILTERS", dataInside);
+
+
+		}
+		else FEF.events.dispatcher.dispatchEvent("NO_URL_FILTERS", dataInside);
+
+	}
+
+	/**
+	 * Updates the URL with the bookmarkeable filters
+	 * @method updateHash
+	 * @param {String} onDataSource The cards id
+	 * @param {Object} dataFilters The dataFillters object for the data source
+	 * @param {dataSort} dataSort The dataSort object for the data source
+	 */
+	function updateHash(onDataSource, dataFilters, dataSort) {
+		//window.location.hash = "cards-"+onDataSource+"="+JSON.stringify(datao.dataFilters)+"+"+JSON.stringify(datao.dataSort);
+		//we need to go on the objects and only add the bookmarkeable on the array to the URL
+
+		var bookmarkFilters=[];
+		//var bookmarkSort=[];
+		for(var x=0; x<dataFilters.length; x++) {
+			if(dataFilters[x].bookmarkFilter == "true") bookmarkFilters.push(dataFilters[x]);
+		}
+
+
+		var hash = "c," + onDataSource + "=";
+		for (var k = 0; k < bookmarkFilters.length; k++) {
+			hash += bookmarkFilters[k].field + "/" + getType(bookmarkFilters[k].type) + "/" + bookmarkFilters[k].compareTo + "/"
+				+ (bookmarkFilters[k].value == true ? 1 : 0) + "/" + (bookmarkFilters[k].bookmarkFilter == "true" ? 1 : 0) + "/"
+				+ (bookmarkFilters[k].dataRemove == true ? 1 : 0);
+
+			if ( bookmarkFilters[k].toggleGroup ) {
+				hash += "/" + bookmarkFilters[k].toggleGroup;
+			}
+
+			if ((k + 1) < bookmarkFilters.length)
+				 hash += "&";
+		}
+
+
+
+		if (dataSort.field && dataSort.order) {
+			if(hash.length>0) {
+				hash+="&+";
+			}
+			else {
+				hash="+";
+			}
+			hash+=dataSort.field+"/"+dataSort.order;
+		}
+
+
+		if(bookmarkFilters.length>0) window.location.hash = encodeURI(hash);
+
+	}
+
+	/**
+	 * Reduces the header URLS types by changing the identifier
+	 * @method getType
+	 * @param {string} filterType the filter type to check against
+	 * @param {inverse} inverse the match order (inverse=false)
+	 */
+	function getType(filterType, inverse) {
+		if(!inverse) {
+			switch(filterType) {
+				case "toggle": return "t"; break ;
+				case "search": return "s"; break ;
+				case "selectbox": return "sb"; break ;
+				case "selectbox-group": return "sbg"; break ;
+				case "dateslider": return "ds"; break ;
+				case "numericslider": return "ns"; break ;
+				case "button": return "b"; break ;
+				case "nullmatch": return "n"; break ;
+				case "radio": return "r"; break ;
+
+
+
+			}
+		}
+		else {
+			switch(filterType) {
+				case "t": return "toggle"; break ;
+				case "s": return "search"; break ;
+				case "sb": return "selectbox"; break ;
+				case "ds": return "dateslider"; break ;
+				case "ns": return "numericslider"; break ;
+				case "b": return "button"; break ;
+				case "n": return "nullmatch"; break ;
+				case "r": return "radio"; break;
+				case "sbg": return "selectbox-group"; break;
+			}
+
+		}
+	}
+
+	function ToggleFilter(dataRemove) {
+		this.dataRemove = dataRemove;
+	}
+	ToggleFilter.prototype.DEFAULT_GROUP = 'default-group';
+
+	ToggleFilter.prototype.setDataGroup = function(dataGroup) {
+		this.toggleGroup = (dataGroup) ? dataGroup : this.DEFAULT_GROUP;
+	}
+
+	/*scope*/
+	return {
+		dataSources:dataSources,
+		getData:getData,
+		filter:filter,
+		filterShort:filterShort,
+		sorter:sorter,
+		getDataObject:getDataObject,
+		setDataObject:setDataObject,
+		applyFilters:applyFilters,
+		applySort:applySort,
+		deleteFilter:deleteFilter,
+		deleteAllFilters:deleteAllFilters,
+		parseURLFilters:parseURLFilters,
+		updateURL:updateURL,
+		updateHash:updateHash,
+		initFilters:initFilters,
+		ToggleFilter:ToggleFilter,
+		isWholeWordMatch:isWholeWordMatch		//exposed for testing
+	}
+}());
+
+/**
+ * Creates an instance to support the usage of event listners and dispatchers
+ * @module FEF
+ * @class FEF.events
+ */
+FEF.events = (function(){
+
+
+
+	/**
+	 * Creates an instance to deliver and register event listners and dispatchers
+	 * @method EventDispacther
+	 */
+	function EventDispatcher(){}
+
+	EventDispatcher.prototype.events = {};
+	/**
+	 * Adds an event listener
+	 * @method addEventListener
+	 * @param {String} key The event name
+	 * @param {Function} func The call back function
+	 */
+	EventDispatcher.prototype.addEventListener = function (key, func) {
+		if (!this.events.hasOwnProperty(key)) {
+			this.events[key] = [];
+		}
+		this.events[key].push(func);
+	};
+	/**
+	 * Removes an event listener
+	 * @method removeEventListener
+	 * @param {String} key The event name
+	 * @param {Function} func The call back function
+	 */
+	EventDispatcher.prototype.removeEventListener = function (key, func) {
+		if (this.events.hasOwnProperty(key)) {
+			for (var i in this.events[key]) {
+				if (this.events[key][i] === func) {
+					this.events[key].splice(i, 1);
+				}
+			}
+		}
+	};
+	/**
+	 * Dispatches and event
+	 * @method dispatchEvent
+	 * @param {String} key The event name
+	 * @param {Object} the data to go with the event
+	 */
+	EventDispatcher.prototype.dispatchEvent = function (key, dataObj) {
+		if (this.events.hasOwnProperty(key)) {
+			dataObj = dataObj || {};
+			dataObj.currentTarget = this;
+			for (var i in this.events[key]) {
+				this.events[key][i](dataObj);
+			}
+		}
+	};
+
+
+	var dispat;
+	if(!dispat) dispat = new EventDispatcher();
+
+	/*scope*/
+	return { dispatcher:dispat}
+}());
+
+
+
+/**
+ * Utils module, handles global utilities for the framework
+ * @module FEF
+ * @class FEF.utils
+ */
+FEF.utils  = (function (){
+
+
+	var versionSearchString;
+	var dataBrowser = [{string: navigator.userAgent,subString: "Chrome",identity: "Chrome"},{ 	string: navigator.userAgent,subString: "OmniWeb",versionSearch: "OmniWeb/",identity: "OmniWeb"},{string: navigator.vendor,subString: "Apple",identity: "Safari",versionSearch: "Version"},{prop: window.opera,identity: "Opera",versionSearch: "Version"},{string: navigator.vendor,subString: "iCab",identity: "iCab"},{string: navigator.vendor,subString: "KDE",identity: "Konqueror"},{string: navigator.userAgent,subString: "Firefox",identity: "Firefox"},{string: navigator.vendor,subString: "Camino",identity: "Camino"},{string: navigator.userAgent,subString: "Netscape",identity: "Netscape"},{string: navigator.userAgent,subString: "MSIE",identity: "Explorer",versionSearch: "MSIE"},{string: navigator.userAgent,subString: "Gecko",identity: "Mozilla",versionSearch: "rv"},{ 	string: navigator.userAgent,subString: "Mozilla",identity: "Netscape",versionSearch: "Mozilla"}];
+	var dataOS = [{string: navigator.platform,subString: "Win",identity: "Windows"},{string: navigator.platform,subString: "Mac",identity: "Mac"},{string: navigator.userAgent,subString: "iPhone",identity: "iPhone/iPod"},{string: navigator.platform,subString: "Linux",identity: "Linux"}];
+
+	/**
+	 * Inserts .js on the body tag for allow the js dependent utilities to appear on the screen and the correct classes be loaded
+	 @method initJs
+	 */
+	function initJs() {
+		$("body").addClass('js');
+	}
+
+
+	/**
+	 * Detects browser IE version and add it to the body
+	 * @method detectBrowserVersion
+	 * @see http://www.quirksmode.org/js/detect.html
+	 */
+	function detectBrowserVersion() {
+		var browser = searchString(dataBrowser) || "An unknown browser";
+		var version = searchVersion(navigator.userAgent) || searchVersion(navigator.appVersion)	|| "an unknown version";
+		var OS =  searchString(dataOS) || "an unknown OS";
+		return {
+			browser:browser,
+			version:version,
+			OS:OS
+		}
+	}
+	/**
+	 * Matches the Browser name on the data
+	 * @method searchString
+	 * @param {object} data
+	 */
+	function searchString (data) {
+		for (var i=0;i<data.length;i++)	{
+			var dataString = data[i].string;
+			var dataProp = data[i].prop;
+			versionSearchString = data[i].versionSearch || data[i].identity;
+			if (dataString) {
+				if (dataString.indexOf(data[i].subString) != -1)
+					return data[i].identity;
+			}
+			else if (dataProp)
+				return data[i].identity;
+		}
+	}
+
+	/**
+	 * Matches the Browser version on the data
+	 * @method searchVersion
+	 * @param {String} dataString
+	 */
+	function searchVersion(dataString) {
+		var index = dataString.indexOf(versionSearchString);
+		if (index == -1) return;
+		return parseFloat(dataString.substring(index+versionSearchString.length+1));
+	}
+
+	/**
+	 * Sets the specific browser classes on the body to apply some fixes, mainly for the menu
+	 * @method initBrowser
+	 */
+	function initBrowser() {
+		var browser = detectBrowserVersion();
+		$("body").addClass(browser.browser.toLowerCase().replace("explorer","ie")).addClass(browser.browser.toLowerCase().replace("explorer","ie")+''+browser.version);
+	}
+
+	/**
+	 * Initiates the accordion component
+	 * @method initAccordion
+	 */
+	function initAccordion() {
+		$('.ec-accordion-arrow').each(function(index, element) {
+
+			var acc=$(element);
+			acc.find('.accordion-heading a').each(function(index, element) {
+				$(element).before('<span class="right-caret"></span>');
+				$(element).unbind('click').click(function(e) {
+					$(this).closest('span').remove();
+				});
+			});
+
+		});
+
+		$('.ec-accordion').each(function(index, element) {
+			var acc=$(element);
+			acc.find('.accordion-heading a').each(function(index, element) {
+				var txt = $(element).text();
+				$(element).empty().append('<b class="caret caret-right"></b>').append(txt);
+			});
+		});
+
+	}
+
+	/**
+	 * Initiates the accordion component interactions.
+	 * @method initAccordionExtension
+	 */
+	function initAccordionExtension() {
+
+		$('.accordion-body.in').closest('.accordion-group').find('.accordion-heading a.accordion-toggle').addClass('open');
+		$('.accordion-body.in').closest('.accordion-group').find('.accordion-heading').addClass('heading-open');
+
+		$('.accordion.ec-accordion .accordion-toggle').on('click', function (e) {
+			var $el = $(this);
+
+			if($el.hasClass('open')) {
+				$el.removeClass('open');
+				$el.closest('.accordion-heading').removeClass('heading-open');
+			}else {
+				var hr = $el.attr("href");
+				//we need to check if the element has an expandeable container
+				if( hr!="#" && $el.closest('.accordion-group').find(hr).length )	{
+					$('.accordion.ec-accordion .accordion-toggle').removeClass('open');
+					$('.accordion.ec-accordion .accordion-heading').removeClass('heading-open');
+				}
+				$el.addClass('open');
+				$el.closest('.accordion-heading').addClass('heading-open');
+			}
+
+		})
+	}
+
+	/**
+	 * Initiates the date picker component.
+	 * @method initDataPicker
+	 */
+	function initiateDatePicker() {
+		$('.ec-datepicker').datepicker()
+	}
+
+	/**
+	 * Stores the cards data sources into global variables
+	 * @method storeCallsDataSource
+	 * @param {String} jsonString The jSON string to store
+	 * @param {String} cardsId The id of cards component to associate the data with
+	 * @param {Boolean} bookmark If the bookmark feature should be enabled for the this cards component
+	 * @dispatches {Event} STORE_COMPLETE Dispatches the event on completion
+	 */
+	function storeCallsDataSource(jsonString, cardsId, bookmark) {
+		var cardsSource = {}, dataFilters = {};
+		cardsSource.id = cardsId;
+		cardsSource.cardsData = jsonString;
+		cardsSource.dataFilters = [];
+		cardsSource.dataSort = [];
+		cardsSource.bookmark= bookmark;
+
+		FEF.data.dataSources.push(cardsSource);
+		FEF.events.dispatcher.dispatchEvent("STORE_COMPLETE", cardsId);
+	}
+
+	/**
+	 * Displays the cards on the container after the filters and sort being applied.
+	 * @method displayCards
+	 * @param {Object} cardsId the cards id
+	 */
+	function displayCards(cardsId) {
+		if(typeof(cardsId)=='object') return;
+		var id = $("#"+cardsId);
+		var dataSource = FEF.data.getData(cardsId);
+
+		var noresult = $('#'+id.data('noresult'));
+		noresult.hide();
+
+		var itenerator = id.attr("data-loop");
+		var dataTemplate = $("#"+id.attr("data-template"));
+		var dataFilters = (id.attr('data-filters')=="false") ? false : true;
+		var els;
+
+		var limit = typeof($(id).attr('data-limit'))!='undefined' ? $(id).attr('data-limit') : 0;
+
+		var template = _.template(dataTemplate.html());
+		var item;
+
+		//use xpath to access defined element by the user
+
+		els=jsonPath(dataSource, "$."+itenerator)[0];
+		//apply any stored filters and sort
+		if(dataFilters) els = FEF.data.applyFilters(cardsId, els);
+		if(dataFilters) els = FEF.data.applySort(cardsId, els);
+
+		/*Notify for extentions of this plugin*/
+		FEF.events.dispatcher.dispatchEvent("REFRESH_VIEW", els);
+
+		var l = els.length, added=0;
+		$(id).empty();
+		if(limit>0) els.reverse();
+		var cards = [];
+
+		//faq specific code (ugly but so what!)
+
+		var firstActive = true;
+		var firstArchived = true;
+
+
+		while(l--) {
+			item = els[l];
+			item.SpecificProgrammeCustom="";
+			item.PublicationDateCustom="";
+			if (item.archived) {
+				item.borderElem = firstArchived;
+				firstArchived = false;
+			} else {
+				item.borderElem = firstActive;
+				firstActive = false;
+			}
+			cards.push(template(item));
+
+			added++;
+			if(limit>0 && added>=limit) l=0; //break
+
+		}
+
+		if (cards.length > 0) {
+			$(id).append(cards.join(""));
+		}
+		// No result
+		if(els.length == 0) noresult.show();
+
+		var searchKey =$('input.plaintext-search').val();
+		if(searchKey)  {
+			$('#searchReset').show();
+		} else {
+			$('#searchReset').hide();
+		}
+
+		setTimeout(function() {
+			$('body').removeClass("loading");
+		},50);
+
+	}
+
+	/**
+	 * Parses a date string
+	 * @method getDateString;
+	 * @param dateStr
+	 * @param format
+	 */
+	function getDateString(dateStr, format) {
+		var dt = new Date(dateStr);
+		return 	dt.toString(format);
+	}
+
+	/**
+	 * Parses a date string
+	 * @method loadTypeAhead
+	 * @param input {Object} The input js object
+	 * @param sourceData {Object} The typeahead source data
+	 */
+	function loadTypeAhead(input, sourceData) {
+		//load the data source from an existent array or a json file
+		if( sourceData.indexOf(".json") > 0 ) {
+			//is a jSON file
+			$.ajax({
+				type: 'GET',
+				url: sourceData,
+				cache: false,
+				dataType: 'json',
+				success: function(json) {
+
+					$(input).typeahead(
+						{ source: json.suggestions, items:15, minLength:1 }
+					);
+					$(input).attr('data-provide','typeahead');
+				}
+			});
+
+		}
+		else if( sourceData.indexOf("[") > -1  && sourceData.indexOf("]")>0) {
+			$(input).typeahead({source:eval(sourceData), items:15, minLength:1});
+			$(input).attr('data-provide','typeahead');
+		}
+		//else console.log("Wrong source definition, ignoring...");
+
+	}
+
+
+
+	return {
+		initJs:initJs,
+		initBrowser:initBrowser,
+		initAccordion:initAccordion,
+		initAccordionExtension:initAccordionExtension,
+		initiateDatePicker:initiateDatePicker,
+		storeCallsDataSource:storeCallsDataSource,
+		displayCards:displayCards,
+		getDateString:getDateString,
+		loadTypeAhead:loadTypeAhead
+	}
+}());
+
+
+/**
+ * Components module
+ * Responsible for handling all the custom components of the main module
+ * @module FEF
+ * @class FEF.components
+ */
+FEF.components = (function() {
+
+
+	/**
+	 * Jumps to a letter on the glossary
+	 * @method glossaryJumpTo
+	 * @param letter {String} The letter to jump to
+	 * @param glosID {Srring} The ID for the glossary, in case of multiple glossaries
+	 **/
+	function glossaryJumpTo(letter, glosID) {
+		//it only selects the letter if it is not selected already
+		if(glosID && glosID.length>0 && !$('#'+glosID+' .gloss-'+letter).hasClass('selected')) $('#'+glosID+' .gloss-'+letter).trigger('click');
+		else if(!$('.gloss-'+letter).hasClass('selected')) $('.gloss-'+letter).trigger('click');
+	}
+
+
+	/**
+	 * Updates data table with data reveived from ajax cal
+	 */
+	function updateDataTable(json, dataSource, dataLoop, dataFields, table, tableOptions,  indexDate,
+							 indexOrgDate, defaultSorting, maxChars) {
+		var showExport = false;
+		var dataSourceLocal;
+
+		//in case of no response return
+		if (json != undefined) {
+			//we got the json, from URL or from local Variable, now we need to create the two dimensions array for the source
+			dataSource = [];
+
+
+			var sources = jsonPath(json, "$."+dataLoop)[0];
+
+			var tot = sources.length, arr, fun, args=null, functions=[];
+
+			for(var x=0; x<tot; x++) {
+				//each array will be created with the dataFields, in same order they appear
+				arr = [];
+				for(var i=0; i<dataFields.length; i++) {
+					var tmp;
+					//*collect possible functions to execute on the element
+					//example, date format
+					if(typeof(dataFields[i])!='undefined') {
+						if( dataFields[i].indexOf(":")>-1) {
+							//we have a function to execute on the field
+							fun = dataFields[i].split(":");
+							var val = fun[0];
+							if(fun.length>=2) args = fun[2]; //arguments
+							fun=fun[1]; //function to be executed
+							fun = FEF.utils[fun]; //lets grab the funciotn named 'fun' of the utils package //safer execution
+							tmp = fun(jsonPath(sources[x], "$."+val)[0], args);
+
+						}
+						else tmp = jsonPath(sources[x], "$."+dataFields[i]);
+
+
+
+						if (jQuery.isArray( tmp )) {
+							tmp = tmp[0];
+						}
+
+						arr.push(tmp); //add to the array
+					}
+					else {
+						if(console && console.error) console.error('[data-field] A data-field is missing on the <th> definition.');
+					}
+				}
+				dataSource.push(arr); //add to the data source
+			}
+
+
+			dataSourceLocal = dataSource;
+			dataSource=null;
+
+		}
+
+		//initiate the data table
+		var oTable = table.DataTable({
+			"bFilter": tableOptions.filter,
+			"sAjaxSource": dataSource,
+			"aaData": dataSourceLocal,
+			"stateSave": tableOptions.stateSave,			//save the state after reload
+			"oLanguage": { "sSearch": tableOptions.filterText,
+				"sInfo": tableOptions.showingInfoLabel,
+				"oPaginate": {
+					"sPrevious": tableOptions.paginationLabels[1],
+					"sNext": tableOptions.paginationLabels[0],
+					"sLast": tableOptions.paginationLabels[3],
+					"sFirst": tableOptions.paginationLabels[2]
+				}
+			},
+			"aoColumnDefs": [
+				{
+					bSortable: false,
+					aTargets: tableOptions.entriesSortingOff
+				},
+				{
+					aTargets: tableOptions.entriesHidden,
+					visible: false
+				},
+				{ sType: 'date-euro', aTargets: indexDate},
+				{ sType: 'date-string', aTargets: indexOrgDate}
+			],
+			"bLengthChange": tableOptions.entriesSelector,
+			"iDisplayLength": tableOptions.entriesSelectorDefault,
+			"aLengthMenu": tableOptions.entriesSelectorArray,
+			"bInfo": tableOptions.showingInfo,
+			"aaSorting":defaultSorting,
+			"bPaginate": tableOptions.showPagination,
+			//"bStateSave": true,
+			"fnRowCallback": function (nRow, aData, iDisplayIndex, iDisplayIndexFull) {
+				//grab the max widths
+				for (var i = 0; i < aData.length; i++) {
+					var th = $(nRow).parents('table').find('th:eq(' + i + ')')[0];
+					var td = $('td:eq(' + i + ')', nRow);
+					if (aData[i] && aData[i].length > maxChars[i].maxChars && maxChars[i].maxChars != -1) {
+						var str = aData[i].substring(0, maxChars[i].maxChars) + "...";
+						td.text(str);
+					}
+				}
+			},
+			"drawCallback": function ( settings ) {
+	           if(tableOptions.dashboardRow >= 0){
+					var api = this.api();
+		            var rows = api.rows( {page:'current'} ).nodes();
+		            var last=null;
+
+		            api.column(tableOptions.dashboardRow, {page:'current'} ).data().each( function ( value, i ) {
+		            	 if(value){
+		            		 $(rows).eq( i ).after(
+			                    '<tr><td colspan="6" style="background-color: #d4e4f3;">'+value.replace(/<\/?[\w\s="/.':;#-\/\?]+>/gi,"")+'</td></tr>'
+			                 );
+		            	 }
+		            } );
+	           }
+	        },
+			"columnDefs": [
+				{
+					"targets": 4,
+					//"data": "permissions",
+					"render": function (data, type, full, meta) {
+						return '<a href="' + data + '">Download</a>';
+					}
+				}
+			]
+		});
+
+		//save as global assuming one table (ugly!)
+		if (oTable.length > 0) {
+		 window.PP.oTable = oTable;
+		 }
+
+
+
+		var tt = new TableTools( table, {"buttons": [{ "type": "print", "buttonText": "Print!" }]} );
+		var wrapper = table.closest('.ec-datatable-wrapper');
+
+		//5. export options, only after table being initialized
+		if(table.has('.ec-export.on').length) {
+			//we will show the export group
+			var buttons = wrapper.find('.btn-group.export');
+			showExport=true;
+
+			table.find('.ec-export.on > ul > li').each(function(index, element) {
+				var el = $(element);
+				if(el.hasClass('pdf-report')){
+						el.unbind('click').click(function(e) {
+						});
+				}
+				else{
+					if(!el.hasClass('export-print')) {
+						var lnk = el.find('a').attr('href');
+						var txt = el.find('a').text();
+						el.empty();
+						el.addClass('btn btn-small');
+						el.append(txt);
+						el.unbind('click').click(function(e) {
+							window.open(lnk);
+						});
+					}
+					else {
+						//its the print action, this should be different
+						el.addClass('btn btn-small');
+						el.unbind('click').click(function(e) {
+							tt.fnPrint(true, {"bShowAll":true, "sInfo":"<h3>Print View.</h3>" + "Please use you browser print function to print the table. <br />Return using ESC key."});
+						});
+					}
+				}
+				buttons.append(el);
+
+			});
+
+		}
+		//mini dashboard
+		var detailRows = [];
+		$('tbody').on( 'click', 'tr td button.details-control', function () {
+			var tr = $(this).closest('tr');
+
+			var row = oTable.row(tr);
+
+			var idx = $.inArray( tr.attr('id'), detailRows );
+
+			if ( row.child.isShown() ) {
+				tr.removeClass('details');
+				row.child.hide();
+			} else {
+				tr.addClass('details');
+
+				$(this).trigger('updateMiniDashboardMsg', row.child);
+
+
+				if ( idx === -1 ) {
+					detailRows.push( tr.attr('id') );
+				}
+			}
+
+		} );
+
+
+
+				//historical account data
+		var detailRows_accountData = [];
+		$('tbody').on( 'click', 'tr td a span.details-historical-accountdata', function () {
+			var tr = $(this).closest('tr');
+
+			var row = oTable.row(tr);
+
+			var idx = $.inArray( tr.attr('id'), detailRows_accountData );
+
+			if ( row.child.isShown() ) {
+				tr.removeClass('details');
+				row.child.hide();
+			} else {
+				tr.addClass('details');
+
+				$(this).trigger('updateHistoricalAccountData', row.child);
+
+
+				if ( idx === -1 ) {
+					detailRows_accountData.push( tr.attr('id') );
+				}
+			}
+
+		} );
+
+
+		$('#trucha').change( function() {
+			oTable.draw();
+	    } );
+
+		// On each draw, loop over the `detailRows` array and show any child rows
+		oTable.on( 'draw', function () {
+			$.each( detailRows, function ( i, id ) {
+				$('#'+id+' td.details-control').trigger( 'click' );
+			} );
+			$.each( detailRows_accountData, function ( i, id ) {
+				$('#'+id+' td.details-historical-accountdata').trigger( 'click' );
+			} );
+		} );
+
+
+
+		if(table.has('.ec-export.off').length) {
+			showExport = false;
+		}//no export
+
+
+
+		if(!showExport && !tableOptions.entriesSelector && !tableOptions.filter) wrapper.find('.ec-data-header').hide();
+	}
+
+
+
+
+
+
+	function getTableOptions(table) {
+		var options = {};
+
+
+		options.filter = true;
+		options.filterText = "Search";
+		options.showingInfo = true;
+		options.showingInfoLabel = "Showing %s% to %e% of %t% entries.";
+
+		options.entriesSelector = true;
+		options.entriesSelectorArray = [10,25,50,100];
+		options.entriesSelectorDefault = 10;
+
+		options.showPagination = true;
+		options.stateSave = false;
+		options.visible = true;
+
+		options.paginationLabels = ["Next","Previous","First","Last"];
+
+		options.entriesSortingOff = [];
+		options.entriesHidden = [];
+
+		options.dashboardRow = -1;
+
+		if(table.has('.ec-table-options').length) {
+
+			//1. show search
+			if(table.has('.ec-search.on').length) {
+				options.filter = true;
+				options.filterText = (table.has('.ec-search-label').length) ? table.find('.ec-search-label').text() : options.filterText;
+			}
+			else if(table.has('.ec-search.off').length) {
+				options.filter=false;
+			}
+
+			//2. Customize the text for the showing entries
+			//"sInfo": "Showing %_START_% to %_END_% of %_TOTAL_% entries."
+			if( table.has('.ec-entries-count.on').length) {
+				options.showingInfo=true;
+				options.showingInfoLabel = table.find('.ec-entries-count.on').text();
+				options.showingInfoLabel = options.showingInfoLabel.replace(/%t%/g,"_TOTAL_");
+				options.showingInfoLabel = options.showingInfoLabel.replace(/%s%/g,"_START_");
+				options.showingInfoLabel = options.showingInfoLabel.replace(/%e%/g,"_END_");
+			}
+			else if(table.has('.ec-entries-count.off').length) {
+				options.showingInfo=false;
+			} //else use the defaults
+
+			//3. Entries selector
+			if(table.has('.ec-entries-selector.on').length) {
+				options.entriesSelector = true;
+				if(table.find('.ec-entries-selector.on > ul > li').length) {
+					options.entriesSelectorArray = [];
+					table.find('.ec-entries-selector.on > ul > li').each(function(index, element) {
+						if($(element).hasClass('default'))  options.entriesSelectorDefault  = parseInt($(element).text());
+						options.entriesSelectorArray.push(parseInt($(element).text()));
+					});
+				} //else the defaults are applied
+			}
+			else if(table.has('.ec-entries-selector.off').length){
+				options.entriesSelector = false;
+			}
+
+
+			//4. Pagination
+			if(table.has('.ec-pagination.on').length) {
+				options.showPagination=true;
+				table.find('.ec-pagination.on > span').each(function(index, element) {
+
+					if( $(element).hasClass('next') ) options.paginationLabels[0] = $(element).text();
+					if( $(element).hasClass('previous') ) options.paginationLabels[1] = $(element).text();
+					if( $(element).hasClass('first') ) options.paginationLabels[2] = $(element).text();
+					if( $(element).hasClass('last') ) options.paginationLabels[3] = $(element).text();
+
+				});
+
+
+			}
+			else if(table.has('.ec-pagination.off')){
+				options.showPagination=false;
+			}
+
+
+			//5. switch off sorting
+			if( table.has('.ec-checkbox').length) {
+				table.find('.ec-checkbox').each(function(index, element) {
+					options.entriesSortingOff.push($(element).index());
+				});
+			}
+
+			if( table.has('.stateSave').length) {
+				options.stateSave = true;
+			};
+
+			if( table.has('.hide-column').length) {
+				table.find('.hide-column').each(function(index, element) {
+					options.entriesHidden.push($(element).index());
+				});
+			};
+
+			if( table.has('.dashboard-row').length) {
+				table.find('.dashboard-row').each(function(index, element) {
+					options.dashboardRow = $(element).index();
+				});
+			};
+
+		} else {
+			//do nothing, the defaults will be loaded
+			options.showingInfoLabel = options.showingInfoLabel.replace(/%t%/g,"_TOTAL_");
+			options.showingInfoLabel = options.showingInfoLabel.replace(/%s%/g,"_START_");
+			options.showingInfoLabel = options.showingInfoLabel.replace(/%e%/g,"_END_");
+		}
+
+
+
+		return options;
+	}
+	/**
+	 * Initiates the ec-datatables using the HTML options
+	 * @method initiateTables
+	 */
+	function initiateTables() {
+
+		//for each table
+		$('.ec-datatable').each(function(index, element) {
+
+			var table = $(element);
+
+			var dataSource = $(element).attr("data-source") ? $(element).attr("data-source") : null;
+			var dataFormat = $(element).attr("data-format") ? $(element).attr("data-format") : null;
+
+			var dataTypeIsLocal=false;
+			var dataSourceLocal=null;
+
+			var indexDate = [];
+			var indexOrgDate = [];
+			var dataLoop;
+
+			var rebuildSource = false;
+			var dataFields = [];
+
+			var defaultSorting = [];
+
+
+			if(table.dataTable)	table.dataTable().fnDestroy();
+
+			var tableOptions = getTableOptions(table);
+
+
+
+			//get maxChars per th
+			var maxChars = [];
+			var rowObj = {}
+			table.find('th').each(function(index, element) {
+				rowObj = {};
+				rowObj.index = index;
+				if($(element).attr('data-maxChars')) rowObj.maxChars =  parseInt($(element).attr('data-maxChars'),10);
+				else rowObj.maxChars=-1;
+				maxChars.push(rowObj);
+
+				//gets the sorting index and order
+				if( $(element).hasClass('default-sort-asc') ) {
+					defaultSorting.unshift([index, "asc"]);
+				}
+				else if( $(element).hasClass('default-sort-desc')) {
+					defaultSorting.unshift([index, "desc"]);
+				}
+				//gets the sorting index and order
+				if( $(element).hasClass('default-sort-asc2') ) {
+					defaultSorting.push([index, "asc"]);
+				}
+				else if( $(element).hasClass('default-sort-desc2')) {
+					defaultSorting.push([index, "desc"]);
+				}
+
+				if( $(element).hasClass('dsort') ){
+					indexDate.push(index);
+				}
+
+					if( $(element).hasClass('dsort2') ){
+					indexOrgDate.push(index);
+				}
+
+				//find if the th has data-field(s) in order to rebuild
+				//the data sourcee
+				if( typeof($(element).attr('data-field'))!='undefined') {
+					rebuildSource = true;
+					dataFields[index]=$(element).attr('data-field');
+					dataLoop=typeof(table.attr("data-loop")!='undefined') ? table.attr("data-loop") : null;
+				}
+			});
+
+			//by default sort the first column
+			if (defaultSorting.length == 0) {
+				defaultSorting.push([0, "asc"]);
+			}
+
+
+
+			//we need to understand if the data-source points to an ajax source
+			//we need just to check if there is a var:varName
+
+
+			if(dataSource != null && dataSource.indexOf("var:")>-1) {
+				//it is a local variable
+				dataSource = dataSource.split(":")[1];
+				dataTypeIsLocal = true;
+				dataSourceLocal = window[""+dataSource+""];
+				//dataSource=null;
+			}
+
+			//console.log('Starting table...', dataSource, dataSourceLocal);
+
+
+
+			if(rebuildSource && dataLoop==null) {
+				if(window.console && console.error) {
+					console.error('[data-loop] Error encountered while loading data loop. Not defined ? Is defined? then check the data-fields on the <th>.');
+
+				}
+			}
+
+			//we need to be able to recreate a complex source in case we define fields
+			//this is to grab items from a complex json file and create a usefull data source for the table
+			//based on those fields.
+
+			
+			//console.log(rebuildSource,dataFields);
+			if(rebuildSource && (dataSource!=null || dataSourceLocal!=null) && dataLoop!=null) {
+				//need to wait for the source to be ready
+
+				var source = "json", json;
+				if( dataSource.toLowerCase().indexOf(".xml")>-1) source="xml";
+				else if(dataSource.toLowerCase().indexOf(".json")>-1 ) source="json";
+				else if(dataFormat!=null) source=dataFormat;
+				else if(dataSourceLocal==null) {
+					if(window.console && console.log) console.log("Missing data format, could not detect it from source neither from data-format.");
+				}
+
+				//only load the source if we do not have it
+				if(dataSourceLocal!=null) {
+					json = dataSourceLocal;
+					updateDataTable(json, dataSource, dataLoop, dataFields, table, tableOptions,
+						indexDate, indexOrgDate, defaultSorting, maxChars  );
+				}
+				
+				else {
+					$.ajax({
+						type: 'GET',
+						url: dataSource+"?redirectURLPP="+window.location.href+"?refreshIamUser=true",
+						cache: false,
+						dataType: source,
+						success: function(data, status, xhr) {							
+							if (source=='xml') {
+								json = $.xml2json(data);
+							} else if(source=='json') {
+								json = data;
+							}
+							if(xhr.status === 200 && data.type && data.type === "redirect"){
+								window.location = data.value;   
+							}
+							
+							$(element).trigger( "backEndSuccess" );
+							updateDataTable(json, dataSource, dataLoop, dataFields, table, tableOptions,
+								indexDate, indexOrgDate, defaultSorting, maxChars  );
+
+						},
+						error: function(data, message){
+							if(console && console.error) {
+								console.error("["+message+"] Error encountered while loading remote data: "+$(location).attr('origin')+$(location).attr('pathname').replace(/\/[A-Za-z_0-9]*\.html/, '/')+dataSource);
+							}
+							$(element).trigger( "backEndError" );
+						}
+					});
+				}
+			} else {
+				//no json data, assuming table initialized with html data
+				updateDataTable(json, dataSource, dataLoop, dataFields, table, tableOptions,
+					indexDate, indexOrgDate, defaultSorting, maxChars  );
+			}
+
+
+
+		}); //end each datatable
+
+	}
+
+
+	/**
+	 * Initiates Content Carousel
+	 * @method initiateCarousel
+	 */
+	function initiateCarousel() {
+		$('#ca-container').css('width','auto');
+
+		$('#ca-container .ca-item').css('opacity','0.6');
+
+		$('.ca-container').each(function(){
+			var visibleItems = $(this).data('visible-items') ? $(this).data('visible-items') : 4;
+			$(this).contentcarousel({"visibleItems": visibleItems});
+		});
+
+		$(".ca-item").mouseover(function(e) {
+			$(this).css('opacity','1');
+		}).mouseout(function(e) {
+			if($(this).find('.ca-content-wrapper:first').width() == 0)	$(this).css('opacity','0.6');
+		});
+
+	}
+
+	/**
+	 * Initiates the "Magic Line" animation under the main nav
+	 * @method initiateMagicLine
+	 **/
+	function initiateMagicLine() {
+		var $el, leftPos, newWidth, $mainNav = $("#main-header .navbar > .navbar-inner");
+
+		var $firstEl = $('body').hasClass('secure') ? $("li#pp-myarea") : $("#main-header .navbar > .navbar-inner li.active");
+		if($(".navbar > .navbar-inner li.active")) $firstEl = $(".navbar > .navbar-inner li.active");
+
+		$mainNav.append("<li id='magic-line'></li>");
+		var $magicLine = $("#magic-line");
+
+
+		var initialLeft;// = $firstEl.position().left;
+		var originalLeft;
+
+		try {
+			initialLeft = $firstEl.position().left; //fix 1.0.1
+		}
+		catch (e) {
+		}
+
+		//ie7 fix
+		if($("body").hasClass('ie7')) {
+			initialLeft-=16;
+			originalLeft=initialLeft+16;
+		}
+
+		$magicLine
+			.width($firstEl.width())
+			.css("left", initialLeft)
+			.data("origLeft", initialLeft)
+			.data("origWidth", $magicLine.width());
+
+		originalLeft = $magicLine.data("origLeft");
+
+		$mainNav.find('.nav > li > a').hover(function() {
+			var $el = $(this);
+
+			if($el.parent("li").hasClass('dropdown')) $el.parent("li").css("position","static");
+			if($el.parent("li").hasClass('dropdown') && $el.parent("li").hasClass('open')) $el.parent("li").css("position","relative");
+
+
+			leftPos = $el.position().left;
+			if($("body").hasClass('ie7')) leftPos-=16;
+
+
+			newWidth = $el.parent().width();
+
+			$magicLine.stop().animate({
+				left: leftPos,
+				width: newWidth
+			});
+		}, function() {
+			$magicLine.stop().animate({
+
+				left: originalLeft,
+				width: $magicLine.data("origWidth")
+			});
+
+			try {
+				if( $el && $el.parent("li") && $el.parent("li").hasClass('dropdown')) $el.parent("li").css("position","relative");
+			} catch(e){ }
+
+		});
+
+	}
+
+
+	/**
+	 * Loads the spinner component events and sets the control options based on the css classes
+	 * @method loadSpinnerEvents;
+	 */
+	function loadSpinnerEvents() {
+
+		$('.ec-spinner').each(function(index, element) {
+			var stepSize=1;
+			var minSize=0, maxSize=0;
+
+			//class list
+			var classList = $(element).attr('class').split(/\s+/);
+			//FEF.log(classList)
+			for (var i = 0; i < classList.length; i++) {
+				if (classList[i].search('max')>-1) maxSize=parseInt(classList[i].substr(3,classList[i].length-3));
+				if (classList[i].search('min')>-1) minSize=parseInt(classList[i].substr(3,classList[i].length-3));
+				if (classList[i].search('step')>-1) stepSize=parseInt(classList[i].substr(4,classList[i].length-4));
+			}
+			$(element).find('input').val(minSize);
+			$(element).find('.ec-hidden .add-on').show();
+			$(element).unbind('keypress').keypress(function(e) {
+				var a = [];
+				var k = e.which;
+				for (i = 48; i < 58; i++) a.push(i);
+				if (!(a.indexOf(k)>=0))	e.preventDefault();
+			});
+			//button up click
+			$(element).find('.ec-icon-up').unbind('click').click(function(e) {
+				var currentField=$(this).closest('.input-append').children('.ec-spinner-field');
+
+				currentField.val( parseInt(currentField.val() )+stepSize);
+				if( parseInt(currentField.val()) > maxSize ) currentField.val(maxSize);
+			});
+
+			//button down click
+			$(element).find('.ec-icon-down').unbind('click').click(function(e) {
+				var currentField=$(this).closest('.input-append').children('.ec-spinner-field');
+				currentField.val( parseInt(currentField.val() )-stepSize);
+				if( parseInt(currentField.val()) < minSize ) currentField.val(minSize);
+			});
+
+
+		}); //end each field
+
+
+	}
+
+
+	/**
+	 * Loads the tree component events and sets the control options based on the css classes
+	 * @method loadTreeEvents;
+	 */
+	function loadTreeEvents() {
+		//this will allow multiple instances or each tree
+		$('.ec-tree').each(function(index, element) {
+			var tree = $(element);
+
+			tree.find('.ec-doc-more').each(function(index, element_button) {
+				openClose = $(element_button);
+				openClose.unbind('click').click(function(e) {
+					if($(this).hasClass('ec-doc-more-close')) {
+						//is open, we need to close the details
+						$(this).addClass('ec-doc-more-open').removeClass('ec-doc-more-close');
+						$(this).parent().find('.ec-more-info').slideUp();
+					}
+					else {
+						//is closed, we need to open the details
+						$(this).addClass('ec-doc-more-close').removeClass('ec-doc-more-open');
+						$(this).parent().find('.ec-more-info').slideDown();
+					}
+				});
+			});
+		});
+	}
+
+	/**
+	 * Initiates the tree component
+	 * @method initiateEcTree
+	 */
+	function initiateEcTree() {
+
+		$('.ec-tree').each(function() {
+			// opened state according to hash
+			var hash = window.location.hash.substr(1);
+			var hashTarget = $(this).find('a[name='+hash+']');
+			var hashTargetParents = hashTarget.parents('.folder');
+			hashTargetParents.removeClass('folder-close');
+			// default state
+			$(this).find('.folder-info').tooltip(); // activate bottstrap tooltip
+			$(this).find('.doc-info').hide(); // hide documents details
+			$(this).find('.title, .doc').removeAttr('name'); // remove name to disable hashtag change event to move the scroll position
+			$(this).find('.folder-close ul').hide(); // hide all folders content
+			$(this).find('.folder-close > .title i').addClass('icon-folder-close').removeClass('icon-folder-open'); // set the correct class that change to have the proper icon folder
+			// open document if needed
+			if(hashTarget.hasClass('doc')) {
+				hashTarget.next('.doc-info').show();
+				hashTarget.find('i').toggleClass('icon-chevron-right').toggleClass('icon-chevron-down');
+			}
+
+			// folder toggler
+			var foldersToggler = $(this).find('.folder > .title');
+			foldersToggler.on('click', function(e) {
+				e.preventDefault();
+				var icon = $(this).find('i:first');
+				var content = $(this).nextAll('ul');
+				var hash = $(this).attr('href');
+
+				if(content.is(':visible')) {
+					icon.addClass('icon-folder-close').removeClass('icon-folder-open');
+					$(this).parent().addClass('folder-close').removeClass('folder-open');
+					content.stop().slideUp();
+					hash = $(this).parent().parents('.folder:first').find('.title:first').attr('href');
+				} else {
+					icon.addClass('icon-folder-open').removeClass('icon-folder-close');
+					$(this).parent().addClass('folder-open').removeClass('folder-close');
+					content.stop().slideDown();
+				}
+
+				window.location.hash = hash === undefined ? '-' : hash; //replace hash
+			});
+
+			// details toggler
+			var detailsToggler = $(this).find('a.doc');
+			detailsToggler.on('click', function(e){
+				e.preventDefault();
+				var icon = $(this).find('i:first');
+				var content = $(this).next('.doc-info');
+				var hash = $(this).attr('href');
+
+				if(content.is(':visible')) {
+					icon.addClass('icon-chevron-right').removeClass('icon-chevron-down');
+					content.stop().slideUp();
+					hash = $(this).parents('.folder:first').find('.title:first').attr('href');
+				} else {
+					icon.addClass('icon-chevron-down').removeClass('icon-chevron-right');
+					content.stop().slideDown();
+				}
+
+				window.location.hash = hash === undefined ? '-' : hash; //replace hash
+			});
+		});
+	}
+
+
+	/**
+	 * Initiates the spinning wheel
+	 * @method initiateSpinning
+	 */
+	function initiateSpinning() {
+
+		var spinner = $('<div class="ec-spinning-spinner-wrapper white"><img src="'+spinnerPath+'"></img></div>');
+		$('.ec-spinning').each(function(){
+			$(this).on('click', function(e){
+				var wrapper = $($(this).data('ec-spinning-wrapper'));
+				ecSpinningStart(wrapper);
+			});
+		});
+
+		window.ecSpinningStart = function(wrapper) {
+			if($.inArray(wrapper.css('position'), ['static','inherit']) != -1){
+				wrapper.css('position','relative');
+			}
+			var newSpinner = spinner.clone().height(wrapper.outerHeight());
+
+			if(wrapper.is('body')) {
+				newSpinner.find('img').css('position', 'fixed');
+			}
+			wrapper.prepend(newSpinner);
+		}
+
+		window.ecSpinningStop = function(wrapper) {
+			wrapper.find('.ec-spinning-spinner-wrapper').remove();
+		}
+
+	}
+
+
+	/**
+	 * Initiates the cards engine
+	 * @method initiateCards
+	 */
+
+	function initiateCards() {
+		//first, grab the datasource and transform it into a json string.
+		$('.ec-cards').each(function(index, element) {
+			var cardsID = $(element).attr("id");
+			var url = $(element).attr("data-source");
+			var bookmark = ($(element).attr('data-bookmark')=="false") ? false : true;
+			var dataFormat = ($(element).attr('data-format')=="json") ? "json" : $(element).attr('data-format')=="xml" ? 'xml' : null;
+			var hideCardsOnInit = ($(element).attr('data-hideInit')=="true") ? true : false;
+			//var limit = typeof($(element).attr('data-limit'))!='undefined' ? $(element).attr('data-limit') : 0;
+
+			FEF.events.dispatcher.addEventListener("STORE_COMPLETE", function(e) {
+				//we need to check if there are filters on the URL before setting the default ones
+				FEF.data.parseURLFilters(e);
+			});
+
+			FEF.events.dispatcher.addEventListener("FILTERS_INITIATED", function(e) {
+				//we need to check if there are no external URL filters
+				FEF.data.updateURL=true;
+				//show the cards be visible initially? if not, they will be visible only on search
+				if(hideCardsOnInit) $("#"+e).hide();
+				//load the cards
+				FEF.utils.displayCards(e);
+
+			});
+
+			FEF.events.dispatcher.addEventListener("FILTERS_SETUP", function(e) {
+				FEF.data.updateURL=false;
+				FEF.data.hasURLFiltersOnInit = true;
+				FEF.components.initiateCardsFiltersUI();
+				FEF.components.initiateCardsFilters(e); //will not replace the existent filters
+				//we have already a defined URL set of filters
+				FEF.events.dispatcher.dispatchEvent("FILTERS_INITIATED", e);
+				//we need to setup the filters UI according to the URL filters
+				FEF.components.setupFiltersUI(e);
+			})
+
+			FEF.events.dispatcher.addEventListener("NO_URL_FILTERS", function(e) {
+				FEF.data.updateURL=true;
+				FEF.data.hasURLFiltersOnInit = false;
+				FEF.components.initiateCardsFiltersUI();
+				FEF.components.initiateCardsFilters(e);
+			})
+
+			var source, dataVar;
+			if(url && url.indexOf(".xml")>-1) source = 'xml';
+			else if(url && url.indexOf(".json")>-1) source = 'json';
+			else if(url && url.indexOf("var:")>-1)  {
+				source = 'variable';
+				dataVar = url.split(":")[1];
+				dataVar = window[""+dataVar+""]; //same as eval() but more safe;
+			}
+			else if(url && url.indexOf("http://")>-1) {
+				if(dataFormat!=null) source = dataFormat;
+				//console.log(dataFormat);
+			}
+
+			if(source=="json" || source=="xml")
+			{
+				$.ajax({
+					type: 'GET',
+					url: url,
+					cache: false,
+					dataType: source,
+					success: function(data, status, xhr) {
+						var json;
+						if (source=='xml') {
+							json = $.xml2json(data);
+						} else if(source=='json') {
+							json = data;
+						}
+
+						FEF.utils.storeCallsDataSource(json, cardsID, bookmark);
+					},
+					error: function(data, message){
+						if(console && console.error) console.error("["+message+"] Error encountered while loading remote data: "+$(location).attr('origin')+$(location).attr('pathname').replace(/\/[A-Za-z_0-9]*\.html/, '/')+url);
+					}
+				});
+			}	 //end json or xml
+			else if(source=='variable' && dataVar) {
+				FEF.utils.storeCallsDataSource(dataVar, cardsID, bookmark);
+			}
+		});
+
+	}
+
+	/**
+	 * Grabs all the HTML filters and translates it into a filters object
+	 * @method setupFiltersUI
+	 * @param {String} e The cards id
+	 */
+	function setupFiltersUI(e) {
+		//e = data id
+		//just need to grab all the filters from the array and activate/deactivate the elements on the interface
+		//we need to check all of the filters in the data array, previously set by the URL and then update the visual
+		//filters on the webpage
+		var data = FEF.data.getDataObject(e);
+		var filters = data.dataFilters;
+		var sorter = data.dataSort;
+		var filtersHolder;
+
+		$('.ec-cards-filters').each(function(index, element) {
+			if($(element).attr('data-filters-for').toLowerCase() == e.toLowerCase()) {
+				if (filtersHolder) {
+					//there's more than one element with "data-filters-for" attr.
+					filtersHolder.add($(element))
+				} else {
+					filtersHolder = $(element);
+				}
+			}
+		});
+
+		_.each(filters, function(filter) {
+			switch(filter.type) {
+				case "toggle":
+					filtersHolder.find('.filter.toggle').each(function(index, element) {
+						var eli = $(element);
+						if(eli.attr('data-field').toLowerCase() == filter.field.toLowerCase() && eli.attr('data-compare').toLowerCase() == filter.compareTo.toLowerCase()) {
+							if(filter.value == true) {
+								eli.find('.cb-disable').removeClass('selected');
+								eli.find('.cb-enable').addClass('selected');
+								eli.find('input').attr('checked','checked');
+							}
+							else if(filter.value == false) {
+								eli.find('.cb-disable').addClass('selected');
+								eli.find('.cb-enable').removeClass('selected');
+								eli.find('input').removeAttr('checked');
+							}
+
+						}
+					});
+					break;
+				case "search":
+					filtersHolder.find('.filter.search').each(function(index, element) {
+						var eli = $(element);
+						if(eli.attr('data-field').toLowerCase().replace('[','').replace(']','') == filter.field.toLowerCase()) {
+							if(filter.compareTo!="")  {
+								eli.find('.plaintext-search').val(filter.compareTo);
+								eli.find('#searchReset').show();
+							}
+						}
+					});
+					break;
+				case "selectbox":
+					filtersHolder.find('.filter.selectbox').each(function(index, element) {
+						var eli = $(element);
+						var arr = eli.attr('data-field').toLowerCase().replace('[','').replace(']','');
+						arr = arr.split(',');
+						if( JSON.stringify(arr).toLowerCase() == JSON.stringify(filter.field).toLowerCase()) {
+							eli.find('select').val(filter.compareTo);
+						}
+					});
+					break;
+
+				case "selectbox-group":
+					filtersHolder.find('.filter.selectbox-group').each(function(index, el) {
+						var selectList = $(el).find('select');
+						selectList.each(function(){
+							if($(this).data('required')) $($(this).data('required')).hide();
+
+							var arr = $(this).data('field').replace(/\[|\]/g, '').split(',');
+							if( JSON.stringify(arr).toLowerCase() == JSON.stringify(filter.field).toLowerCase()) {
+								$(this).val(filter.compareTo);
+							}
+						});
+					});
+					break;
+
+
+				case "radio":
+					filtersHolder.find('.filter.radio').each(function(index, element) {
+
+						var eli = $(element);
+						var field = eli.attr('data-field').toLowerCase();
+						var compare = eli.attr('data-compare').toLowerCase();
+						if( field == filter.field.toLowerCase() && compare == filter.compareTo.toLowerCase()) {
+							eli.find("input[type='radio']").attr('checked','checked');
+						}
+					});
+					break;
+
+				case "numericslider":
+
+					break;
+			}
+
+		}, this);
+
+
+
+		if(sorter) {
+			//console.log(sorter);
+			filtersHolder.find('.filters-container.group.sort .filter.button').each(function(index, element) {
+				var eli = $(element);
+				if(eli.attr('data-field').toLowerCase() == sorter.field.toLowerCase() && eli.attr('data-sort').toLowerCase() == sorter.order.toLowerCase()) {
+					filtersHolder.find('.filters-container.group.sort .filter.button').removeClass('active default');
+					eli.addClass('active default');
+				}
+			});
+
+			filtersHolder.find('.filters-container.group.sort .sort').each(function(index, element) {
+				var eli = $(element);
+				if(eli.attr('data-field').toLowerCase() == sorter.field.toLowerCase() && eli.attr('data-sort').toLowerCase() == sorter.order.toLowerCase()) {
+
+					filtersHolder.find('.filters-container.group.sort .sort input[type="radio"]').removeAttr('checked');
+					eli.attr('checked','checked');
+				}
+			});
+
+		}
+	}
+
+	/**
+	 * Initiates the cards filters UI and events
+	 * @method initiateCardsFiltersUI
+	 */
+
+	function initiateCardsFiltersUI() {
+
+		if(!$('.filter.button').hasClass("initiated")) {
+			$('.filter.button').on('click', function(e) {
+				//set the layout
+				var $group = $(this).parents('.filters-container.group');
+				$group.find('li.filter').removeClass('active');
+				$(this).addClass('active');
+				var dataSourceId = $(this).closest('.ec-cards-filters').attr("data-filters-for");
+
+				FEF.data.sorter($(this).attr('data-field'), $(this).attr('data-sort'), $(this).attr('data-type'), dataSourceId, true, $group.attr("data-bookmark"));
+				$(this).addClass("initiated");
+			});
+
+		}
+
+		if(!$('.group.sort').hasClass("initiated")) {
+			$('.group.sort .sort input[type="radio"]').on('change', function(e) {
+				//set the layout
+				var $group = $(this).closest('.filters-container.group');
+				var dataSourceId = $(this).closest('.ec-cards-filters').attr("data-filters-for");
+				var eli =  $(this).closest(".sort");
+				var $radio = $(this);
+
+				$('body').addClass("loading");
+
+				//set time out to allow loading class to be added
+				setTimeout(function() {
+					FEF.data.sorter(eli.attr('data-field'), eli.attr('data-sort'), eli.attr('data-type'), dataSourceId, true, $group.attr("data-bookmark"));
+					$radio.addClass("initiated");
+				},50);
+
+			});
+
+		}
+
+
+
+
+
+		$('.filter.toggle input').on('change', function(e) {
+			var $el = $(this).closest('.filter');
+			var dataSourceId = $(this).closest('.ec-cards-filters').attr("data-filters-for");
+			var val = $(this).closest('.switch').hasClass('on');
+
+			if(!$(this).hasClass("icheckbox"))
+			{
+				if($(this).is(':checked')) val = true;
+				else val = 	false;
+			}
+
+			$('body').addClass("loading");
+
+			//set time out to allow loading class to be added
+			setTimeout(function() {
+				//(el.attr('data-submit-label')) ? el.attr('data-submit-label') : 'Search';
+				//first set filters for the data source in case multiple sources
+				var filter = new FEF.data.ToggleFilter($el.attr('data-remove'));
+				filter.field = $el.attr('data-field');
+				filter.compareTo = $el.attr('data-compare');
+				filter.type='toggle';
+				filter.value=val;
+				filter.bookmarkFilter = $el.attr('data-bookmark');
+				filter.setDataGroup($el.attr('data-group'));
+
+				FEF.data.filterShort(dataSourceId,filter,true);
+			}, 50);
+
+		});
+
+		$('.filter.radio input').on('change', function(e) {
+			var $el = $(this).closest('.filter');
+			var dataSourceId = $(this).closest('.ec-cards-filters').attr("data-filters-for");
+			var val = $(this).closest('.switch').hasClass('on');
+
+			if($(this).is(':checked')) val = true;
+			else val = 	false;
+
+			FEF.data.filter($el.attr('data-field'),$el.attr('data-compare'), dataSourceId, 'radio', val, true, $el.attr('data-bookmark'));
+
+		});
+
+
+
+		/*FREE SEARCH*/
+
+		$('.filter.search').each(function(index, element) {
+
+			if(!$(element).hasClass('initiated')) {
+				var el = $(element);
+
+
+				var lbl= (el.attr('data-submit-label')) ? el.attr('data-submit-label') : 'Search';
+				var placeholder = (el.attr('data-placeholder')) ? el.attr('data-placeholder') : 'Find an entry';
+				var field = (el.attr('data-field')) ? el.attr('data-field') : '*';
+				var textSearchResetEnabled = el.attr('textSearchReset') == 'on';
+
+				el.append('<input class="plaintext-search" type="search" placeholder="'+placeholder+'" data-field="'+field+'" />');
+				if (textSearchResetEnabled) {
+					el.append('<i id="searchReset" style="display: none;" class="icon-remove"></i>');
+				}
+				el.append('<button class="plaintext-trigger btn btn-small btn-primary" id="btn-search" href="">'+lbl+'</button>');
+
+				el.find('.btn.btn-small').unbind('click').on('click', function(e) {
+					e.preventDefault();
+					var $el2 = $(this).closest('.filter.search');
+					var $ti = $(this).closest('.ec-cards-filters');
+
+
+					$('body').addClass("loading");
+
+					setTimeout(function() {
+						var fields = el.attr('data-field').replace("[","").replace("]","");
+						var dataSourceId = $ti.attr("data-filters-for");
+
+
+
+						if(dataSourceId == null) dataSourceId = $el2.attr("data-filters-for"); //allow search outside the filters
+
+						//if the user search has no text and the data-hideInit=true we hide the results as it should behave as a search engine, if the selectbox-group is on the filters also
+						if(  $el2.find('.plaintext-search').val().length<=0 && $('#'+dataSourceId).attr('data-hideInit')=="true" && $(".ec-cards-filters[data-filters-for='"+dataSourceId+"'] .selectbox-group").length <= 0) $('#'+dataSourceId).hide();
+
+						FEF.data.filter(fields, $el2.find('.plaintext-search').val().trim(), dataSourceId, 'search', true, true, $el2.attr('data-bookmark'));
+					}, 50);
+
+				});
+
+				el.find('input.plaintext-search').keyup( function(event) {
+					tmpEvent = event;
+
+					setTimeout(function (){
+						if(tmpEvent.keyCode == 13) {
+							$('body').addClass("loading");
+
+							setTimeout(function() {
+								var $el = $(tmpEvent.currentTarget).closest('.filter.search');
+								var $ti = $(tmpEvent.currentTarget).closest('.ec-cards-filters');
+								var fields = $el.attr('data-field').replace("[","").replace("]","");
+
+								var dataSourceId = $ti.attr("data-filters-for");
+								if(dataSourceId == null) dataSourceId = $el.attr("data-filters-for"); //allow serarch ouside the filters
+								//if the user search has no text and the data-hideInit=true we hide the results as it should behave as a search engine, if the selectbox-group is on the filters also
+								if(  $el.find('.plaintext-search').val().length<=0 && $('#'+dataSourceId).attr('data-hideInit')=="true" && $(".ec-cards-filters[data-filters-for='"+dataSourceId+"'] .selectbox-group").length <= 0) $('#'+dataSourceId).hide();
+
+								FEF.data.filter(fields, $(tmpEvent.currentTarget).val().trim(), dataSourceId, 'search', true, true, $el.attr('data-bookmark'));
+							}, 50);
+						}
+					}, 200);
+				});
+
+				el.find('#searchReset').click(function() {
+					//clear
+					el.find('input.plaintext-search').val('');
+					el.find('#searchReset').hide();
+					el.find('.btn.btn-small').trigger('click');
+				})
+
+				$(element).addClass("initiated");
+				//setup typeahead
+				if ( typeof($(element).attr('data-typeaheadSource'))!='undefined') {
+					var input = $(element).find('.plaintext-search');
+					FEF.utils.loadTypeAhead(input, $(element).attr('data-typeaheadSource'));
+				}
+
+
+
+			}
+
+		});
+
+
+		/*SELECT*/
+		$('.filter.selectbox .btn').unbind('click').click(function(e) {
+			var $el = $(this).closest('li.filter.selectbox');
+			var $ti = $(this).closest('.filters-container');
+			var fields = $el.attr('data-field').replace("[","").replace("]","");
+			if(fields.search(",")>-1) fields = fields.split(",");
+			else fields = [fields];
+			var dataSourceId = $ti.attr("data-filters-for");
+			FEF.data.filter(fields, $el.find('select').val(), dataSourceId, 'selectbox', true, true, $el.attr('data-bookmark'));
+		});
+
+		/*Group select*/
+		$('.filter.selectbox-group .btn').unbind('click').click(function(e) {
+
+			$('body').addClass("loading");
+			var dataSourceId;
+			var $btn = $(this);
+
+			setTimeout(function() {
+				var selectList = $btn.closest('.filter.selectbox-group').find("select");
+				var filterDenied = false;
+				_.each(selectList, function(select){
+					var value = $(select).val();
+
+					if(!!$(select).data('required')){
+						if(value == ""){
+							$($(select).data('required')).show();
+							filterDenied = $(select).data('required');
+						}else{
+							$($(select).data('required')).hide();
+						}
+					}
+
+					var $ti = $(select).closest('.filter.selectbox-group');
+					var bookmark = $(select).data('bookmark').toString();
+					dataSourceId = $ti.attr("data-filters-for");
+					var fields = $(select).data('field').replace(/\[|\]/g, '').split(",");
+
+					if(filterDenied == false)
+						FEF.data.filter(fields, value, dataSourceId, 'selectbox-group', false, false, bookmark);
+				});
+
+				if(filterDenied == false) FEF.utils.displayCards(dataSourceId);
+
+			}, 50);
+
+		});
+
+
+		/*NUMERIC SLIDER*/
+		//nothing to do here
+
+		/*DATE SLIDER*/
+		//filter date
+
+		$('.filter.date').each(function(index, element) {
+			if(!$(element).hasClass("initiated")) {
+				var $el = $(element);
+				var lblFrom = ($el.attr('data-from-label')) ? $el.attr('data-from-label') : 'From: ';
+				var lblTo = ($el.attr('data-to-label')) ? $el.attr('data-to-label') : 'To: ';
+				var dateFormat = ($el.attr('data-date-format')) ? $el.attr('data-date-format') : 'dd-mm-yyyy';
+				var lblFilter = ($el.attr('data-submit-label')) ? $el.attr('data-submit-label') : 'Filter';
+				var lblReset= ($el.attr('data-reset-label')) ? $el.attr('data-reset-label') : 'Reset';
+				var startDate = ($el.attr('data-start-date')) ? $el.attr('data-start-date') : '';
+				var endDate = ($el.attr('data-end-date')) ? $el.attr('data-end-date') : '';
+				var id = $el.attr('id');
+
+				$el.append('<div class="row-fluid"><div class="span6" style="min-width:120px;"><div class="lbl">'+lblFrom+' </div>'+
+					'<div class="input-append date ec-datepicker from" id="dp1-'+id+'" data-date="'+startDate+'" data-date-format="'+dateFormat+'">'+
+					'<input size="20" type="text" value="" disabled data-content="Please select a valid date" data-original-title="Invalid date", data-placement="top">'+
+					'<span class="add-on"><i class="icon-th"></i></span>'+
+					'</div></div>'+
+					'<div class="span6" style="min-width:120px;"><div class="lbl">'+lblTo+' </div>'+
+					'<div class="input-append date ec-datepicker to" id="dp2-'+id+'" data-date="'+endDate+'" data-date-format="'+dateFormat+'">'+
+					' <input size="20" type="text" value="" disabled data-content="Please select a valid date" data-original-title="Invalid date", data-placement="bottom">'+
+					' <span class="add-on"><i class="icon-th"></i></span>'+
+					'</div></div></div>'+
+					'<div class="row-fluid"><div class="span12"><div class="btn btn-small submit" id="filter-dates">'+lblFilter+'</div><div class="btn btn-small reset" id="reset-dates">'+lblReset+'</div></div></div>');
+
+				$(element).addClass('initiated');
+
+			}
+		});
+
+
+
+		$('.filter.date .submit').unbind('click').click(function(e) {
+			e.preventDefault();
+			var validDate=true;
+			var $eli = $(this).closest('li.filter.date');
+			if($eli.find('.ec-datepicker.from > input').val() == "")  { $eli.find('.ec-datepicker.from > input').popover("show"); setTimeout(function() { $('.ec-datepicker.from > input').popover('hide'); }, 4000); validaDate=false;}
+			if($eli.find('.ec-datepicker.to > input').val() == "")  { $eli.find('.ec-datepicker.to > input').popover("show"); setTimeout(function() { $('.ec-datepicker.to > input').popover('hide'); },4000); validDate=false;}
+
+			if(!validDate) return;
+			var from = ""+$eli.find('.ec-datepicker.from > input').val();
+			var to = ""+$eli.find('.ec-datepicker.to > input').val();
+
+			var split = from.split("/");
+			var dtFrom = new Date(split[2], split[1] - 1, split[0]).getTime();
+			split = to.split("/")
+			var dtTo = new Date(split[2], split[1] - 1, split[0]).getTime();
+
+
+			var fields = $eli.attr('data-field');
+			if(fields.search(",")>-1) fields = fields.split(",");
+			else fields = [fields];
+
+
+			var dataSourceId = $(this).closest('.filters-container').attr("data-filters-for");
+			FEF.data.filter(fields, [dtFrom,dtTo], dataSourceId, 'dateslider', true, true, $eli.attr('data-bookmark'));
+
+
+		});
+
+		$('.filter.date .reset').unbind('click').click(function(e) {
+			var $eli = $(this).closest('.filter.date');
+			var fields = $eli.attr('data-field');
+			var from = ""+$eli.find('.ec-datepicker.from > input').val();
+			var to = ""+$eli.find('.ec-datepicker.to > input').val();
+
+			var split = from.split("/");
+			var dtFrom = new Date(split[2], split[1] - 1, split[0]).getTime();
+			split = to.split("/")
+			var dtTo = new Date(split[2], split[1] - 1, split[0]).getTime();
+
+
+			var fields = $eli.attr('data-field');
+			if(fields.search(",")>-1) fields = fields.split(",");
+			else fields = [fields];
+			var dataSourceId = $(this).closest('.filters-container').attr("data-filters-for");
+			//lets kill the existent dateslide filter
+			FEF.data.deleteFilter(fields, [dtFrom,dtTo], dataSourceId, 'dateslider', true);
+		});
+
+
+		$('.submit-slider').unbind('click').click(function(e) {
+
+			var $eli = $("#"+$(this).attr('data-for'));
+
+			var dv = $eli.data('slider').getValue();
+			var fields = $eli.attr('data-field');
+
+			if(fields.search(",")>-1) fields = fields.split(",");
+			else fields = [fields];
+
+			var dataSourceId = $(this).closest('.ec-cards-filters').attr("data-filters-for");
+
+			FEF.data.filter(fields, dv, dataSourceId, 'numericslider', true, true, $eli.attr('data-bookmark'));
+		});
+
+
+		$('.reset-slider').unbind('click').click(function(e) {
+			var $eli = $("#"+$(this).attr('data-for'));
+			var fields = $eli.attr('data-field');
+			var dv = $eli.data('slider').getValue();
+			if(fields.search(",")>-1) fields = fields.split(",");
+			else fields = [fields];
+
+			var dataSourceId = $(this).closest('.ec-cards-filters').attr("data-filters-for");
+			FEF.data.deleteFilter(fields, dv, dataSourceId, 'numericslider', true);
+		});
+
+
+		$('.cards-filter-button').unbind('click').click(function(e) {
+
+			e.stopImmediatePropagation();
+			e.preventDefault();
+
+			var dataSourceId= $(this).attr('data-button-filter');
+			var fields = $(this).attr('data-field');
+			if(fields.search(",")>-1) fields = fields.split(",");
+			else fields = [fields];
+
+			var compareTo = $(this).attr('data-compare');
+			if(compareTo.search(",")>-1) compareTo = compareTo.split(",");
+			else compareTo = [compareTo];
+
+			$('.cards-filter-button').removeClass("active");
+			$(this).addClass("active");
+
+			FEF.data.filter(fields, compareTo, dataSourceId,'selectbox',true,true,"true");
+
+
+		});
+		//we need to set the initial filters according to the HTML set
+		//first the toogles
+		FEF.utils.initiateDatePicker();
+	}
+
+	/**
+	 * Checks if the filter object exists in HTML
+	 * @method filterExists
+	 * @param filterFromHTML {Object} The HTML Filter Object
+	 * @param cardId {String} The cards id.
+	 **/
+	function filterExists(filterFromHTML, cardId) {
+		//wee need to check if one of the filters match any one from the HTML setup, if matches return true
+		var filters = FEF.data.initFilters;
+		var total = filters.length, filterFromURL;
+		while(total--) {
+			filterFromURL = filters[total];
+			//the simple JSON stringify compare ont he whole object does not work as the fields are not in the correct order and there are field we do not want to compare
+			if(filterFromURL.field == filterFromHTML.field && filterFromURL.compareTo == filterFromHTML.compareTo && filterFromURL.type == filterFromHTML.type && filterFromURL.dataRemove == filterFromHTML.dataRemove) return true;
+
+		}
+		return false;
+	}
+
+
+
+	/**
+	 * Initiates the toggle and sort containers
+	 * @method initiateCardsFilters
+	 * @param {String} cardId The cards id
+	 * @dispatches {Event} FILTERS_INITIATED Dispatches the even when finished v
+	 */
+	function initiateCardsFilters(cardId) {
+
+
+
+		$('.filter.toggle').each(function(index, element) {
+
+			var $el = $(element);
+
+			var filter = new FEF.data.ToggleFilter($el.attr('data-remove') == "true" ? true : false);
+			filter.field = $el.attr('data-field');
+			filter.compareTo = $el.attr('data-compare');
+			filter.value = ($el.attr('data-value') == 'on' ) ? true : false;
+			filter.type = $el.attr('data-filter');
+			filter.bookmarkFilter = ($el.attr('data-bookmark') == "true") ? "true" : "false";
+			filter.setDataGroup($el.attr('data-group'));
+
+			//we need to check if the filter exists on the URL
+			if(FEF.data.hasURLFiltersOnInit && filterExists(filter, cardId)) return; //don't add this one
+			else {
+				//add it to data filters
+				var data = FEF.data.getDataObject(cardId);
+				if(data) data.dataFilters.push(filter);
+				//set back data
+				FEF.data.setDataObject(cardId, data);
+			}
+		});
+
+
+
+
+		$('.filter.radio').each(function(index, element) {
+			var $el = $(element);
+
+			//on radios only active the checked one
+			if($(element).find('input[type="radio"]').is(':checked')) {
+				var filter = {};
+				filter.field = $el.attr('data-field');
+				filter.compareTo = $el.attr('data-compare');
+				filter.value = $(element).find('input[type="radio"]').is(':checked');
+				filter.type = $el.attr('data-filter');
+				filter.bookmarkFilter = ($el.attr('data-bookmark') == "true") ? "true" : "false";
+
+				//we need to check if the filter exists on the URL
+				if(FEF.data.hasURLFiltersOnInit && filterExists(filter, cardId)) return; //don't add this one
+				else {
+					//add it to data filters
+					var data = FEF.data.getDataObject(cardId);
+					if(data) data.dataFilters.push(filter);
+					//set back data
+					FEF.data.setDataObject(cardId, data);
+				}
+
+
+			}
+
+
+		});
+
+		/*NULLFILTER*/
+		$('.filter.nullmatch').each(function(index, element) {
+
+			var $el = $(element);
+			var filter = {};
+			filter.field = $el.attr('data-field');
+			filter.compareTo = $el.attr('data-compare');
+			filter.value = true;
+			filter.type = "nullmatch";
+			filter.bookmarkFilter = "true";
+
+			//we need to check if the filter exists on the URL
+			if(FEF.data.hasURLFiltersOnInit && filterExists(filter, cardId)) return; //don't add this one
+			else {
+				//add it to data filters
+				var data = FEF.data.getDataObject(cardId);
+				data.dataFilters.push(filter);
+				//set back data
+				FEF.data.setDataObject(cardId, data);
+			}
+
+		});
+
+
+		//check for default sorter
+		$(".filters-container.group.sort .filter.button").each(function(index, element) {
+			if(FEF.data.hasURLFiltersOnInit && FEF.data.initSort != null) return;
+			else {
+				//console.log("does not exists");
+				if($(this).hasClass("default")) {
+					//this is the default sort
+					var $group = $(this).parents('.filters-container.group');
+					$group.find('li.filter').removeClass('active');
+					$(this).addClass('active');
+
+					var dataSourceId = $(this).closest('.ec-cards-filters').attr("data-filters-for");
+					FEF.data.sorter($(this).attr('data-field'), $(this).attr('data-sort'), $(this).attr('data-type'), dataSourceId, false, $group.attr("data-bookmark"));
+				}
+			}
+		});
+
+		//check for default sorter in radio mode
+		$('.group.sort input[type="radio"]').each(function(index, element) {
+			if(FEF.data.hasURLFiltersOnInit && FEF.data.initSort != null) return;
+			else {
+				//console.log("does not exists");
+				if( $(element).attr('checked') ) {
+					var $group = $(this).closest('.filters-container.group');
+					var dataSourceId = $group.attr("data-filters-for");
+					var eli =  $(this).closest(".sort")
+					FEF.data.sorter(eli.attr('data-field'), eli.attr('data-sort'), eli.attr('data-type'), dataSourceId, false, $group.attr("data-bookmark"));
+				}
+			}
+		});
+
+
+
+
+		FEF.events.dispatcher.dispatchEvent("FILTERS_INITIATED", cardId);
+	}
+
+
+	/**
+	 * Initiates the accordion deeplinks
+	 * @method initiateAccordion
+	 */
+	function initiateAccordion() {
+		var url = document.location.toString();
+		if (url.match('#') && !url.match('=')) {
+			var fragment = url.split('#')[1];
+			if($('#'+fragment).length) { //collapseThree
+				$('.accordion-group .accordion-body').removeClass('in').css('height','0px');
+				$('#'+url.split('#')[1]).addClass('in').css('height','auto')
+				document.getElementById(url.split('#')[1]).scrollIntoView(true);
+
+			}
+		}
+
+		// Change hash for page-reload
+		$('.accordion-group .accordion-body').on('shown', function (e) {
+			window.location.hash = $(this).attr('id');
+		})
+	}
+
+
+	/**
+	 * Initiates the tab deeplinks
+	 * Please note that this only works in a pade that does not include a deeplinking manager already associated
+	 * @method initiateTabNavigation
+	 */
+	function initiateTabNavigation() {
+		if (location.hash !== '') $('a[href="' + location.hash + '"]').tab('show');
+
+		$('a[data-toggle="tab"]').on('shown', function(e) {
+			location.hash = $(e.target).attr('href').substr(1);
+		});
+	}
+
+	/*scope - public functions*/
+	return {
+		initiateTables:initiateTables,
+		initiateCarousel:initiateCarousel,
+		initiateMagicLine:initiateMagicLine,
+		loadSpinnerEvents:loadSpinnerEvents, //deprecated ?
+		loadTreeEvents:loadTreeEvents,
+		initiateEcTree:initiateEcTree,
+		initiateSpinning:initiateSpinning,
+		initiateCards:initiateCards,
+		initiateCardsFilters:initiateCardsFilters,
+		initiateCardsFiltersUI:initiateCardsFiltersUI,
+		setupFiltersUI:setupFiltersUI,
+		initiateAccordion:initiateAccordion,
+		initiateTabNavigation:initiateTabNavigation,
+		glossaryJumpTo:glossaryJumpTo
+	}
+
+}());
+
+
+
+
+
+$(document).ready(function(e) {
+
+	//setup the datatable defaults
+	$.extend( true, $.fn.dataTable.defaults, {
+		"sDom": "<'row-fluid ec-data-header'<'span4 ec-data-select'l><'span4 ec-data-options'<'btn-group export'>><'span4 ec-data-search'f>r>t<'row-fluid ec-data-footer'<'span4 ec-data-count'i><'span8 ec-data-pagination'p>>",
+		"sPaginationType": "bootstrap",
+		"oLanguage": {
+			"sLengthMenu": "Show _MENU_ entries"
+		}
+	} );
+	$.extend( $.fn.dataTableExt.oStdClasses, {
+		"sWrapper": "ec-datatable-wrapper form-inline"
+	} );
+
+
+	$.fn.dataTable.ext.search.push(
+	    function( settings, data, dataIndex ) {
+			if( $("#trucha").is(":checked")){		//?!
+				var colIndex = $("#trucha").attr("column-index");
+				var status = data[colIndex];
+				if ( "CLOSED" == status ||   "TERMINATED" == status)
+				{
+					return false;
+				}
+				return true;
+			}
+			else{
+				return true;
+			}
+	    }
+	);
+
+	//important fix for having the magic line under
+	$('li.dropdown > a').click(function(e) {
+		$(this).parent("li").css("position","relative");
+	});
+
+	FEF.components.initiateCards();
+	FEF.utils.initJs(); //sets the JS
+	FEF.utils.initBrowser();
+	FEF.utils.initAccordion();
+	FEF.utils.initAccordionExtension();
+	FEF.utils.initiateDatePicker();
+
+
+	$("#btn-close-call").click(function(e) {
+		e.preventDefault();
+		history.back(1);
+	});
+
+	$(".icheckbox").iselector();
+	$('.slider').slider();
+
+	$(".hashLink").click(function() {
+		$(window).scrollTop(0);
+
+		$('body').css('cursor','wait');
+
+		//delay refresh coz of FF bug.
+		setTimeout(function() {
+			//force refresh
+			location.reload(true);
+		}, 100);
+
+	});
+
+});
+
+

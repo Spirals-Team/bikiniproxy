@@ -1,0 +1,1698 @@
+<!DOCTYPE html>
+<html class='v2' dir='ltr' xmlns='http://www.w3.org/1999/xhtml' xmlns:b='http://www.google.com/2005/gml/b' xmlns:data='http://www.google.com/2005/gml/data' xmlns:expr='http://www.google.com/2005/gml/expr'>
+<head>
+<link href='https://www.blogger.com/static/v1/widgets/2437439463-css_bundle_v2.css' rel='stylesheet' type='text/css'/>
+<meta content='IE=EmulateIE7' http-equiv='X-UA-Compatible'/>
+<meta content='width=1100' name='viewport'/>
+<meta content='text/html; charset=UTF-8' http-equiv='Content-Type'/>
+<meta content='blogger' name='generator'/>
+<link href='https://mechanical-sympathy.blogspot.fr/favicon.ico' rel='icon' type='image/x-icon'/>
+<link href='https://mechanical-sympathy.blogspot.com/2012/05/apply-back-pressure-when-overloaded.html' rel='canonical'/>
+<link rel="alternate" type="application/atom+xml" title="Mechanical Sympathy - Atom" href="https://mechanical-sympathy.blogspot.com/feeds/posts/default" />
+<link rel="alternate" type="application/rss+xml" title="Mechanical Sympathy - RSS" href="https://mechanical-sympathy.blogspot.com/feeds/posts/default?alt=rss" />
+<link rel="service.post" type="application/atom+xml" title="Mechanical Sympathy - Atom" href="https://www.blogger.com/feeds/5560209661389175529/posts/default" />
+
+<link rel="alternate" type="application/atom+xml" title="Mechanical Sympathy - Atom" href="https://mechanical-sympathy.blogspot.com/feeds/4576955837831664544/comments/default" />
+<!--[if IE]><script type="text/javascript" src="https://www.blogger.com/static/v1/jsbin/3061962209-ieretrofit.js"></script>
+<![endif]-->
+<link href='http://4.bp.blogspot.com/-H5j78ebce9w/T7erBJ8X-gI/AAAAAAAAADM/F_ak3B9Wdl0/s1600/back-pressure.png' rel='image_src'/>
+<meta content='https://mechanical-sympathy.blogspot.com/2012/05/apply-back-pressure-when-overloaded.html' property='og:url'/>
+<meta content='Applying Back Pressure When Overloaded' property='og:title'/>
+<meta content=' How should a system respond when under sustained load?  Should it keep accepting requests until its response times follow the deadly hockey...' property='og:description'/>
+<meta content='//4.bp.blogspot.com/-H5j78ebce9w/T7erBJ8X-gI/AAAAAAAAADM/F_ak3B9Wdl0/w1200-h630-p-k-no-nu/back-pressure.png' property='og:image'/>
+<!--[if IE]> <script> (function() { var html5 = ("abbr,article,aside,audio,canvas,datalist,details," + "figure,footer,header,hgroup,mark,menu,meter,nav,output," + "progress,section,time,video").split(','); for (var i = 0; i < html5.length; i++) { document.createElement(html5[i]); } try { document.execCommand('BackgroundImageCache', false, true); } catch(e) {} })(); </script> <![endif]-->
+<title>Mechanical Sympathy: Applying Back Pressure When Overloaded</title>
+<style id='page-skin-1' type='text/css'><!--
+/*
+-----------------------------------------------
+Blogger Template Style
+Name:     Simple
+Designer: Blogger
+URL:      www.blogger.com
+----------------------------------------------- */
+
+/* Content
+----------------------------------------------- */
+body {
+font: normal normal 12px Arial, Tahoma, Helvetica, FreeSans, sans-serif;
+color: #222222;
+background: #66bbdd none repeat scroll top left;
+padding: 0 40px 40px 40px;
+}
+html body .region-inner {
+min-width: 0;
+max-width: 100%;
+width: auto;
+}
+h2 {
+font-size: 22px;
+}
+a:link {
+text-decoration:none;
+color: #2288bb;
+}
+a:visited {
+text-decoration:none;
+color: #888888;
+}
+a:hover {
+text-decoration:underline;
+color: #33aaff;
+}
+.body-fauxcolumn-outer .fauxcolumn-inner {
+background: transparent url(https://resources.blogblog.com/blogblog/data/1kt/simple/body_gradient_tile_light.png) repeat scroll top left;
+_background-image: none;
+}
+.body-fauxcolumn-outer .cap-top {
+position: absolute;
+z-index: 1;
+height: 400px;
+width: 100%;
+}
+.body-fauxcolumn-outer .cap-top .cap-left {
+width: 100%;
+background: transparent url(https://resources.blogblog.com/blogblog/data/1kt/simple/gradients_light.png) repeat-x scroll top left;
+_background-image: none;
+}
+.content-outer {
+-moz-box-shadow: 0 0 40px rgba(0, 0, 0, .15);
+-webkit-box-shadow: 0 0 5px rgba(0, 0, 0, .15);
+-goog-ms-box-shadow: 0 0 10px #333333;
+box-shadow: 0 0 40px rgba(0, 0, 0, .15);
+margin-bottom: 1px;
+}
+.content-inner {
+padding: 10px 10px;
+}
+.content-inner {
+background-color: #ffffff;
+}
+/* Header
+----------------------------------------------- */
+.header-outer {
+background: transparent none repeat-x scroll 0 -400px;
+_background-image: none;
+}
+.Header h1 {
+font: normal normal 60px Arial, Tahoma, Helvetica, FreeSans, sans-serif;
+color: #3399bb;
+text-shadow: -1px -1px 1px rgba(0, 0, 0, .2);
+}
+.Header h1 a {
+color: #3399bb;
+}
+.Header .description {
+font-size: 140%;
+color: #777777;
+}
+.header-inner .Header .titlewrapper {
+padding: 22px 30px;
+}
+.header-inner .Header .descriptionwrapper {
+padding: 0 30px;
+}
+/* Tabs
+----------------------------------------------- */
+.tabs-inner .section:first-child {
+border-top: 1px solid #eeeeee;
+}
+.tabs-inner .section:first-child ul {
+margin-top: -1px;
+border-top: 1px solid #eeeeee;
+border-left: 0 solid #eeeeee;
+border-right: 0 solid #eeeeee;
+}
+.tabs-inner .widget ul {
+background: #f5f5f5 url(https://resources.blogblog.com/blogblog/data/1kt/simple/gradients_light.png) repeat-x scroll 0 -800px;
+_background-image: none;
+border-bottom: 1px solid #eeeeee;
+margin-top: 0;
+margin-left: -30px;
+margin-right: -30px;
+}
+.tabs-inner .widget li a {
+display: inline-block;
+padding: .6em 1em;
+font: normal normal 14px Arial, Tahoma, Helvetica, FreeSans, sans-serif;
+color: #999999;
+border-left: 1px solid #ffffff;
+border-right: 1px solid #eeeeee;
+}
+.tabs-inner .widget li:first-child a {
+border-left: none;
+}
+.tabs-inner .widget li.selected a, .tabs-inner .widget li a:hover {
+color: #000000;
+background-color: #eeeeee;
+text-decoration: none;
+}
+/* Columns
+----------------------------------------------- */
+.main-outer {
+border-top: 0 solid #eeeeee;
+}
+.fauxcolumn-left-outer .fauxcolumn-inner {
+border-right: 1px solid #eeeeee;
+}
+.fauxcolumn-right-outer .fauxcolumn-inner {
+border-left: 1px solid #eeeeee;
+}
+/* Headings
+----------------------------------------------- */
+div.widget > h2,
+div.widget h2.title {
+margin: 0 0 1em 0;
+font: normal bold 11px Arial, Tahoma, Helvetica, FreeSans, sans-serif;
+color: #000000;
+}
+/* Widgets
+----------------------------------------------- */
+.widget .zippy {
+color: #999999;
+text-shadow: 2px 2px 1px rgba(0, 0, 0, .1);
+}
+.widget .popular-posts ul {
+list-style: none;
+}
+/* Posts
+----------------------------------------------- */
+h2.date-header {
+font: normal bold 11px Arial, Tahoma, Helvetica, FreeSans, sans-serif;
+}
+.date-header span {
+background-color: transparent;
+color: #222222;
+padding: inherit;
+letter-spacing: inherit;
+margin: inherit;
+}
+.main-inner {
+padding-top: 30px;
+padding-bottom: 30px;
+}
+.main-inner .column-center-inner {
+padding: 0 15px;
+}
+.main-inner .column-center-inner .section {
+margin: 0 15px;
+}
+.post {
+margin: 0 0 25px 0;
+}
+h3.post-title, .comments h4 {
+font: normal normal 22px Arial, Tahoma, Helvetica, FreeSans, sans-serif;
+margin: .75em 0 0;
+}
+.post-body {
+font-size: 110%;
+line-height: 1.4;
+position: relative;
+}
+.post-body img, .post-body .tr-caption-container, .Profile img, .Image img,
+.BlogList .item-thumbnail img {
+padding: 2px;
+background: #ffffff;
+border: 1px solid #eeeeee;
+-moz-box-shadow: 1px 1px 5px rgba(0, 0, 0, .1);
+-webkit-box-shadow: 1px 1px 5px rgba(0, 0, 0, .1);
+box-shadow: 1px 1px 5px rgba(0, 0, 0, .1);
+}
+.post-body img, .post-body .tr-caption-container {
+padding: 5px;
+}
+.post-body .tr-caption-container {
+color: #222222;
+}
+.post-body .tr-caption-container img {
+padding: 0;
+background: transparent;
+border: none;
+-moz-box-shadow: 0 0 0 rgba(0, 0, 0, .1);
+-webkit-box-shadow: 0 0 0 rgba(0, 0, 0, .1);
+box-shadow: 0 0 0 rgba(0, 0, 0, .1);
+}
+.post-header {
+margin: 0 0 1.5em;
+line-height: 1.6;
+font-size: 90%;
+}
+.post-footer {
+margin: 20px -2px 0;
+padding: 5px 10px;
+color: #666666;
+background-color: #f9f9f9;
+border-bottom: 1px solid #eeeeee;
+line-height: 1.6;
+font-size: 90%;
+}
+#comments .comment-author {
+padding-top: 1.5em;
+border-top: 1px solid #eeeeee;
+background-position: 0 1.5em;
+}
+#comments .comment-author:first-child {
+padding-top: 0;
+border-top: none;
+}
+.avatar-image-container {
+margin: .2em 0 0;
+}
+#comments .avatar-image-container img {
+border: 1px solid #eeeeee;
+}
+/* Comments
+----------------------------------------------- */
+.comments .comments-content .icon.blog-author {
+background-repeat: no-repeat;
+background-image: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABIAAAASCAYAAABWzo5XAAAAAXNSR0IArs4c6QAAAAZiS0dEAP8A/wD/oL2nkwAAAAlwSFlzAAALEgAACxIB0t1+/AAAAAd0SU1FB9sLFwMeCjjhcOMAAAD+SURBVDjLtZSvTgNBEIe/WRRnm3U8RC1neQdsm1zSBIU9VVF1FkUguQQsD9ITmD7ECZIJSE4OZo9stoVjC/zc7ky+zH9hXwVwDpTAWWLrgS3QAe8AZgaAJI5zYAmc8r0G4AHYHQKVwII8PZrZFsBFkeRCABYiMh9BRUhnSkPTNCtVXYXURi1FpBDgArj8QU1eVXUzfnjv7yP7kwu1mYrkWlU33vs1QNu2qU8pwN0UpKoqokjWwCztrMuBhEhmh8bD5UDqur75asbcX0BGUB9/HAMB+r32hznJgXy2v0sGLBcyAJ1EK3LFcbo1s91JeLwAbwGYu7TP/3ZGfnXYPgAVNngtqatUNgAAAABJRU5ErkJggg==);
+}
+.comments .comments-content .loadmore a {
+border-top: 1px solid #999999;
+border-bottom: 1px solid #999999;
+}
+.comments .comment-thread.inline-thread {
+background-color: #f9f9f9;
+}
+.comments .continue {
+border-top: 2px solid #999999;
+}
+/* Accents
+---------------------------------------------- */
+.section-columns td.columns-cell {
+border-left: 1px solid #eeeeee;
+}
+.blog-pager {
+background: transparent none no-repeat scroll top center;
+}
+.blog-pager-older-link, .home-link,
+.blog-pager-newer-link {
+background-color: #ffffff;
+padding: 5px;
+}
+.footer-outer {
+border-top: 0 dashed #bbbbbb;
+}
+/* Mobile
+----------------------------------------------- */
+body.mobile  {
+background-size: auto;
+}
+.mobile .body-fauxcolumn-outer {
+background: transparent none repeat scroll top left;
+}
+.mobile .body-fauxcolumn-outer .cap-top {
+background-size: 100% auto;
+}
+.mobile .content-outer {
+-webkit-box-shadow: 0 0 3px rgba(0, 0, 0, .15);
+box-shadow: 0 0 3px rgba(0, 0, 0, .15);
+}
+.mobile .tabs-inner .widget ul {
+margin-left: 0;
+margin-right: 0;
+}
+.mobile .post {
+margin: 0;
+}
+.mobile .main-inner .column-center-inner .section {
+margin: 0;
+}
+.mobile .date-header span {
+padding: 0.1em 10px;
+margin: 0 -10px;
+}
+.mobile h3.post-title {
+margin: 0;
+}
+.mobile .blog-pager {
+background: transparent none no-repeat scroll top center;
+}
+.mobile .footer-outer {
+border-top: none;
+}
+.mobile .main-inner, .mobile .footer-inner {
+background-color: #ffffff;
+}
+.mobile-index-contents {
+color: #222222;
+}
+.mobile-link-button {
+background-color: #2288bb;
+}
+.mobile-link-button a:link, .mobile-link-button a:visited {
+color: #ffffff;
+}
+.mobile .tabs-inner .section:first-child {
+border-top: none;
+}
+.mobile .tabs-inner .PageList .widget-content {
+background-color: #eeeeee;
+color: #000000;
+border-top: 1px solid #eeeeee;
+border-bottom: 1px solid #eeeeee;
+}
+.mobile .tabs-inner .PageList .widget-content .pagelist-arrow {
+border-left: 1px solid #eeeeee;
+}
+
+--></style>
+<style id='template-skin-1' type='text/css'><!--
+body {
+min-width: 1024px;
+}
+.content-outer, .content-fauxcolumn-outer, .region-inner {
+min-width: 1024px;
+max-width: 1024px;
+_width: 1024px;
+}
+.main-inner .columns {
+padding-left: 0px;
+padding-right: 250px;
+}
+.main-inner .fauxcolumn-center-outer {
+left: 0px;
+right: 250px;
+/* IE6 does not respect left and right together */
+_width: expression(this.parentNode.offsetWidth -
+parseInt("0px") -
+parseInt("250px") + 'px');
+}
+.main-inner .fauxcolumn-left-outer {
+width: 0px;
+}
+.main-inner .fauxcolumn-right-outer {
+width: 250px;
+}
+.main-inner .column-left-outer {
+width: 0px;
+right: 100%;
+margin-left: -0px;
+}
+.main-inner .column-right-outer {
+width: 250px;
+margin-right: -250px;
+}
+#layout {
+min-width: 0;
+}
+#layout .content-outer {
+min-width: 0;
+width: 800px;
+}
+#layout .region-inner {
+min-width: 0;
+width: auto;
+}
+--></style>
+<link href="//alexgorbatchev.com/pub/sh/current/styles/shCore.css" rel="stylesheet" type="text/css">
+<link href="//alexgorbatchev.com/pub/sh/current/styles/shThemeEclipse.css" rel="stylesheet" type="text/css">
+<style type='text/css'>
+.syntaxhighlighter { padding: 1px !important }
+</style>
+<script src="//alexgorbatchev.com/pub/sh/current/scripts/shCore.js" type="text/javascript"></script>
+<script src="//alexgorbatchev.com/pub/sh/current/scripts/shBrushJava.js" type="text/javascript"></script>
+<script language='javascript'> 
+    SyntaxHighlighter.config.bloggerMode = true;
+    SyntaxHighlighter.defaults['gutter'] = false;
+    SyntaxHighlighter.all();
+</script>
+<link href='https://www.blogger.com/dyn-css/authorization.css?targetBlogID=5560209661389175529&amp;zx=0565ffd3-60c3-43dd-a413-cffaecd78804' media='none' onload='if(media!=&#39;all&#39;)media=&#39;all&#39;' rel='stylesheet'/><noscript><link href='https://www.blogger.com/dyn-css/authorization.css?targetBlogID=5560209661389175529&amp;zx=0565ffd3-60c3-43dd-a413-cffaecd78804' rel='stylesheet'/></noscript>
+</head>
+<body class='loading variant-pale'>
+<div class='navbar section' id='navbar'><div class='widget Navbar' data-version='1' id='Navbar1'><script type="text/javascript">
+    function setAttributeOnload(object, attribute, val) {
+      if(window.addEventListener) {
+        window.addEventListener('load',
+          function(){ object[attribute] = val; }, false);
+      } else {
+        window.attachEvent('onload', function(){ object[attribute] = val; });
+      }
+    }
+  </script>
+<div id="navbar-iframe-container"></div>
+<script type="text/javascript" src="https://apis.google.com/js/plusone.js"></script>
+<script type="text/javascript">
+      gapi.load("gapi.iframes:gapi.iframes.style.bubble", function() {
+        if (gapi.iframes && gapi.iframes.getContext) {
+          gapi.iframes.getContext().openChild({
+              url: 'https://www.blogger.com/navbar.g?targetBlogID\x3d5560209661389175529\x26blogName\x3dMechanical+Sympathy\x26publishMode\x3dPUBLISH_MODE_BLOGSPOT\x26navbarType\x3dDARK\x26layoutType\x3dLAYOUTS\x26searchRoot\x3dhttps://mechanical-sympathy.blogspot.com/search\x26blogLocale\x3den_GB\x26v\x3d2\x26homepageUrl\x3dhttps://mechanical-sympathy.blogspot.com/\x26targetPostID\x3d4576955837831664544\x26blogPostOrPageUrl\x3dhttps://mechanical-sympathy.blogspot.com/2012/05/apply-back-pressure-when-overloaded.html\x26vt\x3d-8830924696243286042',
+              where: document.getElementById("navbar-iframe-container"),
+              id: "navbar-iframe"
+          });
+        }
+      });
+    </script><script type="text/javascript">
+(function() {
+var script = document.createElement('script');
+script.type = 'text/javascript';
+script.src = '//pagead2.googlesyndication.com/pagead/js/google_top_exp.js';
+var head = document.getElementsByTagName('head')[0];
+if (head) {
+head.appendChild(script);
+}})();
+</script>
+</div></div>
+<div class='body-fauxcolumns'>
+<div class='fauxcolumn-outer body-fauxcolumn-outer'>
+<div class='cap-top'>
+<div class='cap-left'></div>
+<div class='cap-right'></div>
+</div>
+<div class='fauxborder-left'>
+<div class='fauxborder-right'></div>
+<div class='fauxcolumn-inner'>
+</div>
+</div>
+<div class='cap-bottom'>
+<div class='cap-left'></div>
+<div class='cap-right'></div>
+</div>
+</div>
+</div>
+<div class='content'>
+<div class='content-fauxcolumns'>
+<div class='fauxcolumn-outer content-fauxcolumn-outer'>
+<div class='cap-top'>
+<div class='cap-left'></div>
+<div class='cap-right'></div>
+</div>
+<div class='fauxborder-left'>
+<div class='fauxborder-right'></div>
+<div class='fauxcolumn-inner'>
+</div>
+</div>
+<div class='cap-bottom'>
+<div class='cap-left'></div>
+<div class='cap-right'></div>
+</div>
+</div>
+</div>
+<div class='content-outer'>
+<div class='content-cap-top cap-top'>
+<div class='cap-left'></div>
+<div class='cap-right'></div>
+</div>
+<div class='fauxborder-left content-fauxborder-left'>
+<div class='fauxborder-right content-fauxborder-right'></div>
+<div class='content-inner'>
+<header>
+<div class='header-outer'>
+<div class='header-cap-top cap-top'>
+<div class='cap-left'></div>
+<div class='cap-right'></div>
+</div>
+<div class='fauxborder-left header-fauxborder-left'>
+<div class='fauxborder-right header-fauxborder-right'></div>
+<div class='region-inner header-inner'>
+<div class='header section' id='header'><div class='widget Header' data-version='1' id='Header1'>
+<div id='header-inner'>
+<div class='titlewrapper'>
+<h1 class='title'>
+<a href='https://mechanical-sympathy.blogspot.fr/'>
+Mechanical Sympathy
+</a>
+</h1>
+</div>
+<div class='descriptionwrapper'>
+<p class='description'><span>Hardware and software working together in harmony</span></p>
+</div>
+</div>
+</div></div>
+</div>
+</div>
+<div class='header-cap-bottom cap-bottom'>
+<div class='cap-left'></div>
+<div class='cap-right'></div>
+</div>
+</div>
+</header>
+<div class='tabs-outer'>
+<div class='tabs-cap-top cap-top'>
+<div class='cap-left'></div>
+<div class='cap-right'></div>
+</div>
+<div class='fauxborder-left tabs-fauxborder-left'>
+<div class='fauxborder-right tabs-fauxborder-right'></div>
+<div class='region-inner tabs-inner'>
+<div class='tabs no-items section' id='crosscol'></div>
+<div class='tabs no-items section' id='crosscol-overflow'></div>
+</div>
+</div>
+<div class='tabs-cap-bottom cap-bottom'>
+<div class='cap-left'></div>
+<div class='cap-right'></div>
+</div>
+</div>
+<div class='main-outer'>
+<div class='main-cap-top cap-top'>
+<div class='cap-left'></div>
+<div class='cap-right'></div>
+</div>
+<div class='fauxborder-left main-fauxborder-left'>
+<div class='fauxborder-right main-fauxborder-right'></div>
+<div class='region-inner main-inner'>
+<div class='columns fauxcolumns'>
+<div class='fauxcolumn-outer fauxcolumn-center-outer'>
+<div class='cap-top'>
+<div class='cap-left'></div>
+<div class='cap-right'></div>
+</div>
+<div class='fauxborder-left'>
+<div class='fauxborder-right'></div>
+<div class='fauxcolumn-inner'>
+</div>
+</div>
+<div class='cap-bottom'>
+<div class='cap-left'></div>
+<div class='cap-right'></div>
+</div>
+</div>
+<div class='fauxcolumn-outer fauxcolumn-left-outer'>
+<div class='cap-top'>
+<div class='cap-left'></div>
+<div class='cap-right'></div>
+</div>
+<div class='fauxborder-left'>
+<div class='fauxborder-right'></div>
+<div class='fauxcolumn-inner'>
+</div>
+</div>
+<div class='cap-bottom'>
+<div class='cap-left'></div>
+<div class='cap-right'></div>
+</div>
+</div>
+<div class='fauxcolumn-outer fauxcolumn-right-outer'>
+<div class='cap-top'>
+<div class='cap-left'></div>
+<div class='cap-right'></div>
+</div>
+<div class='fauxborder-left'>
+<div class='fauxborder-right'></div>
+<div class='fauxcolumn-inner'>
+</div>
+</div>
+<div class='cap-bottom'>
+<div class='cap-left'></div>
+<div class='cap-right'></div>
+</div>
+</div>
+<!-- corrects IE6 width calculation -->
+<div class='columns-inner'>
+<div class='column-center-outer'>
+<div class='column-center-inner'>
+<div class='main section' id='main'><div class='widget Blog' data-version='1' id='Blog1'>
+<div class='blog-posts hfeed'>
+
+          <div class="date-outer">
+        
+<h2 class='date-header'><span>Saturday, 19 May 2012</span></h2>
+
+          <div class="date-posts">
+        
+<div class='post-outer'>
+<div class='post hentry' itemscope='itemscope' itemtype='http://schema.org/BlogPosting'>
+<a name='4576955837831664544'></a>
+<h3 class='post-title entry-title' itemprop='name'>
+Applying Back Pressure When Overloaded
+</h3>
+<div class='post-header'>
+<div class='post-header-line-1'></div>
+</div>
+<div class='post-body entry-content' id='post-body-4576955837831664544' itemprop='articleBody'>
+<div dir="ltr" style="text-align: left;" trbidi="on">
+How should a system respond when under sustained load?&nbsp; Should it keep accepting requests until its response times follow the deadly hockey stick, followed by a crash?&nbsp; All too often this is what happens unless a system is designed to cope with the case of more requests arriving than it is capable of processing.&nbsp; If we are seeing a sustained arrival rate of requests, greater than our system is capable of processing, then something has to give.&nbsp; Having the entire system degrade is not the ideal service we want to give our customers.&nbsp; A better approach would be to process transactions at our systems maximum possible throughput rate, while maintaining a good response time, and rejecting requests above this arrival rate.<br />
+<br />
+Let&#8217;s consider a small art gallery as an metaphor.&nbsp; In this gallery the typical viewer spends on average 20 minutes browsing, and the gallery can hold a maximum of 30 viewers.&nbsp; If more than 30 viewers occupy the gallery at the same time then customers become unhappy because they cannot have a clear view of the paintings.&nbsp; If this happens they are unlikely to purchase or return.&nbsp; To keep our viewers happy it is better to recommend that some viewers visit the café a few doors down and come back when the gallery is less busy.&nbsp; This way the viewers in the gallery get to see all the paintings without other viewers in the way, and in the meantime those we cannot accommodate enjoy a coffee.&nbsp; If we apply <a href="http://en.wikipedia.org/wiki/Little%27s_law">Little&#8217;s Law</a> we cannot have customers arriving at more than 90 per hour, otherwise the maximum capacity is exceeded.&nbsp; If between 9:00-10:00 they are arriving at 100 per hour, then I&#8217;m sure the café down the road will appreciate the extra 10 customers.<br />
+<br />
+Within our systems the available capacity is generally a function of the size of our thread pools and time to process individual transactions.&nbsp; These thread pools are usually fronted by queues to handle bursts of traffic above our maximum arrival rate.&nbsp; If the queues are unbounded, and we have a sustained arrival rate above the maximum capacity, then the queues will grow unchecked.&nbsp; As the queues grow they increasingly add latency beyond acceptable response times, and eventually they will consume all memory causing our systems to fail.&nbsp; Would it not be better to send the overflow of requests to the café while still serving everyone else at the maximum possible rate?&nbsp; We can do this by designing our systems to apply &#8220;Back Pressure&#8221;.
+<br />
+<br />
+<table align="center" cellpadding="0" cellspacing="0" class="tr-caption-container" style="margin-left: auto; margin-right: auto; text-align: center;"><tbody>
+<tr><td style="text-align: center;"><a href="//4.bp.blogspot.com/-H5j78ebce9w/T7erBJ8X-gI/AAAAAAAAADM/F_ak3B9Wdl0/s1600/back-pressure.png" imageanchor="1" style="margin-left: auto; margin-right: auto;"><img border="0" src="//4.bp.blogspot.com/-H5j78ebce9w/T7erBJ8X-gI/AAAAAAAAADM/F_ak3B9Wdl0/s1600/back-pressure.png"></a></td></tr>
+<tr><td class="tr-caption" style="text-align: center;">Figure 1.</td></tr>
+</tbody></table>
+<br />
+<a href="http://en.wikipedia.org/wiki/Separation_of_concerns">Separation of concerns</a> encourages good systems design at all levels.&nbsp; I like to layer a design so that the gateways to third parties are separated from the main transaction services.&nbsp; This can be achieved by having gateways responsible for protocol translation and border security only.&nbsp; A typical gateway could be a web container running <a href="http://jcp.org/en/jsr/detail?id=315">Servlets</a>.&nbsp; Gateways accept customer requests, apply appropriate security, and translate the channel protocols for forwarding to the transaction service hosting the <a href="http://martinfowler.com/eaaCatalog/domainModel.html">domain model</a>.&nbsp; The transaction service may use a durable store if transactions need to be preserved.&nbsp; For example, the state of a chat server domain model may not require preservation, whereas a model for financial transactions must be kept for many years for compliance and business reasons.<br />
+<br />
+Figure 1. above is a simplified view of the typical request flow in many systems.&nbsp; Pools of threads in a gateway accept user requests and forward them to a transaction service.&nbsp; Let&#8217;s assume we have asynchronous transaction services fronted by an input and output queues, or similar <a href="http://en.wikipedia.org/wiki/FIFO">FIFO</a> structures.&nbsp; If we want the system to meet a response time quality-of-service (QoS) guarantee, then we need to consider the three following variables:<br />
+<ol style="text-align: left;">
+<li>The time taken for individual transactions on a thread</li>
+<li>The number of threads in a pool that can execute transactions in parallel</li>
+<li>The length of the input queue to set the maximum acceptable latency </li>
+</ol>
+<div style="font-family: &quot;Courier New&quot;,Courier,monospace;">
+<b>&nbsp;&nbsp;&nbsp; max latency = (transaction time / number of threads) * queue length</b></div>
+<div style="font-family: &quot;Courier New&quot;,Courier,monospace;">
+<b>&nbsp;&nbsp;&nbsp; queue length = max latency / (transaction time / number of threads) </b></div>
+<br />
+By allowing the queue to be unbounded the latency will continue to increase.&nbsp; So if we want to set a maximum response time then we need to limit the queue length.<br />
+<br />
+By bounding the input queue we block the thread receiving network packets which will apply back pressure up stream.&nbsp; If the network protocol is TCP, similar back pressure is applied via the filling of network buffers, on the sender.&nbsp; This process can repeat all the way back via the gateway to the customer.&nbsp; For each service we need to configure the queues so that they do their part in achieving the required quality-of-service for the end-to-end customer experience.<br />
+<br />
+One of the biggest wins I often find is to improve the time taken to process individual transaction latency.&nbsp; This helps in the best and worst case scenarios.<br />
+<br />
+<b><span style="font-size: large;">Worst Case Scenario</span></b><br />
+<br />
+Let&#8217;s say the queue is unbounded and the system is under sustained heavy load.&nbsp; Things can begin to go wrong very quickly in subtle ways before memory is exhausted.&nbsp; What do you think will happen when the queue is larger than the processor cache?&nbsp; The consumer threads will be suffering cache misses just at the time when they are struggling to keep up, thus compounding the problem.&nbsp; This can cause a system to get into trouble very quickly and eventually crash.&nbsp; Under Linux this is particularly nasty because <a href="http://en.wikipedia.org/wiki/C_dynamic_memory_allocation">malloc</a>, or one of its friends, will succeed because Linux allows &#8220;<a href="http://www.win.tue.nl/~aeb/linux/lk/lk-9.html#ss9.6">Over Commit</a>&#8221; by default, then later at the point of using that memory, the <a href="http://lwn.net/Articles/317814/">OOM Killer</a> will start shooting processes. When the OS starts shooting processes, you just know things are not going to end well!<br />
+<br />
+<b><span style="font-size: large;">What About Synchronous Designs?</span></b><br />
+<br />
+You may say that with synchronous designs there are no queues.&nbsp; Well not such obvious ones.&nbsp; If you have a thread pool then it will have a lock, or semaphore, wait queues to assign threads.&nbsp; If you are crazy enough to allocate a new thread on every request, then once you are over the huge cost of thread creation, your thread is in the run queue for a processor to execute.&nbsp; Also, these queues involve context switches and condition variables which greatly increase the <a href="http://mechanical-sympathy.blogspot.co.uk/2011/11/locks-condition-variables-latency.html">costs</a>.&nbsp; You just cannot run away from queues, they are everywhere!&nbsp; Best to embrace them and design for the quality-of-service your system needs to deliver to its customers.&nbsp; If we must have queues, then design for them, and maybe choose some nice lock-free ones with great performance.<br />
+<br />
+When we need to support synchronous protocols like REST then use back pressure, signalled by our full incoming queue at the gateway, to send a meaningful &#8220;server busy&#8221; message such as the HTTP 503 status code.&nbsp; The customer can then interpret this as time for a coffee and cake at the café down the road.<br />
+<br />
+<b><span style="font-size: large;">Subtleties To Watch Out For...</span></b><br />
+<br />
+You need to consider the whole end-to-end service.&nbsp; What if a client is very slow at consuming data from your system?&nbsp; It could tie up a thread in the gateway taking it out of action.&nbsp; Now you have less threads working the queue so the response time will be increasing.&nbsp; Queues and threads need to be monitored, and appropriate action needs to be taken when thresholds are crossed.&nbsp; For example, when a queue is 70% full, maybe an alert should be raised so an investigation can take place?&nbsp; Also, transaction times need to be sampled to ensure they are in the expected range.<br />
+<br />
+<b><span style="font-size: large;">Summary</span></b><br />
+<br />
+If we do not consider how our systems will behave when under heavy load then they will most likely seriously degrade at best, and at worst crash.&nbsp; When they crash this way, we get to find out if there are any really evil data corruption bugs lurking in those dark places.&nbsp; Applying back pressure is one effective technique for coping with sustained high-load, such that maximum throughput can be delivered without degrading system performance for the already accepted requests and transactions.</div>
+<div style='clear: both;'></div>
+</div>
+<div class='post-footer'>
+<div class='post-footer-line post-footer-line-1'><span class='post-author vcard'>
+Posted by
+<span class='fn'>
+<a href='https://www.blogger.com/profile/15893849163924476586' itemprop='author' rel='author' title='author profile'>
+Martin Thompson
+</a>
+</span>
+</span>
+<span class='post-timestamp'>
+at
+<a class='timestamp-link' href='https://mechanical-sympathy.blogspot.fr/2012/05/apply-back-pressure-when-overloaded.html' itemprop='url' rel='bookmark' title='permanent link'><abbr class='published' itemprop='datePublished' title='2012-05-19T22:17:00+01:00'>22:17</abbr></a>
+</span>
+<span class='post-comment-link'>
+</span>
+<span class='post-icons'>
+<span class='item-action'>
+<a href='https://www.blogger.com/email-post.g?blogID=5560209661389175529&postID=4576955837831664544' title='Email Post'>
+<img alt="" class="icon-action" height="13" src="//img1.blogblog.com/img/icon18_email.gif" width="18">
+</a>
+</span>
+<span class='item-control blog-admin pid-503865779'>
+<a href='https://www.blogger.com/post-edit.g?blogID=5560209661389175529&postID=4576955837831664544&from=pencil' title='Edit Post'>
+<img alt='' class='icon-action' height='18' src='https://resources.blogblog.com/img/icon18_edit_allbkg.gif' width='18'/>
+</a>
+</span>
+</span>
+<div class='post-share-buttons goog-inline-block'>
+<a class='goog-inline-block share-button sb-email' href='https://www.blogger.com/share-post.g?blogID=5560209661389175529&postID=4576955837831664544&target=email' target='_blank' title='Email This'><span class='share-button-link-text'>Email This</span></a><a class='goog-inline-block share-button sb-blog' href='https://www.blogger.com/share-post.g?blogID=5560209661389175529&postID=4576955837831664544&target=blog' onclick='window.open(this.href, "_blank", "height=270,width=475"); return false;' target='_blank' title='BlogThis!'><span class='share-button-link-text'>BlogThis!</span></a><a class='goog-inline-block share-button sb-twitter' href='https://www.blogger.com/share-post.g?blogID=5560209661389175529&postID=4576955837831664544&target=twitter' target='_blank' title='Share to Twitter'><span class='share-button-link-text'>Share to Twitter</span></a><a class='goog-inline-block share-button sb-facebook' href='https://www.blogger.com/share-post.g?blogID=5560209661389175529&postID=4576955837831664544&target=facebook' onclick='window.open(this.href, "_blank", "height=430,width=640"); return false;' target='_blank' title='Share to Facebook'><span class='share-button-link-text'>Share to Facebook</span></a><a class='goog-inline-block share-button sb-pinterest' href='https://www.blogger.com/share-post.g?blogID=5560209661389175529&postID=4576955837831664544&target=pinterest' target='_blank' title='Share to Pinterest'><span class='share-button-link-text'>Share to Pinterest</span></a><div class='goog-inline-block google-plus-share-container'><g:plusone source='blogger:blog:plusone' href='http://mechanical-sympathy.blogspot.com/2012/05/apply-back-pressure-when-overloaded.html' size='medium' width='300' annotation='inline'/></div>
+</div>
+</div>
+<div class='post-footer-line post-footer-line-2'><span class='post-labels'>
+Labels:
+<a href='https://mechanical-sympathy.blogspot.fr/search/label/Java' rel='tag'>Java</a>,
+<a href='https://mechanical-sympathy.blogspot.fr/search/label/Low-Latency' rel='tag'>Low-Latency</a>,
+<a href='https://mechanical-sympathy.blogspot.fr/search/label/Performance' rel='tag'>Performance</a>,
+<a href='https://mechanical-sympathy.blogspot.fr/search/label/Queuing' rel='tag'>Queuing</a>
+</span>
+</div>
+<div class='post-footer-line post-footer-line-3'><span class='post-location'>
+Location:
+<a href='https://maps.google.com/maps?q=London,+UK@51.5081289,-0.128005&z=10' target='_blank'>London, UK</a>
+</span>
+</div>
+</div>
+</div>
+<div class='comments' id='comments'>
+<a name='comments'></a>
+<h4>6 comments:</h4>
+<div class='comments-content'>
+<script async='async' src='//www.blogblog.com/dynamicviews/4224c15c4e7c9321/js/comments.js' type='text/javascript'></script>
+<script type='text/javascript'>
+    (function() {
+      var items = [{'id': '182913035049461609', 'body': 'Are there best practices for dynamically determining queue size based on transaction time? You mention monitoring transaction time, but it would be helpful for systems to protect themselves when something goes wrong at the transaction layer. When things go really wrong, can you reduce the number of gateway threads? Thanks!', 'timestamp': '1337618740914', 'permalink': 'https://mechanical-sympathy.blogspot.com/2012/05/apply-back-pressure-when-overloaded.html?showComment\x3d1337618740914#c182913035049461609', 'author': {'name': 'Jim', 'avatarUrl': '//lh3.googleusercontent.com/zFdxGE77vvD2w5xHy6jkVuElKv-U9_9qLkRYK8OnbDeJPtjSZ82UPq5w6hJ-SA\x3ds35', 'profileUrl': 'https://www.blogger.com/profile/06269113793600381839'}, 'displayTime': '21 May 2012 at 17:45', 'deleteclass': 'item-control blog-admin pid-2132118407'}, {'id': '3923370287565908917', 'body': 'Two questions Martin\x3cbr /\x3e\x3cbr /\x3e1. Are you aware of any good libraries out there that provide the capacity alerts you talk about? It\x26#39;s pretty trivial to add my own but are there any pitfalls?\x3cbr /\x3e\x3cbr /\x3e2. There are limits to how far you can apply back pressure. What do you do when your firehose doesn\x26#39;t have a tap? I\x26#39;m trying Kafka as a durable queue to smooth things out and was interested in your views\x3cbr /\x3e\x3cbr /\x3eCheers', 'timestamp': '1337642987131', 'permalink': 'https://mechanical-sympathy.blogspot.com/2012/05/apply-back-pressure-when-overloaded.html?showComment\x3d1337642987131#c3923370287565908917', 'author': {'name': 'jond3k', 'avatarUrl': '//4.bp.blogspot.com/-EiMwGXF4LJ0/TpF6o3_FFvI/AAAAAAAAAIs/qHfNxUGauPo/s35/internet.jpg', 'profileUrl': 'https://www.blogger.com/profile/07432248672159299466'}, 'displayTime': '22 May 2012 at 00:29', 'deleteclass': 'item-control blog-admin pid-1090559213'}, {'id': '2380813950434350123', 'parentId': '182913035049461609', 'body': 'I do not know of any simple solution to this other than model the problem.  Think of modelling the system for these types of requirements just the same as any other business requirements.  Often people neglect this until they are in the s#*t.  This is just another model with its own bounded context.\x3cbr /\x3e\x3cbr /\x3eSomething going wrong at the transaction layer in my experience is often a business algorithm that is not O(1) or at least O(log n).  As data volumes go up you might find an algorithm is O(n), or worse, and this will show up as increasing transaction time.  You cannot totally fix this with reduced load because it is most likely working set data volumes.  Best to performance test the major data dimensions to breaking point, so you know your system.  Simple examples are a query running in a loop based on a set of results ending up O(n^2) or join that is Cartesian.  This can be to a database or even with in-memory structures.', 'timestamp': '1337705285394', 'permalink': 'https://mechanical-sympathy.blogspot.com/2012/05/apply-back-pressure-when-overloaded.html?showComment\x3d1337705285394#c2380813950434350123', 'author': {'name': 'Martin Thompson', 'avatarUrl': '//lh3.googleusercontent.com/zFdxGE77vvD2w5xHy6jkVuElKv-U9_9qLkRYK8OnbDeJPtjSZ82UPq5w6hJ-SA\x3ds35', 'profileUrl': 'https://www.blogger.com/profile/15893849163924476586'}, 'displayTime': '22 May 2012 at 17:48', 'deleteclass': 'item-control blog-admin pid-503865779'}, {'id': '5043132632247990908', 'parentId': '3923370287565908917', 'body': '1. A simple dashboard for your application with audible alarms can work well.\x3cbr /\x3e\x3cbr /\x3e2. If you cannot reject input then you will incur increasing latency and eventual failure. A market data feed is often used as an example. If just logging for future use then it is OK incur increasing latency for a while. If you are making trading decisions of that data then this is very bad. It would be best to drop data and try get the latest view rather than trade on out-of-date information.', 'timestamp': '1337705662839', 'permalink': 'https://mechanical-sympathy.blogspot.com/2012/05/apply-back-pressure-when-overloaded.html?showComment\x3d1337705662839#c5043132632247990908', 'author': {'name': 'Martin Thompson', 'avatarUrl': '//lh3.googleusercontent.com/zFdxGE77vvD2w5xHy6jkVuElKv-U9_9qLkRYK8OnbDeJPtjSZ82UPq5w6hJ-SA\x3ds35', 'profileUrl': 'https://www.blogger.com/profile/15893849163924476586'}, 'displayTime': '22 May 2012 at 17:54', 'deleteclass': 'item-control blog-admin pid-503865779'}, {'id': '7308104662044357165', 'body': 'What would you recommend to use as a test to induce latency for each transaction ? It is test code. Let\x26#39;s say I send raw bytes to the server. I was going to operate on them so that the no: of bytes and the latency of the algorithm can be a uniform distribution curve.', 'timestamp': '1339566018303', 'permalink': 'https://mechanical-sympathy.blogspot.com/2012/05/apply-back-pressure-when-overloaded.html?showComment\x3d1339566018303#c7308104662044357165', 'author': {'name': 'Mohan Radhakrishnan', 'avatarUrl': '//lh3.googleusercontent.com/zFdxGE77vvD2w5xHy6jkVuElKv-U9_9qLkRYK8OnbDeJPtjSZ82UPq5w6hJ-SA\x3ds35', 'profileUrl': 'https://www.blogger.com/profile/08457140016320542845'}, 'displayTime': '13 June 2012 at 06:40', 'deleteclass': 'item-control blog-admin pid-135907854'}, {'id': '5330234090395530668', 'parentId': '7308104662044357165', 'body': 'If you want your code to be CPU bound then what you are suggesting is suitable.  Better if you mix it up with some lookups against a large data set that will cause cache misses.\x3cbr /\x3e\x3cbr /\x3eIf you want to model pauses for IO, that will be low CPU usage, then try LockSupport.parkNanos(long nanos).  I\x26#39;ve found this can give a sleep down to 55us when you ask for 1ns on the latest Linux kernels. This is in the ballpark for a 1GigE network hop.  It will also generate a syscall to be more realistic with IO.', 'timestamp': '1339607725812', 'permalink': 'https://mechanical-sympathy.blogspot.com/2012/05/apply-back-pressure-when-overloaded.html?showComment\x3d1339607725812#c5330234090395530668', 'author': {'name': 'Martin Thompson', 'avatarUrl': '//lh3.googleusercontent.com/zFdxGE77vvD2w5xHy6jkVuElKv-U9_9qLkRYK8OnbDeJPtjSZ82UPq5w6hJ-SA\x3ds35', 'profileUrl': 'https://www.blogger.com/profile/15893849163924476586'}, 'displayTime': '13 June 2012 at 18:15', 'deleteclass': 'item-control blog-admin pid-503865779'}];
+      var msgs = {'loadMore': 'Load more...', 'loading': 'Loading...', 'loaded': 'No more.', 'addComment': 'Add comment', 'reply': 'Reply', 'delete': 'Delete'};
+      var config = {'blogId': '5560209661389175529', 'postId': '4576955837831664544', 'feed': 'https://mechanical-sympathy.blogspot.com/feeds/4576955837831664544/comments/default', 'authorName': 'Martin Thompson', 'authorUrl': 'https://www.blogger.com/profile/15893849163924476586', 'baseUri': 'https://www.blogger.com', 'maxThreadDepth': 2};
+
+// <![CDATA[
+      var cursor = null;
+      if (items && items.length > 0) {
+        cursor = parseInt(items[items.length - 1].timestamp) + 1;
+      }
+
+      var bodyFromEntry = function(entry) {
+        var text = (entry &&
+                    ((entry.content && entry.content.$t) ||
+                     (entry.summary && entry.summary.$t))) ||
+            '';
+        if (entry && entry.gd$extendedProperty) {
+          for (var k in entry.gd$extendedProperty) {
+            if (entry.gd$extendedProperty[k].name == 'blogger.contentRemoved') {
+              return '<span class="deleted-comment">' + text + '</span>';
+            }
+          }
+        }
+        return text;
+      }
+
+      var parse = function(data) {
+        cursor = null;
+        var comments = [];
+        if (data && data.feed && data.feed.entry) {
+          for (var i = 0, entry; entry = data.feed.entry[i]; i++) {
+            var comment = {};
+            // comment ID, parsed out of the original id format
+            var id = /blog-(\d+).post-(\d+)/.exec(entry.id.$t);
+            comment.id = id ? id[2] : null;
+            comment.body = bodyFromEntry(entry);
+            comment.timestamp = Date.parse(entry.published.$t) + '';
+            if (entry.author && entry.author.constructor === Array) {
+              var auth = entry.author[0];
+              if (auth) {
+                comment.author = {
+                  name: (auth.name ? auth.name.$t : undefined),
+                  profileUrl: (auth.uri ? auth.uri.$t : undefined),
+                  avatarUrl: (auth.gd$image ? auth.gd$image.src : undefined)
+                };
+              }
+            }
+            if (entry.link) {
+              if (entry.link[2]) {
+                comment.link = comment.permalink = entry.link[2].href;
+              }
+              if (entry.link[3]) {
+                var pid = /.*comments\/default\/(\d+)\?.*/.exec(entry.link[3].href);
+                if (pid && pid[1]) {
+                  comment.parentId = pid[1];
+                }
+              }
+            }
+            comment.deleteclass = 'item-control blog-admin';
+            if (entry.gd$extendedProperty) {
+              for (var k in entry.gd$extendedProperty) {
+                if (entry.gd$extendedProperty[k].name == 'blogger.itemClass') {
+                  comment.deleteclass += ' ' + entry.gd$extendedProperty[k].value;
+                } else if (entry.gd$extendedProperty[k].name == 'blogger.displayTime') {
+                  comment.displayTime = entry.gd$extendedProperty[k].value;
+                }
+              }
+            }
+            comments.push(comment);
+          }
+        }
+        return comments;
+      };
+
+      var paginator = function(callback) {
+        if (hasMore()) {
+          var url = config.feed + '?alt=json&v=2&orderby=published&reverse=false&max-results=50';
+          if (cursor) {
+            url += '&published-min=' + new Date(cursor).toISOString();
+          }
+          window.bloggercomments = function(data) {
+            var parsed = parse(data);
+            cursor = parsed.length < 50 ? null
+                : parseInt(parsed[parsed.length - 1].timestamp) + 1
+            callback(parsed);
+            window.bloggercomments = null;
+          }
+          url += '&callback=bloggercomments';
+          var script = document.createElement('script');
+          script.type = 'text/javascript';
+          script.src = url;
+          document.getElementsByTagName('head')[0].appendChild(script);
+        }
+      };
+      var hasMore = function() {
+        return !!cursor;
+      };
+      var getMeta = function(key, comment) {
+        if ('iswriter' == key) {
+          var matches = !!comment.author
+              && comment.author.name == config.authorName
+              && comment.author.profileUrl == config.authorUrl;
+          return matches ? 'true' : '';
+        } else if ('deletelink' == key) {
+          return config.baseUri + '/delete-comment.g?blogID='
+               + config.blogId + '&postID=' + comment.id;
+        } else if ('deleteclass' == key) {
+          return comment.deleteclass;
+        }
+        return '';
+      };
+
+      var replybox = null;
+      var replyUrlParts = null;
+      var replyParent = undefined;
+
+      var onReply = function(commentId, domId) {
+        if (replybox == null) {
+          // lazily cache replybox, and adjust to suit this style:
+          replybox = document.getElementById('comment-editor');
+          if (replybox != null) {
+            replybox.height = '250px';
+            replybox.style.display = 'block';
+            replyUrlParts = replybox.src.split('#');
+          }
+        }
+        if (replybox && (commentId !== replyParent)) {
+          replybox.src = '';
+          document.getElementById(domId).insertBefore(replybox, null);
+          replybox.src = replyUrlParts[0]
+              + (commentId ? '&parentID=' + commentId : '')
+              + '#' + replyUrlParts[1];
+          replyParent = commentId;
+        }
+      };
+
+      var hash = (window.location.hash || '#').substring(1);
+      var startThread, targetComment;
+      if (/^comment-form_/.test(hash)) {
+        startThread = hash.substring('comment-form_'.length);
+      } else if (/^c[0-9]+$/.test(hash)) {
+        targetComment = hash.substring(1);
+      }
+
+      // Configure commenting API:
+      var configJso = {
+        'maxDepth': config.maxThreadDepth
+      };
+      var provider = {
+        'id': config.postId,
+        'data': items,
+        'loadNext': paginator,
+        'hasMore': hasMore,
+        'getMeta': getMeta,
+        'onReply': onReply,
+        'rendered': true,
+        'initComment': targetComment,
+        'initReplyThread': startThread,
+        'config': configJso,
+        'messages': msgs
+      };
+
+      var render = function() {
+        if (window.goog && window.goog.comments) {
+          var holder = document.getElementById('comment-holder');
+          window.goog.comments.render(holder, provider);
+        }
+      };
+
+      // render now, or queue to render when library loads:
+      if (window.goog && window.goog.comments) {
+        render();
+      } else {
+        window.goog = window.goog || {};
+        window.goog.comments = window.goog.comments || {};
+        window.goog.comments.loadQueue = window.goog.comments.loadQueue || [];
+        window.goog.comments.loadQueue.push(render);
+      }
+    })();
+// ]]>
+  </script>
+<div id='comment-holder'>
+<div id='bc_0_7C' kind='c'><div id='bc_0_7CT'><div id='bc_0_6T' class='comment-thread' kind='r'  t='0' u='0'><ol id='bc_0_6TB'><li id='bc_0_1B' class='comment' kind='b'><div class='avatar-image-container'><img src='//lh3.googleusercontent.com/zFdxGE77vvD2w5xHy6jkVuElKv-U9_9qLkRYK8OnbDeJPtjSZ82UPq5w6hJ-SA=s35'></img></div><div id='c182913035049461609' class='comment-block'><div id='bc_0_1M' class='comment-header' kind='m'><cite class='user'><a rel='nofollow' href='https://www.blogger.com/profile/06269113793600381839'>Jim</a></cite><span class='icon user'></span><span class='datetime secondary-text'><a rel='nofollow' href='https://mechanical-sympathy.blogspot.com/2012/05/apply-back-pressure-when-overloaded.html?showComment=1337618740914#c182913035049461609'>21 May 2012 at 17:45</a></span></div><p id='bc_0_1MC' class='comment-content'>Are there best practices for dynamically determining queue size based on transaction time? You mention monitoring transaction time, but it would be helpful for systems to protect themselves when something goes wrong at the transaction layer. When things go really wrong, can you reduce the number of gateway threads? Thanks!</p><span id='bc_0_1MN' class='comment-actions secondary-text' kind='m'><a kind='i' href='javascript:;' target='_self' o='r'>Reply</a><span class='item-control blog-admin pid-2132118407'><a o='d' target='_self' href='https://www.blogger.com/delete-comment.g?blogID=5560209661389175529&amp;postID=182913035049461609'>Delete</a></span></span></div><div id='bc_0_1BR' class='comment-replies'><span id='bc_0_1b+seeda0qD' kind='d'><div id='bc_0_0T' class='comment-thread inline-thread' kind='t'   t='0' u='0'><span id='bc_0_0TT' class='thread-toggle thread-expanded' kind='g'><span id='bc_0_0TA' class='thread-arrow'></span><span id='bc_0_0TN' class='thread-count'><span id='bc_0_0TNT' style='display: none;'></span><span id='bc_0_0TNU' style='display: none;'></span><a href='javascript:;' target='_self'>Replies</a><div id='bc_0_0TD' class='thread-dropContainer thread-expanded'><span class='thread-drop'></span></div></span></span><ol id='bc_0_0TC' class='thread-chrome thread-expanded'><div><li id='bc_0_0B' class='comment' kind='b'><div class='avatar-image-container'><img src='//lh3.googleusercontent.com/zFdxGE77vvD2w5xHy6jkVuElKv-U9_9qLkRYK8OnbDeJPtjSZ82UPq5w6hJ-SA=s35'></img></div><div id='c2380813950434350123' class='comment-block'><div id='bc_0_0M' class='comment-header' kind='m'><cite class='user blog-author'><a rel='nofollow' href='https://www.blogger.com/profile/15893849163924476586'>Martin Thompson</a></cite><span class='icon user blog-author'></span><span class='datetime secondary-text'><a rel='nofollow' href='https://mechanical-sympathy.blogspot.com/2012/05/apply-back-pressure-when-overloaded.html?showComment=1337705285394#c2380813950434350123'>22 May 2012 at 17:48</a></span></div><p id='bc_0_0MC' class='comment-content'>I do not know of any simple solution to this other than model the problem.  Think of modelling the system for these types of requirements just the same as any other business requirements.  Often people neglect this until they are in the s#*t.  This is just another model with its own bounded context.<br /><br />Something going wrong at the transaction layer in my experience is often a business algorithm that is not O(1) or at least O(log n).  As data volumes go up you might find an algorithm is O(n), or worse, and this will show up as increasing transaction time.  You cannot totally fix this with reduced load because it is most likely working set data volumes.  Best to performance test the major data dimensions to breaking point, so you know your system.  Simple examples are a query running in a loop based on a set of results ending up O(n^2) or join that is Cartesian.  This can be to a database or even with in-memory structures.</p><span id='bc_0_0MN' class='comment-actions secondary-text' kind='m'><span class='item-control blog-admin pid-503865779'><a o='d' target='_self' href='https://www.blogger.com/delete-comment.g?blogID=5560209661389175529&amp;postID=2380813950434350123'>Delete</a></span></span></div><div id='bc_0_0BR' class='comment-replies'></div><div id='bc_0_0B_box' class='comment-replybox-single'></div></li></div><div id='bc_0_0I' class='continue' kind='ci'><a href='javascript:;' target='_self'>Reply</a></div></ol><div id='bc_0_0T_box' class='comment-replybox-thread'></div></div></span></div><div id='bc_0_1B_box' class='comment-replybox-single'></div></li><li id='bc_0_3B' class='comment' kind='b'><div class='avatar-image-container'><img src='//4.bp.blogspot.com/-EiMwGXF4LJ0/TpF6o3_FFvI/AAAAAAAAAIs/qHfNxUGauPo/s35/internet.jpg'></img></div><div id='c3923370287565908917' class='comment-block'><div id='bc_0_3M' class='comment-header' kind='m'><cite class='user'><a rel='nofollow' href='https://www.blogger.com/profile/07432248672159299466'>jond3k</a></cite><span class='icon user'></span><span class='datetime secondary-text'><a rel='nofollow' href='https://mechanical-sympathy.blogspot.com/2012/05/apply-back-pressure-when-overloaded.html?showComment=1337642987131#c3923370287565908917'>22 May 2012 at 00:29</a></span></div><p id='bc_0_3MC' class='comment-content'>Two questions Martin<br /><br />1. Are you aware of any good libraries out there that provide the capacity alerts you talk about? It&#39;s pretty trivial to add my own but are there any pitfalls?<br /><br />2. There are limits to how far you can apply back pressure. What do you do when your firehose doesn&#39;t have a tap? I&#39;m trying Kafka as a durable queue to smooth things out and was interested in your views<br /><br />Cheers</p><span id='bc_0_3MN' class='comment-actions secondary-text' kind='m'><a kind='i' href='javascript:;' target='_self' o='r'>Reply</a><span class='item-control blog-admin pid-1090559213'><a o='d' target='_self' href='https://www.blogger.com/delete-comment.g?blogID=5560209661389175529&amp;postID=3923370287565908917'>Delete</a></span></span></div><div id='bc_0_3BR' class='comment-replies'><span id='bc_0_3b+seeda0rD' kind='d'><div id='bc_0_2T' class='comment-thread inline-thread' kind='t'   t='0' u='0'><span id='bc_0_2TT' class='thread-toggle thread-expanded' kind='g'><span id='bc_0_2TA' class='thread-arrow'></span><span id='bc_0_2TN' class='thread-count'><span id='bc_0_2TNT' style='display: none;'></span><span id='bc_0_2TNU' style='display: none;'></span><a href='javascript:;' target='_self'>Replies</a><div id='bc_0_2TD' class='thread-dropContainer thread-expanded'><span class='thread-drop'></span></div></span></span><ol id='bc_0_2TC' class='thread-chrome thread-expanded'><div><li id='bc_0_2B' class='comment' kind='b'><div class='avatar-image-container'><img src='//lh3.googleusercontent.com/zFdxGE77vvD2w5xHy6jkVuElKv-U9_9qLkRYK8OnbDeJPtjSZ82UPq5w6hJ-SA=s35'></img></div><div id='c5043132632247990908' class='comment-block'><div id='bc_0_2M' class='comment-header' kind='m'><cite class='user blog-author'><a rel='nofollow' href='https://www.blogger.com/profile/15893849163924476586'>Martin Thompson</a></cite><span class='icon user blog-author'></span><span class='datetime secondary-text'><a rel='nofollow' href='https://mechanical-sympathy.blogspot.com/2012/05/apply-back-pressure-when-overloaded.html?showComment=1337705662839#c5043132632247990908'>22 May 2012 at 17:54</a></span></div><p id='bc_0_2MC' class='comment-content'>1. A simple dashboard for your application with audible alarms can work well.<br /><br />2. If you cannot reject input then you will incur increasing latency and eventual failure. A market data feed is often used as an example. If just logging for future use then it is OK incur increasing latency for a while. If you are making trading decisions of that data then this is very bad. It would be best to drop data and try get the latest view rather than trade on out-of-date information.</p><span id='bc_0_2MN' class='comment-actions secondary-text' kind='m'><span class='item-control blog-admin pid-503865779'><a o='d' target='_self' href='https://www.blogger.com/delete-comment.g?blogID=5560209661389175529&amp;postID=5043132632247990908'>Delete</a></span></span></div><div id='bc_0_2BR' class='comment-replies'></div><div id='bc_0_2B_box' class='comment-replybox-single'></div></li></div><div id='bc_0_2I' class='continue' kind='ci'><a href='javascript:;' target='_self'>Reply</a></div></ol><div id='bc_0_2T_box' class='comment-replybox-thread'></div></div></span></div><div id='bc_0_3B_box' class='comment-replybox-single'></div></li><li id='bc_0_5B' class='comment' kind='b'><div class='avatar-image-container'><img src='//lh3.googleusercontent.com/zFdxGE77vvD2w5xHy6jkVuElKv-U9_9qLkRYK8OnbDeJPtjSZ82UPq5w6hJ-SA=s35'></img></div><div id='c7308104662044357165' class='comment-block'><div id='bc_0_5M' class='comment-header' kind='m'><cite class='user'><a rel='nofollow' href='https://www.blogger.com/profile/08457140016320542845'>Mohan Radhakrishnan</a></cite><span class='icon user'></span><span class='datetime secondary-text'><a rel='nofollow' href='https://mechanical-sympathy.blogspot.com/2012/05/apply-back-pressure-when-overloaded.html?showComment=1339566018303#c7308104662044357165'>13 June 2012 at 06:40</a></span></div><p id='bc_0_5MC' class='comment-content'>What would you recommend to use as a test to induce latency for each transaction ? It is test code. Let&#39;s say I send raw bytes to the server. I was going to operate on them so that the no: of bytes and the latency of the algorithm can be a uniform distribution curve.</p><span id='bc_0_5MN' class='comment-actions secondary-text' kind='m'><a kind='i' href='javascript:;' target='_self' o='r'>Reply</a><span class='item-control blog-admin pid-135907854'><a o='d' target='_self' href='https://www.blogger.com/delete-comment.g?blogID=5560209661389175529&amp;postID=7308104662044357165'>Delete</a></span></span></div><div id='bc_0_5BR' class='comment-replies'><span id='bc_0_5b+seeda0tD' kind='d'><div id='bc_0_4T' class='comment-thread inline-thread' kind='t'   t='0' u='0'><span id='bc_0_4TT' class='thread-toggle thread-expanded' kind='g'><span id='bc_0_4TA' class='thread-arrow'></span><span id='bc_0_4TN' class='thread-count'><span id='bc_0_4TNT' style='display: none;'></span><span id='bc_0_4TNU' style='display: none;'></span><a href='javascript:;' target='_self'>Replies</a><div id='bc_0_4TD' class='thread-dropContainer thread-expanded'><span class='thread-drop'></span></div></span></span><ol id='bc_0_4TC' class='thread-chrome thread-expanded'><div><li id='bc_0_4B' class='comment' kind='b'><div class='avatar-image-container'><img src='//lh3.googleusercontent.com/zFdxGE77vvD2w5xHy6jkVuElKv-U9_9qLkRYK8OnbDeJPtjSZ82UPq5w6hJ-SA=s35'></img></div><div id='c5330234090395530668' class='comment-block'><div id='bc_0_4M' class='comment-header' kind='m'><cite class='user blog-author'><a rel='nofollow' href='https://www.blogger.com/profile/15893849163924476586'>Martin Thompson</a></cite><span class='icon user blog-author'></span><span class='datetime secondary-text'><a rel='nofollow' href='https://mechanical-sympathy.blogspot.com/2012/05/apply-back-pressure-when-overloaded.html?showComment=1339607725812#c5330234090395530668'>13 June 2012 at 18:15</a></span></div><p id='bc_0_4MC' class='comment-content'>If you want your code to be CPU bound then what you are suggesting is suitable.  Better if you mix it up with some lookups against a large data set that will cause cache misses.<br /><br />If you want to model pauses for IO, that will be low CPU usage, then try LockSupport.parkNanos(long nanos).  I&#39;ve found this can give a sleep down to 55us when you ask for 1ns on the latest Linux kernels. This is in the ballpark for a 1GigE network hop.  It will also generate a syscall to be more realistic with IO.</p><span id='bc_0_4MN' class='comment-actions secondary-text' kind='m'><span class='item-control blog-admin pid-503865779'><a o='d' target='_self' href='https://www.blogger.com/delete-comment.g?blogID=5560209661389175529&amp;postID=5330234090395530668'>Delete</a></span></span></div><div id='bc_0_4BR' class='comment-replies'></div><div id='bc_0_4B_box' class='comment-replybox-single'></div></li></div><div id='bc_0_4I' class='continue' kind='ci'><a href='javascript:;' target='_self'>Reply</a></div></ol><div id='bc_0_4T_box' class='comment-replybox-thread'></div></div></span></div><div id='bc_0_5B_box' class='comment-replybox-single'></div></li></ol><div id='bc_0_6I' class='continue' kind='ci'><a href='javascript:;' target='_self'>Add comment</a></div><div id='bc_0_6T_box' class='comment-replybox-thread'></div><div id='bc_0_6L' class='loadmore loaded' kind='rb'><a href='javascript:;' target='_self'>Load more...</a></div></div></div></div>
+</div>
+</div>
+<p class='comment-footer'>
+<div class='comment-form'>
+<a name='comment-form'></a>
+<p>
+</p>
+<a href='https://www.blogger.com/comment-iframe.g?blogID=5560209661389175529&postID=4576955837831664544' id='comment-editor-src'></a>
+<iframe allowtransparency='true' class='blogger-iframe-colorize blogger-comment-from-post' frameborder='0' height='410px' id='comment-editor' name='comment-editor' src='' width='100%'></iframe>
+<script src='https://www.blogger.com/static/v1/jsbin/2244480862-comment_from_post_iframe.js' type='text/javascript'></script>
+<script type='text/javascript'>
+      BLOG_CMT_createIframe('https://www.blogger.com/rpc_relay.html');
+    </script>
+</div>
+</p>
+<div id='backlinks-container'>
+<div id='Blog1_backlinks-container'>
+</div>
+</div>
+</div>
+</div>
+
+        </div></div>
+      
+</div>
+<div class='blog-pager' id='blog-pager'>
+<span id='blog-pager-newer-link'>
+<a class='blog-pager-newer-link' href='https://mechanical-sympathy.blogspot.fr/2012/07/native-cc-like-performance-for-java.html' id='Blog1_blog-pager-newer-link' title='Newer Post'>Newer Post</a>
+</span>
+<span id='blog-pager-older-link'>
+<a class='blog-pager-older-link' href='https://mechanical-sympathy.blogspot.fr/2012/04/invoke-interface-optimisations.html' id='Blog1_blog-pager-older-link' title='Older Post'>Older Post</a>
+</span>
+<a class='home-link' href='https://mechanical-sympathy.blogspot.fr/'>Home</a>
+</div>
+<div class='clear'></div>
+<div class='post-feeds'>
+<div class='feed-links'>
+Subscribe to:
+<a class='feed-link' href='https://mechanical-sympathy.blogspot.com/feeds/4576955837831664544/comments/default' target='_blank' type='application/atom+xml'>Post Comments (Atom)</a>
+</div>
+</div>
+<script type='text/javascript'>
+    window.___gcfg = { 'lang': 'en-GB' };
+  </script>
+</div></div>
+</div>
+</div>
+<div class='column-left-outer'>
+<div class='column-left-inner'>
+<aside>
+</aside>
+</div>
+</div>
+<div class='column-right-outer'>
+<div class='column-right-inner'>
+<aside>
+<div class='sidebar section' id='sidebar-right-1'><div class='widget BlogSearch' data-version='1' id='BlogSearch1'>
+<h2 class='title'>Search This Blog</h2>
+<div class='widget-content'>
+<div id='BlogSearch1_form'>
+<form action='https://mechanical-sympathy.blogspot.fr/search' class='gsc-search-box' target='_top'>
+<table cellpadding='0' cellspacing='0' class='gsc-search-box'>
+<tbody>
+<tr>
+<td class='gsc-input'>
+<input autocomplete='off' class='gsc-input' name='q' size='10' title='search' type='text' value=''/>
+</td>
+<td class='gsc-search-button'>
+<input class='gsc-search-button' title='search' type='submit' value='Search'/>
+</td>
+</tr>
+</tbody>
+</table>
+</form>
+</div>
+</div>
+<div class='clear'></div>
+<span class='widget-item-control'>
+<span class='item-control blog-admin'>
+<a class='quickedit' href='//www.blogger.com/rearrange?blogID=5560209661389175529&widgetType=BlogSearch&widgetId=BlogSearch1&action=editWidget&sectionId=sidebar-right-1' onclick='return _WidgetManager._PopupConfig(document.getElementById("BlogSearch1"));' target='configBlogSearch1' title='Edit'>
+<img alt='' height='18' src='https://resources.blogblog.com/img/icon18_wrench_allbkg.png' width='18'/>
+</a>
+</span>
+</span>
+<div class='clear'></div>
+</div><div class='widget Text' data-version='1' id='Text2'>
+<h2 class='title'>Discussion Group</h2>
+<div class='widget-content'>
+<a href="https://groups.google.com/forum/#!forum/mechanical-sympathy">https://groups.google.com/forum/#!forum/mechanical-sympathy</a>
+</div>
+<div class='clear'></div>
+<span class='widget-item-control'>
+<span class='item-control blog-admin'>
+<a class='quickedit' href='//www.blogger.com/rearrange?blogID=5560209661389175529&widgetType=Text&widgetId=Text2&action=editWidget&sectionId=sidebar-right-1' onclick='return _WidgetManager._PopupConfig(document.getElementById("Text2"));' target='configText2' title='Edit'>
+<img alt='' height='18' src='https://resources.blogblog.com/img/icon18_wrench_allbkg.png' width='18'/>
+</a>
+</span>
+</span>
+<div class='clear'></div>
+</div><div class='widget Profile' data-version='1' id='Profile1'>
+<h2>About Me</h2>
+<div class='widget-content'>
+<dl class='profile-datablock'>
+<dt class='profile-data'>
+<a class='profile-name-link g-profile' href='https://www.blogger.com/profile/15893849163924476586' rel='author' style='background-image: url(//www.blogger.com/img/logo-16.png);'>
+Martin Thompson
+</a>
+</dt>
+<dd class='profile-data'>London, United Kingdom</dd>
+<dd class='profile-textblock'>Technology geek exploring the capabilities of modern hardware.  Available for development, training, performance tuning, and consulting services via Real Logic Limited.
+
+Twitter: @mjpt777</dd>
+</dl>
+<a class='profile-link' href='https://www.blogger.com/profile/15893849163924476586' rel='author'>View my complete profile</a>
+<div class='clear'></div>
+<span class='widget-item-control'>
+<span class='item-control blog-admin'>
+<a class='quickedit' href='//www.blogger.com/rearrange?blogID=5560209661389175529&widgetType=Profile&widgetId=Profile1&action=editWidget&sectionId=sidebar-right-1' onclick='return _WidgetManager._PopupConfig(document.getElementById("Profile1"));' target='configProfile1' title='Edit'>
+<img alt='' height='18' src='https://resources.blogblog.com/img/icon18_wrench_allbkg.png' width='18'/>
+</a>
+</span>
+</span>
+<div class='clear'></div>
+</div>
+</div><div class='widget Text' data-version='1' id='Text1'>
+<h2 class='title'>Training &amp; Consulting</h2>
+<div class='widget-content'>
+<a href="http://www.real-logic.co.uk/">www.real-logic.co.uk</a><div><br /><div><a href="https://ti.to/real-logic/SeptLockFree">Next public course</a></div></div>
+</div>
+<div class='clear'></div>
+<span class='widget-item-control'>
+<span class='item-control blog-admin'>
+<a class='quickedit' href='//www.blogger.com/rearrange?blogID=5560209661389175529&widgetType=Text&widgetId=Text1&action=editWidget&sectionId=sidebar-right-1' onclick='return _WidgetManager._PopupConfig(document.getElementById("Text1"));' target='configText1' title='Edit'>
+<img alt='' height='18' src='https://resources.blogblog.com/img/icon18_wrench_allbkg.png' width='18'/>
+</a>
+</span>
+</span>
+<div class='clear'></div>
+</div><div class='widget LinkList' data-version='1' id='LinkList1'>
+<h2>Conferences &amp; Workshops</h2>
+<div class='widget-content'>
+<ul>
+<li><a href='https://qconlondon.com/'>QCon London March</a></li>
+<li><a href='http://www.javaland.eu/de/home/'>JavaLand Brühl - March</a></li>
+<li><a href='https://craft-conf.com/'>Craft Conf Budapest - April</a></li>
+<li><a href='http://jonthebeach.com/'>JOnTheBeach Málaga - May</a></li>
+<li><a href='https://gotoams.nl/'>Goto Amsterdam - June</a></li>
+<li><a href='http://www.jcrete.org/'>JCrete - July</a></li>
+</ul>
+<div class='clear'></div>
+<span class='widget-item-control'>
+<span class='item-control blog-admin'>
+<a class='quickedit' href='//www.blogger.com/rearrange?blogID=5560209661389175529&widgetType=LinkList&widgetId=LinkList1&action=editWidget&sectionId=sidebar-right-1' onclick='return _WidgetManager._PopupConfig(document.getElementById("LinkList1"));' target='configLinkList1' title='Edit'>
+<img alt='' height='18' src='https://resources.blogblog.com/img/icon18_wrench_allbkg.png' width='18'/>
+</a>
+</span>
+</span>
+<div class='clear'></div>
+</div>
+</div><div class='widget PopularPosts' data-version='1' id='PopularPosts1'>
+<h2>Popular Posts</h2>
+<div class='widget-content popular-posts'>
+<ul>
+<li>
+<div class='item-content'>
+<div class='item-thumbnail'>
+<a href='https://mechanical-sympathy.blogspot.fr/2013/07/java-garbage-collection-distilled.html' target='_blank'>
+<img alt='' border='0' src='//4.bp.blogspot.com/-7aT-vEsf1ck/UeV-q1u2qUI/AAAAAAAAAIs/9PK5-OpEL5I/w72-h72-p-k-no-nu/Generations.png'/>
+</a>
+</div>
+<div class='item-title'><a href='https://mechanical-sympathy.blogspot.fr/2013/07/java-garbage-collection-distilled.html'>Java Garbage Collection Distilled</a></div>
+<div class='item-snippet'> Serial, Parallel, Concurrent, CMS, G1, Young Gen, New Gen, Old Gen, Perm Gen, Eden, Tenured, Survivor Spaces, Safepoints, and the hundreds ...</div>
+</div>
+<div style='clear: both;'></div>
+</li>
+<li>
+<div class='item-content'>
+<div class='item-thumbnail'>
+<a href='https://mechanical-sympathy.blogspot.fr/2013/02/cpu-cache-flushing-fallacy.html' target='_blank'>
+<img alt='' border='0' src='//4.bp.blogspot.com/-fvYQdIN_XRM/URy239FMHPI/AAAAAAAAAGs/Jkqa8T3gbTk/w72-h72-p-k-no-nu/MemoryHeirarchy.png'/>
+</a>
+</div>
+<div class='item-title'><a href='https://mechanical-sympathy.blogspot.fr/2013/02/cpu-cache-flushing-fallacy.html'>CPU Cache Flushing Fallacy</a></div>
+<div class='item-snippet'> Even from highly experienced technologists I often hear talk about how certain operations cause a CPU cache to &quot;flush&quot;. &#160;This see...</div>
+</div>
+<div style='clear: both;'></div>
+</li>
+<li>
+<div class='item-content'>
+<div class='item-title'><a href='https://mechanical-sympathy.blogspot.fr/2012/10/compact-off-heap-structurestuples-in.html'>Compact Off-Heap Structures/Tuples In Java</a></div>
+<div class='item-snippet'> In my last post  I detailed the implications of the access patterns your code takes to main memory. &#160;Since then I&#39;ve had a lot of quest...</div>
+</div>
+<div style='clear: both;'></div>
+</li>
+<li>
+<div class='item-content'>
+<div class='item-title'><a href='https://mechanical-sympathy.blogspot.fr/2012/08/memory-access-patterns-are-important.html'>Memory Access Patterns Are Important</a></div>
+<div class='item-snippet'> In high-performance computing it is often said that the cost of a cache-miss is the largest performance penalty for an algorithm. &#160;For many...</div>
+</div>
+<div style='clear: both;'></div>
+</li>
+<li>
+<div class='item-content'>
+<div class='item-title'><a href='https://mechanical-sympathy.blogspot.fr/2012/07/native-cc-like-performance-for-java.html'>Native C/C++ Like Performance For Java Object Serialisation</a></div>
+<div class='item-snippet'> Do you ever wish you could turn a Java object into a stream of bytes as fast as it can be done in a native language like C++? &#160;If you use s...</div>
+</div>
+<div style='clear: both;'></div>
+</li>
+<li>
+<div class='item-content'>
+<div class='item-thumbnail'>
+<a href='https://mechanical-sympathy.blogspot.fr/2014/05/simple-binary-encoding.html' target='_blank'>
+<img alt='' border='0' src='https://2.bp.blogspot.com/-97WBcDq_Gm8/U2dWpbKU3hI/AAAAAAAAARQ/DV0HAr9kAE8/w72-h72-p-k-no-nu/SBE-msg-format.png'/>
+</a>
+</div>
+<div class='item-title'><a href='https://mechanical-sympathy.blogspot.fr/2014/05/simple-binary-encoding.html'>Simple Binary Encoding</a></div>
+<div class='item-snippet'> Financial systems communicate by sending and receiving vast numbers of messages in many different formats. When people use terms like &quot...</div>
+</div>
+<div style='clear: both;'></div>
+</li>
+<li>
+<div class='item-content'>
+<div class='item-title'><a href='https://mechanical-sympathy.blogspot.fr/2011/09/single-writer-principle.html'>Single Writer Principle</a></div>
+<div class='item-snippet'>When trying to build a highly scalable system the single biggest limitation on scalability is having multiple writers contend for any item o...</div>
+</div>
+<div style='clear: both;'></div>
+</li>
+<li>
+<div class='item-content'>
+<div class='item-thumbnail'>
+<a href='https://mechanical-sympathy.blogspot.fr/2011/07/memory-barriersfences.html' target='_blank'>
+<img alt='' border='0' src='https://2.bp.blogspot.com/-aX64aN8wOTE/Tixd9Y4X-4I/AAAAAAAAAAg/FgM0HWTCbUI/w72-h72-p-k-no-nu/cpu.png'/>
+</a>
+</div>
+<div class='item-title'><a href='https://mechanical-sympathy.blogspot.fr/2011/07/memory-barriersfences.html'>Memory Barriers/Fences</a></div>
+<div class='item-snippet'> In this article I&#39;ll discuss the most fundamental technique in concurrent programming known as memory barriers, or fences, that make th...</div>
+</div>
+<div style='clear: both;'></div>
+</li>
+<li>
+<div class='item-content'>
+<div class='item-title'><a href='https://mechanical-sympathy.blogspot.fr/2012/03/fun-with-my-channels-nirvana-and-azul.html'>Fun with my-Channels Nirvana and Azul Zing</a></div>
+<div class='item-snippet'> Since leaving LMAX I have been neglecting my blog a bit.&#160; This is not because I have not been doing anything interesting.&#160; Quite the opposi...</div>
+</div>
+<div style='clear: both;'></div>
+</li>
+<li>
+<div class='item-content'>
+<div class='item-thumbnail'>
+<a href='https://mechanical-sympathy.blogspot.fr/2011/07/false-sharing.html' target='_blank'>
+<img alt='' border='0' src='//1.bp.blogspot.com/-MYso5dR5ItE/TjOy1Mbr3NI/AAAAAAAAAAk/uLPjSeGhbmg/w72-h72-p-k-no-nu/cache-line.png'/>
+</a>
+</div>
+<div class='item-title'><a href='https://mechanical-sympathy.blogspot.fr/2011/07/false-sharing.html'>False Sharing</a></div>
+<div class='item-snippet'>Memory is stored within the cache system in units know as cache lines.&#160; Cache lines are a power of 2 of contiguous bytes which are typically...</div>
+</div>
+<div style='clear: both;'></div>
+</li>
+</ul>
+<div class='clear'></div>
+<span class='widget-item-control'>
+<span class='item-control blog-admin'>
+<a class='quickedit' href='//www.blogger.com/rearrange?blogID=5560209661389175529&widgetType=PopularPosts&widgetId=PopularPosts1&action=editWidget&sectionId=sidebar-right-1' onclick='return _WidgetManager._PopupConfig(document.getElementById("PopularPosts1"));' target='configPopularPosts1' title='Edit'>
+<img alt='' height='18' src='https://resources.blogblog.com/img/icon18_wrench_allbkg.png' width='18'/>
+</a>
+</span>
+</span>
+<div class='clear'></div>
+</div>
+</div><div class='widget BlogArchive' data-version='1' id='BlogArchive1'>
+<h2>Blog Archive</h2>
+<div class='widget-content'>
+<div id='ArchiveList'>
+<div id='BlogArchive1_ArchiveList'>
+<ul class='hierarchy'>
+<li class='archivedate collapsed'>
+<a class='toggle' href='javascript:void(0)'>
+<span class='zippy'>
+
+        &#9658;&#160;
+      
+</span>
+</a>
+<a class='post-count-link' href='https://mechanical-sympathy.blogspot.fr/2014/'>
+2014
+</a>
+<span class='post-count' dir='ltr'>(1)</span>
+<ul class='hierarchy'>
+<li class='archivedate collapsed'>
+<a class='toggle' href='javascript:void(0)'>
+<span class='zippy'>
+
+        &#9658;&#160;
+      
+</span>
+</a>
+<a class='post-count-link' href='https://mechanical-sympathy.blogspot.fr/2014/05/'>
+May
+</a>
+<span class='post-count' dir='ltr'>(1)</span>
+</li>
+</ul>
+</li>
+</ul>
+<ul class='hierarchy'>
+<li class='archivedate collapsed'>
+<a class='toggle' href='javascript:void(0)'>
+<span class='zippy'>
+
+        &#9658;&#160;
+      
+</span>
+</a>
+<a class='post-count-link' href='https://mechanical-sympathy.blogspot.fr/2013/'>
+2013
+</a>
+<span class='post-count' dir='ltr'>(5)</span>
+<ul class='hierarchy'>
+<li class='archivedate collapsed'>
+<a class='toggle' href='javascript:void(0)'>
+<span class='zippy'>
+
+        &#9658;&#160;
+      
+</span>
+</a>
+<a class='post-count-link' href='https://mechanical-sympathy.blogspot.fr/2013/08/'>
+August
+</a>
+<span class='post-count' dir='ltr'>(1)</span>
+</li>
+</ul>
+<ul class='hierarchy'>
+<li class='archivedate collapsed'>
+<a class='toggle' href='javascript:void(0)'>
+<span class='zippy'>
+
+        &#9658;&#160;
+      
+</span>
+</a>
+<a class='post-count-link' href='https://mechanical-sympathy.blogspot.fr/2013/07/'>
+July
+</a>
+<span class='post-count' dir='ltr'>(1)</span>
+</li>
+</ul>
+<ul class='hierarchy'>
+<li class='archivedate collapsed'>
+<a class='toggle' href='javascript:void(0)'>
+<span class='zippy'>
+
+        &#9658;&#160;
+      
+</span>
+</a>
+<a class='post-count-link' href='https://mechanical-sympathy.blogspot.fr/2013/06/'>
+June
+</a>
+<span class='post-count' dir='ltr'>(1)</span>
+</li>
+</ul>
+<ul class='hierarchy'>
+<li class='archivedate collapsed'>
+<a class='toggle' href='javascript:void(0)'>
+<span class='zippy'>
+
+        &#9658;&#160;
+      
+</span>
+</a>
+<a class='post-count-link' href='https://mechanical-sympathy.blogspot.fr/2013/02/'>
+February
+</a>
+<span class='post-count' dir='ltr'>(1)</span>
+</li>
+</ul>
+<ul class='hierarchy'>
+<li class='archivedate collapsed'>
+<a class='toggle' href='javascript:void(0)'>
+<span class='zippy'>
+
+        &#9658;&#160;
+      
+</span>
+</a>
+<a class='post-count-link' href='https://mechanical-sympathy.blogspot.fr/2013/01/'>
+January
+</a>
+<span class='post-count' dir='ltr'>(1)</span>
+</li>
+</ul>
+</li>
+</ul>
+<ul class='hierarchy'>
+<li class='archivedate expanded'>
+<a class='toggle' href='javascript:void(0)'>
+<span class='zippy toggle-open'>
+
+        &#9660;&#160;
+      
+</span>
+</a>
+<a class='post-count-link' href='https://mechanical-sympathy.blogspot.fr/2012/'>
+2012
+</a>
+<span class='post-count' dir='ltr'>(7)</span>
+<ul class='hierarchy'>
+<li class='archivedate collapsed'>
+<a class='toggle' href='javascript:void(0)'>
+<span class='zippy'>
+
+        &#9658;&#160;
+      
+</span>
+</a>
+<a class='post-count-link' href='https://mechanical-sympathy.blogspot.fr/2012/12/'>
+December
+</a>
+<span class='post-count' dir='ltr'>(1)</span>
+</li>
+</ul>
+<ul class='hierarchy'>
+<li class='archivedate collapsed'>
+<a class='toggle' href='javascript:void(0)'>
+<span class='zippy'>
+
+        &#9658;&#160;
+      
+</span>
+</a>
+<a class='post-count-link' href='https://mechanical-sympathy.blogspot.fr/2012/10/'>
+October
+</a>
+<span class='post-count' dir='ltr'>(1)</span>
+</li>
+</ul>
+<ul class='hierarchy'>
+<li class='archivedate collapsed'>
+<a class='toggle' href='javascript:void(0)'>
+<span class='zippy'>
+
+        &#9658;&#160;
+      
+</span>
+</a>
+<a class='post-count-link' href='https://mechanical-sympathy.blogspot.fr/2012/08/'>
+August
+</a>
+<span class='post-count' dir='ltr'>(1)</span>
+</li>
+</ul>
+<ul class='hierarchy'>
+<li class='archivedate collapsed'>
+<a class='toggle' href='javascript:void(0)'>
+<span class='zippy'>
+
+        &#9658;&#160;
+      
+</span>
+</a>
+<a class='post-count-link' href='https://mechanical-sympathy.blogspot.fr/2012/07/'>
+July
+</a>
+<span class='post-count' dir='ltr'>(1)</span>
+</li>
+</ul>
+<ul class='hierarchy'>
+<li class='archivedate expanded'>
+<a class='toggle' href='javascript:void(0)'>
+<span class='zippy toggle-open'>
+
+        &#9660;&#160;
+      
+</span>
+</a>
+<a class='post-count-link' href='https://mechanical-sympathy.blogspot.fr/2012/05/'>
+May
+</a>
+<span class='post-count' dir='ltr'>(1)</span>
+<ul class='posts'>
+<li><a href='https://mechanical-sympathy.blogspot.fr/2012/05/apply-back-pressure-when-overloaded.html'>Applying Back Pressure When Overloaded</a></li>
+</ul>
+</li>
+</ul>
+<ul class='hierarchy'>
+<li class='archivedate collapsed'>
+<a class='toggle' href='javascript:void(0)'>
+<span class='zippy'>
+
+        &#9658;&#160;
+      
+</span>
+</a>
+<a class='post-count-link' href='https://mechanical-sympathy.blogspot.fr/2012/04/'>
+April
+</a>
+<span class='post-count' dir='ltr'>(1)</span>
+</li>
+</ul>
+<ul class='hierarchy'>
+<li class='archivedate collapsed'>
+<a class='toggle' href='javascript:void(0)'>
+<span class='zippy'>
+
+        &#9658;&#160;
+      
+</span>
+</a>
+<a class='post-count-link' href='https://mechanical-sympathy.blogspot.fr/2012/03/'>
+March
+</a>
+<span class='post-count' dir='ltr'>(1)</span>
+</li>
+</ul>
+</li>
+</ul>
+<ul class='hierarchy'>
+<li class='archivedate collapsed'>
+<a class='toggle' href='javascript:void(0)'>
+<span class='zippy'>
+
+        &#9658;&#160;
+      
+</span>
+</a>
+<a class='post-count-link' href='https://mechanical-sympathy.blogspot.fr/2011/'>
+2011
+</a>
+<span class='post-count' dir='ltr'>(19)</span>
+<ul class='hierarchy'>
+<li class='archivedate collapsed'>
+<a class='toggle' href='javascript:void(0)'>
+<span class='zippy'>
+
+        &#9658;&#160;
+      
+</span>
+</a>
+<a class='post-count-link' href='https://mechanical-sympathy.blogspot.fr/2011/12/'>
+December
+</a>
+<span class='post-count' dir='ltr'>(1)</span>
+</li>
+</ul>
+<ul class='hierarchy'>
+<li class='archivedate collapsed'>
+<a class='toggle' href='javascript:void(0)'>
+<span class='zippy'>
+
+        &#9658;&#160;
+      
+</span>
+</a>
+<a class='post-count-link' href='https://mechanical-sympathy.blogspot.fr/2011/11/'>
+November
+</a>
+<span class='post-count' dir='ltr'>(3)</span>
+</li>
+</ul>
+<ul class='hierarchy'>
+<li class='archivedate collapsed'>
+<a class='toggle' href='javascript:void(0)'>
+<span class='zippy'>
+
+        &#9658;&#160;
+      
+</span>
+</a>
+<a class='post-count-link' href='https://mechanical-sympathy.blogspot.fr/2011/10/'>
+October
+</a>
+<span class='post-count' dir='ltr'>(1)</span>
+</li>
+</ul>
+<ul class='hierarchy'>
+<li class='archivedate collapsed'>
+<a class='toggle' href='javascript:void(0)'>
+<span class='zippy'>
+
+        &#9658;&#160;
+      
+</span>
+</a>
+<a class='post-count-link' href='https://mechanical-sympathy.blogspot.fr/2011/09/'>
+September
+</a>
+<span class='post-count' dir='ltr'>(3)</span>
+</li>
+</ul>
+<ul class='hierarchy'>
+<li class='archivedate collapsed'>
+<a class='toggle' href='javascript:void(0)'>
+<span class='zippy'>
+
+        &#9658;&#160;
+      
+</span>
+</a>
+<a class='post-count-link' href='https://mechanical-sympathy.blogspot.fr/2011/08/'>
+August
+</a>
+<span class='post-count' dir='ltr'>(4)</span>
+</li>
+</ul>
+<ul class='hierarchy'>
+<li class='archivedate collapsed'>
+<a class='toggle' href='javascript:void(0)'>
+<span class='zippy'>
+
+        &#9658;&#160;
+      
+</span>
+</a>
+<a class='post-count-link' href='https://mechanical-sympathy.blogspot.fr/2011/07/'>
+July
+</a>
+<span class='post-count' dir='ltr'>(7)</span>
+</li>
+</ul>
+</li>
+</ul>
+</div>
+</div>
+<div class='clear'></div>
+<span class='widget-item-control'>
+<span class='item-control blog-admin'>
+<a class='quickedit' href='//www.blogger.com/rearrange?blogID=5560209661389175529&widgetType=BlogArchive&widgetId=BlogArchive1&action=editWidget&sectionId=sidebar-right-1' onclick='return _WidgetManager._PopupConfig(document.getElementById("BlogArchive1"));' target='configBlogArchive1' title='Edit'>
+<img alt='' height='18' src='https://resources.blogblog.com/img/icon18_wrench_allbkg.png' width='18'/>
+</a>
+</span>
+</span>
+<div class='clear'></div>
+</div>
+</div><div class='widget Followers' data-version='1' id='Followers1'>
+<h2 class='title'>Followers</h2>
+<div class='widget-content'>
+<div id='Followers1-wrapper'>
+<div style='margin-right:2px;'>
+<div><script type="text/javascript" src="https://apis.google.com/js/plusone.js"></script>
+<div id="followers-iframe-container"></div>
+<script type="text/javascript">
+    window.followersIframe = null;
+    function followersIframeOpen(url) {
+      gapi.load("gapi.iframes", function() {
+        if (gapi.iframes && gapi.iframes.getContext) {
+          window.followersIframe = gapi.iframes.getContext().openChild({
+            url: url,
+            where: document.getElementById("followers-iframe-container"),
+            messageHandlersFilter: gapi.iframes.CROSS_ORIGIN_IFRAMES_FILTER,
+            messageHandlers: {
+              '_ready': function(obj) {
+                window.followersIframe.getIframeEl().height = obj.height;
+              },
+              'reset': function() {
+                window.followersIframe.close();
+                followersIframeOpen("https://www.blogger.com/followers.g?blogID\x3d5560209661389175529\x26colors\x3dCgt0cmFuc3BhcmVudBILdHJhbnNwYXJlbnQaByMyMjIyMjIiByMyMjg4YmIqByNmZmZmZmYyByMwMDAwMDA6ByMyMjIyMjJCByMyMjg4YmJKByM5OTk5OTlSByMyMjg4YmJaC3RyYW5zcGFyZW50\x26pageSize\x3d21\x26postID\x3d4576955837831664544\x26origin\x3dhttps://mechanical-sympathy.blogspot.fr/");
+              },
+              'open': function(url) {
+                window.followersIframe.close();
+                followersIframeOpen(url);
+              },
+              'blogger-ping': function() {
+              }
+            }
+          });
+        }
+      });
+    }
+    followersIframeOpen("https://www.blogger.com/followers.g?blogID\x3d5560209661389175529\x26colors\x3dCgt0cmFuc3BhcmVudBILdHJhbnNwYXJlbnQaByMyMjIyMjIiByMyMjg4YmIqByNmZmZmZmYyByMwMDAwMDA6ByMyMjIyMjJCByMyMjg4YmJKByM5OTk5OTlSByMyMjg4YmJaC3RyYW5zcGFyZW50\x26pageSize\x3d21\x26postID\x3d4576955837831664544\x26origin\x3dhttps://mechanical-sympathy.blogspot.fr/");
+  </script></div>
+</div>
+</div>
+<div class='clear'></div>
+<span class='widget-item-control'>
+<span class='item-control blog-admin'>
+<a class='quickedit' href='//www.blogger.com/rearrange?blogID=5560209661389175529&widgetType=Followers&widgetId=Followers1&action=editWidget&sectionId=sidebar-right-1' onclick='return _WidgetManager._PopupConfig(document.getElementById("Followers1"));' target='configFollowers1' title='Edit'>
+<img alt='' height='18' src='https://resources.blogblog.com/img/icon18_wrench_allbkg.png' width='18'/>
+</a>
+</span>
+</span>
+<div class='clear'></div>
+</div>
+</div></div>
+</aside>
+</div>
+</div>
+</div>
+<div style='clear: both'></div>
+<!-- columns -->
+</div>
+<!-- main -->
+</div>
+</div>
+<div class='main-cap-bottom cap-bottom'>
+<div class='cap-left'></div>
+<div class='cap-right'></div>
+</div>
+</div>
+<footer>
+<div class='footer-outer'>
+<div class='footer-cap-top cap-top'>
+<div class='cap-left'></div>
+<div class='cap-right'></div>
+</div>
+<div class='fauxborder-left footer-fauxborder-left'>
+<div class='fauxborder-right footer-fauxborder-right'></div>
+<div class='region-inner footer-inner'>
+<div class='foot no-items section' id='footer-1'></div>
+<table border='0' cellpadding='0' cellspacing='0' class='section-columns columns-2'>
+<tbody>
+<tr>
+<td class='first columns-cell'>
+<div class='foot no-items section' id='footer-2-1'></div>
+</td>
+<td class='columns-cell'>
+<div class='foot no-items section' id='footer-2-2'></div>
+</td>
+</tr>
+</tbody>
+</table>
+<!-- outside of the include in order to lock Attribution widget -->
+<div class='foot section' id='footer-3'><div class='widget Attribution' data-version='1' id='Attribution1'>
+<div class='widget-content' style='text-align: center;'>
+Simple theme. Powered by <a href='https://www.blogger.com' target='_blank'>Blogger</a>.
+</div>
+<div class='clear'></div>
+<span class='widget-item-control'>
+<span class='item-control blog-admin'>
+<a class='quickedit' href='//www.blogger.com/rearrange?blogID=5560209661389175529&widgetType=Attribution&widgetId=Attribution1&action=editWidget&sectionId=footer-3' onclick='return _WidgetManager._PopupConfig(document.getElementById("Attribution1"));' target='configAttribution1' title='Edit'>
+<img alt='' height='18' src='https://resources.blogblog.com/img/icon18_wrench_allbkg.png' width='18'/>
+</a>
+</span>
+</span>
+<div class='clear'></div>
+</div></div>
+</div>
+</div>
+<div class='footer-cap-bottom cap-bottom'>
+<div class='cap-left'></div>
+<div class='cap-right'></div>
+</div>
+</div>
+</footer>
+<!-- content -->
+</div>
+</div>
+<div class='content-cap-bottom cap-bottom'>
+<div class='cap-left'></div>
+<div class='cap-right'></div>
+</div>
+</div>
+</div>
+<script type='text/javascript'>
+    window.setTimeout(function() {
+        document.body.className = document.body.className.replace('loading', '');
+      }, 10);
+  </script>
+<script src='https://apis.google.com/js/plusone.js' type='text/javascript'></script>
+<!--Il est de votre responsabilit\xe9 d\x27informer vos visiteurs \xe0 propos des cookies utilis\xe9s sur votre blog. Rendez-vous sur http://www.blogger.com/go/cookiechoices pour en savoir plus.-->
+<script defer='' src='/js/cookiechoices.js'></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function(event) {
+      window.cookieChoices && cookieChoices.showCookieConsentBar && cookieChoices.showCookieConsentBar(
+          (window.cookieOptions && cookieOptions.msg) || 'Ce site utilise des cookies provenant de Google afin de fournir ses services, personnaliser les annonces et analyser le trafic. Les informations relatives \xe0 votre utilisation du site sont partag\xe9es avec Google. En acceptant ce site, vous acceptez l\x27utilisation des cookies.',
+          (window.cookieOptions && cookieOptions.close) || 'OK\xa0!',
+          (window.cookieOptions && cookieOptions.learn) || 'En savoir plus',
+          (window.cookieOptions && cookieOptions.link) || 'https://www.blogger.com/go/blogspot-cookies');
+    });
+  </script>
+
+<script type="text/javascript" src="https://www.blogger.com/static/v1/widgets/3953819307-widgets.js"></script>
+<script type='text/javascript'>
+window['__wavt'] = 'AOuZoY4HywBQRbRed8XAa1Gj_kgLumigJA:1518694038771';_WidgetManager._Init('//www.blogger.com/rearrange?blogID\x3d5560209661389175529','//mechanical-sympathy.blogspot.fr/2012/05/apply-back-pressure-when-overloaded.html','5560209661389175529');
+_WidgetManager._SetDataContext([{'name': 'blog', 'data': {'blogId': '5560209661389175529', 'title': 'Mechanical Sympathy', 'url': 'https://mechanical-sympathy.blogspot.fr/2012/05/apply-back-pressure-when-overloaded.html', 'canonicalUrl': 'https://mechanical-sympathy.blogspot.com/2012/05/apply-back-pressure-when-overloaded.html', 'homepageUrl': 'https://mechanical-sympathy.blogspot.fr/', 'searchUrl': 'https://mechanical-sympathy.blogspot.fr/search', 'canonicalHomepageUrl': 'https://mechanical-sympathy.blogspot.com/', 'blogspotFaviconUrl': 'https://mechanical-sympathy.blogspot.fr/favicon.ico', 'bloggerUrl': 'https://www.blogger.com', 'hasCustomDomain': false, 'httpsEnabled': true, 'enabledCommentProfileImages': true, 'gPlusViewType': 'FILTERED_POSTMOD', 'adultContent': false, 'analyticsAccountNumber': '', 'encoding': 'UTF-8', 'locale': 'en-GB', 'localeUnderscoreDelimited': 'en_gb', 'languageDirection': 'ltr', 'isPrivate': false, 'isMobile': false, 'isMobileRequest': false, 'mobileClass': '', 'isPrivateBlog': false, 'feedLinks': '\x3clink rel\x3d\x22alternate\x22 type\x3d\x22application/atom+xml\x22 title\x3d\x22Mechanical Sympathy - Atom\x22 href\x3d\x22https://mechanical-sympathy.blogspot.com/feeds/posts/default\x22 /\x3e\n\x3clink rel\x3d\x22alternate\x22 type\x3d\x22application/rss+xml\x22 title\x3d\x22Mechanical Sympathy - RSS\x22 href\x3d\x22https://mechanical-sympathy.blogspot.com/feeds/posts/default?alt\x3drss\x22 /\x3e\n\x3clink rel\x3d\x22service.post\x22 type\x3d\x22application/atom+xml\x22 title\x3d\x22Mechanical Sympathy - Atom\x22 href\x3d\x22https://www.blogger.com/feeds/5560209661389175529/posts/default\x22 /\x3e\n\n\x3clink rel\x3d\x22alternate\x22 type\x3d\x22application/atom+xml\x22 title\x3d\x22Mechanical Sympathy - Atom\x22 href\x3d\x22https://mechanical-sympathy.blogspot.com/feeds/4576955837831664544/comments/default\x22 /\x3e\n', 'meTag': '', 'openIdOpTag': '', 'adsenseHostId': 'ca-host-pub-1556223355139109', 'adsenseHasAds': false, 'ieCssRetrofitLinks': '\x3c!--[if IE]\x3e\x3cscript type\x3d\x22text/javascript\x22 src\x3d\x22https://www.blogger.com/static/v1/jsbin/3061962209-ieretrofit.js\x22\x3e\x3c/script\x3e\n\x3c![endif]--\x3e', 'view': '', 'dynamicViewsCommentsSrc': '//www.blogblog.com/dynamicviews/4224c15c4e7c9321/js/comments.js', 'dynamicViewsScriptSrc': '//www.blogblog.com/dynamicviews/7a0e97af10b99e24', 'plusOneApiSrc': 'https://apis.google.com/js/plusone.js', 'sharing': {'platforms': [{'name': 'Get link', 'key': 'link', 'shareMessage': 'Get link', 'target': ''}, {'name': 'Facebook', 'key': 'facebook', 'shareMessage': 'Share to Facebook', 'target': 'facebook'}, {'name': 'BlogThis!', 'key': 'blogThis', 'shareMessage': 'BlogThis!', 'target': 'blog'}, {'name': 'Twitter', 'key': 'twitter', 'shareMessage': 'Share to Twitter', 'target': 'twitter'}, {'name': 'Pinterest', 'key': 'pinterest', 'shareMessage': 'Share to Pinterest', 'target': 'pinterest'}, {'name': 'Google+', 'key': 'googlePlus', 'shareMessage': 'Share to Google+', 'target': 'googleplus'}, {'name': 'Email', 'key': 'email', 'shareMessage': 'Email', 'target': 'email'}], 'googlePlusShareButtonWidth': 300, 'googlePlusBootstrap': '\x3cscript type\x3d\x22text/javascript\x22\x3ewindow.___gcfg \x3d {\x27lang\x27: \x27en_GB\x27};\x3c/script\x3e'}, 'hasCustomJumpLinkMessage': false, 'jumpLinkMessage': 'Read more', 'pageType': 'item', 'postId': '4576955837831664544', 'postImageThumbnailUrl': 'http://4.bp.blogspot.com/-H5j78ebce9w/T7erBJ8X-gI/AAAAAAAAADM/F_ak3B9Wdl0/s72-c/back-pressure.png', 'postImageUrl': 'http://4.bp.blogspot.com/-H5j78ebce9w/T7erBJ8X-gI/AAAAAAAAADM/F_ak3B9Wdl0/s1600/back-pressure.png', 'pageName': 'Applying Back Pressure When Overloaded', 'pageTitle': 'Mechanical Sympathy: Applying Back Pressure When Overloaded'}}, {'name': 'features', 'data': {'lazy_images': 'false', 'unsupported_browser_message': 'false', 'sharing_get_link_dialog': 'true', 'sharing_native': 'false'}}, {'name': 'messages', 'data': {'edit': 'Edit', 'linkCopiedToClipboard': 'Link copied to clipboard', 'ok': 'Ok', 'postLink': 'Post link'}}, {'name': 'template', 'data': {'name': 'custom', 'localizedName': 'Custom', 'isResponsive': false, 'isAlternateRendering': false, 'isCustom': true, 'variant': 'pale', 'variantId': 'pale'}}, {'name': 'view', 'data': {'classic': {'name': 'classic', 'url': '?view\x3dclassic'}, 'flipcard': {'name': 'flipcard', 'url': '?view\x3dflipcard'}, 'magazine': {'name': 'magazine', 'url': '?view\x3dmagazine'}, 'mosaic': {'name': 'mosaic', 'url': '?view\x3dmosaic'}, 'sidebar': {'name': 'sidebar', 'url': '?view\x3dsidebar'}, 'snapshot': {'name': 'snapshot', 'url': '?view\x3dsnapshot'}, 'timeslide': {'name': 'timeslide', 'url': '?view\x3dtimeslide'}, 'isMobile': false, 'title': 'Applying Back Pressure When Overloaded', 'description': ' How should a system respond when under sustained load?&#160; Should it keep accepting requests until its response times follow the deadly hockey...', 'featuredImage': '//4.bp.blogspot.com/-H5j78ebce9w/T7erBJ8X-gI/AAAAAAAAADM/F_ak3B9Wdl0/s1600/back-pressure.png', 'url': 'https://mechanical-sympathy.blogspot.fr/2012/05/apply-back-pressure-when-overloaded.html', 'type': 'item', 'isSingleItem': true, 'isMultipleItems': false, 'isError': false, 'isPage': false, 'isPost': true, 'isHomepage': false, 'isArchive': false, 'isLabelSearch': false, 'postId': 4576955837831664544}}]);
+_WidgetManager._RegisterWidget('_NavbarView', new _WidgetInfo('Navbar1', 'navbar', null, document.getElementById('Navbar1'), {}, 'displayModeFull'));
+_WidgetManager._RegisterWidget('_HeaderView', new _WidgetInfo('Header1', 'header', null, document.getElementById('Header1'), {}, 'displayModeFull'));
+_WidgetManager._RegisterWidget('_BlogView', new _WidgetInfo('Blog1', 'main', null, document.getElementById('Blog1'), {'cmtInteractionsEnabled': false, 'useNgc': false, 'lightboxEnabled': true, 'lightboxModuleUrl': 'https://www.blogger.com/static/v1/jsbin/760749880-lbx__en_gb.js', 'lightboxCssUrl': 'https://www.blogger.com/static/v1/v-css/368954415-lightbox_bundle.css'}, 'displayModeFull'));
+_WidgetManager._RegisterWidget('_BlogSearchView', new _WidgetInfo('BlogSearch1', 'sidebar-right-1', null, document.getElementById('BlogSearch1'), {}, 'displayModeFull'));
+_WidgetManager._RegisterWidget('_TextView', new _WidgetInfo('Text2', 'sidebar-right-1', null, document.getElementById('Text2'), {}, 'displayModeFull'));
+_WidgetManager._RegisterWidget('_ProfileView', new _WidgetInfo('Profile1', 'sidebar-right-1', null, document.getElementById('Profile1'), {}, 'displayModeFull'));
+_WidgetManager._RegisterWidget('_TextView', new _WidgetInfo('Text1', 'sidebar-right-1', null, document.getElementById('Text1'), {}, 'displayModeFull'));
+_WidgetManager._RegisterWidget('_LinkListView', new _WidgetInfo('LinkList1', 'sidebar-right-1', null, document.getElementById('LinkList1'), {}, 'displayModeFull'));
+_WidgetManager._RegisterWidget('_PopularPostsView', new _WidgetInfo('PopularPosts1', 'sidebar-right-1', null, document.getElementById('PopularPosts1'), {}, 'displayModeFull'));
+_WidgetManager._RegisterWidget('_BlogArchiveView', new _WidgetInfo('BlogArchive1', 'sidebar-right-1', null, document.getElementById('BlogArchive1'), {'languageDirection': 'ltr', 'loadingMessage': 'Loading\x26hellip;'}, 'displayModeFull'));
+_WidgetManager._RegisterWidget('_FollowersView', new _WidgetInfo('Followers1', 'sidebar-right-1', null, document.getElementById('Followers1'), {}, 'displayModeFull'));
+_WidgetManager._RegisterWidget('_AttributionView', new _WidgetInfo('Attribution1', 'footer-3', null, document.getElementById('Attribution1'), {}, 'displayModeFull'));
+</script>
+</body>
+</html>

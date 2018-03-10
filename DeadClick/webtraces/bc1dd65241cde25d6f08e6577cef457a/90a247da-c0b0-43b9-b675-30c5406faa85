@@ -1,0 +1,41 @@
+// Foundation JavaScript
+// Documentation can be found at: http://foundation.zurb.com/docs
+$(document).foundation();
+
+$(document).ready(function(){
+
+	$(window).resize(function(){
+		$(scene).css({height:$(window).outerHeight(),width:$(window).outerWidth()});
+	});
+	$(window).scroll(function() {
+		$('#steps').each(function(){
+			var imagePos = $(this).offset().top;
+
+			var topOfWindow = $(window).scrollTop();
+			if (imagePos < topOfWindow+400) {
+				$(this).addClass("animate");
+			}
+		});
+	});
+	$('#work_in_progress').parallaxbg("50%", 0.05);
+	$('#work_in_progress').find('.row').parallaxbg("50%", 0.2);
+
+	$('#scene').each(function(i,scene){
+		$(scene).css({height:$(window).outerHeight(),width:$(window).outerWidth()});
+		$(scene).parallax({limitX: false});
+	});
+
+	$('#redactor').each(function(i,red){
+		$(red).redactor(
+			{
+				imageUpload: '/manager/upload',
+				uploadFields: {
+					'timestamp': '#timestamp'
+				},
+				minHeight: 400
+			}
+	    );
+	});
+	$('.slick').slick();
+
+});

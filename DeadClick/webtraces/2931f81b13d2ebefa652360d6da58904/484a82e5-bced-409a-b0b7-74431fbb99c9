@@ -1,0 +1,162 @@
+<!doctype html>
+<html>
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="ad.size" content="width=160,height=600">
+    <title>160x600</title>
+    <link rel="stylesheet" href="style.css" />
+    <script src="loader.js"></script>
+
+    <script>
+    window.onload = function() {
+        loadScripts([
+            'https://s0.2mdn.net/ads/studio/cached_libs/timelinelite_1.19.0_13e3bd0e510d63fd5e5ef9bf9dac7017_min.js',
+            'https://s0.2mdn.net/ads/studio/cached_libs/tweenlite_1.19.0_422f021fad4c20f20cf3640a06ac39e9_min.js',
+            'https://s0.2mdn.net/ads/studio/cached_libs/cssplugin_1.19.0_cfbff7d208ccfdbe176b9855af1eb1fa_min.js',
+            'https://s0.2mdn.net/ads/studio/cached_libs/easepack_1.19.0_be87087c08fcec83e2b64c70571fe91f_min.js'
+        ], loadAssets);
+    };
+
+    function loadAssets() {
+        preloadImages([
+            'bg.png',
+            'cta.png',
+            'logo.png',
+            'txt1.png',
+            'txt2.png',
+            'txt3.png',
+            'bg1.jpg',
+            'bg2.jpg',
+            'bg3.jpg',
+            'bg3-light.jpg',
+        ], timeline);
+    }
+
+    function timeline() {
+
+        var masterTimeline = new TimelineLite();
+
+        var timers = 0;
+        masterTimeline.add(TweenLite.to('#bg1', 1, { autoAlpha: 1, ease: Power0.easeNone }), timers);
+        timers += 1;
+        masterTimeline.add(TweenLite.to('#bg2', 0.001, { autoAlpha: 1 }), timers);
+        timers += 1;
+        masterTimeline.add(TweenLite.to(['#bg1'], 0.5, { autoAlpha: 0, ease: Power0.easeNone }), timers);
+
+        timers += 0.5;
+        masterTimeline.add(TweenLite.to('#bg3', 0.001, { autoAlpha: 1 }), timers);
+        timers += 2;
+        masterTimeline.add(TweenLite.to(['#bg2'], 0.5, { autoAlpha: 0, ease: Power0.easeNone, onComplete:function(){
+            flashing();
+        }   }), timers);
+
+        timers += 0.25;
+        masterTimeline.add(TweenLite.to('#txt1', 0.5, { scale:1, autoAlpha: 1, ease: Power0.easeNone }), timers);
+        timers += 0.35;
+        masterTimeline.add(TweenLite.to('#txt2', 0.5, { scale:1, autoAlpha: 1, ease: Power0.easeNone }), timers);
+        timers += 0.5;
+        masterTimeline.add(TweenLite.to('#txt3', 0.7, { scale:1, autoAlpha: 1, ease: Power0.easeNone }), timers);
+
+        timers += 2;
+        masterTimeline.add(TweenLite.to('#cta', 1, { scale:1.05, ease: Power0.easeNone }), timers);
+        timers += 0.75;
+        masterTimeline.add(TweenLite.to('#cta', 0.75, { scale:1, ease: Power0.easeNone }), timers);
+        timers += 0.75;
+        masterTimeline.add(TweenLite.to('#cta', 1, { scale:1.05, ease: Power0.easeNone }), timers);
+        timers += 0.75;
+        masterTimeline.add(TweenLite.to('#cta', 0.75, { scale:1, ease: Power0.easeNone }), timers);
+
+        // masterTimeline.seek(8);
+    }
+
+    function flashing(){
+        TweenLite.to('#bg3-light', 1.5, { autoAlpha: 1, ease: Power0.easeNone, delay: 0.5 });
+        TweenLite.to('#bg3-light', 1.5, { autoAlpha: 0, ease: Power0.easeNone, delay: 1.5 });
+        TweenLite.to('#bg3-light', 1.5, { autoAlpha: 1, ease: Power0.easeNone, delay: 2.5 });
+        TweenLite.to('#bg3-light', 1.5, { autoAlpha: 0, ease: Power0.easeNone, delay: 3.5 });
+        TweenLite.to('#bg3-light', 1.5, { autoAlpha: 1, ease: Power0.easeNone, delay: 4.5 });
+        TweenLite.to('#bg3-light', 1.5, { autoAlpha: 0, ease: Power0.easeNone, delay: 5.5 });
+        TweenLite.to('#bg3-light', 1.5, { autoAlpha: 1, ease: Power0.easeNone, delay: 6.5 });
+        TweenLite.to('#bg3-light', 1.5, { autoAlpha: 0, ease: Power0.easeNone, delay: 7.5 });
+        TweenLite.to('#bg3-light', 1.5, { autoAlpha: 1, ease: Power0.easeNone, delay: 8.5 });
+        TweenLite.to('#bg3-light', 1.5, { autoAlpha: 0, ease: Power0.easeNone, delay: 9.5 });
+    }
+    </script>
+    <script type="text/javascript">
+        var clickTag = "http://www.google.com"; 
+    </script>
+<script type="text/javascript">
+    
+      (function() {
+        var relegateNavigation = '';
+        var handleClickTagMessage = function(e) {
+          try {
+            var eventData = JSON.parse(e.data);
+          } catch (err) {
+            return;
+          }
+          if (eventData.isInitClickTag) {
+            if (eventData.clickTags) {
+              for (var i = 0; i < eventData.clickTags.length; i++) {
+                var clkTag = eventData.clickTags[i];
+                window[clkTag.name] = clkTag.url;
+              }
+            } else if (eventData.clickTag) {
+              window.clickTag = eventData.clickTag;
+            }
+            relegateNavigation = eventData.relegateNavigation;
+          }
+        };
+
+        if (open.call) {
+          window.open = function(open) {
+            return function(url, name, features) {
+              if (relegateNavigation === 'parent') {
+                var message = {'clickTag': url, 'isPostClickTag': true};
+                parent.postMessage(JSON.stringify(message), '*');
+              } else {
+                var args = [url, name];
+                if (features) {
+                  args.push(features);
+                }
+                open.apply(window, args);
+              }
+            };
+          }(window.open);
+        }
+
+        if (window.addEventListener) {
+          window.addEventListener(
+              'message', handleClickTagMessage, false);
+        } else {
+          window.attachEvent('onmessage', handleClickTagMessage);
+        }
+      })();
+    
+  </script></head>
+
+<body>
+    <div id="container">
+        <a href="javascript:window.open(window.clickTag)">
+            <div id="grey-bg" class="grey-bg"></div>
+
+            <img id="bg3" class="screen hidden" src="bg3.jpg">
+            <img id="bg3-light" class="screen hidden" src="bg3-light.jpg">
+            <img id="txt1" class="hidden txt1" src="txt1.png">
+            <img id="txt2" class="hidden txt2" src="txt2.png">
+            <img id="txt3" class="hidden txt3" src="txt3.png">
+
+            <img id="bg2" class="screen hidden" src="bg2.jpg">
+
+            <img id="bg1" class="screen hidden" src="bg1.jpg">
+
+            <img id="bg" src="bg.png">
+            <img id="logo" src="logo.png">
+            <img id="cta" class="cta" src="cta.png">
+            <div id="border"></div>
+        </a>
+    </div>
+</body>
+
+</html>

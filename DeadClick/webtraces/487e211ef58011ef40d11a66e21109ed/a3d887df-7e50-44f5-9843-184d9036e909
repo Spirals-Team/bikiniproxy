@@ -1,0 +1,39 @@
+$(document).ready(function () {
+    $("#search-container").find(".search").autocomplete({
+        source: function (request, response) {
+            $.ajax({
+                url: "/Search/AutoComplete",
+                dataType: "json",
+                data: {
+                    term: request.term
+                },
+                success: function (data) {
+                    response($.map(data, function (item) {
+                        return {
+                            label: item.DisplayText,
+                            value: item.Value + "|" + item.ProductID,
+                            description: item.Description
+                        }
+                    }));
+                }
+            });
+        },
+        minLength: 2,
+        select: function (event, ui) {
+            event.preventDefault();
+            var id = ui.item.value.split("|")[0];
+            var hash = "";
+            if (ui.item.value.split("|")[1] != "0") {
+                hash = "#" + ui.item.value.split("|")[1]
+            }
+            window.location = "/Catalogue/Category/" + id + hash;
+            this.value = ui.item.description;
+        },
+        open: function () {
+            $(this).removeClass("ui-corner-all").addClass("ui-corner-top");
+        },
+        close: function () {
+            $(this).removeClass("ui-corner-top").addClass("ui-corner-all");
+        }
+    });
+});

@@ -1,0 +1,123 @@
+//Universal Window Function Type "yes" or "no" for scrollBar
+  function flexWin(aU,aS,aW,aH,aN,aO,aX,aY,aC){
+   var wN = aN ? aN : "myWin" + nocacheRandom();
+   var oV = aO == "all" ? 1 : 0;
+   var oS = "history="+oV+",toolbar="+oV+",location="+oV+",directories="+oV+",status="+oV+",menubar="+oV+",resizable="+oV;
+   var wO = aO != "all" ? aO : oS;
+   var wW = aW ? aW : 800;wO += ",width=" + wW;
+   var wH = aH ? aH : 600;wO += ",height=" + wH;
+   var sB = ",scrollbars="+aS;wO+=sB;
+   var wX = aX ? aX :(screen.availWidth-wW)/2;wO+=",left="+wX+",screenX="+wX;
+   var wY = aY ? aY :((screen.availHeight-wH)/2)-40;wO+=",top="+wY+",screenY="+wY;
+   window.open(aU,wN,wO);
+   aC ? window.close():"";
+  }
+
+//Universal image swapfunction
+function rollover(aIN, aIS, aDA){var dA = "";if(document.layers && aDA){for( var i = 0; i < aDA.length; i++ ){dA += 'document.' + aDA[i] + '.';}eval(dA + 'document.' + aIN + '.src ="' + aIS + '";');return true;}else{document[aIN].src = aIS;}}
+
+
+//Universal function to take user to a page in main window
+function targetMainWindow(aU){if(window.blur){self.blur();}if (window.opener.closed){window.open(aU,"newWin");}else{window.opener.location = aU;}}
+
+//Universal function for no cache
+function nocacheRandom(){var axel = Math.random() + "";var ord = axel * 1000000000000000000;return ord;}
+
+// generate random number within range passed in
+function generateRandomNumber( argRange ) {return 1 + Math.round( Math.random() * ( argRange - 1 ) );}
+
+//Universal function to get parameter from url string
+function getParameter(aP){var qS = new String(location.search.substring(1,location.search.length));var p = qS.split("&");var val = "";if(aP){for(i=0;i<p.length;i++){if(p[i].split( "=" )[0] == aP){val = p[i].split( "=" )[1];}}return val;}
+}
+//Universal function to Print Page in all browsers including IE 4
+var da = (document.all) ? 1 : 0;var pr = (window.print) ? 1 : 0;var mac = (navigator.userAgent.indexOf("Mac") != -1);
+
+// Code for Flash tracking on sites prior to 3.7.05
+function flashTracking(lid, pos, argPN){}
+
+// Code for Flash tracking on sites after to 8.01.07
+function linkTrack(flashLPOS, flashName) {}
+function pageTrack(flashPN, flashMLC) {}
+
+// Flash link tracking code
+function flashLinkTracking(argPN, argMLC, argLid, argLpos, argHEC){}
+
+// Flash page view tracking
+function flashPageTracking(argPN, argMLC, argGP){}
+
+// enlarge image - shows hidden div and centers div in browser window
+function enlargeImg(divID) {
+  winW = getW(divID)/2;
+  winH = getH(divID)/2;
+  
+  if (document.documentElement && document.documentElement.scrollTop) {
+    scrollX = document.documentElement.scrollLeft;
+    scrollY = document.documentElement.scrollTop;
+    } else if (document.body){
+    scrollX = document.body.scrollLeft;
+    scrollY = document.body.scrollTop;
+      } else {
+      scrollX = window.pageXOffset;
+      scrollY = window.pageYOffset;
+  }
+  
+  this.pgX = document.getElementsByTagName('html').item(0).clientWidth||document.getElementsByTagName('html').item(0).offsetWidth||document.body.offsetWidth||innerWidth;
+	this.pgY = document.getElementsByTagName('html').item(0).clientHeight||document.getElementsByTagName('html').item(0).offsetHeight||document.body.offsetHeight||innerHeight;
+  this.pgX2 = parseInt(this.pgX/2-winW+scrollX)||0;
+	this.pgY2 = parseInt(this.pgY/2-winH+scrollY)||0;
+  
+  if (b.mac && b.safari) {
+    setX(divID, pgX2+'px');
+    setY(divID, pgY2-scrollY+'px');
+    } else {
+      setX(divID, pgX2+'px');
+      setY(divID, pgY2+'px');
+  }
+  showE(divID);
+}
+
+function getMSRP(argVehicle, argModel) {
+    if( argModel!="") {
+        for( i=0; i<models.length; i++ ) {
+            if( models[i].vehicle == argVehicle && models[i].model == argModel && models[i].msrp != "" ) {
+
+                if (models[i].is_reveal)
+                    return "Pricing Available Later This Year";
+
+                return 'MSRP* starting at: $' + models[i].msrp; // do any additional formatting here.
+            }
+        }
+        return "Please see your dealer for pricing.";
+    } else {
+        var start=null, end=null, i=0;
+
+        for( i=0; i<models.length; i++ ) {
+            if( models[i].vehicle == argVehicle ) {
+                if (start==null) {
+                    start = i;
+                } else {
+                    end = i;
+                }
+            }
+        }
+        if (models[start].is_reveal)
+            return "Pricing Available Later This Year";
+
+        if (models[start].msrp == ""){
+            return "Pricing available soon.";
+        }
+        if( start != end ) {
+            return "MSRP* starting at: $" + models[start].msrp;
+        } else {
+            return "Pricing available soon.";
+        }
+    }
+}
+
+
+//function to get msrp ONLY for model
+function getMSRPonly(aMI){for( i=0; i<models.length; i++ ){if(models[i].id == aMI){return  models[i].msrp;}}return "";}
+
+
+//function to get starting @ price for family
+function getStartingAtPrice(aV){for(i=0; i<models.length; i++){if(models[i].vehicle == aV){if(models[i].msrp == ""){return "";}else{return 'MSRP* starting at: $' + models[i].msrp;}}}}

@@ -1,0 +1,687 @@
+/* START js required for change Logo Dialog */
+$jq(document).ready(function(){
+    var changeLogoDialog = new $L.DialogManager({
+                                    'id':'changeLogoDialog',
+                                    'width':630,
+                                    'position':['center', 155]
+                                });
+    $L.add('logoUploadSuccess', function(file, server_data, received_response){
+        var data = eval( '(' + server_data + ')' );
+        $jq("#logo_save_changes").prop("disabled", false);
+        $jq("#displayLogo").empty();
+	$jq("#displayLogo").show();
+        $jq('#deleteImageLogoButton').hide();
+        $jq("#displayLogo").addClass("displayLogo");
+        $jq("#displayLogo").append("<img src=\""+data.previewLogoUrl+"?q="+Math.random()+"\"  />");
+    });
+
+    $jq("#inputChangeLogoDialog").makeAsyncUploader({
+        upload_url: LULU_PROXY_URL+"upload/logo/",
+        flash_url: MEDIA_URL+"js/jquery/plugins/async_upload/swfupload.swf",
+        button_image_url: MEDIA_URL+"images/swfuploader_btn.png",
+        upload_success_handler: $L.logoUploadSuccess,
+        button_text: "<font face='Arial' size='13pt'>"+SWFUPLOAD_BUTTON_TEXT+"</font>",
+        file_types : "*.jpg; *.jpeg; *.png; *.gif;"
+    });
+    $L.add("showChangeLogoDialog", function(){
+        changeLogoDialog.close();
+        changeLogoDialog.open();
+    });
+    $L.add("closeChangeLogoDialog", function(){
+        changeLogoDialog.close();
+        $jq('#updateLogoError').empty();
+    });
+    $jq('#deleteImageLogoButton').click(function(){
+        $jq('#displayLogo').fadeOut();
+        $jq('#deleteImageLogoButton').hide();
+        $jq("#logo_save_changes").prop("disabled", false);
+    });
+    $L.add("errorUpdateLogo", function(XMLHttpRequest, textStatus, errorThrown){
+        $L.showMessage('updateLogoError', editLogoAjaxFailureMessage, 'error');
+        $L.hideAjaxLoader('save_logo_ajax_loader');
+        $jq("#logo_save_changes").css('display', 'inline');
+    });
+    $L.add("saveLogo", function(){
+        var ajaxLoader = new $L.AjaxLoader('save_logo_ajax_loader', MEDIA_URL+"images/ajax-loader.gif", ajaxLoaderMessage);
+        $jq("#logo_save_changes").css('display','none');
+        ajaxLoader.show();
+        var postUrl = LULU_PROXY_URL+"update/logo/";
+        var deleteImage = ($jq('#displayLogo').css('display') === "none");
+        if ( deleteImage ){
+            postUrl += "remove/"
+        }
+        $jq.ajax({
+            url: postUrl,
+            type: "POST",
+            success: $L.reload,
+            error: $L.errorUpdateLogo
+        });
+    });
+});
+/* END js required for change LOGO */
+
+/* START js required for changing Theme */
+$jq(document).ready(function(){
+    var changeThemeDialog = new $L.DialogManager({
+                                    'id':'changeThemeDialog',
+                                    'width':820,
+                                    'position':['center', 155]
+                                });
+    $L.add('resetTheme',function(){
+        $jq('.allThemes input:radio:checked').prop('checked',false).parent().removeClass('selected');
+        $jq('#'+CURRENT_THEME+'ThemeRadio').prop('checked',true).parent().addClass('selected');
+        // fix for JQuery.removeClass() function
+        $jq('body')[0].className = '';
+        $jq('body').addClass(CURRENT_THEME);
+    });
+    $L.add("showChangeThemeDialog", function(){
+        $L.closeThemeHideDialog();
+        changeThemeDialog.close();
+        changeThemeDialog.open();
+    });
+    $L.add("closeChangeThemeDialog", function(){
+        changeThemeDialog.close();
+    });
+    $L.add("cancelChangeThemeDialog", function(){
+        $L.resetTheme();
+        $L.closeChangeThemeDialog();
+    });
+    $jq('.allThemes .themeSelector').click(function(){
+        $jq('.allThemes .themeSelector.selected').removeClass('selected');
+        $jq(this).addClass('selected');
+        var theme = $jq(this).find('input:radio[name="themeSelected"]').prop('checked',true).val();
+        // fix for JQuery.removeClass() function
+        $jq('body')[0].className = '';
+        $jq('body').addClass(theme);
+    });
+    $jq("#themeSelectorForm").submit(function(){
+        var ajaxLoader = new $L.AjaxLoader('edit_theme_ajax_loader', MEDIA_URL+"images/ajax-loader.gif", ajaxLoaderMessage);
+        $jq("#theme_save_changes").hide('fast');
+        ajaxLoader.show();
+    });
+    $L.add("closeThemeHideDialog", function(){
+        $jq("#theme_hide_dialog").hide('fast');
+        $jq("#theme_hide_dialog").css('display','none');
+    });
+    $L.add("cancelThemeHideDialog", function(){
+        $L.resetTheme();
+        $L.closeThemeHideDialog();
+    });
+    $L.add("showThemeHideDialog", function(){
+        $jq("#theme_hide_dialog").show('fast');
+    });
+    $jq("#hide_theme_dialog").click(function(){
+        $L.closeChangeThemeDialog();
+        $L.showThemeHideDialog();
+    });
+    $jq("#show_theme_dialog").click(function(){
+        $L.showChangeThemeDialog();
+        $L.closeThemeHideDialog();
+    });
+    $jq("#theme_save_changes_hd").click(function(){
+        var ajaxLoader = new $L.AjaxLoader('edit_theme_ajax_loader_hd', MEDIA_URL+"images/ajax-loader.gif", ajaxLoaderMessage);
+        $jq("#theme_save_changes_hd").hide('fast');
+        ajaxLoader.show();
+        $jq("#themeSelectorForm").submit();
+    });
+});
+/* END js required for changing Theme */
+
+/* START js required for changing Layout */
+$jq(document).ready(function(){
+    var changeLayoutDialog = new $L.DialogManager({
+                                    'id':'changeLayoutDialog',
+                                    'width':850,
+                                    'position':['center', 155]
+                                });
+    $L.add("showChangeLayoutDialog", function(){
+        changeLayoutDialog.close();
+        changeLayoutDialog.open();
+    });
+
+    $L.add("closeChangeLayoutDialog", function(){
+            changeLayoutDialog.close();
+    });
+   
+   $jq('#changeLayoutDialog .layoutAlignment').click(function(){
+        var productAlignment = $jq(this).find('input:radio[name="productAlignment"]').prop('checked',true).val();
+        if ( productAlignment == "left" ) {
+            $jq('#productAlignmentRight').hide();
+            $jq('#productAlignmentLeft').show();
+            $jq('#productAlignmentLeft .layoutList').html($jq('#productAlignmentRight .layoutList').html());
+            var selectedSortOrderRight = $jq('#productAlignmentRight .layoutEditPageAreaProductContent #sortOrder option:selected').val();
+            $jq('#productAlignmentLeft .layoutEditPageAreaProductContent #sortOrder option:selected').prop('selected', false);
+            $jq('#productAlignmentLeft .layoutEditPageAreaProductContent #sortOrder option[value='+selectedSortOrderRight+']').prop('selected',true);
+
+            $jq('#smallProductAlignmentLeft').addClass('selected');
+            $jq('#smallProductAlignmentRight').removeClass('selected');
+        } else if ( productAlignment == "right" ) {
+            $jq('#productAlignmentLeft').hide();
+            $jq('#productAlignmentRight').show();
+            $jq('#productAlignmentRight .layoutList').html($jq('#productAlignmentLeft .layoutList').html());
+            var selectedSortOrderLeft = $jq('#productAlignmentLeft .layoutEditPageAreaProductContent #sortOrder option:selected').val();
+            $jq('#productAlignmentRight .layoutEditPageAreaProductContent #sortOrder option:selected').prop('selected', false);
+            $jq('#productAlignmentRight .layoutEditPageAreaProductContent #sortOrder option[value='+selectedSortOrderLeft+']').prop('selected',true);
+
+            $jq('#smallProductAlignmentRight').addClass('selected');
+            $jq('#smallProductAlignmentLeft').removeClass('selected');
+        }
+    });
+
+    $jq(".layoutList").sortable({
+          handle : '.layoutEditModuleUnit'
+    });
+
+    $L.add("successChangeLayout", function(data, textStatus){
+
+        if ( data['success'] != true ){
+            for (var param in data['errors']){
+                //XXX:Right now this for loop would  lead to showing only the
+                //last message in data['errors']. We dont have infra for showing
+                //multiple errors at the same time.
+                $L.showMessage('changeLayoutError', param + ":" +data['errors'][param][0], 'error');
+            }
+            $jq("#changeLayoutError").scrollTop();
+            $L.hideAjaxLoader('change_layout_ajax_loader');
+            $jq("#change_layout_save").css('display', 'inline');
+            window.location = "#changeLayoutDialogTop";
+        }else{
+            window.location.reload();
+        }
+    });
+
+    $L.add("errorChangeLayout", function(XMLHttpRequest, textStatus, errorThrown){
+        $L.showMessage('changeLayoutError', changeLayoutAjaxFailureMessage, 'error');
+    });
+
+    $L.add("saveLayoutChange", function(){
+        $L.hideMessage('changeLayoutError');
+
+        var ajaxLoader = new $L.AjaxLoader('change_layout_ajax_loader', 
+                                MEDIA_URL+"images/ajax-loader.gif", ajaxLoaderMessage);
+        $jq("#change_layout_save").css('display', 'none');
+        ajaxLoader.show();
+        var postParams = {};
+        postParams['productAlignment'] = $jq('#changeLayoutForm input:radio:checked').val()
+        var divId = "#productAlignment";
+        if ( postParams["productAlignment"] == "left" ) {
+            divId += "Left";
+        } else if ( postParams["productAlignment"] == "right" ) {
+            divId += "Right";
+        }
+        postParams["sortOrder"] = $jq('#changeLayoutDialog '+divId+' #sortOrder option:selected').val();
+        postParams['modulesOrder'] = JSON.stringify($jq(divId+" .layoutList").sortable('toArray'));
+
+        $jq.ajax({
+            url: LULU_PROXY_URL+"update/layout/",
+            type: "POST",
+            data: postParams,
+            dataType: "json",
+            success: $L.successChangeLayout,
+            error: $L.errorChangeLayout
+        });
+    });
+
+});
+/* END js required for changing Layout*/
+
+/* START js required for changing Heading*/
+$jq(document).ready(function(){
+    var changeHeadingDialog = new $L.DialogManager({
+                                    'id':'changeHeadingDialog',
+                                    'width':490,
+                                    'position':['center', 155]
+                                });
+    $L.add("showChangeHeadingDialog", function(){
+        $L.hideMessage('changeHeadingError');
+        changeHeadingDialog.close();
+        changeHeadingDialog.open();
+        var heading = $L.trim($jq('#headerTextForPage').text());
+        $jq('#changeHeadingForm').find('textarea').text(heading);
+        $L.textCounter('heading', 'headingCounter', 50);
+    });
+    $L.add("closeChangeHeadingDialog", function(){
+        changeHeadingDialog.close();
+    });
+    $L.add("successUpdateHeading", function(data, textStatus){
+        window.location.reload();
+    });
+    $L.add("errorUpdateHeading", function(XMLHttpRequest, textStatus, errorThrown){
+        $L.showMessage('changeHeadingError', saveHeadingAjaxFailureMessage, 'error');
+        $L.hideAjaxLoader('save_heading_ajax_loader');
+        $jq("#heading_save_changes").css('display', 'inline');
+    });
+    $L.add("saveHeading", function(){
+        headingText = $L.trim($jq('#changeHeadingForm textarea').val());
+        if ( headingText.length == 0 ){
+            $L.showMessage('changeHeadingError', emptyTextErrorMessage, 'error');
+            return;
+        }
+            
+        $L.hideMessage('changeHeadingError');
+        var ajaxLoader = new $L.AjaxLoader('save_heading_ajax_loader', MEDIA_URL+"images/ajax-loader.gif", ajaxLoaderMessage);
+        $jq("#heading_save_changes").css('display','none');
+        ajaxLoader.show();
+        var postUrl = LULU_PROXY_URL+"update/heading/";
+        var postParams = {};
+        $jq('#changeHeadingForm').find('textarea').each(function(){
+            postParams[this.name] = this.value;
+        });
+        $jq.ajax({
+            url: postUrl,
+            type: "POST",
+            data: postParams,
+            dataType: "json",
+            success: $L.successUpdateHeading,
+            error: $L.errorUpdateHeading
+        });
+    });
+
+});
+/* END js required for changing Heading*/
+
+/* START js required for change profile */
+$jq(document).ready(function(){
+    $L.add('imageUploadSuccess', function(file, server_data, received_response){
+        var data = eval( '(' + server_data + ')' );
+        var previewImageUrl = data.authorPreviewImageUrl + "?" + new Date().getTime();
+        $jq("#deleteImage").remove();
+        $jq("<img/>").appendTo($jq('#profileImage').empty()).attr('src',previewImageUrl);
+        $jq("<img/>").appendTo($jq("#noProfileImage").empty().removeClass('noImage').addClass('profileImage'))
+                     .attr('src',previewImageUrl);
+    });
+    var changeProfileDialog = new $L.DialogManager({
+                                    'id':'changeProfileDialog',
+                                    'width':630,
+                                    'position':['center', 155]
+                                });
+    $jq("#inputChangeImageDialog").makeAsyncUploader({
+        upload_url: LULU_PROXY_URL+"upload/pic/",
+        flash_url: MEDIA_URL+"js/jquery/plugins/async_upload/swfupload.swf",
+        button_image_url: MEDIA_URL+"images/swfuploader_btn.png",
+        upload_success_handler: $L.imageUploadSuccess,
+        button_text: "<font face='Arial' size='13pt'>"+SWFUPLOAD_BUTTON_TEXT+"</font>",
+        file_types : "*.jpg; *.jpeg; *.png; *.gif;"
+    });
+    $jq('#deleteImageButton').click(function(){
+        $jq('#editProfileImage').fadeOut();
+        $jq('#deleteImageButton').hide();
+    });
+    $L.add("showChangeProfileDialog", function(){
+        $L.textCounter('bio', 'counter', 1000);
+        changeProfileDialog.close();
+        changeProfileDialog.open();
+    });
+    $L.add("closeChangeProfileDialog", function(){
+        changeProfileDialog.close();
+        $jq('#updateProfileError').empty();
+    });
+    $L.add("successUpdateProfile", function(data, textStatus){
+        window.location.reload();
+    });
+    $L.add("errorUpdateProfile", function(XMLHttpRequest, textStatus, errorThrown){
+        $L.showMessage('updateProfileError', editProfileAjaxFailureMessage, 'error');
+        $L.hideAjaxLoader('edit_profile_ajax_loader');
+        $jq("#profile_save_changes").css('display', 'inline');
+    });
+    $L.add("saveProfile", function(){
+        var ajaxLoader = new $L.AjaxLoader('edit_profile_ajax_loader', MEDIA_URL+"images/ajax-loader.gif", ajaxLoaderMessage);
+        $jq("#profile_save_changes").hide('fast');
+        ajaxLoader.show();
+        var postParams = {};
+        $jq('#changeProfileDialog').find('textarea').each(function(){
+            postParams[this.name] = this.value;
+        });
+        var deleteImage = ($jq('#editProfileImage').css('display') === "none");
+        if ( deleteImage ){
+            postParams['deleteImage'] = true;
+        }
+        $jq.ajax({
+            url: LULU_PROXY_URL+"update/profile/",
+            type: "POST",
+            data: postParams,
+            dataType: "json",
+            success: $L.successUpdateProfile,
+            error: $L.errorUpdateProfile
+        });
+    });
+
+
+});
+/* END js required for change profile */
+/* START js required for video dialog */
+$jq(document).ready(function(){
+    var changeVideoDialog = new $L.DialogManager({
+                                    'id':'changeVideoDialog',
+                                    'width':670,
+                                    'position':['center', 155]
+                                });
+    $L.add("showChangeVideoDialog", function(){
+        changeVideoDialog.open();
+    });
+     $L.add("closeChangeVideoDialog", function(){
+        changeVideoDialog.close();
+        $jq('#updateVideoError').empty();
+    });
+    $L.add('showUpdateVideoError', function(divId, errorMsg){
+        $jq("#updateVideoError #"+divId).remove();
+        $jq("<div id='"+divId+"'>").appendTo($jq('#updateVideoError').show());
+        $L.showMessage(divId, errorMsg, 'error', true);
+        $L.hideAjaxLoader('save_video_ajax_loader');
+        $jq("#video_save_changes").css('display', 'inline');
+    });
+    $L.add("successUpdateVideo", function(data, textStatus, XMLHttpRequest){
+       var success = data['success'];
+       if(success){
+            $L.reload();
+       } else {
+           $jq.each(data['errors'], function(key, value) {
+                $L.showUpdateVideoError(key+"ErrorUpdateVideo", value);
+           });
+           
+       }
+    });
+    $L.add("errorUpdateVideo", function(XMLHttpRequest, textStatus, errorThrown){
+        $L.showUpdateVideoError('ajaxErrorUpdateVideo', saveVideoAjaxFailureMessage);
+    });
+    $jq('#deleteVideoButton').click(function(){
+        $jq('#deleteVideoButton').hide();
+        $jq('<span>').html("&nbsp;").addClass('noVideo').appendTo($jq('#displayVideo').empty().removeClass('displayVideo'));
+    });
+    $L.add("saveVideo", function(){
+        var ajaxLoader = new $L.AjaxLoader('save_video_ajax_loader', MEDIA_URL+"images/ajax-loader.gif", ajaxLoaderMessage);
+        $jq("#video_save_changes").css('display','none');
+        ajaxLoader.show();
+        var postUrl = LULU_PROXY_URL+"update/media/";
+        var postParams = {};
+        $jq('#addVideoForm').find('textarea').each(function(){
+	    var videoSrc = $L.trim(this.value),
+	    pattern = new RegExp("src=\"//"),
+	    matches = pattern.exec(videoSrc);
+	    if (matches !== null) {
+	    	videoSrc = videoSrc.replace(matches[0], "src=\"http://");	
+	    }
+	    postParams[this.name] = videoSrc;
+        });
+        var deleteVideo = ($jq('#deleteVideoButton').css('display') === "none");
+        if ( deleteVideo ){
+            postUrl += "remove/"
+        }
+        $jq.ajax({
+            url: postUrl,
+            type: "POST",
+            data: postParams,
+            dataType: "json",
+            success: $L.successUpdateVideo,
+            error: $L.errorUpdateVideo
+        });
+    });
+});
+/* END js required for video dialog */
+/* START js required for mylinks dialog*/
+$jq(document).ready(function(){
+    var changeLinkDialog = new $L.DialogManager({
+                                    'id':'changeLinkDialog',
+                                    'width':680,
+                                    'position':['center', 155]
+                                });
+    $L.add("showChangeLinkDialog", function(){
+        $jq("#table_mylinks").tableDnD();
+        changeLinkDialog.close();
+        changeLinkDialog.open();
+    });
+
+    $L.add("closeChangeLinkDialog", function(){
+        changeLinkDialog.close();
+        $jq('#updateMylinksError').empty();
+    });
+    $L.add('showMylinksError', function(divId, errorMsg){
+        $jq("#"+divId).remove();
+        $jq("<div id='"+divId+"'>").appendTo($jq('#updateMylinksError').show());
+        $L.showMessage(divId, errorMsg, 'error', true);
+    });
+    $L.add('showMylinksEmptyError', function(){
+        $L.showMylinksError('mylinksEmptyError', newLinkEmptyErrorMessage);
+    });
+    $L.add('showMylinksTitleMaxLengthError', function(){
+        $L.showMylinksError('mylinksTitleError', linkTitleMaxLengthError);
+    });
+    $L.add('showMylinksUrlMaxLengthError', function(){
+        $L.showMylinksError('mylinksUrlError', linkUrlMaxLengthError);
+    });
+    $L.add("successUpdateMyLinks", function(data, textStatus){
+        window.location.reload();
+    });
+    $L.add("errorUpdateMyLinks", function(XMLHttpRequest, textStatus, errorThrown){
+        $L.hideAjaxLoader('edit_mylinks_ajax_loader');
+        $jq("#ml_make_changes").css('display', 'inline');
+        $L.showMylinksError('mylinksAjaxFailureError', editMylinksAjaxFailureMessage);
+        $L.hideAjaxLoader('edit_mylinks_ajax_loader');
+        $jq("#ml_make_changes").css('display', 'inline');
+    });
+    $L.add('showMylinksMaxReachedError', function(){
+        $L.showMylinksError('mylinksMaxReachedError', mylinksMaxReachedErrorMessage);
+    });
+    $L.add("saveEditLink", function(rowId) {
+        var row = document.getElementById(rowId);
+        var inputs = row.getElementsByTagName('input');
+        var title = $L.trim(inputs[0].value);
+        var url = $L.trim(inputs[1].value);
+        var title_length_exceeded = !!(title.length > 50 );
+        var url_length_exceeded = !!(url.length > 250 );
+        if ( title_length_exceeded || url_length_exceeded ) {
+            if ( title_length_exceeded ) {
+                $L.showMylinksTitleMaxLengthError();
+            }
+            if ( url_length_exceeded ) {
+                $L.showMylinksUrlMaxLengthError();
+            }
+            return;
+        }
+        if ( title == "" || url == "" ){
+            $L.showMylinksEmptyError();
+            return;
+        }
+        var tdHTML = "";
+        tdHTML += "<td class='border'>";
+        tdHTML +=   "<div class='left'>";
+        tdHTML +=       "<img src='"+MEDIA_URL+"images/drag_handle.png' alt='drag'/>";
+        tdHTML +=       "<span class='title'>";
+        tdHTML +=           title;
+        tdHTML +=       "</span>";
+        tdHTML +=       "<span class='link'>";
+        tdHTML +=           url;
+        tdHTML +=       "</span>";
+        tdHTML +=   "</div>";
+        tdHTML +=   "<div class='right'>";
+        tdHTML +=       "<span>";
+        tdHTML +=           "<a href='javascript:$L.editLink(\""+rowId+"\")' class='UIButton UIButtonHExpand' title='Edit Link' id='edit_link' ><span>Edit</span></a>";
+        tdHTML +=       "</span>";
+        tdHTML +=       "<span>";
+        tdHTML +=           "<a href='javascript:$L.deleteLink(\""+rowId+"\")'><img src='"+MEDIA_URL+"images/delete.png' alt='delete'/></a>";
+        tdHTML +=       "</span>";
+        tdHTML +=   "</div>";
+        tdHTML += "</td>";
+        $jq("#"+rowId).html(tdHTML);
+    });
+    $L.add("cancelEditLink", function(rowId) {
+        var row = document.getElementById(rowId);
+        var spans = row.getElementsByTagName('span');
+        var title = $L.trim(spans[0].innerHTML);
+        var url = $L.trim(spans[1].innerHTML);
+        var tdHTML = "";
+        tdHTML += "<td class='border'>";
+        tdHTML +=   "<div class='left'>";
+        tdHTML +=       "<img src='"+MEDIA_URL+"images/drag_handle.png' alt='drag'/>";
+        tdHTML +=       "<span class='title'>";
+        tdHTML +=           title;
+        tdHTML +=       "</span>";
+        tdHTML +=       "<span class='link'>";
+        tdHTML +=           url;
+        tdHTML +=       "</span>";
+        tdHTML +=   "</div>";
+        tdHTML +=   "<div class='right'>";
+        tdHTML +=       "<span>";
+        tdHTML +=           "<a href='javascript:$L.editLink(\""+rowId+"\")' class='UIButton UIButtonHExpand' title='Edit Link' id='edit_link' ><span>Edit</span></a>";
+        tdHTML +=       "</span>";
+        tdHTML +=       "<span>";
+        tdHTML +=           "<a href='javascript:$L.deleteLink(\""+rowId+"\")'><img src='"+MEDIA_URL+"images/delete.png' alt='delete'/></a>";
+        tdHTML +=       "</span>";
+        tdHTML +=   "</div>";
+        tdHTML += "</td>";
+        $jq("#"+rowId).html(tdHTML);
+    });
+    $L.add("editLink", function(rowId) {
+        var row = document.getElementById(rowId);
+        var spans = row.getElementsByTagName('span');
+        var title = $L.trim(spans[0].innerHTML);
+        var url = $L.trim(spans[1].innerHTML);
+        var tdHTML = "";
+        tdHTML += "<td class='border'>";
+        tdHTML +=   "<span style='display:none'>"+title+"</span><span style='display:none'>"+url+"</span>";
+        tdHTML +=   "<div class='line'>";
+        tdHTML +=       "<div class='size1of2 unit'>";
+        tdHTML +=           "<label> Link Text </label>";
+        tdHTML +=       "</div>";
+        tdHTML +=       "<div class='size1of2 lastUnit'>";
+        tdHTML +=           "<label>URL </label>";
+        tdHTML +=       "</div>";
+        tdHTML +=   "</div>";
+        tdHTML +=   "<div class='line'>";
+        tdHTML +=       "<div class='size1of2 unit'>";
+        tdHTML +=           "<input style='width:300px;' type='text' id='edit_ml_title' name='edit_mltitle' value='"+title+"' >";
+        tdHTML +=       "</div>";
+        tdHTML +=       "<div class='size1of2 lastUnit'>";
+        tdHTML +=           "<input style='width:300px;' type='text' id='edit_ml_url' name='edit_ml_url' value='"+url+"' >";
+        tdHTML +=       "</div>";
+        tdHTML +=   "</div>";
+        tdHTML +=   "<div class='editLink'>";
+        tdHTML +=       "<span class='atom'><a href='javascript:$L.cancelEditLink(\""+rowId+"\");'>cancel</a></span>";
+        tdHTML +=       "<span class='atom'><a class='UIButton UIButtonHExpand' href='javascript:$L.saveEditLink(\""+rowId+"\");'><span>Done</span></a>";
+        tdHTML +=   "</div>";
+        tdHTML += "</td>";
+        $jq("#"+rowId).html(tdHTML);
+    });
+    $L.add("deleteLink", function(rowId){
+        var row = document.getElementById(rowId);
+        row.parentNode.deleteRow(row.sectionRowIndex);
+    });
+    $L.add("updateMyLinks", function(){
+        var table = document.getElementById('table_mylinks');
+        var rows = table.getElementsByTagName('tr');
+        var length = rows.length;
+        /*TODO: define the constant for number of links the user can add and use it */
+        if ( length > 20 ) {
+            $L.showMylinksMaxReachedError();
+            return;
+        }
+        var ajaxLoader = new $L.AjaxLoader('edit_mylinks_ajax_loader', MEDIA_URL+"images/ajax-loader.gif", ajaxLoaderMessage);
+        $jq("#ml_make_changes").hide('fast');
+        ajaxLoader.show();
+        var links = [];
+        for (var i=0; i<length; i++) {
+            var spans = rows[i].getElementsByTagName('span');
+            var url = $L.trim(spans[1].innerHTML);
+            var title = $L.trim(spans[0].innerHTML);
+            var rank = i+1;
+            links[i] = {'url':url,'title':title,'rank':rank};
+        }
+        $jq.ajax({
+            url: LULU_PROXY_URL+"update/mylinks/",
+            type: "POST",
+            data: {'links':JSON.stringify(links)},
+            dataType: "json",
+            success: $L.successUpdateMyLinks,
+            error: $L.errorUpdateMyLinks
+        });
+    });
+    $L.add("addLink", function(){
+        var addlink_table = document.getElementById('table_add_link');
+        var addlink_row = addlink_table.tBodies[0].rows[1];
+        var addlink_title = $L.trim(addlink_row.getElementsByTagName('input')[0].value);
+        var addlink_url = $L.trim(addlink_row.getElementsByTagName('input')[1].value);
+
+        if ( addlink_title == "" || addlink_url == "" ){
+            $L.showMylinksEmptyError();
+            return;
+        }
+        var addlink_title_length_exceeded = !!(addlink_title.length > 50 );
+        var addlink_url_length_exceeded = !!(addlink_url.length > 250 );
+        if ( addlink_title_length_exceeded || addlink_url_length_exceeded ) {
+            if ( addlink_title_length_exceeded ) {
+                $L.showMylinksTitleMaxLengthError();
+            }
+            if ( addlink_url_length_exceeded ) {
+                $L.showMylinksUrlMaxLengthError();
+            }
+            return;
+        }
+        var mylinks_table = document.getElementById('table_mylinks');
+        var mylinks_tbody = mylinks_table.getElementsByTagName('tbody')[0];
+        /*TODO: define the constant for number of links the user can add and use it */
+        if ( mylinks_tbody.rows.length >= 20 ) {
+            $L.showMylinksMaxReachedError();
+            return;
+        }
+        addlink_row.getElementsByTagName('input')[0].value = "";
+        addlink_row.getElementsByTagName('input')[1].value = "";
+        var row = document.createElement("tr");
+        if ( mylinks_tbody.rows.length >0 ) {
+            row.id = mylinks_tbody.rows[mylinks_tbody.rows.length-1].id+"1";
+        } else {
+            row.id = "1";
+        }
+        var cell = document.createElement("td");
+        cell.className = "border";
+        tdHTML = "";
+        tdHTML +=   "<div class='left'>";
+        tdHTML +=       "<img src='"+MEDIA_URL+"images/drag_handle.png' alt='drag'/>";
+        tdHTML +=       "<span class='title'>";
+        tdHTML +=           addlink_title;
+        tdHTML +=       "</span>";
+        tdHTML +=       "<span class='link'>";
+        tdHTML +=           addlink_url;
+        tdHTML +=       "</span>";
+        tdHTML +=   "</div>";
+        tdHTML +=   "<div class='right'>";
+        tdHTML +=       "<span>";
+        tdHTML +=           "<a href='javascript:$L.editLink(\""+row.id+"\")' class='UIButton UIButtonHExpand' title='Edit Link' id='edit_link' ><span>Edit</span></a>";
+        tdHTML +=       "</span>";
+        tdHTML +=       "<span>";
+        tdHTML +=           "<a href='javascript:$L.deleteLink(\""+row.id+"\")'><img src='"+MEDIA_URL+"images/delete.png' alt='delete'/></a>";
+        tdHTML +=       "</span>";
+        tdHTML +=   "</div>";
+        cell.innerHTML = tdHTML;
+        row.appendChild(cell);
+        mylinks_tbody.appendChild(row);
+        $jq('#table_mylinks').tableDnD();
+        $L.hideMessage("updateMylinksError");
+    });
+});
+/* END js required for mylinks dialog*/
+
+/* START js required for author ribbon */
+$jq(document).ready(function(){
+    $jq('#sp_change_links').click( function() {
+       $L.showChangeLinkDialog();
+    });
+    $jq('#sp_change_heading').click( function() {
+       $L.showChangeHeadingDialog();
+    });
+    $jq('#sp_change_logo').click( function() {
+       $L.showChangeLogoDialog();
+    });
+    $jq('#sp_change_video').click( function() {
+        $L.showChangeVideoDialog();
+    });
+    $jq("#sp_change_profile").click( function(){
+        $L.showChangeProfileDialog();
+    });
+    $jq("#sp_change_theme").click( function(){
+        $L.showChangeThemeDialog();
+    });
+    $jq("#sp_change_layout").click( function(){
+        $L.showChangeLayoutDialog();
+    });
+});
+/* END js required for author ribbon */

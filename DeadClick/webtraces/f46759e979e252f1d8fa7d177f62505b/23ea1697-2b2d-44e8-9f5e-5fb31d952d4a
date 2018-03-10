@@ -1,0 +1,341 @@
+function DetectScreenWidth(min_screen_width) {
+  var width1 = window.outerWidth;
+  var width2 = window.screen.width;
+  if (width1 < width2 && width1 > 0) {
+    var screenWidth = width1;
+  } else {
+    var screenWidth = width2;
+  }
+  if (screenWidth <= min_screen_width) {
+	var mobile_value = 'Y';
+  } else {
+	var mobile_value = 'N';   
+  }
+  myform = document.createElement('form');
+  myform.setAttribute('method', 'POST');
+  myform.setAttribute('action', '');
+  myvar = document.createElement('input');
+  myvar.setAttribute('name', 'mobileVersion');
+  myvar.setAttribute('type', 'hidden');
+  myvar.setAttribute('value', mobile_value);
+  myform.appendChild(myvar);
+  document.body.appendChild(myform);
+  myform.submit();
+}
+
+function MM_swapImgRestore() { //v3.0
+  var i,x,a=document.MM_sr; for(i=0;a&&i<a.length&&(x=a[i])&&x.oSrc;i++) x.src=x.oSrc;
+}
+
+function MM_preloadImages() { //v3.0
+  var d=document; if(d.images){ if(!d.MM_p) d.MM_p=new Array();
+    var i,j=d.MM_p.length,a=MM_preloadImages.arguments; for(i=0; i<a.length; i++)
+    if (a[i].indexOf("#")!=0){ d.MM_p[j]=new Image; d.MM_p[j++].src=a[i];}}
+}
+
+function MM_findObj(n, d) { //v4.01
+  var p,i,x;  if(!d) d=document; if((p=n.indexOf("?"))>0&&parent.frames.length) {
+    d=parent.frames[n.substring(p+1)].document; n=n.substring(0,p);}
+  if(!(x=d[n])&&d.all) x=d.all[n]; for (i=0;!x&&i<d.forms.length;i++) x=d.forms[i][n];
+  for(i=0;!x&&d.layers&&i<d.layers.length;i++) x=MM_findObj(n,d.layers[i].document);
+  if(!x && d.getElementById) x=d.getElementById(n); return x;
+}
+
+function MM_swapImage() { //v3.0
+  var i,j=0,x,a=MM_swapImage.arguments; document.MM_sr=new Array; for(i=0;i<(a.length-2);i+=3)
+   if ((x=MM_findObj(a[i]))!=null){document.MM_sr[j++]=x; if(!x.oSrc) x.oSrc=x.src; x.src=a[i+2];}
+}
+
+function MM_validateForm() { //v4.0
+  var i,p,q,nm,test,num,min,max,errors='',args=MM_validateForm.arguments;
+  if (window.mobile == 'N') {
+	var ln_feed = '<br>';
+  } else {
+	var ln_feed = '\n';  
+  }
+  for (i=0; i<(args.length-2); i+=3) { test=args[i+2]; val=MM_findObj(args[i]);
+    if (val) { nm=val.name; if ((val=val.value)!="") {
+      if (test.indexOf('isEmail')!=-1) { p=val.indexOf('@');
+        if (p<1 || p==(val.length-1)) errors+='- '+nm.replace(/_/g," ")+' appears to be invalid.'+ln_feed;
+      } else if (test!='R') {
+        if (isNaN(val)) errors+='- '+nm.replace(/_/g," ")+' must contain a number.'+ln_feed;
+        if (test.indexOf('inRange') != -1) { p=test.indexOf(':');
+          min=test.substring(8,p); max=test.substring(p+1);
+          if (val<min || max<val) errors+='- '+nm+' must contain a number between '+min+' and '+max+'.'+ln_feed;
+    } } } else if (test.charAt(0) == 'R') errors += '- '+nm.replace(/_/g," ")+ln_feed; }
+  } if (errors) {
+     document.MM_errors = errors;
+     var msg = 'Please complete the following:'+ln_feed+ln_feed+errors;
+     var x=DisplayAlert(msg);
+     document.MM_returnValue = false;
+   } else {
+     document.MM_returnValue = true;
+   }
+}
+
+function DisplayAlert(msg) {
+  if (window.mobile == 'N') { <!-- mobile is a global variable set in request.php -->	
+    document.getElementById("AlertBoxMessage").innerHTML = "<table width='100%' height='100%'><tr><td height='100' valign='middle'>"+msg+"</td></tr></table>";
+    var x=showAlertWindow(472,336,'AlertBox');
+  } else {
+	alert(msg);  
+  }
+}
+
+function DisplaySignupSuccess(msg) {
+  document.getElementById("SignupSuccessBoxMessage").innerHTML = "<table width='100%' height='100%'><tr><td height='100' valign='middle'>"+msg+"</td></tr></table>";
+  var x=showAlertWindow(472,336,'SignupSuccessBox');
+}
+
+function open_window(height, width, xpos, ypos, scrollbars){
+      window.open("","openWindow",config=eval("'"+"height="+height+"px,width="+width+"px,menubar=no,location=no,toolbar=no,resizable=yes,scrollbars="+scrollbars+",directories=no,titlebar=no,dependent=yes,left="+xpos+",top="+ypos+"'"));
+}
+
+function hideLayer(id) {
+  var layer = document.getElementById(id);
+  layer.style.visibility = "hidden";
+}
+
+function hideLayer3(id) {
+  var layer = document.getElementById(id);
+  layer.style.visibility = "hidden";
+  layer.style.display = "none";  
+}
+
+function showLayer(id) {
+  var layer = document.getElementById(id);
+  layer.style.visibility = "visible";
+  layer.style.display = "block";
+}
+
+function hideLayer_and_undimLights(id) {
+  var layer = document.getElementById(id);
+  layer.style.visibility = "hidden";
+  id = "dimLights";
+  var layer = document.getElementById(id);
+  layer.style.visibility = "hidden";
+  layer.style.display = "none";
+}
+
+function alignDiv(divobj){ //Centers a div element on the page
+  this.standardbody=(document.compatMode=="CSS1Compat")? document.documentElement : document.body
+  var ie=document.all && !window.opera
+  var dom=document.getElementById
+  var wrapper = document.getElementById("wrapper")
+  var scroll_top=(ie)? this.standardbody.scrollTop : window.pageYOffset
+  var scroll_left=(ie)? this.standardbody.scrollLeft : window.pageXOffset
+  var docheight=(ie)? this.standardbody.clientHeight: window.innerHeight
+  var docwidth = wrapper.offsetWidth
+  var docheightcomplete=(this.standardbody.offsetHeight>this.standardbody.scrollHeight)? this.standardbody.offsetHeight : this.standardbody.scrollHeight
+  var objwidth=divobj.offsetWidth //width of div element
+  var objheight=divobj.offsetHeight //height of div element
+  var topposition=(docheight>objheight)? scroll_top+docheight/2-objheight/2+"px" : scroll_top+10+"px" //Vertical position of div element: Either centered, or if elemen
+  divobj.style.left=docwidth/2-objwidth/2+"px"  //Center div element horizontally
+  divobj.style.top=Math.floor(parseInt(topposition))+"px"
+}
+
+function showLayer_and_dimLights(id) {
+  this.layer = document.getElementById(id);
+  this.alignDiv(this.layer);
+  this.layer.style.visibility = "visible";
+  this.layer.style.display = "block";
+  id = "dimLights";
+  this.layer = document.getElementById(id);
+  this.layer.style.visibility = "visible";
+  this.layer.style.display = "block";
+}
+
+ 
+function hideLayer2(tabi, num) {
+  for (i=0;i<=num;i++)
+  {
+	id = "bigphoto"+tabi+"_"+i;
+	id2 = "thumb"+tabi+"_"+i;
+    var layer = document.getElementById(id);
+    layer.style.visibility = "hidden";
+    var layer2 = document.getElementById(id2);
+    layer2.style.borderColor = "#EDEDED";	
+  }	
+}
+
+function showLayer2(tabi, id, cfg_photo_thumbnail_border_color) {
+  id1 = "bigphoto"+tabi+"_"+id;
+  id2 = "thumb"+tabi+"_"+id;  
+  var layer = document.getElementById(id1);
+  layer.style.visibility = "visible";
+  var layer2 = document.getElementById(id2);
+  layer2.style.borderColor = cfg_photo_thumbnail_border_color;  
+}
+
+function showLayer3(id) {
+  var layer1 = document.getElementById(id);
+  layer1.style.borderColor = "#FF6600";  
+}
+
+function showLayer4(id) {
+  var layer1 = document.getElementById(id);
+  layer1.style.borderColor = "#CCCCCC";  
+}
+
+function showLayer5() {
+  var layer = document.getElementById('EmailShoppingList');
+  layer.style.visibility = "visible";
+}
+
+function MM_reloadPage(init) {  //reloads the window if Nav4 resized
+  if (init==true) with (navigator) {if ((appName=="Netscape")&&(parseInt(appVersion)==4)) {
+    document.MM_pgW=innerWidth; document.MM_pgH=innerHeight; onresize=MM_reloadPage; }}
+  else if (innerWidth!=document.MM_pgW || innerHeight!=document.MM_pgH) location.reload();
+}
+MM_reloadPage(true);
+
+function MM_showHideLayers() { //v3.0
+  var i,p,v,obj,args=MM_showHideLayers.arguments;
+  for (i=0; i<(args.length-2); i+=3) if ((obj=MM_findObj(args[i]))!=null) { v=args[i+2];
+    if (obj.style) { obj=obj.style; v=(v=='show')?'visible':(v='hide')?'hidden':v; }
+    obj.visibility=v; }
+}
+
+function iFrameHeight() {
+  if(document.getElementById && !(document.all)) {
+    h = document.getElementById('iframename').contentDocument.body.scrollHeight;
+    document.getElementById('iframename').style.height = h;
+  }
+  else if(document.all) {
+    h = document.frames('iframename').document.body.scrollHeight;
+    document.all.iframename.style.height = h;
+  }
+}
+
+function myprintln(s) {
+  document.writeln(s); 
+}
+
+function MM_jumpMenu(targ,selObj,restore){ //v3.0
+  eval(targ+".location='"+selObj.options[selObj.selectedIndex].value+"'");
+  if (restore) selObj.selectedIndex=0;
+}
+
+//mouse down on dragged DIV element
+function startdrag(t, e) {
+	if (e.preventDefault) e.preventDefault(); //line for IE compatibility
+	e.cancelBubble = true;
+	window.document.onmousemoveOld = window.document.onmousemove;
+	window.document.onmouseupOld = window.document.onmouseup;
+	window.document.onmousemove=dodrag;
+	window.document.onmouseup=stopdrag;
+	window.document.draged = t;
+	t.dragX = e.clientX;
+	t.dragY = e.clientY;
+	return false;
+}
+//move the DIV
+function dodrag(e) {
+	
+	if (!e) e = event; //line for IE compatibility
+	t = window.document.draged;
+	t.style.left = (t.offsetLeft + e.clientX - t.dragX)+"px";
+	t.style.top = (t.offsetTop + e.clientY - t.dragY)+"px";
+	t.dragX = e.clientX;
+	t.dragY = e.clientY;
+	return false;
+}
+//restore event-handlers
+function stopdrag() {
+   window.document.onmousemove=window.document.onmousemoveOld;
+   window.document.onmouseup=window.document.onmouseupOld;
+}
+
+function showAlertWindow(popWidth,popHeight,boxName) {
+  this.standardbody=(document.compatMode=="CSS1Compat")? document.documentElement : document.body;			
+  var ie=document.all && !window.opera;
+  var dom=document.getElementById; 
+  var divobj=document.getElementById(boxName); 		
+  var scroll_top=(ie)? this.standardbody.scrollTop : window.pageYOffset;
+  var scroll_left=(ie)? this.standardbody.scrollLeft : window.pageXOffset;
+  var docwidth=(ie)? this.standardbody.clientWidth : window.innerWidth+10;
+  var docheight=(ie)? this.standardbody.clientHeight: window.innerHeight;
+  var docheightcomplete=(this.standardbody.offsetHeight>this.standardbody.scrollHeight)? this.standardbody.offsetHeight : this.standardbody.scrollHeight;
+  var objwidth=popWidth; 
+  var objheight=popHeight;		
+  var topposition=(docheight>objheight)? scroll_top+docheight/2-objheight/2+"px" : scroll_top+10+"px";
+  var leftposition=(docwidth/2)-(objwidth/2);	
+  leftposition=Math.round(leftposition);
+  topposition=Math.floor(parseInt(topposition));
+  divobj.style.position="fixed";  
+  divobj.style.left="50%";
+  divobj.style.top="50%";
+  divobj.style.marginTop="-168px";	
+  divobj.style.marginLeft="-236px";	  
+  divobj.style.visibility="visible";		
+  divobj.style.display = "block";	
+}
+
+function ajaxCart(nv_pl_id,proditem_id,script_name,remove,nv,prodline_id,prodcat_id,prod_id, product_description) {
+  if (nv_pl_id=="") {
+    document.getElementById("cart_container_ajax").innerHTML="";
+    document.getElementById("details_button"+proditem_id).innerHTML="";		
+    return;
+  } 
+  if (proditem_id != '0') {
+	showLayer('ajax_spinner');
+  }
+  if (window.XMLHttpRequest) {// code for IE7+, Firefox, Chrome, Opera, Safari
+    xmlhttp=new XMLHttpRequest();
+    xmlhttp2=new XMLHttpRequest();	
+  } else {// code for IE6, IE5
+    xmlhttp=new ActiveXObject("Microsoft.XMLHTTP");
+    xmlhttp2=new ActiveXObject("Microsoft.XMLHTTP");	
+  }
+
+  xmlhttp.onreadystatechange=function() {
+    if (xmlhttp.readyState==4 && xmlhttp.status==200) {
+      document.getElementById("cart_container_ajax").innerHTML=xmlhttp.responseText;
+      hideLayer('ajax_spinner');	
+    }
+  }
+  
+  xmlhttp2.onreadystatechange=function() {
+    if (xmlhttp2.readyState==4 && xmlhttp2.status==200) {
+      document.getElementById("details_button"+proditem_id).innerHTML=xmlhttp2.responseText;  
+    }
+  }   
+
+  if (script_name == 'product.php' && proditem_id > 0 && typeof document.forms["form"+proditem_id] != 'undefined') {
+    var productQty       = document.forms["form"+proditem_id].quantity.value;
+    var productName      = document.forms["form"+proditem_id].productName.value;
+    var productImg       = document.forms["form"+proditem_id].productImg.value;
+    var productImgBig    = document.forms["form"+proditem_id].productImgBig.value;
+    var productId        = document.forms["form"+proditem_id].productId.value;
+    var productParentid  = document.forms["form"+proditem_id].productParentid.value;
+    var productPrice     = document.forms["form"+proditem_id].productPrice.value;
+    var productSKU       = document.forms["form"+proditem_id].productSKU.value;
+    var productUnitWt    = document.forms["form"+proditem_id].productUnitWt.value;
+    var productURLDesc   = document.forms["form"+proditem_id].productURLDesc.value; 
+    var queryString = '?nv_pl_id='+nv_pl_id+'&script_name='+script_name+'&remove='+remove+'&nv='+nv+'&prodline_id='+prodline_id+'&prodcat_id='+prodcat_id+'&prod_id='+prod_id+'&product_description='+product_description+'&productQty='+productQty+'&productName='+productName+'&productImg='+productImg+'&productImgBig='+productImgBig+'&productId='+productId+'&productParentid='+productParentid+'&productPrice='+productPrice+'&productSKU='+productSKU+'&productUnitWt='+productUnitWt+'&productURLDesc='+productURLDesc;
+  } else {
+    var queryString = '?nv_pl_id='+nv_pl_id+'&script_name='+script_name+'&remove='+remove+'&nv='+nv+'&prodline_id='+prodline_id+'&prodcat_id='+prodcat_id+'&prod_id='+prod_id+'&product_description='+product_description;
+  }
+
+  xmlhttp.open("GET","ajaxcart.php"+queryString,true);
+  xmlhttp.send(null);
+  
+  if (script_name == 'product.php' && proditem_id > 0 && typeof document.forms["formavail"+proditem_id] != 'undefined') {
+    var totalOrdered = document.forms["formavail"+proditem_id].totalOrdered.value; 
+  }  
+  
+  var queryString2 = '?productId='+productId+'&qtyord='+productQty+'&totalord='+totalOrdered+'&remove='+remove;
+  xmlhttp2.open("GET","ajaxbutton.php"+queryString2,true);
+  xmlhttp2.send(null);  
+  
+}
+
+function appendStyle(styles) {
+  var css = document.createElement('style');
+  css.type = 'text/css';
+
+  if (css.styleSheet) css.styleSheet.cssText = styles;
+  else css.appendChild(document.createTextNode(styles));
+
+  document.getElementsByTagName("head")[0].appendChild(css);
+}

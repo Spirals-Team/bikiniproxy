@@ -1,0 +1,403 @@
+define(["jquery","jqueryui","bootstrap.min","smoothscroll","jquery.matchHeight-min","appear","slick","jquery.backgroundSize","jquery.mmenu","superfish","hoverIntent","jquery.nicescroll","appeared","custom","validation"], function($) {
+
+/* Ready Function */
+window.scrollTo(0, 0);
+$(function() {
+	setTimeout(function () {
+        $('header,#aboutBlk').animate({'opacity':1}, 1000 , function(){
+           $('#menuBlk').show().animate({'opacity':1}, 1000, function(){
+           	$('#patten-bg').show().delay(1000).animate({'opacity':1});
+           	 $('.pressSec').show().delay(1000).animate({'opacity':1});	
+		        $('.contactSec').show().delay(1000).animate({'opacity':1});
+               $('footer').show().animate({'opacity':1});
+               // $('body').css({'background-color': '#fff'});
+           });
+        });
+        $('#subPage').show().animate({'opacity':1})
+   }, 500);
+	/*Scroll Animation*/ 
+	$('*[data-animated]').addClass('animated');
+	$('*[data-animate]').addClass('animate');
+	/* Animate */			
+	function animated_contents() {
+		$(".animated:appeared").each(function (i) {
+			var $this    = $(this),
+				animated = $(this).data('animated');
+			setTimeout(function () {
+				$this.addClass(animated);
+			}, 70 * i);
+		});
+	}
+	animated_contents();
+	//animated_contents();
+	$(window).scroll(function() {
+		animated_contents();
+	});
+		/* background images */
+	$('.dataBg, .welcome').each(function(index, element) {
+		var bgImage = $(this).data('background');
+		$(this).css('background-image', 'url('+bgImage+')');
+	});	
+	/* background images */
+	if($('.welcomeBlock').length!=0)
+	{
+	$('html').addClass('lockBg');	
+	}
+	/* main menu */
+	$('ul.sf-menu').superfish({
+		delay:       200,                            // one second delay on mouseout
+		animation:   {opacity:'show',height:'show'},  // fade-in and slide-down animation
+		speed:       'fast',                          // faster animation speed
+		autoArrows:  false                            // disable generation of arrow mark-up	
+	});	
+	/* main menu */
+	/*jquery ui*/
+	/* selectbox */
+	$.widget( 'app.selectmenu', $.ui.selectmenu, {
+		_drawButton: function() {
+			this._super();
+			
+			var selected = this.element
+					.find( '[selected]' )
+					.length,
+				placeholder = this.options.placeholder;
+			
+			if ( !selected && placeholder ) {
+				this.buttonText.text( placeholder );    
+			}
+		}
+	});			
+	$( "#selectMenu" ).selectmenu( { placeholder: 'Please select an option' } );
+	/* selectbox */
+	
+	$( ".radio" ).buttonset();
+	$( ".checkBox" ).buttonset();
+	/*jquery ui*/
+	
+	/* mobile nav */
+	$('div#mobileNav').mmenu();
+	
+	/* BG image Exclusive */
+	$('.bunchjs').each(function(){
+		var imgBG = $(this).data('img');
+		$(this).css('background-image', 'url('+imgBG+')');
+	});
+	
+	 /* Select */
+	/* $('.selectcss li a').click(function(){
+		var selectTxt = $(this).text();
+		$('.selectMain').text(selectTxt); 
+		$('.selectcss > div').slideUp();
+		return false; 
+	 }); */
+	  $('.selectMain').click(function(){
+	 	$(this).parents('.selectcss').find('.select-loc').slideToggle();
+		$('.selectMain').toggleClass('arrowDown');
+	 });	 $('.selectcss ul').niceScroll({  railpadding: { top: 10, right: 5, left: 0, bottom: 0 } });
+	 $(document).click(function(event) { 
+    if(!$(event.target).closest('.selectcss').length) {
+        if($('.selectcss').is(":visible")) {
+            $('.selectcss > div').slideUp();
+        }
+    }        
+});   
+
+if(!Modernizr.touch) { 
+$('.ui-selectmenu-menu .ui-menu').niceScroll();
+}
+
+/* Scroll */
+$('.moreLocat').on('click', function(){
+	$('html').niceScroll();
+		if(!$(this).hasClass('active')){
+		$(this).addClass('active');
+		$(this).find('a').text('Less');
+		 $('.dropHide').slideDown(function(){  });
+		 $('html, body').animate({
+                scrollTop: $('#animateDrop').offset().top
+            }, 800);
+		} else {
+			$(this).removeClass('active');
+		$(this).find('a').text('More');	
+		$('.dropHide').slideUp();
+		}
+	return false;
+});
+
+
+	/* home page banner slider */
+	$('#homeBanner').slick({
+		arrows: false,
+		autoplay: true,
+		dots: false,
+		infinite: true,
+		pauseOnHover: false,
+		autoplaySpeed: 5000,
+		speed: 500,
+		fade: true,
+		cssEase: 'linear',
+		init: function() {
+			topBanner();
+		}
+	});
+	/* home page banner slider */
+	$('#homeBanner1').slick({
+		arrows: true,
+		autoplay: false,
+		dots: false,
+		infinite: true,
+		pauseOnHover: false,
+		autoplaySpeed: 5000,
+		speed: 500,
+		fade: true,
+		cssEase: 'linear',
+		init: function() {
+			topBanner();
+		}
+	});
+$('.commonSlider').slick({
+		arrows: true,
+		autoplay: false,
+		dots: false,	
+		infinite: true,
+		pauseOnHover: false,
+		autoplaySpeed: 5000,
+		speed: 500,
+		fade: true,
+		cssEase: 'linear'
+	});
+$('#circleSlider').slick({
+	  slidesToShow: 3,
+	  slidesToScroll: 1,
+	  autoplay: false,
+	  dots: true,
+	  autoplaySpeed: 5000,	  
+	  arrows: false,
+	  speed: 500,
+	  swipe:true,
+	  infinite: true,
+	  responsive: [
+		{
+		  breakpoint: 870,
+		  settings: {
+			slidesToShow: 2,
+			slidesToScroll: 1
+		  }
+		},
+		{
+		  breakpoint: 580,
+		  settings: {
+			slidesToShow: 1,
+			slidesToScroll: 1
+		  }
+		}
+	  ]
+	});
+
+	$('.slickBunch').slick({
+	arrows: false,
+	autoplay: false,
+	dots: true,	
+	infinite: true,
+	pauseOnHover: false,
+	autoplaySpeed: 5000,
+	speed: 500
+	});
+	/* home page banner slider */	
+	
+	/* recipe section home page */
+	
+	$('.menuWrap ul li:nth-child(3n+1), .menuWrap ul li:nth-child(3n+3)').addClass('movelist');	
+	$('.menuWrap ul li').each(function(index, element) {
+        var movList = $('.menuWrap ul li.movelist');
+		if($(this).hasClass('movelist')){
+			$(this).find('.recipeTxt').insertAfter($(this).find('figure'));
+		}else{
+			$(this).find('.recipeTxt').insertBefore($(this).find('figure'));
+		}
+    });
+	/* setTimeout( function() { $('.menuWrap ul li').each(function(index, element) {
+        var movList = $('.menuWrap ul li.movelist');
+		if($(this).hasClass('movelist')){
+			$(this).find('.recipeTxt').insertAfter($(this).find('figure'));
+		}else{
+			$(this).find('.recipeTxt').insertBefore($(this).find('figure'));
+		}
+    }); }, 1000 );
+	 recipe section home page */
+	
+	/* sticky nav */
+	$(window).scroll(function(){	
+		if($(window).scrollTop()>20){
+			$('.menuSection').addClass('bgSmall');
+			$('header').addClass('mobPart');
+		} else {
+			$('.menuSection').removeClass('bgSmall');
+			$('header').removeClass('mobPart');
+		}
+	});
+	/* sticky nav */
+	
+	/* bg cover ie8*/	
+	function getIEVersion() {
+        var rv = -1; 
+		/* Return value assumes failure. */
+        if (navigator.appName == 'Microsoft Internet Explorer') {
+            var ua = navigator.userAgent;
+            var re  = new RegExp("MSIE ([0-9]{1,}[\.0-9]{0,})");
+            if (re.test(ua) != null)
+                rv = parseFloat( RegExp.$1 );
+        }
+        return rv;
+    }
+    function checkVersion() {
+        var ver = getIEVersion();
+        if ( ver != -1 ) {
+            if (ver <= 8.0) {
+               $('.coverBg').css( "background-size", "cover" );
+            }
+        }
+    }
+    checkVersion();
+	setTimeout(function () {
+				/*ulHgt();*/
+			}, 200);
+	/*ulHgt();*/
+	/* bg cover ie8*/
+	
+	/* matchHeight */
+	$('.pressTitle').matchHeight();	
+	$('.slideTable > div').matchHeight();
+	$('.contactSec > div').matchHeight();
+	
+	/* sublinks aside*/
+	/*
+	$('.subLink > ul > li').on('click', function(){
+		if(!$(this).hasClass('active')){
+			$('.subLink > ul > li').removeClass('active');
+			$('.subLink ul ul').slideUp();
+			$(this).addClass('active');
+			$(this).find('ul').slideDown();
+		} else {
+			$('.subLink > ul > li').removeClass('active');
+			$('.subLink ul ul').slideUp();
+		}
+		return false;
+	});
+*/
+	/* sublinks aside*/
+	
+	/* table mobile*/
+	$('table tr td').each(function(index, element) {
+        var th = $('table tr th').eq($(this).index()).text();
+		$(this).attr('data-title', th);
+    });
+	/* function init */
+	topBanner();
+	common();
+	/* function init */
+});
+	$(window).on('load',function(){
+$('.preloader').fadeOut();
+	$('.pageContent').animate({opacity:1},{duration:1000});
+});	
+function topBanner(){
+	var windowHeight = $(window).height();		
+	$('#topBanner,#homeBanner .dataBg ,#homeBanner1 .dataBg').css({height:windowHeight});
+	$('#topBanner1 .dataBg').css({height:windowHeight - 68});
+	$('.welcomeBlock').css({minHeight:windowHeight});
+	/*var topHgt = $('#topBanner2').height();
+	if(topHgt < windowHeight){
+	$('#topBanner2, .patternDec').css({minHeight:windowHeight});
+	$('.welcomeBlock').css({minHeight:windowHeight});
+	} else { 
+	$('#topBanner2, .patternDec').css({minHeight:topHgt});
+	$('.welcomeBlock').css({minHeight:topHgt});
+	}*/
+}
+
+
+
+function common(){
+	var windowWidth = $(window).width();
+	var windowHeight = $(window).height();	
+	var contaierWidth = $('.container').innerWidth();
+	var outContWidth = Math.round(windowWidth-contaierWidth)/2;
+	var introDec = $('.introDesc').innerHeight();
+	$('.introDesc').css({marginTop:-(introDec)/2});
+	/*if($('#aboutBlk').innerHeight()<windowHeight-80) {
+		$('#aboutBlk').css({minHeight:windowHeight-60});
+	} else {
+		$('#aboutBlk').css({minHeight:$('#aboutBlk').innerHeight()});
+	}*/
+	
+	$('.menuWrap ul li figure img').each(function(index, element) {
+        var imgHeight = $(this).height();
+		$(this).parents('li').find('.recipeTxt').css({height:imgHeight});
+    });
+	
+	/* recipe section home page */
+	if(windowWidth>640){
+		$('.menuWrap ul li').each(function(index, element) {
+			var movList = $('.menuWrap ul li.movelist');
+			if($(this).hasClass('movelist')){
+				$(this).find('.recipeTxt').insertAfter($(this).find('figure'));
+			} else {
+				$(this).find('.recipeTxt').insertBefore($(this).find('figure'));
+			}
+    	});
+	} else {
+		$('.menuWrap ul li').each(function(index, element) {
+			$(this).find('.recipeTxt').insertBefore($(this).find('figure'));
+    	});
+	}
+	if(windowWidth<=640){
+		$('.copyContent').insertAfter('.policy');
+$('.blogBlk').each(function(index, element) {
+            $(this).find('.date').insertAfter($(this).find('.blogDesc'));
+        });
+	}else{
+		$('.policy').insertAfter('.copyContent');
+$('.blogBlk').each(function(index, element) {
+            $(this).find('.date').insertBefore($(this).find('.authorName'));
+        });
+	}
+}
+/* Height */
+function ulHgt(){
+var winHgt = $(window).height();
+var landCont = $('.landingCont').innerHeight();
+var botHgt = $('.moreLocat').innerHeight();
+var ulLocat = $('.locatList').innerHeight();
+var totHgt = winHgt - (landCont + botHgt + 66);
+var countLi =$('.locatList li').size();
+countLi = countLi * 45;
+if(countLi > totHgt){
+$('.locatList').height(totHgt);
+} else {
+$('.locatList').css({'height':'100% !important'});	
+}
+/*if(countLi < totHgt){
+$('.moreLocat').css('visibility','hidden');
+} else {
+$('.moreLocat').css('visibility','visible');
+}*/
+}
+
+if(!Modernizr.touch) { 
+	$(window).on('resize', function(){
+		topBanner();
+		common();
+		/*ulHgt();*/
+	});
+}
+
+
+$(window).on('orientationchange', function(e){
+	topBanner();
+	common();
+	/*ulHgt();*/
+});
+
+});
+

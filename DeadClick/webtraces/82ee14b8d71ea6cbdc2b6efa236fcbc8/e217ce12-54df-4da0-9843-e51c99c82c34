@@ -1,0 +1,153 @@
+define('shared/scripts/bam/storage/0.3/storage', function( require, exports, module ){
+
+
+        var OBJECT = 'object',
+            STRING = 'string',
+            DATE = 'date',
+            STORAGE, STR_STORAGE = 'Storage',
+
+            INVALID_TYPE_EXCEPTION = new Error("Unknown storage type specified. Acceptable values are 'session' and 'local'."),
+            INVALID_KEY_EXCEPTION = new Error("Storage Key is not specified"),
+            INVALID_VALUE_EXCEPTION = new Error("Storage Value is not specified"),
+
+            config = {
+                type: 'session',
+                expires: 0
+            };
+
+        module = { /* Enum constant for two available storage types */
+            storageType: {
+                local: 'local',
+                session: 'session'
+            },
+            /**
+             *	Flag that indicates that local storage feature is supported by a browser
+             */
+            isAvailable: ("sessionStorage" in window) && ("localStorage" in window),
+            /**
+             * Sets default configuration for storage library
+             * @opt {
+             *	type: 'local' | 'session',
+             *	expires: Date | number(ms) - exact expiration date
+             * }
+             *	@returns - this(bam.storage)
+             */
+            setup: function(opt) {
+                if (typeof(opt) === OBJECT) {
+                    $.extend(config, opt);
+                }
+                return this;
+            },
+            /**
+             * Sets a new storage value
+             * Supports 2 argument signatures
+             * sig. 1
+             * 	@key <String> - key name
+             *	@value <object> - any string serializable value
+             *
+             * sig. 2
+             *	@opt {
+             *		key: "keyName",
+             *		value: "myValue",
+             *		expires: new Date()+1
+             *		type: 'local'
+             *	}
+             *
+             *	@returns - this(bam.storage)
+             */
+            set: function() {
+                var args = $.makeArray(arguments),
+                    opt = args.length === 1 ? (typeof(args[0]) === OBJECT ? args[0] : {
+                        expires: config.expires
+                    }) : {
+                        expires: config.expires
+                    },
+                    key = args.length > 1 ? args[0] : opt.key,
+                    value = args.length > 1 ? args[1] : opt.value,
+                    wrapper = {
+                        value: typeof(value) === OBJECT ? JSON.stringify(value) : value
+                    };
+
+                if (!key) {
+                    throw INVALID_KEY_EXCEPTION;
+                }
+                if (value === undef) {
+                    throw INVALID_VALUE_EXCEPTION;
+                }
+                if ($.type(opt.expires) === DATE && !isNaN(opt.expires)) {
+                    opt.expires = opt.expires.valueOf();
+                }
+
+                wrapper.expires = opt.expires || config.expires;
+
+                STORAGE = window[(opt.type || config.type) + STR_STORAGE];
+                if (STORAGE) {
+                    STORAGE[key] = JSON.stringify(wrapper);
+                } else {
+                    throw INVALID_TYPE_EXCEPTION;
+                }
+                return this;
+            },
+            /**
+             * Retrieves a stored value
+             *	@key <String> - value key
+             *	@type <String> - storage type (local | session) (optional)
+             *
+             * @returns - stored value or 'undefined' if value does not exist or has expired
+             */
+            get: function(key, type) {
+                STORAGE = window[(type || config.type) + STR_STORAGE];
+                if (STORAGE) {
+                    if (typeof(key) === STRING && (key in STORAGE)) {
+                        var wrapper = JSON.parse(STORAGE[key]),
+                            expires = wrapper.expires,
+                            now = new Date().valueOf(),
+                            out;
+                        if (expires && expires <= now) {
+                            delete STORAGE[key];
+                        } else {
+                            if (wrapper.value === undef) {
+                                out = STORAGE[key];
+                            } else {
+                                //Opera throws an exception when it tries to parse non-json value
+                                try {
+                                    out = JSON.parse(wrapper.value);
+                                } catch (ex) {
+                                    out = wrapper.value;
+                                }
+                            }
+                        }
+                        return out;
+                    }
+                } else {
+                    throw INVALID_TYPE_EXCEPTION;
+                }
+            },
+            /**
+             * Removes a stored value from local storage
+             *	@key <String> - value key
+             *	@type <String> - storage type (local | session) (optional)
+             *
+             *	@returns - this(bam.storage)
+             */
+            remove: function(key, type) {
+                STORAGE = window[(type || config.type) + STR_STORAGE];
+                if (STORAGE) {
+                    if (typeof(key) === STRING && (key in STORAGE)) {
+                        delete STORAGE[key];
+                    }
+                } else {
+                    throw INVALID_TYPE_EXCEPTION;
+                }
+                return this;
+            }
+        };
+
+    exports.isAvailable = module.isAvailable;
+    exports.setup = module.setup;
+    exports.set = module.set;
+    exports.get = module.get;
+    exports.remove = module.remove;
+
+
+});

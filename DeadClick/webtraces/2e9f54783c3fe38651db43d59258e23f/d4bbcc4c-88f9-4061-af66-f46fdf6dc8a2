@@ -1,0 +1,401 @@
+/* Version: 7.6.0 */
+
+// Current Menu
+var currentMenu = null;
+var currentMenuStatus = false;
+var is_pending = 0;
+var submit_clicked = 0;
+
+function ubbtAJAX(url, callback, responseType) {
+
+	var req = init();
+
+	req.onreadystatechange = processRequest;
+
+	if (!responseType) {
+		responseType = "text";
+	}
+
+	var type = responseType;
+
+ 	function init() {
+		if (window.XMLHttpRequest) {
+			http_request = new XMLHttpRequest();
+		} else if (window.ActiveXObject) { // IE
+			try {
+				http_request = new ActiveXObject("Msxml2.XMLHTTP");
+			} catch (e) {
+				try {
+					http_request = new ActiveXObject("Microsoft.XMLHTTP");
+				} catch (e) {}
+			}
+		}
+		return http_request;
+	}
+
+	function processRequest () {
+		if (req.readyState != 4) {
+			return;
+		}
+		if (req.readyState == 4) {
+			if (callback) {
+				if (type == "xml") {
+					callback(req.responseXML);
+				} else {
+					callback(req.responseText);
+				}
+			}
+			req.onreadystatechange = function() {};
+			req.abort();
+		}
+	}
+
+	this.sendData = function(meth,params) {
+
+		if (meth == "GET") {
+			req.open("GET", url, true);
+			req.send(null);
+		} else {
+    			req.open('POST', url, true);
+      			req.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+      			req.setRequestHeader("Content-length", params.length);
+      			req.setRequestHeader("Connection", "close");
+      			req.send(params);
+    		}
+	}
+}
+
+function markRead(forum,replacer) {
+
+	var url = script + "?ubb=markread&forum=" + forum;
+	var ajax = new ubbtAJAX(url);
+	ajax.sendData("GET");
+
+	image = get_object('icon-' + forum);
+	image.src = baseurl + "/images/" + imagedir + "/" + replacer;
+
+	obj = get_object('threads-' + forum);
+	obj.innerHTML = '';
+
+	obj = get_object('posts-' + forum);
+	obj.innerHTML = '';
+
+}
+
+function doPreview() {
+	if (is_pending) return;
+	is_pending = 1;
+
+	obj = document.replier;
+
+	body = get_object('texteditor').value;
+	convert = '';
+	if (obj.convert) {
+		convert = obj.convert.value;
+	}
+
+	gallery = 0;
+	if (obj.gallery) {
+		gallery = obj.gallery.value;
+	}
+
+	obj = get_object('preview_text');
+	obj.innerHTML = loadingpreview;
+	area = get_object('preview_area');
+	area.style.display = "";
+
+	var url = script;
+	var ajax = new ubbtAJAX(url, updatePreview);
+	ajax.sendData("POST","ubb=previewpost&convert=" + convert + "&gallery=" + gallery + "&Body=" + encodeURIComponent(body));
+}
+
+function updatePreview(responseXML) {
+	postBody = responseXML;
+	obj = get_object('preview_text');
+	obj.innerHTML = postBody;
+	is_pending = 0;
+}
+
+
+// Get and retrieve an object
+function get_object(obj) {
+	if (document.getElementById) {
+		return document.getElementById(obj);
+	} else if (document.all) {
+		return document.all[obj];
+	} else if (document.layers) {
+		return document.layers[obj];
+	} else {
+		return null;
+	}
+}
+
+// Get the position of the current object
+function get_offset(obj) {
+	var left_offset = obj.offsetLeft;
+	var top_offset = obj.offsetTop;
+
+		while ((obj = obj.offsetParent) != null) {
+		left_offset += obj.offsetLeft;
+		top_offset += obj.offsetTop;
+	}
+	top_offset += 2;
+		return {
+			'left': left_offset,
+			'top': top_offset
+		};
+}
+
+
+// Show/Hide a block of content and set a cookie
+function showHideBlock(e) {
+
+	element = get_object(e);
+	image = get_object('toggle_' + e);
+
+	currentCookie = "";
+	currentCookie = getCookie('ubbt_collapsed');
+
+	if (element.style.display == "none") {
+		element.style.display = "";
+		re = new RegExp(e, "ig");
+		newCookie = currentCookie.replace(re, "");
+		image.src = baseurl + "/images/" + imagedir + "/toggle_closed.gif";
+	} else {
+		element.style.display = "none";
+		image.src = baseurl + "/images/" + imagedir + "/toggle_open.gif";
+		newCookie = currentCookie + "|" + e + "|";
+	}
+
+	setCookie('ubbt_collapsed',newCookie);
+	}
+
+// Show/Hide any block of text
+function showHide(obj,delay) {
+
+	obj = get_object(obj);
+	if (obj.style.display == "none") {
+		obj.style.display = '';
+	} else {
+		obj.style.display = "none";
+		}
+		return true;
+	}
+
+// Show/Hide a popup menu
+function showHideMenu(obj, e) {
+		obj = get_object(obj);
+	pos = get_offset(obj);
+	leftpx = pos['left'];
+	toppx = pos['top'] + obj.offsetHeight;
+
+	element = get_object(e);
+
+	// Close the last active menu
+		if (currentMenu != null && typeof currentMenu == "object" && currentMenu != element) {
+			currentMenu.style.display = "none";
+		}
+		if (element.style.display == "none") {
+			element.style.visibility = "hidden";
+			element.style.display = "";
+			currentMenu = element;
+			currentMenuStatus = true;
+
+		element.style.position = 'absolute';
+		element.style.zIndex = 50;
+
+		// Compensate for menus that are far to the right
+		if ((leftpx + element.offsetWidth >= document.body.clientWidth) && (leftpx + obj.offsetWidth - element.offsetWidth) > 0) {
+			element.style.left = (leftpx + obj.offsetWidth - element.offsetWidth) + 'px';
+			element.style.top  = toppx + 'px';
+		} else {
+			element.style.left = leftpx + 'px';
+			element.style.top  = toppx + 'px';
+		}
+		element.style.visibility = "visible";
+
+	} else {
+		element.style.display = "none";
+		currentMenu = null;
+		currentMenuStatus = false;
+	}
+
+}
+
+// Clears the last active menu
+function clearMenus(e) {
+		if (!e) e = window.event
+		if (e.target) targ = e.target;
+		else if (e.srcElement) targ = e.srcElement;
+		if (targ.nodeType == 3) targ = targ.parentNode;
+		if (targ.className.indexOf("noclose") != -1 || (targ.parentNode != null && targ.parentNode.className != null && (targ.parentNode.className.indexOf("noclose") != -1 || (targ.parentNode.parentNode != null && targ.parentNode.parentNode.className != null && targ.parentNode.parentNode.className.indexOf("noclose") != -1)))) {
+			return;
+		}
+		if (currentMenuStatus == true) {
+			currentMenuStatus = false;
+			return true;
+		}
+		if (currentMenu != null && typeof currentMenu == "object") {
+			currentMenu.style.display = "none";
+		}
+	}
+
+// Register a popup menu
+function registerPopup(e) {
+	element = get_object(e);
+	if (element == null) return;
+	element.style.display = "none";
+	if (element.getElementsByTagName) var x = element.getElementsByTagName('TD');
+	for (var i = 0; i < x.length; i++) {
+		if (x[i].className.indexOf("noclose") == -1) {
+			x[i].onclick = click;
+			x[i].id = e;
+		}
+		if (x[i].className == "popup_menu_header") continue;
+		x[i].onmouseover = over;
+		x[i].onmouseout = out;
+	}
+}
+
+function over() {
+	this.className = this.className.replace(/popup_menu_content/, "popup_menu_highlight");
+
+}
+function out() {
+	this.className = this.className.replace(/popup_menu_highlight/, "popup_menu_content");
+}
+function click() {
+	obj = get_object(this.id);
+	obj.style.display="none";
+}
+
+function getCookie(name) {
+	var start = document.cookie.indexOf(name + "=");
+	var len = start + name.length + 1;
+	if ((!start) && (name != document.cookie.substring(0, name.length))) {
+		return null;
+	}
+	if (start == -1) return null;
+	var end = document.cookie.indexOf(";", len);
+	if (end == -1) end = document.cookie.length;
+	return unescape(document.cookie.substring(len, end));
+}
+
+
+function setCookie(id,value) {
+
+	var today = new Date();
+	today.setTime( today.getTime() );
+	expires = 1000 * 365 * 60 * 60 * 24;
+	var expires_date = new Date( today.getTime() + (expires) );
+
+	document.cookie = id + "=" +escape( value ) + ";expires=" + expires_date.toGMTString()  + ";path=/";
+
+}
+
+function toggleIgnore(e) {
+
+	element = get_object(e);
+	image = get_object('body' + e);
+	if (element.style.display == "none") {
+		element.style.display = "";
+	} else {
+		element.style.display = "none";
+	}
+}
+
+function submitPost() {
+	if (submit_clicked == "1") {
+		return alert(submitClicked);
+	}
+	submit_clicked = 1;
+	document.replier.submit();
+}
+
+function clearSubmit() {
+	submit_clicked = 0;
+}
+
+function toggle_spoiler(self, lang_hide_spoiler, lang_show_spoiler) {
+	var spoiler_box = self.parentNode.parentNode.getElementsByTagName('div')[1].getElementsByTagName('div')[0];
+
+	if (spoiler_box.style.display == 'none') {
+		spoiler_box.style.display = "";
+		self.value = lang_hide_spoiler;
+	} else {
+		spoiler_box.style.display = "none";
+		self.value = lang_show_spoiler;
+	}
+}
+
+function goto_page(url, id) {
+	var page = get_object(id).value;
+	var loc = window.location.href;
+	window.location.href = baseurl + "/ubbthreads.php?ubb=" + url + page;
+}
+
+function changePrefs(what,value) {
+	window.location.href = baseurl + "/ubbthreads.php?ubb=changeprefs&what=" + what + "&value=" + value + "&curl=" + document.prefs.curl.value;
+	}
+
+// Centers the supplied window in the available realestate provided by the windows' dimensions
+function showChromeless(url, name, w, h, scroll) {
+  // Fudge factors for window decoration space.
+  // In my tests these work well on all platforms & browsers.
+  w += 32;
+  h += 96;
+  wleft = (screen.width - w) / 2;
+  wtop = (screen.height - h) / 2;
+  // IE5 and other old browsers might allow a window that is
+  // partially offscreen or wider than the screen. Fix that.
+  // (Newer browsers fix this for us, but let's be thorough.)
+  if (wleft < 0) {
+    w = screen.width;
+    wleft = 0;
+  }
+  if (wtop < 0) {
+    h = screen.height;
+    wtop = 0;
+  }
+  // Optional scroll
+  sc = (scroll == 1) ? 'yes' : 'no';
+
+  var win = window.open(url,
+    name,
+    'width=' + w + ', height=' + h + ', ' +
+    'left=' + wleft + ', top=' + wtop + ', ' +
+    'location=no, menubar=no, ' +
+    'status=no, toolbar=no, scrollbars=' + sc + ', resizable=no');
+  // Just in case width and height are ignored
+  win.resizeTo(w, h);
+  // Just in case left and top are ignored
+  win.moveTo(wleft, wtop);
+  win.focus();
+}
+var grippy_list = new Array();
+var additional_onloads = new Array();
+
+// Section expander, such as Forum Help
+$(document).ready(function() {
+	var to = "fa fa-plus-square fa-fw";
+	var tc = "fa fa-minus-square fa-fw";
+	$('div.expheader').each(function() {
+		var state = false,
+			answer = $(this).next('div'),
+			ind = $(this).find('i');
+		$(this).click(function() {
+			state = !state;
+			newSrc = (state) ? tc : to;
+			ind.attr('class', newSrc);
+			answer.slideToggle('fast');
+		});
+	});
+});
+
+// Show or Hide right/left columns
+$(document).ready(function() {
+	$('#expcols').click(function() {
+		$('.right_col').toggle("slide");
+		$('.left_col').toggle("slide");
+	});
+});

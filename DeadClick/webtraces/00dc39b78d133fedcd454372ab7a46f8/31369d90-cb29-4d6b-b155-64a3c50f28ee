@@ -1,0 +1,69 @@
+if(b.ie && !b.mac)
+	{
+	var vb= "";
+      	vb += '<SCR' + 'IPT LANGUAGE=VBScript\> \n';
+	vb += 'Function VBFlash() \n';
+        vb += 'on error resume next \n';
+        vb += 'Dim C \n';
+        vb += 'set C = vbNull \n';
+        vb += 'Dim tver \n';
+        vb += 'set tver = 0 \n';
+	vb += 'Dim svr \n';
+        vb += 'svr = "ShockwaveFlash.ShockwaveFlash" \n';
+        vb += 'set C = CreateObject(svr) \n';
+        vb += 'if (IsObject(C)) then \n';
+	vb += 'Dim mVer \n';
+        vb += 'Dim sVer \n';
+        vb += 'Dim cVer \n';
+        vb += 'cVer = C.FlashVersion() \n';
+        vb += 'mVer = int(cVer / 65536) \n';
+        vb += 'sVer = cVer mod 65536 \n';
+        vb += 'if (sVer < 100) then sVer = "0" + CStr(sVer) \n';
+        vb += 'if (sVer < 10)  then sVer = "0" + CStr(sVer) \n';
+        vb += 'tver = CStr(mVer) + ".0" + CStr(sVer) \n';
+        vb += 'end if \n';
+        vb += 'VBFlash = tver \n';
+        vb += 'End Function \n';
+      	vb += 'Function VBGetFlashTE \n';
+        vb += 'on error resume next \n';
+        vb += 'Dim C \n';
+        vb += 'set C = vbNull \n';
+        vb += 'Dim svVer \n';
+        vb += 'set svVer = 0 \n';
+        vb += 'For i = 10 To 1 Step -1 \n';
+        vb += 'Dim svr \n';
+        vb += 'svr = "ShockwaveFlash.ShockwaveFlash." + CStr(i) \n';
+        vb += 'set C = CreateObject(svr) \n';
+        vb += 'if (IsObject(C)) then \n';
+        vb += 'svVer = i \n';
+        vb += 'Exit For \n';
+        vb += 'end if \n';
+        vb += 'Next \n';
+        vb += 'VBGetFlashTE = svVer \n';
+        vb += 'End Function \n';
+	vb += '</SCR' + 'IPT\> \n';
+	document.write(vb);
+	}
+    if(b.ie && !b.mac)
+		{
+	      	var fVer = VBFlash() || 0;
+		if (fVer == 3.0008){var svVer = VBGetFlashTE();
+        	if (svVer > fVer){fVer = 4.0000;}}
+		else if (!fVer){fVer = VBGetFlashTE() || 0;}
+		else if (fVer == 4){fVer = 4.0015;}}
+    else{var fVer=0;}
+      function setF()
+      {arr = navigator.plugins;arrl = arr.length;
+        for (var i=0; i < arrl; i++){plug = arr[i];desc   = plug.description;
+          if (desc.indexOf("Shockwave Flash ") != -1){var vLoc = desc.indexOf("Shockwave Flash ");
+            var vStr = desc.substring(vLoc + 16,desc.length);var sVer;var mVer;vLoc = vStr.indexOf(" r");
+            if (vLoc != -1){mVer = vStr.substring(0,vLoc);sVer = vStr.substring(vLoc + 2,vStr.length);
+            fnVer = parseFloat(mVer + (sVer < 100 ? "0" : "") + (sVer < 10 ? "0" : "") + sVer);}
+            else{fnVer = parseFloat(vStr);}}}}
+var fnVer = 0;
+setF();
+var myFlash;
+if(!fVer || fVer==0){myFlash=fnVer;}
+else{myFlash=fVer;}
+function hasFlash(bVer){if(myFlash<bVer){return false;}else{return true;}}
+

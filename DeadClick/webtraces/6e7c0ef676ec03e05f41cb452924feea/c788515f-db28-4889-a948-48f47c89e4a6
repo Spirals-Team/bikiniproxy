@@ -1,0 +1,31 @@
+/* /Legacy Tracker Marker Conversion to Omniture Link Scraper */
+/* Code to search for the video tag marker and dynamically include the AMP player .js file
+ * To Do: start using the new data attribute to search for the players instead of the hard-coded
+  * id="cme-video-player"*/
+jQuery(document).ready(function(){
+    if(document.getElementById('cme-video-player') != null && document.getElementById('video-bundle') == null) {
+    var config = document.getElementById('cme-video-player').getAttribute('data-config'),
+        fileref = document.createElement('script'),
+        scriptEl = document.createElement('script');
+        scriptEl.async = false;
+
+    fileref.setAttribute('type', 'text/javascript');
+    fileref.setAttribute('id', 'video-bundle');
+    fileref.async = false;
+    fileref.setAttribute('src', '//img.' + getDomain() + 'medscapestatic.com/pi/core/cmeplayer/corelib.bundle.js');
+
+    window.storeConfig = function(obj) {
+        if(obj && obj.config && obj.config.articleId) {
+        window.storedConfigs = {};
+        window.storedConfigs[obj.config.articleId] = obj;
+        if(window.location.pathname.indexOf('cme-example') !== -1) {
+            var fragment = window.location.hash.replace('#','');
+            window.storedConfigs[fragment] = obj
+        }
+        }
+        document.getElementsByTagName("head")[0].appendChild(fileref);
+    }
+    scriptEl.setAttribute('src','//api.' + getDomain() + 'medscape.com/contentservice/video/content/' + config +  '?callback=storeConfig');
+    document.body.appendChild(scriptEl);
+    }
+});

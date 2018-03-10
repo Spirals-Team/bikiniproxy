@@ -1,0 +1,1289 @@
+;
+var cb; // annoying GSI callback hack
+
+// $j is required for this app becuase of GSI issues
+if (typeof $j === 'undefined') $j = $;
+
+;(function($j){
+  $j.ajaxSetup({
+    cache: true
+  });
+
+var evt_type = ("ontouchstart" in window) ? 'touchstart' : 'click';
+
+var RLSocial = {
+    version: 'v2',
+    parent: null,
+    element: null,
+    id: 'ralphlauren',
+    requestId: '',
+    userId: '',
+    endpoint: '//api.curalate.com/v1/reels/',
+    //pluginURLbase: '//qa.assets.ralphlauren.com/js/plugins/rlsocial/',
+    jsAssetsBase: '//assets.ralphlauren.com/js/',
+
+    assetsURL: '',
+
+    productPath: ($j('#route-content').length > 0) ? '/#/product/{{pid}}?' : '/product/index.jsp?productId={{pid}}&',
+
+    settings: null,
+
+    shoppable: true,
+
+    templates: [],
+
+    curalateData: null,
+
+    gridData: {},
+
+    isIE: false,
+    isIE9:false,
+
+    width: 'wide',
+
+    language: 'en',
+
+    init: function(settings) {
+        userAgent = navigator.userAgent;
+
+        if(userAgent.indexOf('iPad') > -1){
+            $j('html').addClass('ipad');
+            RLSocial.isIpad = true;
+        }
+        else if((userAgent.indexOf('MSIE') > -1) || (userAgent.indexOf('Trident/') > -1)) {
+            $j('html').addClass('ie');
+            RLSocial.isIE = true;
+
+            if((userAgent.indexOf('MSIE 9') >-1) || (userAgent.indexOf('MSIE 8') >-1)) {
+                $j('html').addClass('lt-ie10');
+                RLSocial.isIE9 = true;
+
+                if((userAgent.indexOf('MSIE 8') >-1)) {
+                    $j('html').addClass('lt-ie9');
+                }
+            }
+        }
+
+        if (typeof settings !== 'undefined') {
+            RLSocial.settings = settings;
+            RLSocial.id = settings.fanreelId;
+            RLSocial.pluginBase = settings.pluginBase;
+            RLSocial.locale = settings.locale;
+            RLSocial.product_only = settings.product_only;
+            RLSocial.product_captions = typeof(settings.product_captions !== undefined)
+              ? settings.product_captions : true;
+              console.log(RLSocial.product_captions)
+            RLSocial.tag_filter = settings.tag_filter;
+
+            RLSocial.limit = settings.limit;
+            RLSocial.layout = settings.layout;
+            RLSocial.header = settings.header;
+            RLSocial.more_btn = settings.more_btn;
+            RLSocial.columns = settings.columns;
+            RLSocial.rows = settings.rows;
+            RLSocial.responsive = settings.responsive;
+            RLSocial.qtyToAdd = RLSocial.columns;
+
+            RLSocial.shoppable = settings.shoppable;
+
+            RLSocial.onComplete = settings.onComplete;
+
+            RLSocial.parent = settings.parent;
+
+            RLSocial.tagging = {
+              omni_pageName: settings.omni_pageName,
+              omni_pageType: settings.omni_pageType,
+              omni_campaign: settings.omni_campaign,
+            }
+
+        }
+
+        //RLSocial.assetsURL = (document.currentScript) ? document.currentScript.baseURI : RLSocial.assetsURLbase + RLSocial.version + '/'; // add version to assets path
+        RLSocial.assetsURL = RLSocial.pluginBase + RLSocial.version + '/'; // add version to assets path
+
+        $j("head").append("<link rel='stylesheet' type='text/css' href='" + RLSocial.assetsURL + "rlsocial.css' />");
+
+        RLSocial.parent.append('<div id="RLSocial" class="rlsocial_tp_' + RLSocial.layout + '" />');
+
+        RLSocial.element = $j('#RLSocial')
+
+        if(!RLSocial.responsive) {
+          if(RLSocial.parent.width() == 740) {
+            RLSocial.element.addClass('width_740');
+          }
+        }
+
+        if (settings.language != 'en') {
+          RLSocial.language = settings.language;
+        }
+        else if(typeof config !== 'undefined') {
+            RLSocial.language = config.lang.toLowerCase();
+        }
+        else if(typeof locale !== 'undefined') {
+            RLSocial.language = locale.substr(0,2);
+        }
+        else if(typeof localeCode !== 'undefined') {
+            RLSocial.language = localeCode.substr(0,2);
+        }
+        else if (typeof objEnvironmentManager !== 'undefined') {
+            RLSocial.language = objEnvironmentManager.locale.substr(0,2);
+        }
+        else {
+            RLSocial.language = 'en';
+        }
+
+        if(typeof Handlebars === 'undefined') {
+            //$j.getScript(RLSocial.jsAssetsBase+'lib/handlebars-v4.0.5.js', function () { // NOT WORKING
+            $j.getScript('//assets.ralphlauren.com/js/libs/handlebars/handlebars-v1.3.0.min.js', function () {
+              /*
+                if(typeof Handlebars.templates === 'undefined') {
+                    $j.getScript('//shop.ralphlauren.com/Templates/templates.js', function () {
+                        buildApp();
+                    });
+                }
+                else {
+                    buildApp();
+                }
+                */
+                buildApp();
+            });
+        }
+        else {
+            buildApp();
+        }
+
+        /* TODO - IS THIS NEEDED??
+        // LOAD OMNITURE SCRIPT
+        if(typeof s === 'undefined') {
+          if(typeof Df === 'undefined') {
+            $j.getScript('//www.ralphlauren.com/js/df/Df.js', function () {
+              $j.getScript('//www.ralphlauren.com/include/omniture-h.js', function () {});
+            });
+          }
+          else {
+            $j.getScript('//www.ralphlauren.com/include/omniture-h.js', function () {});
+          }
+        }
+        */
+
+        function buildApp(){
+            var limit = RLSocial.limit;
+
+            RLSocial.getCuralateFeed(RLSocial.id, limit);
+
+            $RLSocialElem = RLSocial.element;
+
+            $RLSocialElem.siblings().addClass('RLSocialSibling');
+
+            if(!RLSocial.responsive) $RLSocialElem.addClass('notResponsive');
+
+            //if (RLSocial.columns) {
+              $RLSocialElem.addClass('columns_' + RLSocial.columns);
+            //}
+
+            RLSocial.resizeHandler.currWidth = RLSocial.parent.width();
+
+            $j( window ).resize(RLSocial.resizeHandler.checkChanged);
+            window.addEventListener("orientationchange", function() {
+              RLSocial.resizeHandler.currWidth = RLSocial.parent.width();
+              RLSocial.resizeHandler.resetLayout();
+            }, false);
+
+            if (RLSocial.more_btn) {
+              RLSocial.element.after(RLSocial.renderTemplate('btnLoadMore', RLSocialTranslations[RLSocial.language]));
+            }
+
+            $j('.rlSocialBtnLoadMore').on('click', RLSocial.addMore);
+
+            return false;
+        }
+
+        return false;
+    },
+    resizeHandler: {
+      breakpoint: 739,
+        currWidth: 0,
+        checkChanged: function() {
+            if ((RLSocial.resizeHandler.currWidth < RLSocial.resizeHandler.breakpoint && RLSocial.parent.width() >=  RLSocial.resizeHandler.breakpoint)
+                || (RLSocial.resizeHandler.currWidth >= RLSocial.resizeHandler.breakpoint && RLSocial.parent.width() <  RLSocial.resizeHandler.breakpoint)) {
+                RLSocial.resizeHandler.currWidth = RLSocial.parent.width();
+                RLSocial.resizeHandler.resetLayout();
+            }
+        },
+        resetLayout: function() {
+          if( RLSocial.element.attr('data-rlsocial-modal-open') == 'true' ) {
+            RLSocial.modal.close();
+            setTimeout(function() {
+              RLSocial.modal.build($j('.rlSocialGridBox:eq(' + RLSocial.element.attr('data-rlsocial-currItem') + ')').find('.rlSocialItem')[0]);
+            }, RLSocial.modal.transitionSpeed);
+          }
+        }
+    },
+    getCuralateFeed: function(id, limit) {
+      var optionStr = (RLSocial.product_only) ? '&isProductRequired=true' : '';
+      optionStr += (RLSocial.tag_filter) ? '&filters=' + RLSocial.tag_filter : '';
+        var url = RLSocial.endpoint + id + ".jsonp?" + "limit=" + limit + optionStr
+        RLSocial.getData(url);
+    },
+    getData: function(url) {
+        $j.ajax({
+            url: url,
+            jsonpCallback: "$j.fn.rlSocialBuild",
+            cache: false,
+            dataType: "jsonp"
+        });
+    },
+    getItemData:function(key, findPins) {
+        if(typeof key === 'number') {
+            //console.log(RLSocial.gridData[key]);
+            return RLSocial.gridData.items[key];
+        }
+        else {
+            //findPinned = (key == 'big')? 1 : 0;
+            var itemData = getData(findPins);
+
+            if(!itemData) {
+                if(!findPins) RLSocial.resetShownItems();
+                itemData = getData(false);
+
+            }
+            return itemData;
+        }
+
+        function getData(getPin) {
+            //for (var index in RLSocial.gridData){
+            for (var index = 0;index < RLSocial.gridData.length;index++){
+                if(((getPin && RLSocial.gridData[index].pin == 'pin') || RLSocial.gridData[index].size == key || (key == '' && RLSocial.gridData[index].size === undefined) )
+                    && RLSocial.gridData[index].active != true) {
+                //if(RLSocial.gridData[index].active != true) {
+                    RLSocial.gridData[index].active = true;
+                    return RLSocial.gridData[index];
+                }
+            }
+        }
+    },
+    checkWidth: function() {
+      if ($j('.rlSocialGridBox:eq(0)').position().top == $j('.rlSocialGridBox:eq(2)').position().top) {
+        return 'wide';
+      }
+      else {
+        return 'thin';
+      }
+    },
+    renderTemplate: function(template, context){
+      //console.log('renderTemplate');
+        //var Handlebars = window["Handlebars"];
+          //var deviceStr = (RLSocial.isMobile && !RLSocial.isIpad)? 'mobile/' : '';
+          var deviceStr = '';
+          if (template == 'modal' || template == 'modal_inner' || template == 'productDetails') {
+            var mobilePrefix = (RLSocial.settings.dev)? 'mobile/' : 'mobile_';
+            var deviceStr = (RLSocial.checkWidth() == 'thin')? mobilePrefix : '';
+          }
+
+        if (Handlebars.templates === undefined ||
+            Handlebars.templates[deviceStr + template] === undefined) {
+
+            if (RLSocial.settings.dev) { // use template files
+                var template_url = RLSocial.assetsURL + 'templates/' + deviceStr + template + '.hbs';
+                //console.log(template_url);
+                $j.ajax({
+                    url: template_url,
+                    method: 'GET',
+                    async: false,
+                    crossDomain : true,
+                    success: function (data) {
+                        if (Handlebars.templates === undefined) {
+                            Handlebars.templates = {};
+                        }
+                        Handlebars.templates[deviceStr + template] = Handlebars.compile(data);
+                    }
+                });
+            }
+            else { // use compiled templates
+              if (Handlebars.templates === undefined) {
+                  Handlebars.templates = {};
+              }
+              if(RLSocial.settings.product_captions == false && (deviceStr + template) == 'mobile_modal_inner'){
+                Handlebars.templates[deviceStr + template] = Handlebars.compile(RLSocialTemplates['mobile_modal_inner_captionless']);
+              }
+              else{ Handlebars.templates[deviceStr + template] = Handlebars.compile(RLSocialTemplates[deviceStr + template]); }
+            }
+        }
+       return Handlebars.templates[deviceStr + template](context);
+    },
+    buildItems:function(data, startPos){
+      //console.log('build items');
+      //console.log(data);
+      if (!startPos) {
+        startPos = 0;
+
+        if(data && data.items) {
+            //console.log(data);
+            RLSocial.curalateData = data.items;
+            RLSocial.requestId = data.requestId;
+            RLSocial.prepareItems(data.items);
+        }
+      }
+
+        var language = RLSocial.language;
+
+        if(RLSocial.curalateData) {
+          //console.log('layout', RLSocial.layout)
+          if(RLSocial.layout == 'grid') {
+
+            Handlebars.registerHelper('odd_even', function(index) {
+              if((index % 2) == 0) {
+                return 'odd';
+              }
+              else {
+                return 'even';
+              }
+            });
+
+            Handlebars.registerHelper('col_num', function(index) {
+              return 'col' + RLSocial.columns + '_' + ((index % RLSocial.columns)+1)
+            });
+
+            RLSocial.gridData.title = RLSocialTranslations[language];
+
+            var rlSocialMarkup = '';
+            if (RLSocial.header == 'default' && startPos == 0) {
+              rlSocialMarkup = RLSocial.renderTemplate('headerRLSocial', RLSocialTranslations[language]);
+            }
+
+            var feedLengthGood = true;
+
+            if (startPos == 0){ // FIRST LOAD
+              var qtyToAdd = (RLSocial.columns * RLSocial.rows);
+              if(qtyToAdd > RLSocial.curalateData.length) {
+                qtyToAdd = (Math.floor(RLSocial.curalateData.length / RLSocial.columns) * RLSocial.columns);
+                feedLengthGood = false;
+              }
+            }
+            else if (RLSocial.checkWidth() == 'thin') {  // MOBILE MORE BUTTON
+              var qtyToAdd = 2;
+            }
+            else {  // MORE BUTTON
+              var qtyToAdd = RLSocial.qtyToAdd;
+            }
+            RLSocial.gridData.items_paginated = RLSocial.gridData.items.slice(startPos,(startPos + qtyToAdd));
+            rlSocialMarkup += RLSocial.renderTemplate('grid', RLSocial.gridData);
+
+            //add clear for float
+            //rlSocialMarkup += '<div class="clear rlsocial_bottom"></div>';
+
+            //console.log(rlSocialMarkup);
+            RLSocial.element.append(rlSocialMarkup).data('page',1);
+          }
+
+          // TODO give this a better name for v2
+          RLSocial.position_items(feedLengthGood);
+
+          /* SOLVED BY REMOVING WHITESPACE IN TEMPLATES
+          //remove previous clear
+          $j('.rlsocial_bottom.loaded').remove();
+
+          $j('.rlsocial_bottom').addClass('loaded');
+          */
+
+          if(!RLSocial.isMobile) RLSocial.fanreelAnalytics();
+        }
+
+        RLSocial.onComplete(feedLengthGood);
+
+        return false;
+    },
+    fanreelAnalytics: function() {
+        $j.getScript( "//api.curalate.com/js-min/fanreel-analytics.min.js", function() {
+            window.fanreelAnalytics.init({
+                fanreelId: RLSocial.id,
+                containerId: '#RLSocial',
+                requestId: RLSocial.requestId,
+                userId: RLSocial.userId,
+                jQuery: window.$j
+            });
+        });
+
+        return false;
+    },
+    prepareItems: function(items) {
+      //console.log('prepareItems');
+      //console.log(items);
+        var context = [];
+//        for (var index in items){
+        for (var index = 0; index < items.length; index++){
+          //console.log('item');
+          //console.log(items[index]);
+            //var excludeItem = false;
+            //var includeItem = (RLSocial.tag_filter) ? false : true;
+            var includeItem = true;
+
+            var classStr = '';
+
+            var tmp_obj = {
+                item_index: index,
+                caption: items[index].caption,
+                url: (items[index].url) ? items[index].url : '',
+                like_count: items[index].like_count,
+                comment_count: items[index].comment_count,
+                active: false,
+                image: {
+                    large: items[index].photo.large_square.url,
+                    medium: items[index].photo.medium_square.url,
+                    small: items[index].photo.small_square.url
+                },
+                timeElapsed: getTimeElapsed(items[index].timestamp),
+                user: {
+                    display_name: (items[index].user.small_square) ? items[index].user.display_name : 'Ralph Lauren',
+                    image: (items[index].user.small_square) ? items[index].user.small_square.url : '//d3srxg1ot3a2g0.cloudfront.net/profiles/50x50c/77776a5f-08ca-4f6e-bef6-a8b6d7c331f6.jpg',
+                    profile: (items[index].user.small_square) ? items[index].user.profile_url : ''
+                }
+            }
+            if(items[index].video){
+              tmp_obj.video = {
+                large: items[index].video.large.url,
+                medium: items[index].video.medium.url
+              }
+            }
+            // GET TAGS
+            var isRLMag = false;
+            var isCeleb = false;
+
+            for (var tagIdx=0;tagIdx < items[index].tags.length;tagIdx++){
+                if(typeof items[index].tags[tagIdx] === 'string') {
+                  if(RLSocial.tag_filter && items[index].tags[tagIdx] == RLSocial.tag_filter) {
+                    includeItem = true;
+                  }
+                  if (items[index].tags[tagIdx].indexOf('celeb') > -1 ) {
+                      tmp_obj.size = 'big';
+                      isCeleb = true;
+                  }
+                  if (items[index].tags[tagIdx].indexOf('brand_') == 0) {
+                  }
+                    if (items[index].tags[tagIdx].indexOf('big') > -1 ) {
+                        tmp_obj.size = 'big';
+                    }
+                    else if (items[index].tags[tagIdx].indexOf('pin') > -1 ) {
+                        tmp_obj.pin = 'pin';
+                        tmp_obj.size = 'big';
+                    }
+                    /*
+                    else if (RLSocial.shoppable && items[index].products.length > 0) {
+                        tmp_obj.products = items[index].products;
+                        classStr += 'product '
+                    }
+                    */
+                    else if (items[index].tags[tagIdx].indexOf('link_') == 0) {
+                        tmp_obj.link = {
+                            url: items[index].tags[tagIdx].replace('link_', ''),
+                            text: 'SHOP NOW',
+                            ab: 'shopnow'
+                        }
+                    }
+                    else {
+                        classStr += items[index].tags[tagIdx] + ' ';
+                        if (items[index].tags[tagIdx].toLowerCase().indexOf('rlmag') > -1 ||
+                            items[index].tags[tagIdx].toLowerCase().indexOf('explore') > -1) isRLMag = true;
+                    }
+                }
+            }
+            if (RLSocial.shoppable && !isCeleb && items[index].products.length > 0) {
+              for (var idx in items[index].products){
+                if (typeof items[index].products[idx] === 'object') {
+                  // Use brand logos
+                  if (items[index].products[idx].metadata.brand){
+                    if (items[index].products[idx].metadata.brand.indexOf('Polo Ralph Lauren') == 0) {
+                      items[index].products[idx].brandID = 1000032;
+                    }
+                    else if (items[index].products[idx].metadata.brand.indexOf('Polo Sport') == 0) {
+                      items[index].products[idx].brandID = 1000033;
+                    }
+                    else if (items[index].products[idx].metadata.brand.indexOf('Purple Label') == 0) {
+                      items[index].products[idx].brandID = 1000035;
+                    }
+                    else if (items[index].products[idx].metadata.brand.indexOf('Golf') > -1) {
+                      items[index].products[idx].brandID = 1000029;
+                    }
+                    else if (items[index].products[idx].metadata.brand.indexOf('Collection') == 0) {
+                      items[index].products[idx].brandID = 1001016;
+                    }
+                    else if (items[index].products[idx].metadata.brand.indexOf('Denim') == 0) {
+                      items[index].products[idx].brandID = 1024533;
+                    }
+                  }
+
+                  // ADD AB tag to product URL
+                  items[index].products[idx].link = items[index].products[idx].link + '&AB=' + RLSocial.locale + '_' + RLSocial.tagging.omni_pageType + '_' + RLSocial.tagging.omni_campaign + '_InstagramShop_SHOP';
+                  // BTN CTA
+                  if(isRLMag) items[index].products[idx].linkcta = 'EXPLORE NOW'
+                  else items[index].products[idx].linkcta = 'SHOP NOW'
+                }
+                tmp_obj.products = items[index].products;
+                classStr += 'product '
+              }
+            }
+
+            // find social tag
+            if(items[index].url) {
+                if (items[index].url.indexOf('tumblr.com') > -1 ) {
+                    tmp_obj.social = 'tumblr';
+                }
+                else if (items[index].url.indexOf('twitter.com') > -1 ) {
+                    tmp_obj.social = 'twitter';
+                }
+                else if (items[index].url.indexOf('instagram.com') > -1 ) {
+                    tmp_obj.social = 'instagram';
+                }
+
+                if(isSpecialPortrait(items[index].photo, tmp_obj.social)){
+                    tmp_obj.image = {
+                        large: items[index].photo.large.url,
+                        medium: items[index].photo.large.url,
+                        small: items[index].photo.medium.url
+                    }
+                }
+            }
+            if (isRLMag && (typeof tmp_obj.link != 'undefined')) {
+                tmp_obj.link.text = 'READ MORE';
+                tmp_obj.link.ab = 'readmore';
+            }
+            else if (tmp_obj.link && (RLSocial.shoppable) && (tmp_obj.link.ab == 'shopnow')) {
+                tmp_obj.link == null;
+            }
+
+            tmp_obj.classes = classStr;
+
+            // pass data to html for less server calls
+            if (includeItem) {
+              tmp_obj.data = JSON.stringify(tmp_obj);
+              context.push(tmp_obj);
+            }
+        }
+        //console.log('context');
+        //console.log(context);
+        RLSocial.gridData.items = context;
+
+
+        function isSpecialPortrait(data, social){
+            var result = ((social == 'tumblr' || social == 'twitter' ) && (data.original.width/data.original.height) < 1);
+
+           return  result
+        }
+
+        function getTimeElapsed(timestamp) {
+            var prevTime = timestamp * 1000;
+            var thisTime = new Date();
+
+            var diff = thisTime.getTime() - prevTime;
+
+            if((diff / (1000*60)) < 120) {
+                timeElapsed = parseInt(diff / (1000*60)) + ' Minutes Ago';
+            }
+            else if((diff / (1000*60*60)) < 24) {
+                timeElapsed = parseInt(diff / (1000*60*60)) + ' Hours Ago';
+            }
+            else if((diff / (1000*60*60*24)) < 10) {
+                timeElapsed = parseInt(diff / (1000*60*60*24)) + ' Days Ago';
+            }
+            else {
+                timeElapsed = parseInt(diff / (1000*60*60*24*7)) + ' Weeks Ago';
+            }
+            return timeElapsed;
+        }
+    },
+    position_items: function(feedLengthGood){
+        $j('.rlSocialItemWrapper').each(function(index){
+            $this = $j(this);
+            //if($this.children('.rlSocialItem').length < 1) {
+                size = ($j(this).hasClass('small'))? '' : 'big';
+
+                $this.append(RLSocial.renderTemplate('item', RLSocial.getItemData(size, true)))
+                        .children('.rlSocialItem')
+                            .addClass('active')
+                            .removeClass('preactive')
+
+                $this.children('.rlSocialItem.pin').parent('.rlSocialItemWrapper').addClass('pin');
+
+                $this.find('img').one('load', function(){
+                    $j(this).parents('.rlSocialItemWrapper').addClass('loaded');
+                }).each(function() {
+                    if(this.complete) $j(this).load();
+                });
+            //}
+        });
+
+        // activate popup
+        if($j('.rlSocialLoadMore').length < 2) RLSocial.element.off('click').on('click', '.rlSocialItem', function(e) {
+          //console.log('OPEN');
+          e.stopImmediatePropagation();
+          $j('.rlSocialItem.current').removeClass('current');
+          $j(this).addClass('current');
+          RLSocial.modal.build(this);
+
+          RLSocial.tracking('EXPAND');
+
+          return false;
+        });
+
+        if (!feedLengthGood) $j('.rlSocialLoadMore').hide();
+        return false;
+    },
+    addMore: function() {
+      if (RLSocial.layout == 'grid') {
+        // remove rlsocial addmore button
+        //RLSocial.element.addClass('loadingMore');
+        //$j('#RLSocial .rlSocialLoadMore').remove();
+
+        RLSocial.buildItems({},$j('.rlSocialGridBox').length);
+
+        if (RLSocial.checkWidth() == 'thin' && ((RLSocial.gridData.items.length - $j('.rlSocialGridBox').length) < 2)) {  // MOBILE MORE BUTTON
+          $j('.rlSocialBtnLoadMore').hide();
+        }
+        else if((RLSocial.gridData.items.length - $j('.rlSocialGridBox').length) < RLSocial.qtyToAdd) {
+            $j('.rlSocialBtnLoadMore').hide();
+        }
+
+      }
+      else {
+
+      }
+
+    },
+    resetShownItems: function() {
+        for (var index in RLSocial.gridData){
+            RLSocial.gridData[index].active = false;
+        }
+        $j('.rlSocialItem').not('.deactive').each(function(){
+            RLSocial.gridData[parseInt($j(this).data('index'))].active = true;
+        });
+
+        return false;
+    },
+    buildProductInfo: function(data) {
+      //console.log(data);
+        $j('.rlsocial-product-details-container')
+            .html(RLSocial.renderTemplate('productDetails',data))
+                .find('img').one('load',function(){
+                    $j(this).parents('.rlsocial-product-details')
+                        .addClass('active');
+                        $j(this).parents('.rlSocialPopupImageWrapper');
+                    }).each(function() {
+                      if(this.complete) $j(this).load();
+                    });
+
+        if (data.products) {
+          $j('.rlsocial-details').addClass('hasProducts');
+        }
+        else {
+          $j('.rlsocial-details').removeClass('hasProducts');
+        }
+
+        if (data.products && data.products.length > 1) {
+          $productWidth = RLSocialGetProductWidth();
+
+          $j('.rlsocial-product-details').addClass('rlsocial-multiple-products').addClass('loaded');
+          $j('.rlSocialProductScroller').css({'width': ($productWidth * data.products.length) + 50})
+          $j('.rlsocial-products-indicator').children('li:eq(0)').addClass('active');
+
+          var productPositionsX = [];
+          $j('.rlSocialProductScroller').children('.rlSocialProductWrapper').each(function(i){
+            productPositionsX.push(i * $productWidth);
+          });
+
+          $j('.rlsocial-products-indicator li').on(evt_type, function(e){
+            $this = $j(this);
+            $this.addClass('active').siblings().removeClass('active');
+            $rlSocialProductScroller = $j(this.parentNode).siblings('.rlsocial-product-details-container').children('.rlSocialProductScrollerWrapper');
+            //var scrollX = ($this.index() * $productWidth);
+            $rlSocialProductScroller.animate({'scrollLeft' : productPositionsX[$this.index()] });
+          });
+
+          $j('.rlSocialProductScrollerWrapper').on('scroll', function() {
+            //console.log('SCROLL ', $j(this).scrollLeft());
+            var $this = $j(this);
+            var scrollLimit = ($this.children().width() - $this.width());
+            var posX = $this.scrollLeft();
+            var prodIdx = 0;
+            if(posX >= scrollLimit) {
+              prodIdx = (productPositionsX.length - 1);
+            }
+            else {
+              productPositionsX.forEach(function(prodPosX, index){
+                if(posX >= prodPosX) {
+                  prodIdx = index;
+                }
+              });
+            }
+
+            $j('.rlsocial-products-indicator li:eq(' + prodIdx + ')').addClass('active').siblings().removeClass('active');
+          });
+
+
+        }
+        else {
+          $j('.rlsocial-products-indicator').hide();
+        }
+
+        $j('a.rlsocial_cta').on('click',function(){
+          RLSocial.tracking('SHOP', 'v1');
+        });
+
+        $rlsocial_modal_caption_wrapper = $j('.rlsocial-modal-caption-wrapper');
+
+        if (data.products) {
+          $j('.rlsocial-product-details').addClass('loaded');
+          // FIX for long caption over products
+          if ($rlsocial_modal_caption_wrapper.children().height() > $rlsocial_modal_caption_wrapper.height()) $rlsocial_modal_caption_wrapper.addClass('readMore');
+        }
+
+        return false;
+    },
+    modal: {
+      element: null,
+      transitionSpeed: 360,
+      build: function(elem, reuseModal) {
+          var transitionSpeed = RLSocial.modal.transitionSpeed; //this should match .rlsocial-details transition speed
+
+          if(!reuseModal) {
+            var lastInRow = getLastInRow( elem );
+          }
+
+          $elem = $j(elem);
+          $parentBox = $elem.parents('.rlSocialGridBox');
+          RLSocial.element
+              .attr('data-rlsocial-currItem',$parentBox.index('.rlSocialGridBox'))
+              .attr('data-rlsocial-modal-open','true');
+          var offsetModal = $elem.offset().top + $elem.height();
+
+          function getLastInRow( elm ) {
+            elemTop = getOffset(elm.parentNode.parentNode).top
+
+            isLast = false;
+            nextElm = elm.parentNode.parentNode.nextElementSibling;
+            if (nextElm) {
+              while (isLast == false) {
+                if ( nextElm && getOffset(nextElm).top == elemTop ) {
+                  if (nextElm.nextElementSibling) {
+                    nextElm = nextElm.nextElementSibling;
+                  }
+                  else {
+                    return nextElm;
+                  }
+                }
+                else {
+                  isLast = true;
+                  return nextElm.previousElementSibling;
+                }
+              }
+            }
+            else {
+              return elm.parentNode.parentNode;
+            }
+          }
+
+          function getOffset( el ) {
+              var _x = 0;
+              var _y = 0;
+              while( el && !isNaN( el.offsetLeft ) && !isNaN( el.offsetTop ) ) {
+                  _x += el.offsetLeft - el.scrollLeft;
+                  _y += el.offsetTop - el.scrollTop;
+                  el = el.offsetParent;
+              }
+              return { top: _y, left: _x };
+          }
+
+          var scrollPosY = $j(window).scrollTop();
+
+          var itemData = JSON.parse(elem.parentNode.nextElementSibling.innerText);
+          itemData.shoptitle = RLSocialTranslations[RLSocial.language].shoptitle;
+          if (itemData.classes.toLowerCase().indexOf('rlmag') > -1 ||
+              itemData.classes.toLowerCase().indexOf('explore') > -1) itemData.shoptitle = 'EXPLORE';
+          //if(isRLMag) itemData.shoptitle = 'EXPLORE';
+          //debugger;
+
+          if(reuseModal) {
+            var templateData = RLSocial.renderTemplate('modal_inner',itemData);
+            $j('.rlsocial-photo-detail-container').html(templateData);
+          }
+          else if ($j(lastInRow).next().hasClass('rlsocial-details')) {
+            var templateData = RLSocial.renderTemplate('modal_inner',itemData);
+            $j(lastInRow).next().children('.rlsocial-photo-detail-container').html(templateData);
+          }
+          else {
+            var templateInnerData = {'inner':RLSocial.renderTemplate('modal_inner',itemData)};
+            var templateData = RLSocial.renderTemplate('modal',templateInnerData);
+
+            RLSocial.modal.close();
+            $j(lastInRow).after('<div class="rlsocial-details preactive">' + templateData + '</div>');
+            if (RLSocial.checkWidth() == 'thin') {
+              if($j('.rlsocial-details.preactive').index('.rlsocial-details') > 0) {
+                newPosY = $j('.rlsocial-details.preactive').offset().top;
+              }
+              else {
+                navOffset = 25;
+                if($j('#mobileHeader').length > -1) {
+                  navOffset = (navOffset - $j('#mobileHeader').height());
+                }
+                //olympics temp fix
+                else if($j('#rioNav').length > -1) {
+                  navOffset = (navOffset - $j('#rioNav').height());
+                }
+
+                newPosY = (offsetModal+navOffset);
+              }
+            }
+            else {
+              newPosY = ($j('.rlsocial-details').length < 2) ? (offsetModal-50) : scrollPosY + $elem.height();
+            }
+            $j("html, body").animate({ scrollTop: newPosY },transitionSpeed);
+          }
+          //$containerElem.append(RLSocial.renderTemplate('modal', RLSocial.getItemData(parseInt($j(elem).data('index')), false)));
+          // kickstart transition
+          setTimeout(function(){
+            $j('.rlsocial-details.preactive').addClass('active').removeClass('preactive');
+          },2);
+
+          $j('.rlsocial-modal-large-photo').find('img').one('load', function(){
+              $j(this).parents('.rlsocial-modal-large-photo').addClass('loaded');
+          }).each(function() {
+              if(elem.complete) $j(elem).load();
+          });
+
+          if(RLSocial.isMobile && !RLSocial.isIpad) {
+              // move to top of modal
+              $j(window).scrollTop(RLSocial.parent.position().top);
+          }
+          //console.log(itemData);
+          RLSocial.buildProductInfo(itemData);
+
+          setArrowPosition();
+
+          function setArrowPosition(){
+            var parentWidth = RLSocial.element.width();
+            var colWidth = $elem.width();
+            var colQty = (Math.round(parentWidth / colWidth));
+            var colIdx = (Math.round($parentBox.position().left / colWidth));
+            var displayBoxArrow = ($parentBox.index() > $j('.rlsocial-details').index()) ? 'none' : 'block';
+            $j('.rlsocial-details-arrow').css({'left':((100 / colQty) * colIdx + (100 / (colQty * 2))) + '%', 'display': displayBoxArrow});
+          }
+
+          $j('.rlsocial-details .btn-close')
+              .on(evt_type, function(){
+                  RLSocial.element.attr('data-rlsocial-currItem',false)
+                      .attr('data-rlsocial-modal-open',false);
+
+                  $j('.rlSocialItem.current').removeClass('current');
+                  RLSocial.modal.close();
+                  $j("html, body").animate({ scrollTop: scrollPosY },transitionSpeed);
+
+                  return false;
+              });
+          $j('.rlsocial-photo-detail-container').on('click',function(e){
+              e.stopPropagation();
+          });
+
+            $j('.rlsocial-arrow').off(evt_type).on(evt_type, function(e){
+              e.stopPropagation();
+
+              $j('.rlSocialItem.current').removeClass('current');
+
+              var direction = ($j(this).hasClass('rlsocial-arrow-left')) ? -1 : 1;
+              var currItem = parseInt(RLSocial.element.attr('data-rlsocial-currItem'));
+              var nextItem = (currItem + direction);
+              if (nextItem >= $j('.rlSocialGridBox').length) nextItem = 0;
+              RLSocial.modal.build($j('.rlSocialGridBox:eq(' + nextItem + ')').find('.rlSocialItem')[0], true);
+
+              RLSocial.tracking('PrevNext');
+            });
+
+          RLSocial.sharing();
+
+          $j('.rlsocial-modal-large-photo a').on('click',function(e){
+              if($j(this).attr('href').indexOf('instagram')) {
+                  socialBrand = 'Instagram'
+              }
+              else if($j(this).attr('href').indexOf('facebook')) {
+                  socialBrand = 'Facebook'
+              }
+              else if($j(this).attr('href').indexOf('twitter')) {
+                  socialBrand = 'Twitter'
+              }
+              else if($j(this).attr('href').indexOf('tumblr')) {
+                  socialBrand = 'Tumblr'
+              }
+              else {
+                  "Internal"
+              }
+
+              RLSocial.tracking(socialBrand + '_EXIT')
+          });
+
+          $j('.rlsocial-btn-play').click(function(e){
+            $this = $j(this);
+            if ($this.siblings('video').length < 1) {
+              var videoPlayerStr = '<video src="' + $this.attr('data-video') + '" autoplay loop controls poster="' + $this.attr('data-poster') + '"></video>';
+              $this.parents('.rlsocial-modal-large-photo-inner').addClass('rlsocial-video-loaded').append(videoPlayerStr);
+
+              $j($this.siblings('video')).click(function(){
+                if (this.paused) {
+                  this.play();
+                }
+                else {
+                  this.pause();
+                }
+              });
+            }
+          });
+          return false;
+      },
+      close: function() {
+        $j('.rlsocial-details.active').removeClass('active').addClass('deactivated');
+        setTimeout(function(){
+          $j('.rlsocial-details.deactivated').remove();
+        }, RLSocial.modal.transitionSpeed);
+      }
+
+    },
+    tracking: function(tag, type) {
+      //console.log(tag);
+      if (!RLSocial.settings.omni_override) {
+          try {
+              if ((s != null) && (s != undefined)) {
+                  if (s.un == undefined) { s.un == ''; }
+                  var tagStr = RLSocial.locale + '_' + RLSocial.tagging.omni_pageType + '_' + RLSocial.tagging.omni_campaign + '_InstagramShop_' + tag;
+                  if(type && type == 'v1') {
+                    s.eVar1 = tagStr;
+                    s.eVar40 = '';
+                  }
+                  else {
+                    s.eVar40 = tagStr;
+                  }
+                  s.tl();
+              }
+          }
+          catch (e) {}
+      }
+      return false;
+    },
+    sharing: function(){
+      $j('.rlsocial-details .share_icons').rlShare({
+            image: $j('.rlsocial-modal-large-photo').find('img').attr('src'),
+            title: $j('.rlsocial-modal-caption').html(),
+            description: $j('.rlsocial-modal-caption').html(),
+            returnLink: $j('.rlsocial-modal-large-photo').children('a').attr('href'),
+            fb_image: $j('.rlsocial-modal-large-photo').find('img').attr('data-fbimg'),
+            omni_pageName: RLSocial.settings.omni_pageName,
+            omni_pageType: RLSocial.settings.omni_pageType,
+            omni_campaign: RLSocial.settings.omni_campaign
+        });
+
+        return false;
+    }
+}
+
+function RLSocialGetProductWidth (elem) {
+  $rlSocialProductWrapper = $j('.rlSocialProductWrapper');
+
+  return ($rlSocialProductWrapper.width() + parseInt($rlSocialProductWrapper.css('margin-right').replace('px','')));
+}
+
+// minified string versions of templates
+var RLSocialTemplates = {
+    title: '<div class="rlSocialTitle"> <img src="/content/variation/common/RLLive/images/rlSocialLogo.jpg" alt="RL Social"> </div>',
+    item: '{{#if image}} <div class="rlSocialItem preactive {{social}} {{size}} {{pin}} {{classes}}" data-index="{{item_index}}" {{#if pid}} data-pid="{{pid}}" {{/if}} > <img src="{{image.large}}" alt="{{caption}}"></img> <div class="rlsocial-image-overlay"></div> <div class="loadgraphic"></div> </div> {{/if}}',
+    modal: '<div class="rlsocial-details-arrow"></div> <div class="rlsocial-photo-detail-container" data-width="wide"> {{{inner}}} </div>',
+    modal_inner: '<div class="rlsocial-modal-inner"> <div class="rlsocial-modal-left-content"> <div class="rlsocial-modal-large-photo-wrapper"> <div class="rlsocial-modal-large-photo"> <div class="rlsocial-modal-large-photo-inner"> <div data-rlsocial-spinner="" class="rlsocial-spinner"></div> <a href="{{url}}" target="new"> <img data-rlsocial-image="large_square" class="rlsocial-overlay-image" src="{{image.large}}" data-fbimg="{{image.small}}"> </a> {{#if video}} <div class="rlsocial-btn-play" data-video="{{video.large}}" data-poster="{{image.large}}"> <div class="rlsocial-btn-play-arrow"></div> </div> {{/if}} <div class="loadgraphic"></div> </div> <div class="rlsocial-arrow rlsocial-arrow-left"><div></div></div> <div class="rlsocial-arrow rlsocial-arrow-right"><div></div></div> </div> </div> <ul class="rlsocial-photo-detail-share share_icons"> <li><a href="#" class="rlsocial-share-facebook facebook"></a></li> <li><a href="#" class="rlsocial-share-twitter twitter"></a></li> <li><a href="#" class="rlsocial-share-pinterest pinterest"></a></li> <li><a href="#" class="rlsocial-share-mail mail"></a></li> </ul> </div> <div class="rlsocial-modal-right-content"> <div class="rlsocial-social-details"> <a class="rlsocial-avatar-link" href="{{user.url}}" target="new"> <img data-rlsocial-avatar="small_square" class="rlsocial-avatar" src="{{user.image}}"> </a> <ul class="rlsocial-display-info"> <li> <span data-rlsocial-user-full-name-or-username="" class="rlsocial-display-name">{{{user.display_name}}}</span> </li> <li> <ul class="inline"> <li> <span data-rlsocial-posted-elapsed="" class="rlsocial-posted-elapsed">{{timeElapsed}}</span> </li> {{#if like_count}} <li> <span class="rlsocial-likes-icon"></span> <span class="rlsocial-likes" data-rlsocial-likes="">{{like_count}}</span> </li> {{/if}} {{#if comment_count}} <li> <span class="rlsocial-comments-icon"></span> <span class="rlsocial-comments" data-rlsocial-comments="">{{comment_count}}</span> </li> {{/if}} </ul> </li> <li class="rlsocial-modal-caption-wrapper"> <div data-rlsocial-caption="" class="rlsocial-modal-caption">{{{caption}}}</div> <a href="{{url}}" target="new">read more</a> </li> </ul> </div> {{#if link}} <div class="rlsocial_cta_container"> <a class="rlsocial_cta link" target="_self" href="//rlauren.co/{{link.url}}?AB=HP_rlsocial_{{link.ab}}"> <span>{{link.text}}</span> </a> </div> {{/if}} {{#if products}} <div class="rlsocial-product-details"> <div class="rlsocial-product-details-container"></div> <div class="loadgraphic"></div> <ul class="rlsocial-products-indicator inline"> {{#each products}} <li><div></div></li> {{/each}} </ul> </div> {{/if}} </div> <div class="rlsocial-clear"></div> <div class="btn-close"></div> </div>',
+    productDetails: '<div class="rlSocialProductScrollerWrapper"> <div class="rlSocialProductScroller"> {{#each products}} <div class="rlSocialProductWrapper"> <div class="rlSocialPopupImageWrapper"> <img src="{{image}}"> <div class="loadgraphic"></div> </div> <div class="rlSocialPopupBrand"> {{#if brandID}} <img src="//www.ralphlauren.com/graphics/category_images/polo_family_brand_240x30_{{brandID}}.gif"> {{else}} {{{metadata.brand}}} {{/if}} </div> <h4 class="rlSocialProductTitle">{{{name}}}</h4> <div class="rlsocial_cta_container cta_btn"><a class="rlsocial_cta" target="_self" href="{{{link}}}"><span>{{linkcta}}</span></a></div> <div class="rlsocial_cta_container cta_overlay"><a class="rlsocial_cta" target="_self" href="{{{link}}}"><span> </span></a></div> </div> {{/each}} </div>',
+    grid: '{{#each items_paginated ~}}<div class="rlSocialGridBox {{odd_even @index}} {{col_num @index}}"> <div class="rlSocialItemWrapper"> {{#if image}} <div class="rlSocialItem preactive {{social}} {{size}} {{pin}} {{classes}}" data-index="{{item_index}}" {{#if pid}} data-pid="{{pid}}" {{/if}} > <img src="{{image.large}}" alt="{{caption}}"></img> <div class="rlsocial-image-overlay"></div> <div class="loadgraphic"></div> </div> {{/if}} </div> <div class="rlSocialData">{{{data}}}</div> </div>{{~/each}}',
+    headerRLSocial: '<div class="rlSocialTitleWrapper top title"> <h2><span id="rlSocialLogo"></span></h2> <h6>New in the World of @RalphLauren</h6> </div>',
+    btnLoadMore: '<div class="rlSocialLoadMore"> <div class="rlSocialBtnLoadMore"><span>{{{loadmore}}}</span><div class="rlSocialLoadMoreArrow"></div></div></div>',
+
+    // MOBILE TEMPLATES
+    mobile_title: '<div class="rlSocialTitleWrapper top title"> <h2><span id="rlSocialLogo"></span></h2> <h6>New in the World of @RalphLauren</h6> </div>',
+    mobile_item: '{{#if image}} <div class="rlSocialItem preactive {{social}} {{size}} {{pin}} {{classes}}" data-index="{{item_index}}" {{#if pid}} data-pid="{{pid}}" {{/if}} > <img src="{{image.large}}" alt="{{caption}}"></img> <div class="rlsocial-image-overlay"></div> <div class="loadgraphic"></div> </div> {{/if}}',
+    mobile_modal: '<div class="rlsocial-details-arrow"></div> <div class="rlsocial-photo-detail-container" data-width="thin"> {{{inner}}} </div>',
+    mobile_modal_inner: '<div class="btn-close"></div> <div class="rlsocial-modal-top-content"> <div class="rlsocial-social-details"> <a class="rlsocial-avatar-link" href="{{user.url}}" target="new"> <img data-rlsocial-avatar="small_square" class="rlsocial-avatar" src="{{user.image}}"> </a> <ul class="rlsocial-display-info"> <li> <span data-rlsocial-user-full-name-or-username="" class="rlsocial-display-name">{{{user.display_name}}}</span> </li> </ul> </div> <div class="rlsocial-modal-large-photo"> {{#if video}} <video src="{{video.large}}" autoplay loop controls poster="{{image.large}}"></video> {{else}} <div data-rlsocial-spinner="" class="rlsocial-spinner"></div> <div class="rlsocial-modal-large-photo-wrapper"> <a href="{{url}}" target="new"> <img data-rlsocial-image="large_square" class="rlsocial-overlay-image" src="{{image.large}}"> </a> <div class="loadgraphic"></div> </div> {{/if}} <div class="rlsocial-arrow rlsocial-arrow-left"><div></div></div> <div class="rlsocial-arrow rlsocial-arrow-right"><div></div></div> </div><div data-rlsocial-caption="" class="rlsocial-modal-caption">{{{caption}}}</div></div> <div class="rlsocial-modal-bottom-content"> {{#if link}} <div class="rlsocial_cta_container"><a class="rlsocial_cta link" target="_self" href="http://rlauren.co/{{link.url}}?AB=HP_rlsocial_{{link.ab}}">"><span>{{link.text}}</span></a></div> {{/if}} {{#if products}} <div class="rlsocial-product-details"> <div class="rlsocial-modal-shop-title">{{{shoptitle}}}</div> <div class="rlsocial-product-details-container"></div> <div class="loadgraphic"></div> </div> {{/if}} </div>',
+    mobile_modal_inner_captionless: '<div class="btn-close"></div> <div class="rlsocial-modal-top-content"> <div class="rlsocial-social-details"> <a class="rlsocial-avatar-link" href="{{user.url}}" target="new"> <img data-rlsocial-avatar="small_square" class="rlsocial-avatar" src="{{user.image}}"> </a> <ul class="rlsocial-display-info"> <li> <span data-rlsocial-user-full-name-or-username="" class="rlsocial-display-name">{{{user.display_name}}}</span> </li> </ul> </div> <div class="rlsocial-modal-large-photo"> {{#if video}} <video src="{{video.large}}" autoplay loop controls poster="{{image.large}}"></video> {{else}} <div data-rlsocial-spinner="" class="rlsocial-spinner"></div> <div class="rlsocial-modal-large-photo-wrapper"> <a href="{{url}}" target="new"> <img data-rlsocial-image="large_square" class="rlsocial-overlay-image" src="{{image.large}}"> </a> <div class="loadgraphic"></div> </div> {{/if}} <div class="rlsocial-arrow rlsocial-arrow-left"><div></div></div> <div class="rlsocial-arrow rlsocial-arrow-right"><div></div></div> </div> {{#unless products}}<div data-rlsocial-caption="" class="rlsocial-modal-caption">{{{caption}}}</div>{{/unless}} </div> <div class="rlsocial-modal-bottom-content"> {{#if link}} <div class="rlsocial_cta_container"><a class="rlsocial_cta link" target="_self" href="http://rlauren.co/{{link.url}}?AB=HP_rlsocial_{{link.ab}}">"><span>{{link.text}}</span></a></div> {{/if}} {{#if products}} <div class="rlsocial-product-details"> <div class="rlsocial-modal-shop-title">{{{shoptitle}}}</div> <div class="rlsocial-product-details-container"></div> <div class="loadgraphic"></div> </div> {{/if}} </div>',
+    mobile_productDetails: '{{#each products}} <div class="rlSocialProductWrapper"> <div class="rlSocialPopupImageWrapper"> <img src="{{image}}"> <div class="loadgraphic"></div> </div> <div class="rlSocialProductDetails"> <div class="rlSocialProductCopyWrapper"> <div class="rlSocialProductCopy"> <div class="rlSocialPopupBrand"> {{#if brandID}} <img src="//www.ralphlauren.com/graphics/category_images/polo_family_brand_240x30_{{brandID}}.gif"> {{else}} {{{metadata.brand}}} {{/if}} </div> <h4 class="rlSocialProductTitle">{{{name}}}</h4> <div class="rlsocial_cta_container cta_btn"><a class="rlsocial_cta" target="_self" href="{{{link}}}"><span>{{linkcta}}</span></a></div> <div class="rlsocial_cta_container cta_overlay"><a class="rlsocial_cta" target="_self" href="{{{link}}}"><span> </span></a></div> </div> </div> </div> </div> {{/each}}',
+    mobile_btnLoadMore: '<div class="rlSocialLoadMore"> <div class="rlSocialBtnLoadMore"><span>{{{loadmore}}}</span></div> </div>',
+}
+
+var RLSocialTranslations = {
+    en: {
+        title: 'New in the World of @RalphLauren',
+        loadmore: 'LOAD MORE',
+        shoptitle: 'SHOP THE LOOK'
+    },
+    de: {
+        title: 'NEU IN DER WELT VON @RALPHLAUREN',
+        loadmore: 'MEHR ANZEIGEN',
+        shoptitle: 'SHOP THE LOOK'
+    },
+    fr: {
+        title: 'NOUVEAU DANS L&rsquo;UNIVERS DE @RALPHLAUREN',
+        loadmore: 'CONTINUER',
+        shoptitle: 'SHOP THE LOOK'
+    },
+    it: {
+        title: 'NOVIT&Agrave; DAL MONDO DI @RALPHLAUREN',
+        loadmore: 'CARICARE ALTRO',
+        shoptitle: 'SHOP THE LOOK'
+    }
+}
+
+$j.fn.isOnScreen = function(){
+
+    var $window = $j(window);
+
+    var viewport = {
+        top : $window.scrollTop(),
+        left : $window.scrollLeft()
+    };
+    viewport.right = viewport.left + $window.width();
+    viewport.bottom = viewport.top + $window.height();
+
+    var bounds = this.offset();
+    bounds.right = bounds.left + this.outerWidth();
+    bounds.bottom = bounds.top + this.outerHeight();
+
+    return (!(viewport.right < bounds.left || viewport.left > bounds.right || viewport.bottom < bounds.top || viewport.top > bounds.bottom));
+
+};
+
+// tie callbacks to global $j scope
+$j.fn.rlSocialBuild = function(data) {
+    try {
+        RLSocial.buildItems(data);
+    }
+    catch (e) {}
+};
+$j.fn.rlSocialPrepareProductData = function(data) {
+    RLSocial.prepareProductData(data);
+};
+
+// Provide initialize function
+$j.fn.rlSocial = function(options) {
+    var settings = $j.extend({
+        parent: $j(this),
+        fanreelId: 'ralphlauren',
+        pluginBase: '//assets.ralphlauren.com/js/plugins/rlsocial/',
+        language: 'en',
+        locale: 'en_US',
+        header: 'default',
+        tag_filter: null,
+        layout: 'grid',
+        columns: 4,
+        rows: 2,
+        responsive: true,
+        limit: 50,
+        onComplete: function(){},
+        shoppable: true,
+        product_only: false,
+        omni_pageName: '',
+        omni_pageType: 'MLP',
+        omni_campaign: 'Feature',
+        dev: false // set to true to use development templates
+    }, options);
+
+    RLSocial.init(settings);
+};
+
+})($j);
+
+
+/**** MODIFIED VERSION OF DREW'S RLSHARE ****/
+(function(jQuery) {
+
+/* Version 1.3
+ * Author:  Drew Prochaska
+ * Email:   Drew.Prochaska@ralphlauren.com
+ * NOTE:    - To test Facebook, the file must live on a subdomain of ralphlauren.com
+            - This version uses the "on" event instead of "live", which has been deprecated
+ *
+ */
+
+    jQuery.fn.rlShare = function(options) {
+
+        var obj = this;
+
+        var settings = jQuery.extend({
+            image: null,    // Full URL to image
+            title: jQuery('title').text(),
+            description: jQuery('meta[name=description]').attr("content"),
+            returnLink: window.location.toString(),
+
+            fb_handle: obj.find('.facebook'),
+            fb_image: null,
+            fb_title: null,
+            fb_desc: null,
+            fb_channel: '//worldofpolo.ralphlauren.com/channel.html',
+            fb_appID: '346999125435031',
+
+            twitter_handle: obj.find('.twitter'),
+            twitter_desc: null,
+
+            pinterest_handle: obj.find('.pinterest'),
+            pinterest_desc: null,
+
+            tumblr_handle: obj.find('.tumblr'),
+            tumblr_desc: null,
+
+            googleplus_handle: obj.find('.googleplus'),
+
+            mail_handle: obj.find('.mail'),
+
+            omni_override: false,   // Use custom Ominture code or plugin code
+            omni_pageName: null,    // Omniture PageName
+            omni_pageType: null,        // Omniture PageType
+            omni_campaign: null     // Omniture optional campaign detail
+
+        }, options);
+
+        jQuery(settings.fb_handle,settings.pinterest_handle).removeAttr('data-image');
+
+
+        /*----------  FACEBOOK  ----------*/
+
+        if (jQuery(settings.fb_handle).length != 0) {
+            if (!window.fbAsyncInit) {
+                if (jQuery('.fb-root').length == 0) {jQuery('body').prepend('<div id="fb-root" />');}
+                jQuery.ajaxSetup({ cache: true });
+                if(typeof FB === 'undefined') {
+                    jQuery.getScript('//connect.facebook.net/en_US/all.js', function(){
+                        FB_init();
+                    });
+                }
+                else {
+                    FB_init();
+                }
+
+                function FB_init() {
+                    FB.init({
+                        appId: settings.fb_appID,
+                        channelUrl: settings.fb_channel,
+                        status: true,
+                        xfbml: true
+                    });
+                }
+            }
+
+            jQuery(settings.fb_handle)
+                .attr('data-image',settings.image)
+                .on('click', function (e) {
+                    e.preventDefault();
+                    var title = settings.title;
+                    var desc = settings.description;
+                    //var image = (settings.fb_image)? settings.fb_image : settings.image;
+                    var image = (settings.image.indexOf('http') != 0) ? 'http:' + settings.image : settings.image;
+                    var link = settings.returnLink;
+                    if (settings.fb_title) {title = settings.fb_title;}
+                    if (settings.fb_desc) {desc = settings.fb_desc;}
+
+                    FB.ui({
+                        method: 'feed',
+                        link: link,
+                        display: 'popup',
+                        picture: image,
+                        name: title,
+                        description: desc
+                    }, function (response) {
+
+                    });
+                    omniShare('Facebook');
+                    return false;
+                });
+        }
+
+        /*----------  TWITTER  ----------*/
+
+        jQuery(settings.twitter_handle)
+            .addClass('twitter-share-button')
+            .on('click', function (e) {
+                e.preventDefault();
+                var twitUrl = 'https://twitter.com/share?url=' + settings.returnLink;
+                if (settings.twitter_desc) {twitUrl +='&text=' + settings.twitter_desc;} else {twitUrl +='&text=' + settings.description;}
+                window.open(twitUrl.toString().replace('#',''));
+                omniShare('Twitter');
+                return false;
+            });
+
+        /*----------  PINTEREST  ----------*/
+
+        jQuery(settings.pinterest_handle)
+            .attr('data-image',settings.image)
+            .on('click', function (e) {
+                e.preventDefault();
+                var desc = settings.description;
+                if (settings.pinterest_desc) {desc = settings.pinterest_desc;}
+                window.open('//pinterest.com/pin/create/button/?url=' + settings.returnLink + '&media=' + jQuery(this).attr('data-image') + '&description=' + desc);
+                omniShare('Pinterest');
+                return false;
+            });
+
+
+        /*----------  TUMBLR  ----------*/
+
+        jQuery(settings.tumblr_handle)
+            .on('click', function (e) {
+                e.preventDefault();
+                var desc = settings.description;
+                if (settings.tumblr_desc) {desc = settings.tumblr_desc;}
+                returnLink = encodeURIComponent(settings.returnLink.replace(/.*?:\/\//g, ""));
+                window.open('//www.tumblr.com/share/link?url='+returnLink+'&name='+settings.title+'&description=' + desc);
+                omniShare('Tumblr');
+                return false;
+            });
+
+        /*----------  GOOGLE+  ----------*/
+
+        function popupwindow(url, title, w, h) {
+          var left = (screen.width/2)-(w/2);
+          var top = (screen.height/2)-(h/2);
+          return window.open(url, title, 'menubar=no,toolbar=no,resizable=yes,scrollbars=yes, width='+w+', height='+h+', top='+top+', left='+left);
+        }
+
+        jQuery(settings.googleplus_handle)
+            .on('click', function (e) {
+                e.preventDefault();
+                popupwindow('https://plus.google.com/share?url='+settings.returnLink, '', 600, 600);
+                omniShare('Google+');
+                return false;
+            });
+
+        /*----------  MAIL  ----------*/
+
+        jQuery(settings.mail_handle)
+            .addClass('mail-share-button')
+            .on('click', function (e) {
+                e.preventDefault();
+                var description = ($j('html').hasClass('ie')) ? settings.description.replace('#','') : settings.description;
+                document.location.href = 'mailto:?body=' + encodeURI(description + ' ' + settings.returnLink);
+                omniShare('email');
+                return false;
+            });
+
+        /*----------  OMNITURE  ----------*/
+
+        function omniShare(social){
+            if (!settings.omni_override) {
+                var campaign = '';
+                if (settings.omni_campaign) {campaign = '_'+settings.omni_campaign;}
+                try {
+                    if ((s != null) && (s != undefined)) {
+                        if (s.un == undefined) { s.un == ''; }
+                        s.linkTrackVars="pageType";
+                        s.pageType = settings.omni_pageType;
+                        s.pev1 = 'RL Live ' + social + ' Feed Click';
+                        s.eVar71 = social;
+                        s.tl(true, 'o', 'Share_'+social+campaign, s.pageName=settings.omni_pageName);
+                    }
+                }
+                catch (e) {}
+            }
+        }
+
+        return this;
+
+    };
+
+}($j));

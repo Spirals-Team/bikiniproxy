@@ -1,0 +1,251 @@
+/*jslint debug: true, evil: true*/
+
+/*
+* Fonctions permettant de gerer les popups.
+*/
+
+var newWin = null;
+
+function popUp(strURL,winName,strType,strWidth,strHeight) {
+	var strOptions="";
+	if (strType=="console"){
+		strOptions="resizable,scrollbars=yes,height="+strHeight+",width="+strWidth;
+	}
+	if (strType=="fixed"){
+		strOptions="status,height="+strHeight+",width="+strWidth;
+	}
+	if (strType=="elastic"){
+		strOptions="toolbar,menubar,scrollbars,resizable,location,height="+strHeight+",width="+strWidth;
+	}
+	if (strType=="aide"){
+		strOptions="resizable,scrollbars=yes,height=360,width=420";
+	}
+	if (strType=="cheval"){
+		// On fixe la taille de la popup fiche cheval dans le javascript
+		strOptions="resizable,scrollbars=yes,height=650,width=780";
+		winName=Math.floor(Math.random()*256);
+	}
+	if (strType=="entraineur"){
+		// On fixe la taille de la popup fiche entraineur dans le javascript
+		strOptions = "resizable,scrollbars=yes,height=650,width=780";
+		winName=Math.floor(Math.random()*256);
+	}
+	if (strType=="jockey"){
+		// On fixe la taille de la popup fiche jockey dans le javascript
+		strOptions = "resizable,scrollbars=yes,height=650,width=780";
+		winName=Math.floor(Math.random()*256);
+	}
+	if (strType=="perf-cheval"){
+		// On fixe la taille de la popup perf cheval dans le javascript
+		strOptions = "resizable,scrollbars=yes,height=650,width=780";
+		winName=Math.floor(Math.random()*256);
+	}
+	newWin = window.open(strURL, winName, strOptions);
+	newWin.focus();
+}
+
+/*
+* Fonctions permettant de gerer le formulaire de connexion.
+* Les donnees a saisir dans le formulaire sont indiquees directement dans la case a remplir.
+*/
+
+function initOverLabels () {
+	if (!document.getElementById) {return;}  	
+
+	var labels, id, field, idLabelPasswd, fieldPasswd;
+
+	// Recuperation de tous les tags 'label' de la page.
+	labels = document.getElementsByTagName('label');
+	for (var i = 0; i < labels.length; i++) {
+		
+		// Si ce tag 'label' poss?de la classe 'overlabel'
+		if (labels[i].className == 'overlabel') {
+
+			// Recuperation de l'identifiant du champ de formulaire
+			// a partir de l'attribut 'for' du tag 'label'.
+			id = labels[i].htmlFor || labels[i].getAttribute('for');
+			if (!id || !(field = document.getElementById(id))) {
+				continue;
+			}
+
+			// Application d'un nouveau style sur le tag 'label'
+			// afin de placer le 'label' sur le champ du formulaire.
+			labels[i].className = 'overlabel-apply';
+
+			// Si le champ de formulaire est remplit, on cache le 'label'
+			// place sur ce champ.
+			if (field.value !== '') {
+				hideLabel(field.getAttribute('id'), true);
+			}
+
+			// Si le focus est sur le champ du formulaire alors
+			// on cache le 'label' place sur ce champ.
+			field.onfocus = function () {
+				hideLabel(this.getAttribute('id'), true);
+			};
+			// Si le champ perds le focus et qu'il n'est pas remplit,
+			// on affiche le 'label' place sur ce champ.
+			field.onblur = function () {
+				if (this.value === '') {
+					hideLabel(this.getAttribute('id'), false);
+				}
+			};
+
+			// Traitement particulier pour Safari.
+			// Traitement du clic sur le 'label'.
+			labels[i].onclick = function () {
+				var id, field;
+		        id = this.getAttribute('for');
+		        if (id && (field = document.getElementById(id))) {
+					field.focus();
+		        }
+			};
+
+		}
+	}
+}
+
+function hideLabel (field_id, hide) {
+	var field_for;
+	// Recuperation de tous les tags 'label' de la page.
+	var labels = document.getElementsByTagName('label');
+	for (var i = 0; i < labels.length; i++) {
+		field_for = labels[i].htmlFor || labels[i].getAttribute('for');
+		if (field_for == field_id) {
+			labels[i].style.textIndent = (hide) ? '-1000px' : '0px';
+			return true;
+		}
+	}
+}
+
+window.onload = function () {
+	setTimeout(initOverLabels, 50);
+};
+
+/*
+* Fonctions permettant de gerer le choix de la taille de la police selon l'utilisateur
+*/
+
+function setActiveStyleSheet(title) {
+  var i, a, main;
+  for(i=0; (a = document.getElementsByTagName("link")[i]); i++) {
+    if(a.getAttribute("rel").indexOf("style") != -1 && a.getAttribute("title")) {
+      a.disabled = true;
+      if(a.getAttribute("title") == title) {a.disabled = false;}
+    }
+  }
+}
+
+function getActiveStyleSheet() {
+  var i, a;
+  for(i=0; (a = document.getElementsByTagName("link")[i]); i++) {
+    if(a.getAttribute("rel").indexOf("style") != -1 && a.getAttribute("title") && !a.disabled) {return a.getAttribute("title");}
+  }
+  return null;
+}
+
+function getPreferredStyleSheet() {
+  var i, a;
+  for(i=0; (a = document.getElementsByTagName("link")[i]); i++) {
+    if(a.getAttribute("rel").indexOf("style") != -1 && a.getAttribute("rel").indexOf("alt") == -1 && a.getAttribute("title")) {return a.getAttribute("title");}
+  }
+  return null;
+}
+
+function changeStylePolice () {
+	var title = getActiveStyleSheet();
+	YAHOO.util.Cookie.set("style", title, { path: "/", expires: "January 12, 2025", domain: document.domain.substr(document.domain.lastIndexOf('geny')) });
+}
+
+YAHOO.util.Event.onDOMReady (function () {
+	var cookie = YAHOO.util.Cookie.get("style");
+	var title = cookie ? cookie : getPreferredStyleSheet();
+	setActiveStyleSheet(title);
+});
+YAHOO.util.Event.addListener("dStyle", "click", changeStylePolice);
+YAHOO.util.Event.addListener("lStyle", "click", changeStylePolice);
+
+/*
+* outil pour changement de langue
+*/
+function sLang() {
+	// creation du overlay
+    var langOL = new YAHOO.widget.Overlay("sLangOl", {context:["sLang","tl","bl"], visible:false});
+    langOL.render();
+    YAHOO.util.Event.addListener("sLang", "mouseover", langOL.show, langOL, true);
+    YAHOO.util.Event.addListener("sLang", "mouseout", langOL.hide, langOL, true);
+}
+YAHOO.util.Event.onAvailable("sLang", sLang);
+
+/**
+ * Fonction pour initialiser les libellés du formulaire de connexion (E-mail et mot de passe)
+ * dans la page entete.jsp
+ * */
+function initOverLabels() {
+	if (!document.getElementById)
+		return;
+
+	var labels, id, field;
+
+	// Set focus and blur handlers to hide and show 
+	// labels with 'overlabel' class names.
+	labels = YAHOO.util.Dom.getElementsByClassName('overlabel','label',document.getElementById('login'));
+
+	for ( var i = 0; i < labels.length; i++) {
+
+			// Skip labels that do not have a named association
+			// with another field.
+			id = labels[i].htmlFor || labels[i].getAttribute('for');
+			if (!id || !(field = document.getElementById(id))) {
+				continue;
+			}
+
+			// Change the applied class to hover the label 
+			// over the form field.
+			labels[i].className = 'overlabel-apply';
+
+			// Hide any fields having an initial value.
+			if (field.value !== '') {
+				hideLabel(field.getAttribute('id'), true);
+			}
+
+			// Set handlers to show and hide labels.
+			field.onfocus = function() {
+				hideLabel(this.getAttribute('id'), true);
+			};
+			field.onblur = function() {
+				if (this.value === '') {
+					hideLabel(this.getAttribute('id'), false);
+				}
+			};
+
+			// Handle clicks to label elements (for Safari).
+			labels[i].onclick = function() {
+				var id, field;
+				id = this.getAttribute('for');
+				if (id && (field = document.getElementById(id))) {
+					field.focus();
+				}
+			};
+	}
+}
+
+function hideLabel(field_id, hide) {
+	var field_for;
+	var labels = document.getElementsByTagName('label');
+	for ( var i = 0; i < labels.length; i++) {
+		field_for = labels[i].htmlFor || labels[i].getAttribute('for');
+		if (field_for == field_id) {
+			labels[i].style.textIndent = (hide) ? '-1000px' : '0px';
+			return true;
+		}
+	}
+}
+
+function initConnexion() {
+	setTimeout(initOverLabels, 50);
+}
+/**
+ * Fin Fonction pour initialiser les libellés du formulaire de connexion (E-mail et mot de passe)
+ * */
+

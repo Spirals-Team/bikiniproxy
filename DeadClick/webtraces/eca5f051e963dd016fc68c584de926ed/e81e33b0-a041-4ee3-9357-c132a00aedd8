@@ -1,0 +1,72 @@
+(function (w, d, v, e) {
+  function getVersion() {
+    if (w.CNX_AB_VERSION) {
+      return w.CNX_AB_VERSION;
+    }
+
+    var r = Math.random();
+    var no = v[0].n;
+
+    var p = 0;
+    for (var i = 0; i < v.length; i++) {
+      p += parseInt(v[i].w, 10) / 100;
+      if (r < p) {
+        no = v[i].n;
+        break;
+      }
+    }
+
+    if (w.self !== top) {
+      var currW = w;
+      while (currW !== top) {
+        try {
+          currW = currW.parent;
+          if (currW.CNX_AB_VERSION) {
+            no = currW.CNX_AB_VERSION;
+          } else {
+            currW.CNX_AB_VERSION = no;
+          }
+        } catch (e) {
+          break;
+        }
+      }
+    }
+
+    w.CNX_AB_VERSION = no;
+
+    return no;
+  }
+
+  var scripts = [].slice.call(d.getElementsByTagName('script'));
+  scripts = scripts.filter(function (i) {
+    return i.getAttribute('data-initialized') === null && i.getAttribute('data-cnx-ab') === null && i.getAttribute('src') !== null && i.getAttribute('src').indexOf('connatix.renderer.infeed') > 0;
+  });
+
+  for (var i = 0; i < scripts.length; i++) {
+    var script = scripts[i];
+    script.setAttribute('data-initialized', 'true')
+
+    try {
+      var parent = script.parentNode;
+      var s = d.createElement('script');
+      s.setAttribute('data-cnx-ab', true);
+
+      var attributes = [].slice.call(script.attributes);
+      for (var index = 0; index < attributes.length; index++) {
+        try {
+          var attr = attributes[index];
+          if (attr.name != null && attr.name !== 'data-initialized' && attr.name.trim().length > 0) {
+            s.setAttribute(attr.name.trim(), attr.value ? attr.value.trim() : attr.value);
+          }
+        } catch (e) {}
+      }
+
+      var f = script.src.substring(script.src.indexOf('connatix.renderer.infeed'));
+
+      s.async = 1;
+      s.src = 'https://cdns.connatix.com/' + e + '/' + getVersion() + '/min/' + f;
+      parent.insertBefore(s, script);
+      parent.removeChild(script);
+    } catch (e) {}
+  }
+})(window, document, [{n: '385', w: 100}], 'p');

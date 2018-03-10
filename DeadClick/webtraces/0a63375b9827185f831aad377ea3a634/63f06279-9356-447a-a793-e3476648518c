@@ -1,0 +1,616 @@
+    
+
+    
+
+    
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head><link rel="shortcut icon" href="favicon.ico" >
+   <link rel="icon" type="image/gif" href="animated_favicon1.gif" >
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>WelcomePaperTemptress.com</title>
+
+<!--- CARTWEAVER CSS --->
+<link href="cw4/css/cw-core.css" rel="stylesheet" type="text/css">
+<!--- Cartweaver jQuery file --->
+<script type="text/javascript" src="assets/js/jquery-1.2.6.min.js" /></script>
+<script type="text/javascript" src="cw4/js/jquery-1.7.1.min.js"></script>
+<!--- Cartweaver Template-01 css --->
+<link href="_cw4-tmplt-ft1/css/cw-tmplt-ft1.css" rel="stylesheet" type="text/css" />	
+<!--- Cartweaver jQuery script for accordian slide menu --->
+<script type="text/javascript" src="_cw4-tmplt-ft1/js/cw_side-accordian-menu.js"></script>
+<!--- Cartweaver accordian slide menu css --->
+<link href="_cw4-tmplt-ft1/css/cw-slide-accordian-menu.css" rel="stylesheet" type="text/css" />	
+
+		
+<style type="text/css">
+#apDiv1 {
+	position:absolute;
+	width:200px;
+	height:115px;
+	z-index:1;
+	left: 364px;
+	top: 532px;
+}
+.style53 {font-size: 13px;
+	font-style: italic;
+	padding-top: 1px;
+	padding-right: 10px;
+	padding-bottom: 1px;
+	padding-left: 5px;
+}
+</style>
+<script type="text/javascript" src="cw4/js/jquery-1.7.1.min.js"></script>
+<script src="cw4/js/jquery.metadata.js" type="text/javascript"></script>
+<script src="cw4/js/jquery.validate.js" type="text/javascript"></script>
+<script src="cw4/js/jquery.calculation.js" type="text/javascript"></script>
+<script type="text/javascript">
+jQuery(document).ready(function() {
+	// VALIDATION
+	// validate forms that have class="CWvalidate"
+	jQuery('form.CWvalidate').each(function() {
+	var alertID = jQuery(this).attr('id');
+	jQuery(this).append('<div class="CWalertBox alertText validationAlert" style="display:none;"></div><div class="CWclear"></div>');
+	});
+
+	// handle select box changes
+	jQuery('form.CWvalidate select').change(function() {
+		jQuery(this).blur();
+	});
+	// set default options for validation
+	jQuery.validator.setDefaults({
+		focusInvalid:true,
+		onkeyup:false,
+		onblur:true,
+		errorClass:"warning",
+		errorElement:"span",
+		errorPlacement: function(error, element) {
+			// give the sibling label the warning class
+			// insert error markup above the label
+			jQuery(element).siblings('label').addClass('warning')
+			// uncomment next line to show error messages above each field
+			//.before(error)
+			;
+		   },
+		 showErrors: function(errorMap, errorList) {
+		 	// target the current form with this.currentForm
+		 	//jQuery(this.currentForm).hide();
+
+		 	if (this.numberOfInvalids() > 0) {
+
+		 		// dynamic message depending on form ID
+		 		var formID = jQuery(this.currentForm).attr('id');
+				if (formID == 'CWformCustomer') {
+					var validationMessage = 'Complete all required information';
+				} else if (formID == 'CWformLogin') {
+					var validationMessage = '';
+				} else if (formID == 'CWformOrderSubmit') {
+					var validationMessage = 'Complete all required information';
+				} else if (formID == 'CWformAddToCartWindow') {
+					var validationMessage = 'Select at least one item';
+				} else {
+					var validationMessage = 'Complete your selection above';
+				};
+
+				// only show validation message if text is provided
+						if (!(validationMessage == '')) {
+						jQuery(this.currentForm).children('.validationAlert:first').show().html(validationMessage);
+						};
+					// show the errors
+						this.defaultShowErrors();
+					// if everything is ok, reset the validation
+					} else {
+						//alert('Selection OK!');
+						jQuery(this.currentForm).children('div.validationAlert').empty().hide();
+						jQuery(this.currentForm).children('span.warning').remove();
+						jQuery(this.currentForm).children('.warning').removeClass('warning');
+					}
+			}
+		// end showErrors
+		});
+
+	jQuery('form.CWvalidate').each(function() {
+		jQuery(this).validate();
+	});
+	// end form validation
+});
+</script>
+<script src="cw4/js/fancybox/jquery.fancybox.pack.js" type="text/javascript"></script>
+<link href="cw4/js/fancybox/jquery.fancybox.css" rel="stylesheet" type="text/css">
+<script type="text/javascript">
+jQuery(document).ready(function() {
+
+	// total quantities (for table product option type)
+	jQuery('form#CWformAddToCart input.qty').keyup(function() {
+		var sumVal = jQuery('form#CWformAddToCart input.qty').sum();
+		jQuery('form#CWformAddToCart input#totalQty').val(sumVal);
+	});
+
+	// warning boxes fade out
+	jQuery('.fadeOut').delay(2750).fadeOut(500);
+
+	// cart confirmation coloring
+	window.setTimeout(function() {jQuery('tr.cartConfirm').removeClass('cartConfirm');}, 2750);
+	window.setTimeout(function() {jQuery('tr.stockAlert').removeClass('stockAlert');}, 2750);
+
+	// CHECKALL CHECKBOXES
+	// controls all checkboxes with class matching 'rel' attribute
+	jQuery('input.checkAll, a.checkAllLink').click(function() {
+		var checkClass = jQuery(this).attr('rel');
+		//assemble the group name
+		var groupEl = 'input[class*=' + checkClass + ']';
+		//alert(groupEl);
+		var isChecked = false;
+		if (jQuery(this).prop('checked')==true) {
+		isChecked = true;
+		};
+		//alert(isChecked);
+		jQuery(groupEl).each(function() {
+			if (jQuery(this).attr('disabled')!=true) {
+			jQuery(this).prop('checked',isChecked);
+			// handle radioGroup siblings
+				if((jQuery(this).hasClass('radioGroup')==true) && (isChecked==true) ) {
+			$radioBoxes(jQuery(this).attr('rel'),isChecked);
+			jQuery(this).prop('checked',isChecked);
+				}
+			};
+		});
+	});
+
+	 // PRODUCT OPTIONS WINDOW (via add to cart function)
+		var $optionLinkHandler = function(elem) {
+			// get url, remove quantity
+			var origLink = jQuery(elem).siblings('a.selOptions:hidden');
+			var origHref = jQuery(origLink).attr('href');
+			var cleanHref = origHref.replace(/&intqty([\S])+/g,"");
+			// qty box value
+			var origQty = jQuery(elem).siblings('input.qty').val()
+			var newHref = cleanHref + '&intqty=' + origQty;
+			// add new url to link, trigger click
+			jQuery(elem).next('a.selOptions:hidden').attr('href',newHref).trigger('click');
+		};
+		// clicking button triggers hidden fancybox link
+		jQuery('input.CWaddButton').click(function() {
+			$optionLinkHandler(this);
+			//return false;
+		});
+		// submitting form (enter key in qty box) triggers hidden fancybox link
+		jQuery('form.CWqtyForm').submit(function() {
+			var fbButton = jQuery(this).find('input.CWaddButton');
+			$optionLinkHandler(fbButton);
+			jQuery('input.CWaddButton').unbind('click');
+			return false;
+		});
+		// fancybox - see http://fancybox.net/api for available options
+		jQuery('a.selOptions').each(function() {
+			var windowHeight = jQuery(this).attr('rel');
+			jQuery(this).fancybox({
+			'titlePosition': 'inside',
+			'margin': 4,
+			'padding': 3,
+			'overlayShow': true,
+			'showCloseButton': true,
+			'hideOnOverlayClick':true,
+			'hideOnContentClick': false,
+			'width':350,
+			'height':parseInt(windowHeight),
+			'autoDimensions':false,
+			'showNavArrows':false
+			});
+		});
+});
+</script>
+<script type="text/javascript">
+
+//misc validation functions --------- //
+
+// CHECK VALUE - return default value to empty input
+// give your input any default value, and call with onblur="checkValue(this)"
+function checkValue(inputName) {
+if (inputName.value == '') {
+inputName.value = inputName.defaultValue;
+};
+}
+
+
+// EXTRACT NUMERIC - allow numeric input only
+// invoke like this:  onkeyup="extractNumeric(this,2,true)"
+// thanks to http://www.mredkj.com/tutorials/validate2.html
+function extractNumeric(obj,decimalPlaces,allowNegative) {
+var out = obj.value;
+// set defaults
+if(decimalPlaces == null){
+var decimalPlaces = 0;
+};
+if(allowNegative == null){
+var allowNegative = true;
+};
+	// check for correct formatting
+	var reg0Str = '[0-9]*';
+	if (decimalPlaces > 0) {
+		reg0Str += '\\.?[0-9]{0,' + decimalPlaces + '}';
+	} else if (decimalPlaces < 0) {
+		reg0Str += '\\.?[0-9]*';
+	}
+	reg0Str = allowNegative ? '^-?' + reg0Str : '^' + reg0Str;
+	reg0Str = reg0Str + '$';
+	var reg0 = new RegExp(reg0Str);
+	if (reg0.test(out)) return true;
+
+	// first replace all non numbers
+	var reg1Str = '[^0-9' + (decimalPlaces != 0 ? '\\.' : '') + (allowNegative ? '-' : '') + ']';
+	var reg1 = new RegExp(reg1Str, 'g');
+	out = out.replace(reg1, '');
+
+	if (allowNegative) {
+		// replace extra negative
+		var hasNegative = out.length > 0 && out.charAt(0) == '-';
+		var reg2 = /-/g;
+		out = out.replace(reg2, '');
+		if (hasNegative) out = '-' + out;
+	}
+
+	if (decimalPlaces != 0) {
+		var reg3 = /\./g;
+		var reg3Array = reg3.exec(out);
+		if (reg3Array != null) {
+			// keep only first occurrence of .
+			//  and the number of places specified by decimalPlaces or the entire string if decimalPlaces < 0
+			var reg3Right = out.substring(reg3Array.index + reg3Array[0].length);
+			reg3Right = reg3Right.replace(reg3, '');
+			reg3Right = decimalPlaces > 0 ? reg3Right.substring(0, decimalPlaces) : reg3Right;
+			out = out.substring(0,reg3Array.index) + '.' + reg3Right;
+		}
+	}
+	obj.value = out;
+    obj.focus();
+};
+//end misc validation functions--- //
+</script>
+</head>
+<body>
+<div id="fb-root"></div>
+<script>(function(d, s, id) {
+  var js, fjs = d.getElementsByTagName(s)[0];
+  if (d.getElementById(id)) return;
+  js = d.createElement(s); js.id = id;
+  js.src = "//connect.facebook.net/en_US/all.js#xfbml=1&appId=518187688227630";
+  fjs.parentNode.insertBefore(js, fjs);
+}(document, 'script', 'facebook-jssdk'));</script>
+<div class="page-wrapper">
+<!--- Server Side Include for the site header --->
+<div class="header">
+  <div class="header-rt-block"><div class="image" id="logo"><a href="http://papertemptress.com/images/bannerblinkie.gif" target="_blank"></a><a href="http://www.papertemptress.com/" target="_blank"><img src="http://papertemptress.com/images/bannerblinkie.gif" border="0" alt="" /></a></div>
+  
+  </div><!-- end .header-rt-block -->
+  
+ 
+  
+  <div class="clearfloat"></div>
+  
+  <div class="header-menu-block">
+ <a href="index.php">Home</a> &#8226; <a href="Sales1.php">Sales</a> &#8226; <a href="shippinginfo.php">Shipping Info</a> &#8226; <a href="searchpage.php">Search</a> &#8226;<a href="FAQ.php">FAQ</a><a href="cart.php">View Cart</a> &#8226;<a href="account.php">My Account</a>&#8226;<a href="contact-us.php">Contact Me</a> </p>
+  </div><!-- end .header-menu-block --> 
+</div><!-- end .header -->
+<!-- Begin Right Column =================== -->
+<div class="lft-column"> 
+
+<div class="CWcontent">
+    <!--- This nav include requires the corresponding java script snippet be placed between the head tags
+    of your page.  It also requires that you include a script source that calls the latest jQuery library.
+    You should also add the associated CSS to your site css file. To be formatted consistently with other
+    Cartweaver elements, be sure to surround all CW4 elements in a dive with the class of "CWcontent"
+    ---> 
+    <div class="cwVerticalSlide">
+        
+
+<ul class="CWnav" id="nav2">
+				<li><a href="productlist.php" class="firstLink" title="All Products">All Products</a></li>
+						<li><a href="productlist.php?category=54" title="Copic Cardstock">Copic Cardstock <span>(9)</span></a>
+						<ul>
+							<li><a href="productlist.php?category=54" title="All">All <span>(9)</span></a></li>
+						<li><a href="productlist.php?category=54&secondary=32" title="Heavenly White">Heavenly White <span>(2)</span></a></li>
+						<li><a href="productlist.php?category=54&secondary=20" title="Iridescent 89#">Iridescent 89# <span>(1)</span></a></li>
+						<li><a href="productlist.php?category=54&secondary=31" title="Neenah Classic Crest">Neenah Classic Crest <span>(3)</span></a></li>
+					</ul>
+				</li>
+				<li><a href="productlist.php?category=71" title="Ribbon">Ribbon <span>(68)</span></a>
+						<ul>
+							<li><a href="productlist.php?category=71" title="All">All <span>(68)</span></a></li>
+						<li><a href="productlist.php?category=71&secondary=67" title="1 inch">1 inch <span>(1)</span></a></li>
+						<li><a href="productlist.php?category=71&secondary=63" title="1/2 inch">1/2 inch <span>(1)</span></a></li>
+						<li><a href="productlist.php?category=71&secondary=61" title="1/4 inch ribbon">1/4 inch ribbon <span>(4)</span></a></li>
+						<li><a href="productlist.php?category=71&secondary=64" title="3/16 inch">3/16 inch <span>(1)</span></a></li>
+						<li><a href="productlist.php?category=71&secondary=58" title="3/8 Ribbon">3/8 Ribbon <span>(19)</span></a></li>
+						<li><a href="productlist.php?category=71&secondary=66" title="5/16 inch">5/16 inch <span>(1)</span></a></li>
+						<li><a href="productlist.php?category=71&secondary=59" title="5/8 Ribbon">5/8 Ribbon <span>(32)</span></a></li>
+						<li><a href="productlist.php?category=71&secondary=65" title="7/8 inch">7/8 inch <span>(1)</span></a></li>
+						<li><a href="productlist.php?category=71&secondary=62" title="Cord and Loops">Cord and Loops <span>(4)</span></a></li>
+						<li><a href="productlist.php?category=71&secondary=60" title="Twine">Twine <span>(2)</span></a></li>
+					</ul>
+				</li>
+				<li><a href="productlist.php?category=66" title="Speciality Cardstock">Speciality Cardstock <span>(92)</span></a>
+						<ul>
+							<li><a href="productlist.php?category=66" title="All">All <span>(92)</span></a></li>
+						<li><a href="productlist.php?category=66&secondary=26" title="Elegant Linen 80#">Elegant Linen 80# <span>(3)</span></a></li>
+						<li><a href="productlist.php?category=66&secondary=20" title="Iridescent 89#">Iridescent 89# <span>(5)</span></a></li>
+						<li><a href="productlist.php?category=66&secondary=16" title="Lustre 80#">Lustre 80# <span>(12)</span></a></li>
+						<li><a href="productlist.php?category=66&secondary=10" title="Mica/Metallic 105#">Mica/Metallic 105# <span>(35)</span></a></li>
+						<li><a href="productlist.php?category=66&secondary=23" title="Ruche 80#">Ruche 80# <span>(9)</span></a></li>
+						<li><a href="productlist.php?category=66&secondary=21" title="Ultimate Glossy">Ultimate Glossy <span>(3)</span></a></li>
+						<li><a href="productlist.php?category=66&secondary=39" title="Velvet Touch 111#">Velvet Touch 111# <span>(2)</span></a></li>
+						<li><a href="productlist.php?category=66&secondary=40" title="Deckled Stationery 65#">Deckled Stationery 65# <span>(8)</span></a></li>
+						<li><a href="productlist.php?category=66&secondary=11" title="Glimmer 98#">Glimmer 98# <span>(13)</span></a></li>
+						<li><a href="productlist.php?category=66&secondary=9" title="12 x 12">12 x 12 <span>(6)</span></a></li>
+						<li><a href="productlist.php?category=66&secondary=29" title="Incandescent">Incandescent <span>(3)</span></a></li>
+						<li><a href="productlist.php?category=66&secondary=28" title="Other">Other <span>(1)</span></a></li>
+					</ul>
+				</li>
+				<li><a href="productlist.php?category=47" title="Dropdead Gorgeous Cardstock">Dropdead Gorgeous Cardstock <span>(21)</span></a>
+						<ul>
+							<li><a href="productlist.php?category=47" title="All">All <span>(21)</span></a></li>
+						<li><a href="productlist.php?category=47&secondary=26" title="Elegant Linen 80#">Elegant Linen 80# <span>(3)</span></a></li>
+						<li><a href="productlist.php?category=47&secondary=16" title="Lustre 80#">Lustre 80# <span>(14)</span></a></li>
+						<li><a href="productlist.php?category=47&secondary=10" title="Mica/Metallic 105#">Mica/Metallic 105# <span>(2)</span></a></li>
+						<li><a href="productlist.php?category=47&secondary=21" title="Ultimate Glossy">Ultimate Glossy <span>(5)</span></a></li>
+						<li><a href="productlist.php?category=47&secondary=9" title="12 x 12">12 x 12 <span>(1)</span></a></li>
+					</ul>
+				</li>
+				<li><a href="productlist.php?category=22" title="Must TOUCH Cardstock">Must TOUCH Cardstock <span>(18)</span></a>
+						<ul>
+							<li><a href="productlist.php?category=22" title="All">All <span>(18)</span></a></li>
+						<li><a href="productlist.php?category=22&secondary=30" title="Leather 80#">Leather 80# <span>(3)</span></a></li>
+						<li><a href="productlist.php?category=22&secondary=38" title="Plastic Touch 122#">Plastic Touch 122# <span>(11)</span></a></li>
+						<li><a href="productlist.php?category=22&secondary=46" title="Suede 93#">Suede 93# <span>(1)</span></a></li>
+						<li><a href="productlist.php?category=22&secondary=39" title="Velvet Touch 111#">Velvet Touch 111# <span>(3)</span></a></li>
+						<li><a href="productlist.php?category=22&secondary=9" title="12 x 12">12 x 12 <span>(1)</span></a></li>
+					</ul>
+				</li>
+				<li><a href="productlist.php?category=74" title="Layering Weight Cardstock">Layering Weight Cardstock <span>(61)</span></a>
+						<ul>
+							<li><a href="productlist.php?category=74" title="All">All <span>(61)</span></a></li>
+						<li><a href="productlist.php?category=74&secondary=35" title="Antique Parchment 65#">Antique Parchment 65# <span>(10)</span></a></li>
+						<li><a href="productlist.php?category=74&secondary=14" title="Pop Tones 65#">Pop Tones 65# <span>(24)</span></a></li>
+						<li><a href="productlist.php?category=74&secondary=41" title="Sorbet 100#">Sorbet 100# <span>(4)</span></a></li>
+						<li><a href="productlist.php?category=74&secondary=34" title="Astrobright Color 65#">Astrobright Color 65# <span>(23)</span></a></li>
+					</ul>
+				</li>
+				<li><a href="productlist.php?category=75" title="Base weight Cardstock">Base weight Cardstock <span>(76)</span></a>
+						<ul>
+							<li><a href="productlist.php?category=75" title="All">All <span>(76)</span></a></li>
+						<li><a href="productlist.php?category=75&secondary=13" title="BASIS 80#">BASIS 80# <span>(19)</span></a></li>
+						<li><a href="productlist.php?category=75&secondary=27" title="Classic Linen 80#">Classic Linen 80# <span>(18)</span></a></li>
+						<li><a href="productlist.php?category=75&secondary=25" title="Columns 80#">Columns 80# <span>(12)</span></a></li>
+						<li><a href="productlist.php?category=75&secondary=26" title="Elegant Linen 80#">Elegant Linen 80# <span>(1)</span></a></li>
+						<li><a href="productlist.php?category=75&secondary=37" title="Felt 80#">Felt 80# <span>(13)</span></a></li>
+						<li><a href="productlist.php?category=75&secondary=30" title="Leather 80#">Leather 80# <span>(3)</span></a></li>
+						<li><a href="productlist.php?category=75&secondary=17" title="Malermo Perle 92#">Malermo Perle 92# <span>(10)</span></a></li>
+						<li><a href="productlist.php?category=75&secondary=9" title="12 x 12">12 x 12 <span>(10)</span></a></li>
+					</ul>
+				</li>
+				<li><a href="productlist.php?category=76" title="Heavy Weight Cardstock">Heavy Weight Cardstock <span>(34)</span></a>
+						<ul>
+							<li><a href="productlist.php?category=76" title="All">All <span>(34)</span></a></li>
+						<li><a href="productlist.php?category=76&secondary=47" title="Astrobright Color 104#">Astrobright Color 104# <span>(2)</span></a></li>
+						<li><a href="productlist.php?category=76&secondary=17" title="Malermo Perle 92#">Malermo Perle 92# <span>(1)</span></a></li>
+						<li><a href="productlist.php?category=76&secondary=31" title="Neenah Classic Crest">Neenah Classic Crest <span>(2)</span></a></li>
+						<li><a href="productlist.php?category=76&secondary=38" title="Plastic Touch 122#">Plastic Touch 122# <span>(1)</span></a></li>
+						<li><a href="productlist.php?category=76&secondary=15" title="Pop Tones 100#">Pop Tones 100# <span>(16)</span></a></li>
+						<li><a href="productlist.php?category=76&secondary=43" title="RC 100#">RC 100# <span>(6)</span></a></li>
+						<li><a href="productlist.php?category=76&secondary=41" title="Sorbet 100#">Sorbet 100# <span>(4)</span></a></li>
+						<li><a href="productlist.php?category=76&secondary=9" title="12 x 12">12 x 12 <span>(1)</span></a></li>
+					</ul>
+				</li>
+				<li><a href="productlist.php?category=68" title="White/Black">White/Black <span>(8)</span></a>
+						<ul>
+							<li><a href="productlist.php?category=68" title="All">All <span>(8)</span></a></li>
+						<li><a href="productlist.php?category=68&secondary=32" title="Heavenly White">Heavenly White <span>(2)</span></a></li>
+						<li><a href="productlist.php?category=68&secondary=31" title="Neenah Classic Crest">Neenah Classic Crest <span>(3)</span></a></li>
+						<li><a href="productlist.php?category=68&secondary=15" title="Pop Tones 100#">Pop Tones 100# <span>(1)</span></a></li>
+						<li><a href="productlist.php?category=68&secondary=43" title="RC 100#">RC 100# <span>(1)</span></a></li>
+					</ul>
+				</li>
+				<li><a href="productlist.php?category=69" title="Neenah">Neenah <span>(10)</span></a>
+						<ul>
+							<li><a href="productlist.php?category=69" title="All">All <span>(10)</span></a></li>
+						<li><a href="productlist.php?category=69&secondary=31" title="Neenah Classic Crest">Neenah Classic Crest <span>(10)</span></a></li>
+					</ul>
+				</li>
+				<li><a href="productlist.php?category=67" title="Textured">Textured <span>(78)</span></a>
+						<ul>
+							<li><a href="productlist.php?category=67" title="All">All <span>(78)</span></a></li>
+						<li><a href="productlist.php?category=67&secondary=47" title="Astrobright Color 104#">Astrobright Color 104# <span>(2)</span></a></li>
+						<li><a href="productlist.php?category=67&secondary=27" title="Classic Linen 80#">Classic Linen 80# <span>(18)</span></a></li>
+						<li><a href="productlist.php?category=67&secondary=25" title="Columns 80#">Columns 80# <span>(12)</span></a></li>
+						<li><a href="productlist.php?category=67&secondary=37" title="Felt 80#">Felt 80# <span>(13)</span></a></li>
+						<li><a href="productlist.php?category=67&secondary=30" title="Leather 80#">Leather 80# <span>(3)</span></a></li>
+						<li><a href="productlist.php?category=67&secondary=23" title="Ruche 80#">Ruche 80# <span>(9)</span></a></li>
+						<li><a href="productlist.php?category=67&secondary=44" title="Treasures 80#">Treasures 80# <span>(10)</span></a></li>
+						<li><a href="productlist.php?category=67&secondary=40" title="Deckled Stationery 65#">Deckled Stationery 65# <span>(8)</span></a></li>
+						<li><a href="productlist.php?category=67&secondary=9" title="12 x 12">12 x 12 <span>(10)</span></a></li>
+						<li><a href="productlist.php?category=67&secondary=28" title="Other">Other <span>(1)</span></a></li>
+					</ul>
+				</li>
+				<li><a href="productlist.php?category=11" title="Vellum">Vellum <span>(14)</span></a>
+						<ul>
+							<li><a href="productlist.php?category=11" title="All">All <span>(14)</span></a></li>
+					</ul>
+				</li>
+				<li><a href="productlist.php?category=63" title="12 x 12">12 x 12 <span>(23)</span></a>
+						<ul>
+							<li><a href="productlist.php?category=63" title="All">All <span>(23)</span></a></li>
+						<li><a href="productlist.php?category=63&secondary=13" title="BASIS 80#">BASIS 80# <span>(2)</span></a></li>
+						<li><a href="productlist.php?category=63&secondary=25" title="Columns 80#">Columns 80# <span>(3)</span></a></li>
+						<li><a href="productlist.php?category=63&secondary=37" title="Felt 80#">Felt 80# <span>(3)</span></a></li>
+						<li><a href="productlist.php?category=63&secondary=32" title="Heavenly White">Heavenly White <span>(1)</span></a></li>
+						<li><a href="productlist.php?category=63&secondary=30" title="Leather 80#">Leather 80# <span>(1)</span></a></li>
+						<li><a href="productlist.php?category=63&secondary=16" title="Lustre 80#">Lustre 80# <span>(3)</span></a></li>
+						<li><a href="productlist.php?category=63&secondary=17" title="Malermo Perle 92#">Malermo Perle 92# <span>(2)</span></a></li>
+						<li><a href="productlist.php?category=63&secondary=10" title="Mica/Metallic 105#">Mica/Metallic 105# <span>(3)</span></a></li>
+						<li><a href="productlist.php?category=63&secondary=18" title="premium glossy 80#">premium glossy 80# <span>(1)</span></a></li>
+						<li><a href="productlist.php?category=63&secondary=23" title="Ruche 80#">Ruche 80# <span>(2)</span></a></li>
+						<li><a href="productlist.php?category=63&secondary=9" title="12 x 12">12 x 12 <span>(20)</span></a></li>
+					</ul>
+				</li>
+				<li><a href="productlist.php?category=9" title="Glossy">Glossy <span>(20)</span></a>
+						<ul>
+							<li><a href="productlist.php?category=9" title="All">All <span>(20)</span></a></li>
+						<li><a href="productlist.php?category=9&secondary=16" title="Lustre 80#">Lustre 80# <span>(4)</span></a></li>
+						<li><a href="productlist.php?category=9&secondary=18" title="premium glossy 80#">premium glossy 80# <span>(13)</span></a></li>
+						<li><a href="productlist.php?category=9&secondary=21" title="Ultimate Glossy">Ultimate Glossy <span>(6)</span></a></li>
+						<li><a href="productlist.php?category=9&secondary=9" title="12 x 12">12 x 12 <span>(1)</span></a></li>
+					</ul>
+				</li>
+				<li><a href="productlist.php?category=51" title="Kraft/Brown Bag">Kraft/Brown Bag <span>(3)</span></a>
+						<ul>
+							<li><a href="productlist.php?category=51" title="All">All <span>(3)</span></a></li>
+					</ul>
+				</li>
+				<li><a href="productlist.php?category=37" title="Variety Packages">Variety Packages <span>(13)</span></a>
+						<ul>
+							<li><a href="productlist.php?category=37" title="All">All <span>(13)</span></a></li>
+					</ul>
+				</li>
+				<li><a href="productlist.php?category=70" title="Hambly Studio">Hambly Studio <span>(212)</span></a>
+						<ul>
+							<li><a href="productlist.php?category=70" title="All">All <span>(212)</span></a></li>
+						<li><a href="productlist.php?category=70&secondary=56" title="Hambly Studio 6 x 6">Hambly Studio 6 x 6 <span>(4)</span></a></li>
+						<li><a href="productlist.php?category=70&secondary=50" title="HP Stickers">HP Stickers <span>(4)</span></a></li>
+						<li><a href="productlist.php?category=70&secondary=48" title="HS Overlays">HS Overlays <span>(102)</span></a></li>
+						<li><a href="productlist.php?category=70&secondary=49" title="HS Screenprints">HS Screenprints <span>(105)</span></a></li>
+					</ul>
+				</li>
+				<li><a href="productlist.php?category=73" title="Pretty Bows">Pretty Bows <span>(18)</span></a>
+						<ul>
+							<li><a href="productlist.php?category=73" title="All">All <span>(18)</span></a></li>
+						<li><a href="productlist.php?category=73&secondary=52" title="Grosgrain Butterfly Bows">Grosgrain Butterfly Bows <span>(2)</span></a></li>
+						<li><a href="productlist.php?category=73&secondary=24" title="Itty Bitty Bows">Itty Bitty Bows <span>(7)</span></a></li>
+						<li><a href="productlist.php?category=73&secondary=54" title="Pull Butterfly Bow">Pull Butterfly Bow <span>(5)</span></a></li>
+						<li><a href="productlist.php?category=73&secondary=51" title="Satin Bows">Satin Bows <span>(4)</span></a></li>
+					</ul>
+				</li>
+				<li><a href="productlist.php?category=72" title="Flowers">Flowers <span>(6)</span></a>
+						<ul>
+							<li><a href="productlist.php?category=72" title="All">All <span>(6)</span></a></li>
+					</ul>
+				</li>
+				<li><a href="productlist.php?category=33" title="Gift Certificates">Gift Certificates <span>(5)</span></a>
+						<ul>
+							<li><a href="productlist.php?category=33" title="All">All <span>(5)</span></a></li>
+						<li><a href="productlist.php?category=33&secondary=28" title="Other">Other <span>(1)</span></a></li>
+					</ul></li>
+</ul>  </div>
+</div><!-- end .CWcontent  Note: Any Cartweaver functionality that you manually place on your page must be wrapped in this dive tag class in order to use the Cartweaver css styles-->   
+    
+<!--- Add Social Media Links Include --->
+
+
+
+<div class="social-media-block-horz">
+      <p><strong>Join us @</strong></p>
+      <p><img src="_cw4-tmplt-ft1/images/facebook.png" alt="Facebook" width="16" height="16" align="absmiddle" /> <a href="http://www.facebook.com/pages/Paper-Temptress/125901434090616" target="_blank">Facebook</a></p>
+      
+      <p><img src="_cw4-tmplt-ft1/images/rss.png" alt="our blog" width="16" height="16" align="absmiddle" /> <a href="http://blogs.papertemptress.com/" target="_blank">PaperTemptress's Community Blog</a></p>
+</div>
+</a>
+
+
+
+
+<br />
+<div align="center">
+
+</div><!-- end .social-media-block-horz -->     
+
+    
+<!-- end .lft-column --></div><!-- end .lft-column -->
+
+<!-- Begin Main Content ===================  -->    
+<div class="main-content">
+ <h1>Welcome to PaperTemptress.com</h1>
+ <br />
+ <h2>REDUCED SHIPPING RATES (inside the US)! </h2>
+ <h2><span class="style53">10 sheets or less $3.20<br />
+10 - 20 sheets  $3.50<br />
+21 - 65 sheets $5.90<br />
+66 - 450 sheets $10.75<br />
+451-1000 sheets $19.50<br />
+ </span></h2>
+ <p>&nbsp;</p>
+ <h2>2018 is almost here....where have the years gone? To celebrate a new year and hopefully a better year PaperTemptress is offering <em><strong>FREE SHIPPING</strong></em> on the very gorgeous <a href="http://papertemptress.com/product.php?product=448">Valentine Day Speciality Pkg</a> which works out to let you only pay $2.25 to ship up to another 50 sheets of any cardstock including any of the Copic Blending cardstock and only $7 shipping for up to another 400 sheets so a PERFECT time to add speciality cardstock to your paper stash! Sorry but there will be an additional shipping charge applied to your order if purchasing any 12 x 12 sheets due to the extra cost of shipping 12 x 12 cardstock.</h2>
+ <br />
+ 
+ <h2>The gorgeous Valentine Day Speciality pkg is 22 sheets of gorgeous speciality cardstock that coordinates to design very special Valentine Day cards... Here is the sheets of gorgeous cardstock that is included in the Valentine Day Speciality Pkg.<br />
+   2 Wild Cherry Pop Tones 100#<br />
+   2 Vintage Silver Lustre<br />
+   2 Nero Incandescent <br />
+   1 Pink Lemonade Pop Tones <br />
+   2 Cotton Candy Pop Tones 100# <br />
+   2 Gold Mica/Metallic text <br />
+   1 Opal Mica/Metallic <br />
+   2 Gold Pearl Linen<br />
+   2 Virtual Pearl Iridescent text <br />
+   2 Jupiter Red Mica/Metallic <br />
+   2 Rose Quartz metallic <br />
+   1 Kraft 100# <br />
+   1 Cream Velvet Touch!!<br />
+   1 yd 5/8 Pretty Pink Crystalline Ribbon</h2>
+      <br />
+ <h2>Also on sale @ <a href="http://papertemptress.com/" target="_blank" data-ft="{'tn':'-U'}" rel="noopener nofollow" data-lynx-mode="async" data-lynx-uri="https://l.facebook.com/l.php?u=http%3A%2F%2FPaperTemptress.com%2F&amp;h=ATOKSu9zW2zd_CtwEM5zukprO_cBuDds4pN1C-eHN7z2N5nX5LWOErjAJ-rvm0UTmjxpi-lckLgQLhe-ycDcLhfo8iNuqqJHUuJ-h4qbD48A7unXmvvILBqgbjJ6oZDsYsf3KcpoH18woWal9KdZMqnH4FcV66iXcFsE-JHXSl9YIPD8pGYDkamNWHXc8W66PPFwoMDOh5-5uHVENdstan3Cfg8ARLCnuBFTxrK1m4TkRPdIQ2w1qJ64KG8-wq9DSaA8_uTGRDeF9QOGDR5S4_IIBKLMmGVViAoiRrQ860k8WNQ">PaperTemptress.com.</a> the whole <a href="http://www.papertemptress.com/productlist.php?category=66&secondary=10">Gorgeous 105# Mica/Metallic </a>paperline is 25% off....plus all 12 sheets of <a href="http://www.papertemptress.com/productlist.php?category=11">Vellum</a> is 30% off...great time to add GORGEOUS cardstock to help take your designs from great to AMAZING!<br />
+ </h2>
+ <h2>&nbsp;</h2>
+ <h2>I need more space BADLY so my needs are going to be really good for your stash....ALL ribbon is 60% off !  You just can't beat this sale especially since all ribbon carried @ PaperTemptress.com is high quality ribbon, most of the ribbon is May Art ribbon which is extremely popular...so take advantage of this amazing sale quickly since there are limited supplies on most of the ribbon!<br />
+   &nbsp;
+   
+   
+   <br />
+ </h2>
+ <h2>&nbsp;</h2>
+ 
+ <h2><a href="http://papertemptress.com/productlist.php?category=67&amp;secondary=27">The whole Linen line is 40% off.</a>..yep you read that right 40% for a very high quality 80# cardstock that cuts like butter with a digital cutter, and spray inks look amazing with this cardstock.....plus this Classic Linen works GREAT for watercoloring.....check out this  <a href="http://wp.me/psPwU-6xq">Watercoloring Classic Linen </a> youtube video ..check out how you can still see the texture on the Linen cardstock:</h2>
+ <h2><br>
+   <iframe width="560" height="315" src="https://www.youtube.com/embed/cKU954mWKRY" frameborder="0" allowfullscreen></iframe>
+ </h2>
+ <h2><br />
+  
+  Be sure to check out the rest of PaperTemptress's specials on the <a href="http://papertemptress.com/Sales1.php">Sales page.</a> </h2>
+<p>
+<h2>Everyone has absolutely fallen in love with the Cryogen White Iridescent for coloring with Copics. This is what is said by Suzanne J. Dean, an amazing Copic instructor...."I am using Cryogen White now, love it.....it's a mix between a smooth paper & and some with tooth too---lite iridescent too, really pretty and easy to use!" Perfect reason to keep the Cryogen White on sale at 30% discount! </h2>
+&nbsp;
+<h2><a href="http://papertemptress.com/sale.php">Copic Sampler Package</a> </h2>
+<h2>The perfect way to test the most popular copic coloring cardstock to see which cardstock you prefer!!!</h2>
+&nbsp;
+
+ <h2>Samples are available upon request...just select <a href="http://papertemptress.com/contact-us.php">Contact me</a> and let me know what samples you would like to see. <br />
+ </h2>
+
+<h2>&nbsp;</h2>
+<h2>Huge Sale!<a href="http://papertemptress.com/productlist.php?category=70"> All Hambly Studio Products</a> are 60% off for a limited time only! Many overlays and Screenprints have been selected to cut to a 6x6 sheet to be easily used for Greeting Card, Project Life, or Mini books. <a href="http://papertemptress.com/productlist.php?category=70&secondary=56" target="_blank">Check out the 6 x6 sizes!</a> See amazing designs using <a href="http://papertemptress.com/overlaycollage.jpg">overlays and screeprints here</a> used for home decor, greeting cards, and scrapbook layouts! They are very versatile! All designed by the very talented <a href="http://www.allisonkreft.com">Alison Kreft!</a> 20 Screcan be shipped for less that $4.00 so perfect time to stock up on the very popular Silk Screenprints!  </h2>
+ <h2>&nbsp;</h2>
+ <h2>
+   <p><a href="http://papertemptress.com/product.php?product=1087"><img src="_cw4-tmplt-ft1/site-graphics/urbanOver_197770.jpg" width="144" height="206" /></a><a href="http://papertemptress.com/product.php?product=1133"><img src="_cw4-tmplt-ft1/site-graphics/modcircles_610178.jpg" width="144" height="206" /></a><a href="http://papertemptress.com/product.php?product=1097"><img src="_cw4-tmplt-ft1/site-graphics/journalingbitsup.jpg" width="144" height="206" /></a><a href="http://papertemptress.com/product.php?product=1123"><img src="_cw4-tmplt-ft1/site-graphics//patchover_662560.jpg" width="144" height="206" /></a><br />
+   </p>
+  <div class="clearfloat"></div>
+</h2>
+ <h2>&nbsp;</h2>
+ <h2>
+  <a href="http://papertemptress.com/sale.php"><br />
+  </a></h2>
+ <h2>
+   
+   <p></p>
+   <br />
+ </h2>
+
+
+<!-- end .main-content --></div><!-- end .main-content -->
+<!--- Add Cartweaver 4 Template Footer Include --->
+<div class="footer">
+<div class="footer-lft-block">
+  <img src="_cw4-tmplt-ft1/site-graphics/footer.gif" width="1000" height="180" alt="Cartweaver.com" />
+
+
+</div><!-- end .footer --><!-- end .page-wrapper --></div><!-- end .page-wrapper -->
+</body>
+</html>

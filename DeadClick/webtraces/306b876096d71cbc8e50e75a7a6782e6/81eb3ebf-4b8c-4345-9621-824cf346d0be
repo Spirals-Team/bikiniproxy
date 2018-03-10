@@ -1,0 +1,181 @@
+
+var wdata_dafbf5bad1cd82b24d0e1316c18f1c62 = '<link type="text/css" rel="stylesheet" href="http://collegefootball.ap.org/profiles/ap/themes/ap_cfootball/widgets/ap_widgets.css" media="all"><div class="ap_widget ap_widget-poll_widget table-widget-wrapper" type-class="poll-table" data-type="table-widget" id="5a85c547ea052"> <div id="ap-new-widgets"> <div class="title-block"> <div class="inner-frame"> <h1 class="widget-title poll-title"> <a href="http://collegefootball.ap.org/ap/" target="_blank">AP Top 25 Poll</a> </h1> <label class="small">Poll Released: Jan 9</label> </div> </div> <div class="content-wrapper"> <div class="content-block"> <div class="inner-frame"> <table> <caption></caption> <thead><tr><th class="trank col1"><span class="title-name">Rank</span></th><th class="tname col2"><span class="title-name">team</span></th><th class="tprev col3"><span class="title-name">PV Rank</span></th> </tr></thead> <tbody> <tr class="1 alabama odd"><td class="trank col1"><span class="row-number">1</span></td><td class="tname col2"><div class="outer-cell"><span class="inner-cell">Alabama (57)</span></div></td><td class="tprev col3">4</td> </tr> <tr class="2 georgia even"><td class="trank col1"><span class="row-number">2</span></td><td class="tname col2"><div class="outer-cell"><span class="inner-cell">Georgia</span></div></td><td class="tprev col3">3</td> </tr> <tr class="3 oklahoma odd"><td class="trank col1"><span class="row-number">3</span></td><td class="tname col2"><div class="outer-cell"><span class="inner-cell">Oklahoma</span></div></td><td class="tprev col3">2</td> </tr> <tr class="4 clemson even"><td class="trank col1"><span class="row-number">4</span></td><td class="tname col2"><div class="outer-cell"><span class="inner-cell">Clemson</span></div></td><td class="tprev col3">1</td> </tr> <tr class="5 ohio-state odd"><td class="trank col1"><span class="row-number">5</span></td><td class="tname col2"><div class="outer-cell"><span class="inner-cell">Ohio State</span></div></td><td class="tprev col3">5</td> </tr> </tbody> </table> <div class="nav-wrapper"> <a href="http://collegefootball.ap.org/ap/poll" target="_blank" class="poll-link"><button class="button-left"><span>More</span></button></a> <a href="http://collegefootball.ap.org/ap/" target="_blank"><button class="button-right"><span>Home</span></button></a> </div> </div> </div> </div> </div><div class="ad-block"><div class="inner-frame"><div class="add-container"><span class="description">Advertisement</span><iframe src="http://collegefootball.ap.org/ap/ap_widgets/widget/ad/poll_widget" scrolling="no"></iframe></div></div></div><div style="clear:both" /></div><script src="http://collegefootball.ap.org/profiles/ap/modules/custom/core/ap_widgets/misc/v2.js"></script><script>if(typeof apTableWidgetResize == "function"){apTableWidgetResize();}</script><script> var _gaq = _gaq || [];_gaq.push(["_setAccount", "UA-27590430-4"]);_gaq.push(["_trackPageview"]);(function() {var ga = document.createElement("script");ga.type = "text/javascript";ga.async = true;ga.src = ("https:" == document.location.protocol ? "https://ssl" : "http://www") + ".google-analytics.com/ga.js";var s = document.getElementsByTagName("script")[0];s.parentNode.insertBefore(ga, s);})();</script><script>; _gaq.push([\'_trackEvent\', \'Widget\', \'ViewWidget\', \'poll_widget_new\', 1]);</script><script></script>';
+var ap_widget_compatibility_dafbf5bad1cd82b24d0e1316c18f1c62 = false;
+
+document.addEventListener('DOMContentLoaded', function () {
+
+    var d = document;
+
+    function overrideJQueryFunctions() {
+        console.log('Switch AP Widget to compatibility mode.');
+        ap_widget_compatibility_dafbf5bad1cd82b24d0e1316c18f1c62 = true;
+        // Define overriding method.
+        jQuery.fn.on = function () {
+            // Execute the original method.
+            var objCaller = jQuery(this[0]);
+            if (arguments.length == 3) {
+                jQuery(arguments[1], objCaller).bind(arguments[0], arguments[2]);
+            } else if (arguments.length == 2) {
+                jQuery(objCaller).bind(arguments[0], arguments[1]);
+            }
+        }
+        // Define overriding method.
+        jQuery.fn.off = function () {
+            // Execute the original method.
+            var objCaller = jQuery(this[0]);
+            if (arguments.length > 0) {
+                jQuery(arguments[1], objCaller).unbind(arguments[0]);
+            }
+        }
+    }
+
+    function onlyLoadScript(url, callback) {
+        var script = d.createElement("script")
+        script.type = "text/javascript";
+
+        if (script.readyState) { //IE
+            script.onreadystatechange = function () {
+                if (script.readyState == "loaded" || script.readyState == "complete") {
+                    script.onreadystatechange = null;
+                    callback();
+                }
+            };
+        } else { //Others
+            script.onload = function () {
+                callback();
+            };
+        }
+
+        script.src = url;
+        d.getElementsByTagName("head")[0].appendChild(script);
+    }
+
+    function loadScript(url, callback) {
+
+        if (typeof jQuery != 'undefined') {
+            var __jQversion = jQuery.fn.jquery.split(".");
+            if (Number(__jQversion[0]) == 1 && Number(__jQversion[1]) < 7) {
+                //console.log('jQuery version ',jQuery.fn.jquery,' has been detected but the AP widget requires jQuery 1.7 or higher, please update your jQuery version.' );
+                // TODO: Delete it if scoreboard is used only in CBBgit
+                //displayBasicScoreboard();
+                overrideJQueryFunctions();
+            }
+            callback();
+            return;
+        }
+        onlyLoadScript(url, callback);
+    }
+
+    function setContentIfNotExists(jq) {
+       if (jq("#ap_widget_container_dafbf5bad1cd82b24d0e1316c18f1c62").html() == '') {
+           jq("#ap_widget_container_dafbf5bad1cd82b24d0e1316c18f1c62").html(wdata_dafbf5bad1cd82b24d0e1316c18f1c62);
+       }
+    }
+
+    function mainInitialization(jq) {
+
+        var refreshIntervalId_dafbf5bad1cd82b24d0e1316c18f1c62 = setInterval(function () {
+            if (typeof apTableWidgetResize == "function") {
+                apTableWidgetResize();
+                clearInterval(refreshIntervalId_dafbf5bad1cd82b24d0e1316c18f1c62);
+            }
+        }, 400);
+
+        var refreshIntervalIdFirstImage_dafbf5bad1cd82b24d0e1316c18f1c62 = setInterval(function () {
+            if (!false) {
+                clearInterval(refreshIntervalIdFirstImage_dafbf5bad1cd82b24d0e1316c18f1c62);
+            }
+
+            if (typeof fixFirstImageV2 == "function") {
+                try {
+                    var _img = jq('#ap_widget_container_dafbf5bad1cd82b24d0e1316c18f1c62 .slides .slidesjs-container .slidesjs-control img:first');
+                    if (_img.length > 0 && _img[0].complete === true) {
+                        fixFirstImageV2(_img);
+                        clearInterval(refreshIntervalIdFirstImage_dafbf5bad1cd82b24d0e1316c18f1c62);
+                    }
+                } catch (err) {
+                    console.log("The first image has not been loaded yet.");
+                }
+            }
+        }, 400);
+
+        /*gallery-code*/
+        
+        /*gallery-code*/
+    }
+
+    function reloadWidgetContent_dafbf5bad1cd82b24d0e1316c18f1c62() {
+        
+        /* Script to Forcefully Stop reloading widget before scheduled time
+         * Local Storage Item to save Current Timestamp and last script execution timestamp
+         * Comparing the timestamps will give us difference of seconds
+         * If time Difference is Less than Refresh time then return
+         * Else execute the script and reload widget
+         */
+        try {
+            var secondsToRefresh = 60;
+            if(localStorage.getItem("script_exection_time_dafbf5bad1cd82b24d0e1316c18f1c62")) {
+                var last_exection_time_dafbf5bad1cd82b24d0e1316c18f1c62 = parseInt(localStorage.getItem("script_exection_time_dafbf5bad1cd82b24d0e1316c18f1c62"));
+            }
+            if( last_exection_time_dafbf5bad1cd82b24d0e1316c18f1c62 ) {
+                var current_milliseconds = new Date().getTime();
+                var time_difference = Math.round((current_milliseconds - last_exection_time_dafbf5bad1cd82b24d0e1316c18f1c62)/1000);
+                if(time_difference < secondsToRefresh) {
+                    return true;
+                }
+                else {
+                    var milliseconds = new Date().getTime();
+                    localStorage.setItem("script_exection_time_dafbf5bad1cd82b24d0e1316c18f1c62", milliseconds);
+                }
+            }
+            else {
+                var milliseconds = new Date().getTime();
+                localStorage.setItem("script_exection_time_dafbf5bad1cd82b24d0e1316c18f1c62", milliseconds);
+            }
+        } catch(e) {
+            console.log("Local Storage not available: "+e);
+        }
+          
+        var searchScript = function (currentUrl) {
+            var currentScripts = document.getElementsByTagName('script'),
+                total = currentScripts.length, idx = 0, scriptObj, scriptUrl,
+                parser = document.createElement('a');
+            for (; idx < total; idx++) {
+                scriptObj = currentScripts[idx];
+                parser.href = scriptObj.src;
+                scriptUrl = parser.protocol + '//' + parser.host +  parser.pathname;
+                if (scriptUrl == currentUrl) {
+                    return scriptObj;
+                }
+            }
+        }
+
+        var currentWgtURL = 'http://digitalservices.ap.org/widget-content/dafbf5bad1cd82b24d0e1316c18f1c62',
+    scriptWgt = searchScript(currentWgtURL),
+    urlScript;
+
+urlScript = currentWgtURL;
+scriptWgt.parentElement.removeChild(scriptWgt);
+onlyLoadScript(urlScript, function () {
+    console.log('Reload widget content dafbf5bad1cd82b24d0e1316c18f1c62');
+    jQuery('#ap_widget_container_dafbf5bad1cd82b24d0e1316c18f1c62').html(eval('wdata_dafbf5bad1cd82b24d0e1316c18f1c62'));
+    mainInitialization(jQuery);
+});
+    }
+
+    loadScript('https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js', function () {
+
+        jQuery(window).bind('load', function () {
+            setContentIfNotExists(jQuery);
+        });
+
+        jQuery(d).ready(function () {
+            setContentIfNotExists(jQuery);
+            mainInitialization(jQuery);
+        })
+    });
+
+    // Set reload each 60 seconds
+    var secondsToRefresh = 60;
+    setInterval(reloadWidgetContent_dafbf5bad1cd82b24d0e1316c18f1c62, secondsToRefresh * 1000);
+});

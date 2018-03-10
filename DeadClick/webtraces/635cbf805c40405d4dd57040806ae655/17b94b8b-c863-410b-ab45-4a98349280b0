@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<script type="text/javascript">
+		(function(){
+
+			function DecodeURIParams(s) {
+				var result = {};
+				var eqvalues = s.split("&");
+				for (var i=0; i<eqvalues.length; i++) {
+					var tuple = eqvalues[i].split("=");
+					if (tuple[1]) {
+						result[decodeURIComponent(tuple[0])] = decodeURIComponent(tuple[1]);
+					}
+				}
+				return result;
+			}
+
+			var args = DecodeURIParams(document.location.hash.substring(1))
+
+
+			var url = args.url
+			if (args.url.indexOf(document.location.protocol) == -1) {
+			  url = args.url.replace(/https?:/, document.location.protocol)
+			}
+
+			var params = {
+			  url: url,
+			  type: "GET",
+			  global: false,
+			  dataType: "text",
+			}
+
+			var request = new XMLHttpRequest();
+			request.open(params.type, params.url, true);
+
+			request.onload = function() {
+			  if (request.status >= 200 && request.status < 400) {
+			    // Success!
+			    var resp = request.responseText;
+			    if (resp !== null && resp.indexOf("<") > -1) {
+			    	window.parent.postMessage(args.uid + "__" + resp, "*");
+			    } else {
+			    	window.parent.postMessage(args.uid + "__vasterror", "*");
+			    }
+			  } else {
+			    // We reached our target server, but it returned an error
+			    window.parent.postMessage(args.uid + "__vasterror", "*");
+			  }
+			};
+
+			request.onerror = function() {
+			  // There was a connection error of some sort
+			  window.parent.postMessage(args.uid + "__vasterror", "*");
+			};
+
+			request.send();
+		})();
+		</script>
+	</head>
+	<body>
+	</body>
+</html>

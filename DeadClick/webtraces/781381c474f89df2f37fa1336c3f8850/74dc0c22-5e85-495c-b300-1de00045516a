@@ -1,0 +1,53 @@
+
+
+
+
+
+
+
+
+if (typeof CONVIO=="undefined" || ! CONVIO) { var CONVIO = {}; }
+CONVIO.userName = '1437:0';
+CONVIO.sessionID = '7C8F4A9170FC56D50C8EF88B6D16D5A1.app20119a';
+CONVIO.sessionName = 'JSESSIONID';
+
+CONVIO.checkAuthStatus = function(o) {
+
+  var authUserName = o.siteID + ":" + o.userID;
+
+  var sessionName = o.sessionCookieName || o.sessionName;
+
+  if (authUserName != CONVIO.userName || 
+      o.sessionID != CONVIO.sessionID ||
+      sessionName != CONVIO.sessionName) {
+
+    var returnURL = window.location.href;
+    var authRedirect = "/system/auth/session-revalidate.jsp?payload=" + escape(o.payload);
+
+    var isChrome = window.chrome;
+    var vendorName = window.navigator.vendor;
+    if(isChrome !== null && isChrome !== undefined && vendorName === "Google Inc." && document.referrer != ""){
+       // is Google chrome
+       returnURL = returnURL + "?referrer=" + document.referrer;
+    }
+
+    authRedirect = authRedirect +"&returnURL=" + escape(returnURL);
+
+    // This javascript redirect will lose the Referer information.
+    // Store the original referrer in a cookie for future consumption.
+    setCookie("CONVIO.referrer", document.referrer, 1000);
+
+    window.location.replace(authRedirect);
+
+  } else if (CONVIO.pageUserName != CONVIO.userName ||
+             CONVIO.pageSessionID != CONVIO.sessionID ||
+             CONVIO.pageSessionName != CONVIO.sessionName) {
+
+    window.location.reload();
+  } else {
+    // Session checks out. Clear loop checks.
+    document.writeln("<script type=\"text/javascript\" src=\"/system/auth/session-loop-clear.jsp\"></script>");
+  }
+}
+
+document.writeln("<script type=\"text/javascript\" src=\"http://nas.nasonline.org/site/AnonymousLogin?SSO=93acc9df6cae5bbb050e148f5dda3c47b9ff7b5d&NEXTURL=http%3A%2F%2Fwww.nasonline.org%2Fsystem%2Fauth%2Fsession-status.jsp%3Fnocache%3D1518712533463&timestamp=2018-02-15T16:35:33.638Z&format=JSON&callback=CONVIO.checkAuthStatus\"></script>");

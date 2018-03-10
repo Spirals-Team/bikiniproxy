@@ -1,0 +1,18 @@
+/*!************************************************************************
+*
+* ADOBE CONFIDENTIAL
+* ___________________
+*
+*  Copyright 2011 Adobe Systems Incorporated
+*  All Rights Reserved.
+*
+* NOTICE:  All information contained herein is, and remains
+* the property of Adobe Systems Incorporated and its suppliers,
+* if any.  The intellectual and technical concepts contained
+* herein are proprietary to Adobe Systems Incorporated and its
+* suppliers and are protected by trade secret or copyright law.
+* Dissemination of this information or reproduction of this material
+* is strictly forbidden unless prior written permission is obtained
+* from Adobe Systems Incorporated.
+**************************************************************************/
+(function(a){a.Util.require("s7sdk.common.ItemDesc");if(!a.SwatchesParser){a.SwatchesParser={};a.SwatchesParser.parse=function(m){var b=new Array();if(m==null){return b}var n=m.split(/,/);var l=null;var g=null;var p=null;var c=new RegExp(/{\s*(0x|0X|#)?([\dabcdefABCDEF]{1,6})\s*(.*)}/);var e=new RegExp(/^\s*$/);for(var k=0;k<n.length;k++){var f=String(n[k]).split(/;/);if(f==null||f[0]==null||e.test(f[0])){continue}g=null;p=null;l=null;if(f.length>1){var q=String(f[1]).match(c);if(q!=null&&q[2]!=null){g=q[1]+q[2];g=g.replace(/\s*(0x|0X|#)?/,"0x");p=q[3]}else{l=f[1]}}var d=f[0];var o=d!=null?d.split(":"):new Array();if(o.length>1){for(var h=0;h<o.length;h++){o[h]=String(o[h]).trim()}d=a.SwatchesParser.combinedImageName(o)}else{d=String(d).trim()}l=l!=null?String(l).trim():(g==null||g=="")?d:null;b[k]=new a.SwatchDesc(l,g,p,"","","");b[k].asset=d;b[k].frame=k;b[k].sourceFrame=k}return b};a.SwatchesParser.combinedImageName=function(b,h,f){var e;if(h){e=b[0]+"?layer=0"+(f&&f[0]?f[0]:"")+"&extendN="+(b.length-1)+",0,0,0&originN="+(1/b.length-0.5)+",-0.5";for(var d=1;d<b.length;d++){e+="&layer="+d+(f&&f[d]?f[d]:"")+"&src="+g(b[d])+"&originN="+(d-b.length+1.5)+",-0.5&sizeN="+1/b.length+",1"}}else{e=b[0]+"?layer=0"+(f&&f[0]?f[0]:"")+"&extendN=0,0,"+(b.length-1)+",0&originN="+(1/b.length-0.5)+",-0.5";for(var c=1;c<b.length;c++){e+="&layer="+c+(f&&f[c]?f[c]:"")+"&src="+g(b[c])+"&originN="+(0.5-c)+",-0.5&sizeN="+1/b.length+",1"}}return e;function g(i){if(i.indexOf("?")!=-1){return"is("+i+")"}return i}};a.SwatchesParser.parseItems=function(d){var c=a.SwatchesParser.parse(d);var b=null;if(c!=null){b=[];for(var e=0;e<c.length;e++){var f=c[e];b.push(new a.ItemDesc(null,a.ItemDescType.IMG,f.asset,f))}}return b};a.SwatchesParser.filterSet=function(j,f,g){f=(typeof f=="number")?f:0;g=(typeof g=="boolean")?g:true;var h=[];var e=0;if(j==null||j.items.length==0){return h}for(var c=0;c<j.items.length;c++){var l=j.items[c];var b=l&&((f==a.ItemDescType.UNKNOWN)?true:((l.type&f)!=0));if(b){var k=a.SwatchesParser.getItemSwatch(l,g);if(k!=null){k.frame=e++;k.sourceFrame=c;k.asset=j.items[c].name;k.owner=l;var d={};d.swatch=k;d.type=l.type;d.np=l.np;h.push(d)}}}return h};a.SwatchesParser.getItemSwatch=function(c,d){d=(typeof d=="boolean")?d:true;var b=(d&&c.swatch!=null)?c.swatch:null;if(b==null){if(c instanceof a.ImageDesc){b=new a.SwatchDesc(c.name,null,c.label,c.version,c.mod,c.pmod)}else{b=(c instanceof a.MediaSetDesc)?a.SwatchesParser.getMissingSwatchFromImage(c):null}}return b};a.SwatchesParser.getMissingSwatchFromImage=function(g){for(var d=0;d<g.items.length;d++){if(g.items[d] instanceof a.ImageDesc){var b=g.items[d];return new a.SwatchDesc(b.name,null,b.label,b.version,b.mod,b.pmod)}}for(var c=0;c<g.items.length;c++){if(g.items[c] instanceof a.MediaSetDesc){var f=g.items[c];var e=a.SwatchesParser.getMissingSwatchFromImage(f);if(e!=null){return e}}}return null}}})(s7getCurrentNameSpace());

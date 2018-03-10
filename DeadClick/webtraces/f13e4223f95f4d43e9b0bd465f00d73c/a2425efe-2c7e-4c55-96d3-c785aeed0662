@@ -1,0 +1,242 @@
+/* FUNCTIONS
+--------------------------------------------------------------------------------------*/
+// Email Address Validation
+function isEmail(email) {
+  var regex = /^([a-zA-Z0-9_.+-])+\@(([a-zA-Z0-9-])+\.)+([a-zA-Z0-9]{2,4})+$/;
+  return regex.test(email);
+}
+
+// Step Form Progress Bar
+function moveProgressBar(formID) {
+	var getPercent = $(formID + ' .progress-bar').data('percent');
+    var convPercent = (getPercent / 100);
+    var getProgressWrapWidth = $(formID + ' .progress-bar').width();
+    var progressTotal = convPercent * getProgressWrapWidth;
+    var animationLength = 900;
+
+    $(formID + ' .progress-bar .progress-bkgd').stop().animate({
+        left: progressTotal
+    }, animationLength);
+
+    $({numberValue: 0}).animate({numberValue: getPercent}, {
+	    duration: animationLength,
+	    easing: 'linear',
+	    step: function() { 
+	    	var perc = Math.ceil(this.numberValue);
+	    	if(perc >= 96) { perc = 100 }
+	        $(formID + ' .progress-bar .progress-text').html(perc+'% Complete'); 
+	    }
+	});
+}
+
+// Step Form buttons
+function formSteps(formID){
+	$(formID + ' .step1 a.next').on('click', function(e){
+		e.preventDefault();
+		var experience = $(formID + ' .experience').val(),
+		gpa = $(formID + ' .gpa').val(),
+		test = $(formID + ' .test').val(),
+		score = $(formID + ' .score').val();
+		if(experience!=null && gpa!=null && test!=null){
+			if(test!='none' && score==null) {
+				$(formID + ' .errorMsg').show().html('<span class="fa fa-exclamation-triangle"></span> Please select a score range.');
+			}else{
+				$(this).parent().hide();
+				$(formID + ' .step2').show();
+				$(formID + " .errorMsg").removeAttr("style").attr("style","display:none");
+				$(formID + ' .progress-bar').data('percent',50);
+				moveProgressBar(formID);
+			}
+		}else {
+			$(formID + ' .errorMsg').show().html('<span class="fa fa-exclamation-triangle"></span> Please select all of the dropdown options to continue.');
+		}
+		console.log(score);
+	});
+
+	$(formID + ' .step2 a.submit').on('click', function(e){
+		e.preventDefault();
+		var fname = $(formID + ' .first_name').val(),
+		lname = $(formID + ' .last_name').val(),
+		email = $(formID + ' .email').val(),
+		phone = $(formID + ' .phone').val(),
+		country = $(formID + ' .country').val();
+		if(fname!='' && lname!='' && email!='' && phone!='' && country!=null){
+			if(isEmail(email)){
+				$(formID + ' form').submit();
+			}else{
+				$(formID + '.errorMsg').show().html('<span class="fa fa-exclamation-triangle"></span> Please enter a valid email address.');
+			}
+		}else {
+			$(formID + ' .errorMsg').show().html('<span class="fa fa-exclamation-triangle"></span> Please fill out all of the required fields to continue.');
+		}
+	});
+	
+	$(formID + ' .step2 a.previous').on('click', function(e){
+		e.preventDefault();
+		$(this).parent().hide();
+		$(formID + ' .step1').show();
+		$(formID + ' .progress-bar').data('percent',0);
+		moveProgressBar(formID);
+	});
+
+	// Input dependent inputs
+	$(formID + ' .test').on('change', function(){
+		var test = $(this).val();
+		if(test != 'none') {
+			$(formID + ' .test-score').removeClass('hidden');
+		}else {
+			$(formID + ' .test-score').addClass('hidden');
+			$(formID + ' .score').val(null);
+		}
+	});
+
+	// Initialize Progress Bar
+	$(formID + ' .progress-bar').html('<div class="progress-bkgd"></div><div class="progress-text"></div>');
+	moveProgressBar(formID);
+
+    $(window).resize(function() {
+        moveProgressBar(formID);
+    });
+
+    if($(formID).hasClass('thanks')){
+    	$(formID + ' .progress-bar').data('percent',100);
+		moveProgressBar(formID);
+    }
+}
+
+// PhD Step Form buttons
+function formStepsPHD(formID){
+
+	// STEP 1
+	$(formID + ' .step1 a.next').on('click', function(e){
+		e.preventDefault();
+		var fname = $(formID + ' .first_name').val(),
+		lname = $(formID + ' .last_name').val(),
+		email = $(formID + ' .email').val(),
+		phone = $(formID + ' .phone').val(),
+		zip = $(formID + ' .zip').val(),
+		country = $(formID + ' .country').val(),
+		concentration = $(formID + ' .concentration').val();
+
+		if(fname!='' && lname!='' && email!='' && country!=null){
+			if(country=='United States' && zip==null) {
+				$(formID + ' .errorMsg').show().html('<span class="fa fa-exclamation-triangle"></span> Please enter a zipcode.');
+			}
+			if(isEmail(email)){
+				$(this).parent().hide();
+				$(formID + ' .step2').show();
+				$(formID + " .errorMsg").removeAttr("style").attr("style","display:none");
+				$(formID + ' .progress-bar').data('percent',50);
+				moveProgressBar(formID);
+			}else{
+				$(formID + '.errorMsg').show().html('<span class="fa fa-exclamation-triangle"></span> Please enter a valid email address.');
+			}
+		}else {
+			$(formID + ' .errorMsg').show().html('<span class="fa fa-exclamation-triangle"></span> Please fill out or select all of the required fields to continue.');
+		}
+	});
+
+	// STEP 2
+	$(formID + ' .step2 a.submit').on('click', function(e){
+		e.preventDefault();
+
+		var experience = $(formID + ' .experience').val(),
+		gpa = $(formID + ' .gpa').val(),
+		test = $(formID + ' .test').val(),
+		score = $(formID + ' .score').val(),
+		degree = $(formID + ' .degree').val();
+
+		if(experience!=null && gpa!=null && test!=null && degree!=null){
+			if(test!='none' && score==null) {
+				$(formID + ' .errorMsg').show().html('<span class="fa fa-exclamation-triangle"></span> Please select a score range.');
+			}else{
+				$(formID + ' form').submit();
+			}
+		}else {
+			$(formID + ' .errorMsg').show().html('<span class="fa fa-exclamation-triangle"></span> Please select all of the dropdown options to continue.');
+		}
+		console.log(score);
+	});
+
+	$(formID + ' .step2 a.previous').on('click', function(e){
+		e.preventDefault();
+		$(this).parent().hide();
+		$(formID + ' .step1').show();
+		$(formID + ' .progress-bar').data('percent',0);
+		moveProgressBar(formID);
+	});
+
+	// Input dependent inputs
+	$(formID + ' .country').on('change', function(){
+		var country = $(this).val();
+		if(country == 'United States') {
+			$(formID + ' .zipcode').removeClass('hidden');
+		}else {
+			$(formID + ' .zipcode').addClass('hidden');
+			$(formID + ' .zip').val(null);
+		}
+	});
+
+	$(formID + ' .test').on('change', function(){
+		var test = $(this).val();
+		if(test != 'none') {
+			$(formID + ' .test-score').removeClass('hidden');
+		}else {
+			$(formID + ' .test-score').addClass('hidden');
+			$(formID + ' .score').val(null);
+		}
+	});
+
+	$(formID + ' .interest').on('change', function(){
+		var interest = $(this).val();
+		if(interest == 'PhD/Business Administration') {
+			$(formID + ' .phd-concentration').removeClass('hidden');
+		}else {
+			$(formID + ' .phd-concentration').addClass('hidden');
+			$(formID + ' .concentration').val(null);
+		}
+	});
+
+	// Initialize Progress Bar
+	$(formID + ' .progress-bar').html('<div class="progress-bkgd"></div><div class="progress-text"></div>');
+	moveProgressBar(formID);
+
+    $(window).resize(function() {
+        moveProgressBar(formID);
+    });
+
+    if($(formID).hasClass('thanks')){
+    	$(formID + ' .progress-bar').data('percent',100);
+		moveProgressBar(formID);
+    }
+}
+
+/* Initialize Shadowbox */
+Shadowbox.init({
+    handleOversize: "drag",
+	overlayOpacity: 0.8
+});
+
+/* RUN AFTER DOM LOAD...
+--------------------------------------------------------------------------------------*/
+$(function(){
+
+	// Check for SVG Support
+	if(!Modernizr.svg) {
+		// replace img tags with svg src with png src
+	    $('img[src*="svg"]').attr('src', function() {
+	        return $(this).attr('src').replace('.svg', '.png');
+	    });
+
+	    // replace program wordmark svg with png
+	    var prog_bg = $('a.program_wm').css("background-image");
+	    new_prog_bg = prog_bg.replace('.svg', '.png');
+	    $('a.program_wm').css("background-image", new_prog_bg);
+
+	    $('input, textarea').placeholder();
+	}
+
+});
+
+/* IE HACK */
+window.remakeRFIFormsFor = new Array();

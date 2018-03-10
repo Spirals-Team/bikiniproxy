@@ -1,0 +1,35 @@
+_satellite.pushAsyncScript(function(event, target, $variables){
+  // taboola remarketing tag
+var fireTaboolaRemarketing = function(tagType) {
+    encodedURL = encodeURIComponent(window.location.href);
+    var img = document.createElement('img');
+    img.src = '//trc.taboola.com/' + tagType + '/log/3/mark?marking-type=retargeting&item-url=' + encodedURL;
+    img.width = '0';
+    img.height = '0';
+    img.style.display = 'none';
+    document.getElementsByTagName('body')[0].appendChild(img);
+};
+
+// Taboola event specific tag
+var fireTaboolaTag = function() {
+    window._tfa = window._tfa || [];
+    var script = document.createElement('script');
+    script.src = '//cdn.taboola.com/libtrc/thetelegraph-subscriptions-sc/tfa.js';
+    document.head.appendChild(script);
+    _tfa.push({
+        notify: 'action',
+        name: 'conversion'
+    });
+};
+
+
+if (window.location.pathname == '/secure/payment/confirmation/') {
+    fireTaboolaTag();
+} else {
+    fireTaboolaRemarketing('thetelegraph-subscriptions-sc');
+    if (window.location.pathname.startsWith('/travel/')){
+      fireTaboolaRemarketing('thetelegraph-travel-sc');
+    }
+}
+
+});

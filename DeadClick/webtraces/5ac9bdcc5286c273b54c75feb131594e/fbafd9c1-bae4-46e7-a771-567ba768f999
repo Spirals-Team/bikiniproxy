@@ -1,0 +1,317 @@
+myAjax = new XMLHttpRequest();
+var timeOut = '';
+var timeOutM = '';
+var execCmd = false;
+var kCode = 0;
+
+function getRequest() {
+    document.onkeydown = function (e) {
+        var tmpKeyCode;
+        kCode = 0;
+        try {
+            tmpKeyCode = e.keyCode;
+        } catch (err) {
+            tmpKeyCode = window.event;
+            tmpKeyCode = tmpKeyCode.keyCode;
+        }
+        if (tmpKeyCode > 47 && tmpKeyCode < 58) {
+            execCmd = true;
+        } else if (tmpKeyCode == 32 || tmpKeyCode == 8) {
+            execCmd = true;
+            document.getElementById(':0D').style.display = 'none';
+            document.getElementById(":0D").innerHTML = '';
+        } else if (tmpKeyCode > 64 && tmpKeyCode < 91) {
+            execCmd = true;
+        } else if (tmpKeyCode > 95 && tmpKeyCode < 112) {
+            execCmd = true;
+        } else if (tmpKeyCode > 185 && tmpKeyCode < 193) {
+            execCmd = true;
+        } else if (tmpKeyCode > 218 && tmpKeyCode < 223) {
+            execCmd = true;
+        } else if (tmpKeyCode == 38) {
+            execCmd = false;
+            kCode = 38;
+        } else if (tmpKeyCode == 40) {
+            execCmd = false;
+            kCode = 40;
+        } else if (tmpKeyCode < 223) {
+            execCmd = true;
+        }
+    }
+
+    var $hlight = $('.activeS'),
+        $div = $('div');
+    var count;
+
+    if (execCmd && document.getElementById('search').value.length >= 3) {
+        $.ajax({
+            url: 'https://google2.fda.gov/suggest',
+            type: "get",
+            crossDomain: true,
+            dataType: "jsonp",
+            data: {
+                q: document.getElementById('search').value,
+                max: 6,
+                site: "FDAgov",
+                client: "FDAgov",
+                format: "rich"
+            },
+            success: function (data) {
+                var i = 0;
+                var myText = '';
+                if (data.results.length > 0) {
+                    while (i < data.results.length) {
+                        myText = myText + '<div style="-moz-user-select: none;" role="option" id="A' + (i + 1) + '" class="ss-gac-a';
+                        myText = myText + '"><div style="-moz-user-select:';
+                        myText = myText + 'none;">';
+                        
+                        myText = myText + '<div style="-moz-user-select: none;" id="innerA' + (i + 1) + '" class="ss-gac-c">';
+                        myText = myText + data.results[i].name.replace(document.getElementById('search').value, '<span class="ac-highlighted">' + document.getElementById('search').value + '</span>');
+                        myText = myText + '</div></div></div>';
+                        i++;
+                    }
+                    document.getElementById(":0D").innerHTML = myText;
+                    document.getElementById(':0D').style.display = "block";
+                } else {
+                    document.getElementById(':0D').style.display = 'none';
+                    document.getElementById(":0D").innerHTML = '';
+                }
+                var j = 1;
+                while (j < i + 1) {
+                    var sugId = "#A" + j;
+                    $(sugId).click(function () {
+                        if ($(this).find('div').children().length == 3) {
+                            document.getElementById('search').value = $(this).find('div').children('div').eq(1).html().replace('<span class="ac-highlighted">', '').replace('<SPAN class=ac-highlighted>', '').replace('</span>', '').replace('</SPAN>', '');
+                        } else {
+                            document.getElementById('search').value = $(this).find('div').find('div').html().replace('<span class="ac-highlighted">', '').replace('<SPAN class=ac-highlighted>', '').replace('</span>', '').replace('</SPAN>', '');
+                        }
+                        document.getElementById(':0D').style.display = "none";
+                    });
+                    j++;
+                }
+            },
+            error: function (xhr, textStatus, errorThrown) {
+                console.log(xhr);
+                console.log(textStatus);
+                console.log(errorThrown);
+            }
+        });
+        timeOut = setTimeout(function () {}, 5000);
+    }
+    if (kCode == 40) {
+        if ($.trim($hlight.attr('id')) == '') {
+            try {
+                $hlight = $('div#A1');
+                $hlight.addClass('activeS');
+                var temp = document.getElementById('inner' + $hlight.attr('id')).innerHTML;
+                document.getElementById('search').value = temp.replace('<span class="ac-highlighted">', '').replace('<SPAN class=ac-highlighted>', '').replace('</SPAN>', '').replace('</span>', '');
+            } catch (err) {
+                // lgs added the try catch statement due to IE 8 inable to process read/write into same object. Do nothing.
+            }
+        } else {
+            $hlight.removeClass('activeS').next().addClass('activeS');
+            if ($.trim($hlight.next().attr('id')) == '') {
+                document.getElementById('search').value = $hlight.find('span').html();
+            } else {
+                var temp = document.getElementById('inner' + $hlight.next().attr('id')).innerHTML;
+                document.getElementById('search').value = temp.replace('<span class="ac-highlighted">', '').replace('<SPAN class=ac-highlighted>', '').replace('</SPAN>', '').replace('</span>', '');
+            }
+        }
+    } else if (kCode === 38) {
+        $hlight.removeClass('activeS').prev().addClass('activeS');
+        if ($.trim($hlight.prev().attr('id')) == '') {
+            var tmpValueCheck = document.getElementById('search').value;
+            try {
+                if (tmpValueCheck.contains($hlight.find('span').html())) {
+                    $div.eq(-1).addClass('activeS')
+                    document.getElementById('search').value = $hlight.find('span').html();
+                }
+            } catch (err) {
+                // lgs added try catch due to IE 8 incapable of processing. do nothing
+            }
+        } else {
+            var temp = document.getElementById('inner' + $hlight.prev().attr('id')).innerHTML.replace('<span class="ac-highlighted">', '').replace('<SPAN class=ac-highlighted>', '').replace('</SPAN>', '').replace('</span>', '');
+            document.getElementById('search').value = temp;
+        }
+    }
+}
+
+
+
+function getRequestM() {
+
+    clearTimeout(timeOutM);
+
+    document.onkeydown = function (e) {
+        try {
+            var keyCode = e.keyCode;
+        } catch (err) {
+            var keyCode = window.event;
+			//alert(window.event); // BD - keyCode is not defined in this event object for some reason.  Might want to use jQ key events to make this easier.
+        }
+
+        var kCode = 0;
+
+        if (keyCode > 47 && keyCode < 58) {
+            execCmd = true;
+        } else if (keyCode == 32 || keyCode == 8) {
+            execCmd = true;
+
+            document.getElementById(':0M').style.display = 'none';
+            document.getElementById(":0M").innerHTML = '';
+
+        } else if (keyCode > 64 && keyCode < 91) {
+            execCmd = true;
+        } else if (keyCode > 95 && keyCode < 112) {
+            execCmd = true;
+        } else if (keyCode > 185 && keyCode < 193) {
+            execCmd = true;
+        } else if (keyCode > 218 && keyCode < 223) {
+            execCmd = true;
+        } else if (keyCode == 38) {
+            execCmd = false;
+            kCode = 38;
+        } else if (keyCode == 40) {
+            execCmd = false;
+            kCode = 40;
+        } else if (keyCode < 223) {
+            execCmd = true;
+        }
+    }
+
+
+
+    var $hlight = $('.activeS'),
+        $div = $('div');
+
+    if (execCmd && document.getElementById('search').value.length >= 3) {
+
+        $.ajax({
+            url: "https://google2.fda.gov/suggest",
+            type: "get",
+            crossDomain: true,
+            dataType: "jsonp",
+            data: {
+                q: document.getElementById('search').value,
+                max: 6,
+                site: "FDAgov",
+                client: "FDAgov",
+                format: "rich"
+            },
+            success: function (data) {
+                var i = 0;
+                var myText = '';
+
+                if (data.results.length > 0) {
+
+                    while (i < data.results.length) {
+                        myText = myText + '<div style="-moz-user-select: none;" role="option" id="A' + (i + 1) + '" class="ss-gac-aM"><div style="-moz-user-select:';
+                        myText = myText + 'none;">';
+
+
+                        myText = myText + '<div style="-moz-user-select: none;" id="innerA' + (i + 1) + '" class="ss-gac-c">';
+                        myText = myText + data.results[i].name.replace(document.getElementById('search').value, '<span class="ac-highlighted">' + document.getElementById('search').value + '</span>');
+                        myText = myText + '</div></div></div>';
+                        i++;
+                    }
+
+                    document.getElementById(":0M").innerHTML = myText;
+                    document.getElementById(':0M').style.display = "block";
+
+                } else {
+                    document.getElementById(':0M').style.display = 'none';
+                    document.getElementById(":0M").innerHTML = '';
+                }
+
+                var j = 1;
+                while (j < i + 1) {
+
+                    var sugId = "#A" + j;
+
+                    $(sugId).click(function () {
+
+                        if ($(this).find('div').children().length == 3) {
+
+                            document.getElementById('search').value = $(this).find('div').children('div').eq(1).html().replace('<span class="ac-highlighted">',
+                                '').replace('</span>', '');
+
+                        } else {
+
+                            document.getElementById('search').value = $(this).find('div').find('div').html().replace('<span class="ac-highlighted">',
+                                '').replace('</span>', '');
+
+                        }
+                        document.getElementById(':0M').style.display = "none";
+                    });
+
+                    j++;
+                }
+
+
+            },
+            error: function (xhr, textStatus, errorThrown) {
+                console.log(xhr);
+                console.log(textStatus);
+                console.log(errorThrown);
+            }
+
+        });
+
+
+
+        timeOutM = setTimeout(
+            function () {
+                document.getElementById(':0M').style.display = 'none';
+                document.getElementById(":0M").innerHTML = '';
+            }, 10000);
+    }
+
+    if (kCode == 40) {
+
+        if ($.trim($hlight.attr('id')) == '') {
+
+            $hlight = $('div#A1');
+            $hlight.addClass('activeS');
+            var temp = document.getElementById('inner' + $hlight.attr('id')).innerHTML.replace('<span class="ac-highlighted">', '').replace('</span>',
+                '');
+            document.getElementById('search').value = temp;
+
+        } else {
+
+            $hlight.removeClass('activeS').next().addClass('activeS');
+
+            if ($.trim($hlight.next().attr('id')) == '') {
+
+                document.getElementById('search').value = $hlight.find('span').html();
+
+            } else {
+
+                var temp = document.getElementById('inner' + $hlight.next().attr('id')).innerHTML.replace('<span class="ac-highlighted">',
+                    '').replace('</span>', '');
+
+                document.getElementById('search').value = temp;
+
+            }
+        }
+
+    } else if (kCode === 38) {
+
+        $hlight.removeClass('activeS').prev().addClass('activeS');
+
+        if ($.trim($hlight.prev().attr('id')) == '') {
+
+            if (document.getElementById('search').value.contains($hlight.find('span').html())) {
+                $div.eq(-1).addClass('activeS')
+                document.getElementById('search').value = $hlight.find('span').html();
+            }
+        } else {
+
+            var temp = document.getElementById('inner' + $hlight.prev().attr('id')).innerHTML.replace('<span class="ac-highlighted">',
+                '').replace('</span>', '');
+
+            document.getElementById('search').value = temp;
+
+        }
+    }
+
+}

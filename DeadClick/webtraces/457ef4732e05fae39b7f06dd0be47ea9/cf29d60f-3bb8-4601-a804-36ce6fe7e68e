@@ -1,0 +1,622 @@
+var appPath = window.location.hostname === "localhost" ? "/genealogie.web" : "/v4/genealogie";
+var loginActive = false;
+
+function flagEndRequest() {
+    loginActive = false;
+}
+function flagStartRequest() {
+    loginActive = true;
+}
+
+var registerLoginResources = {
+    emptyPassword: "Merci de saisir votre mot de passe.",
+    spaceInPassword: "Votre mot de passe ne doit pas contenir le caractère espace.",
+    invalidPassword: "Votre mot de passe ne doit pas contenir les caractères [?<>]",
+    passwordLessThan5Character: "Le mot de passe doit contenir au moins 5 caractères.",
+    passwordDontMatch: 'On recommence ? Les mots de passe ne correspondent pas.',
+    generalErrorMessage: "Une erreur s'est produite ! Essayez à nouveau...",
+    incorrectPassword: "Qui va là ? Votre mot de passe n'est pas correct.",
+    emailEmpty: "Merci de saisir votre adresee e-mail.",
+    incorrectEmail: "Oh oh ! Veuillez entrer une adresse e-mail valide."
+}
+
+var Layer;
+var connexionFromHeader = false;
+// Afficher mot de passe dans le formulaire
+$(document).ready(function () {
+    var resetLoginStep = function () {
+        $('#partial-view-layer').load(appPath + "/Authentication.mvc/GetConnexionBlock");
+    };
+
+    Layer = initLayer("#btn-connexion-layer, .paywall-offer, #begin-free-offer-btn, #tiggerConnexion, .btn-connexion-layer, .discovery-login-btn", "#email-connexion-subscription", resetLoginStep);
+
+    $('#partial-view-layer').on('click', '.show-password', function () {
+        if ($(this).next('input').prop('type') == 'password') {
+            //Si c'est un input type password
+            $(this).next('input').prop('type', 'text');
+            $(this).text('masquer');
+        } else {
+            //Sinon
+            $(this).next('input').prop('type', 'password');
+            $(this).text('afficher');
+        }
+    });
+
+    $('.closebt-container').on('click', $('#return-to-connxion'), function () {
+        console.log("ok");
+        $('#partial-view-layer').load($(this).attr('data-url'));
+    });
+ 
+    $("#btn-connexion-layer").on('click', function () {
+        connexionFromHeader = true;
+    });
+    $(".closebt").on("click", function () {
+        if (connexionFromHeader) {
+            connexionFromHeader = false;
+        }
+    })
+});
+
+var functionReRequest = function () {
+    requestDeclinedPermissions('email', function (credentialsNew) { submitLogin(credentialsNew, false); });
+};
+
+function facebookLogin(fromDelete) {
+    fromDelete = fromDelete != undefined ? fromDelete : false;
+    FB.login(function (response) {
+        if (response.status !== undefined) {
+            if (response.status === 'connected') {
+                var credentials = {
+                    uid: response.authResponse.userID, accessToken: response.authResponse.accessToken
+                };
+
+                $.when(checkPermissions(credentials.accessToken)).then(function (declindePermissions) {
+                    if (declindePermissions) {
+                        var tryAgain = confirm("Veulliez vérifier l'accès de votre email pour la création de votre compte!");
+                        if (tryAgain) {
+                            $('.footer-connexion a').attr('onclick', "functionReRequest()");
+                            functionReRequest = function () {
+                                requestDeclinedPermissions(declindePermissions, function (credentialsNew) { submitLogin(credentialsNew, fromDelete); });
+                            };
+                        }
+                    } else {
+                        submitLogin(credentials, fromDelete);
+                    }
+                }
+                );
+            } else if (response.status === 'not_authorized') { // third option is status == 'unknown'
+                alert("La connexion a échouée!");
+            }
+        }
+    },
+        {
+            scope: 'email,user_birthday,user_location,user_hometown'
+        });
+}
+
+function submitLogin(credentials, fromDelete) {
+    var redirect = $('#actionCompletRedirect') ? $('#actionCompletRedirect').val() : "refresh";
+    credentials.redirect = redirect;
+
+    credentials.TunnelNbPersons = $('#tunnel-nb-persons').val();
+    credentials.TunnelNbResults = $('#tunnel-nb-results').val();
+
+    flagStartRequest();
+    $.ajax({
+        url: appPath + "/Authentication.mvc/facebooklogin",
+        type: "POST",
+        data: credentials,
+        error: function () {
+            alert("Une erreur est survenue lors de la connexion à votre compte Facebook");
+        },
+        success: function (data) {
+            switch (data.error) {
+                case "error":
+                    alert(data.message);
+                    break;
+                case "errorEmailNull":
+                    alert("Connexion facebook impossible. Votre compte Facebook n'a pas d'adresse email associée.");
+                    break;
+                default:
+                    if (data.success) {
+                        if (fromDelete) {
+                            deleteAccount();
+                        } else {
+                            if (data.inscriptionEvent) {
+                                if (data.partial) {
+                                    if (Layer && typeof Layer.close === "function") {
+                                        Layer.close();
+                                    }
+                                    dataLayer[0] = extractDataLayerFromPartial(data.partial);
+                                    $("#googleTracking").replaceWith(data.partial);
+                                    if ($('#btn-connexion-layer').length) {
+                                        $('#btn-connexion-layer').html(dataLayer[0].email);
+                                        $('#btn-connexion-layer').removeAttr("href");
+                                        $('#btn-connexion-layer').unbind('click');
+                                    }
+                                }
+                                dataLayer.push({ 'event': 'inscription' });
+                                setTimeout(function () { userConnectedSuccess(data.redirect); }, 200);
+                            } else {
+                                userConnectedSuccess(data.redirect, data.partial);
+                            }
+                        }
+                    }
+            }
+        }
+    }).always(flagEndRequest);
+}
+
+function checkPermissions(token) {
+    var dfd = $.Deferred();
+    var declined = '';
+    FB.api(
+        '/me/permissions',
+        'GET',
+        { "access_token": token },
+        function (response) {
+            for (i = 0; i < response.data.length; i++) {
+                if (response.data[i].status == 'declined') {
+                    if (response.data[i].permission == "email") {
+                        declined = "email";
+                    }
+                }
+            }
+            dfd.resolve(declined);
+        }
+    );
+    return dfd.promise();
+}
+
+function requestDeclinedPermissions(permission, callback) {
+    FB.login(
+        function (response) {
+            $.when(checkPermissions(response.authResponse.accessToken)).then(
+                function (rejected) {
+                    if (!rejected) {
+                        var credentials = {
+                            uid: response.authResponse.userID, accessToken: response.authResponse.accessToken
+                        };
+                        callback(credentials);
+                    }
+                    else {
+                        var tryAgain = confirm("Veulliez vérifier l'accès de votre email pour la création de votre compte!");
+                        if (tryAgain) {
+                            //   requestDeclinedPermissions(rejected, callback);
+                        }
+                    }
+                });
+        },
+        {
+            scope: permission,
+            auth_type: 'rerequest'
+        }
+    );
+}
+
+function emailValidation(userEmail) {
+    var emailPattern = new RegExp(/^[-a-z0-9~!$%^&+*_.=}{\'?]+(\.[-a-z0-9~!$%^&*_=}{\'?]+)*@([a-z0-9_][-a-z0-9_]*(\.[-a-z0-9_]+)*\.(aero|arpa|biz|bzh|com|coop|edu|gov|info|int|mil|museum|name|net|org|pro|travel|mobi|xyz|[a-z][a-z])|([0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}))(:[0-9]{1,5})?$/i);
+    var error = '';
+
+    if (userEmail === undefined || userEmail.length == 0 || !emailPattern.test(userEmail) || /[?<>*%&]/.test(userEmail)) {
+        error = registerLoginResources.incorrectEmail;
+    }
+
+    return error;
+}
+
+function checkEmailAlreadyExists(loginPage) {
+    var userEmail = loginPage ? $('#EmailForm').val() : $('#email-connexion-subscription').val(),
+        $partialView = $('#partial-view-layer'),
+        URLAction = appPath + "/Authentication.mvc/EmailAlreadyExists",
+        $erroBlock = loginPage ? $('#errorMessage') : $('#alert-wrong-email'),
+        $errorIcon = loginPage ? '' : $erroBlock.find('i');
+
+    var errorEmail = emailValidation(userEmail.trim());
+    var tunnelNbPersons = $('#tunnel-nb-persons').val();
+    var tunnelNbResults = $('#tunnel-nb-results').val();
+
+    if (errorEmail) {
+        if (loginPage) {
+            $erroBlock.html(errorEmail);
+            $erroBlock.show();
+            return false;
+        } else {
+            $erroBlock.find('#errorText').html($errorIcon);
+            $erroBlock.find('#errorText').append(errorEmail);
+            $erroBlock.show();
+            return false;
+        }
+    }
+
+    $erroBlock.hide();
+    userEmail = userEmail.trim();
+
+    $.ajax({
+        url: URLAction,
+        type: "Post",
+        data: {
+            email: userEmail,
+            redirect: window.location.pathname
+        },
+        datatype: "application/json",
+        success: function (response) {
+            if (response.success == true) {
+                $partialView.empty();
+                $partialView.html(response.partial);
+                if (response.alreadyexists == true) {
+                    $('#user-registration-password').focus();
+                    if (loginPage) {
+                        loginUserInlayer(true);
+                    }
+                } else {
+                    if (loginPage) {
+                        $erroBlock.html(registerLoginResources.incorrectPassword);
+                        $erroBlock.show();
+                    }
+                    $('#user-password').focus();
+                    $('#registration-tunnel-nb-persons').val(tunnelNbPersons);
+                    $('#registration-tunnel-nb-results').val(tunnelNbResults);
+                }
+            }
+            else {
+                if (response.message && response.message != '') {
+                    if (loginPage) {
+                        $erroBlock.html(response.message);
+                        $erroBlock.show();
+                        return false;
+                    } else {
+                        $erroBlock.find('#errorText').html($errorIcon);
+                        $erroBlock.find('#errorText').append(response.message);
+                        $erroBlock.show();
+                        return false;
+                    }
+                }
+            }
+        }
+    });
+};
+
+//trigger button when clicking enter for email connexion and password
+$('.container.inscr-conn').on('keydown', $("#email-connexion-subscription"), function (event) {
+    if (event.keyCode == 13) {
+        $("#check-user-email").click();
+        return false;
+    }
+});
+
+$('.container.inscr-conn').on('keydown', $("#user-registration-password"), function (event) {
+    if (event.keyCode == 13) {
+        $("#submit-user-login").click();
+        return false;
+    }
+});
+
+$('.container.inscr-conn').on('keydown', $("#show-password,#user-confirm-password"), function (event) {
+    if (event.keyCode == 13) {
+        $("#subscription-btn").click();
+        return false;
+    }
+});
+//***
+
+function validateNewUser() {
+    if ($('#alert-processing-registration').is(":visible")) {
+        return false;
+    }
+
+    $('#alert-wrong-email-registration').hide();
+    var password = $('#user-password').val(),
+        confirmPasswordVal = $('#user-confirm-password').val();
+
+    if (password === undefined || password.length == 0) {
+        $('#alert-wrong-email-registration #error-message-display').empty().text(registerLoginResources.passwordLessThan5Character);
+        $('#alert-wrong-email-registration').show();
+        return false;
+    }
+    if (password.length < 5) {
+        $('#alert-wrong-email-registration #error-message-display').empty().text(registerLoginResources.passwordLessThan5Character);
+        $('#alert-wrong-email-registration').show();
+        return false;
+    }
+    if (password.indexOf(' ') >= 0) {
+        $('#alert-wrong-email-registration #error-message-display').empty().text(registerLoginResources.spaceInPassword);
+        $('#alert-wrong-email-registration').show();
+        return false;
+    }
+    if (password != confirmPasswordVal) {
+        $('#alert-wrong-email-registration #error-message-display').empty().text(registerLoginResources.passwordDontMatch);
+        $('#alert-wrong-email-registration').show();
+        return false;
+    }
+    if (/[?<>]/.test(password)) {
+        $('#alert-wrong-email-registration #error-message-display').empty().text(registerLoginResources.invalidPassword);
+        $('#alert-wrong-email-registration').show();
+        return false;
+    }
+
+    showProcessing();
+}
+
+function parseInscriptionResult(content) {
+    var jsonData = content._response._xmlHttpRequest.status == 200 ? Sys.Serialization.JavaScriptSerializer.deserialize(content.get_data()) : null;
+    hideProcessing();
+    if (jsonData && jsonData.success) {
+        if (jsonData.redirect === "freeoffers" || jsonData.redirect === "SearchApi") {
+            if (jsonData.partial) {
+                if (Layer && typeof Layer.close === "function") {
+                    Layer.close();
+                }
+                dataLayer[0] = extractDataLayerFromPartial(jsonData.partial);
+                $("#googleTracking").replaceWith(jsonData.partial);
+                if ($('#btn-connexion-layer').length) {
+                    $('#btn-connexion-layer').html(dataLayer[0].email);
+                    $('#btn-connexion-layer').removeAttr("href");
+                    $('#btn-connexion-layer').unbind('click');
+                }
+            }
+            dataLayer.push({ 'event': 'inscription' });
+            setTimeout(function () { userConnectedSuccess(jsonData.redirect); }, 200);
+        } else {
+            userConnectedSuccess(jsonData.redirect);
+        }
+    } else {
+        showGeneralError(jsonData.message);
+    }
+}
+
+function showGeneralError(msg) {
+    $('#alert-wrong-email-registration #error-message-display').empty().text(msg || registerLoginResources.generalErrorMessage);
+    $('#alert-wrong-email-registration').show();
+}
+
+function showProcessingUp() {
+    $('#alert-processing-general').show();
+}
+
+function hideProcessingUp() {
+    $('#alert-processing-general').hide();
+}
+
+function formSubmit() {
+    $('#inscription-form').submit();
+}
+
+function resetPasswordShow() {
+    var $partialView = $('#partial-view-layer'),
+        resetPasswordPartialHtml = $('#reset-password-wrapper').html();
+    $partialView.html(resetPasswordPartialHtml);
+    $('#email-connexion-subscription').focus();
+}
+
+function resetPassword(isFromPage, isPopup) {
+    var email = isFromPage ? $('#EmailForm').val() : $('#email-connexion-subscription').val(),
+        URLAction = appPath + "/Authentication.mvc/ResetPassword",
+        $partialView = $('#partial-view-layer'),
+        $erroBlock = isFromPage ? $('#emailValidationMessage') : $('#alert-wrong-email'),
+        $errorIcon = $erroBlock.find('i');
+
+    var error = emailValidation(email.trim());
+
+    if (email === undefined || email.length == 0) {
+        if (isFromPage) {
+            $erroBlock.html(registerLoginResources.incorrectEmail);
+        }
+        else {
+            $erroBlock.find('#errorText').html($errorIcon);
+            $erroBlock.find('#errorText').append(registerLoginResources.incorrectEmail);
+        }
+        $erroBlock.show();
+        return false;
+    }
+
+    var emailPattern = new RegExp(/^[-a-z0-9~!$%^&+*_.=}{\'?]+(\.[-a-z0-9~!$%^&*_=}{\'?]+)*@([a-z0-9_][-a-z0-9_]*(\.[-a-z0-9_]+)*\.(aero|arpa|biz|bzh|com|coop|edu|gov|info|int|mil|museum|name|net|org|pro|travel|xyz|mobi|[a-z][a-z])|([0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}))(:[0-9]{1,5})?$/i);
+
+    if (!emailPattern.test(email.trim()) || /[?<>*%&]/.test(email.trim())) {
+        if (isFromPage) {
+            $erroBlock.html(registerLoginResources.incorrectEmail);
+        }
+        else {
+            $erroBlock.find('#errorText').html($errorIcon);
+            $erroBlock.find('#errorText').append(registerLoginResources.incorrectEmail);
+        }
+        $erroBlock.show();
+        return false;
+    }
+
+    $erroBlock.hide();
+
+    $.ajax({
+        url: URLAction,
+        type: "Post",
+        data: {
+            email: email.trim(),
+            fromLayer: !isFromPage,
+            isPopup: isPopup
+        },
+        datatype: "application/json",
+        success: function (response) {
+            if (response.success == true) {
+                if (isFromPage) {
+                    $("#forgotPasswordForm").hide();
+                    $("#forgotPasswordValid").show();
+                }
+                else if (isPopup) {
+                    $partialView.empty();
+                    $partialView.html(response.partial);
+                } else {
+                    $partialView.empty();
+                    $partialView.html(response.partial);
+                }
+            }
+            else {
+                if (isFromPage) {
+                    $erroBlock.html(response.message);
+                }
+                else {
+                    $erroBlock.find('#errorText').html($errorIcon);
+                    $erroBlock.find('#errorText').append(response.message);
+                }
+                $erroBlock.show();
+            }
+        }
+    });
+}
+
+function checkForValidationErrors(userEmail, userPassword) {
+    if (userPassword === undefined || userPassword.length == 0) {
+        return registerLoginResources.emptyPassword;
+    }
+    if (userPassword.length < 5) {
+        return registerLoginResources.passwordLessThan5Character;
+    }
+    if (userPassword.indexOf(' ') >= 0) {
+        return registerLoginResources.spaceInPassword;
+    }
+    if (/[?<>]/.test(userPassword)) {
+        return registerLoginResources.incorrectPassword;
+    }
+}
+
+function loginUserInlayer(loginPage) {
+    var URLAction = appPath + "/Authentication.mvc/Login";
+    var userPassword = loginPage ? $('#PasswordForm').val() : $('#user-registration-password').val();
+    var userEmail = loginPage ? $('#EmailForm').val() : $('#userEmailRegistration').val();
+    var error = '';
+
+    if (loginPage) {
+        $("#login-button").addClass('disabled');
+        $("#errorMessage").css("display", "none");
+        error = emailValidation(userEmail.trim());
+    }
+
+    error = error ? error : checkForValidationErrors(userEmail, userPassword);
+
+    if (error) {
+        if (loginPage) {
+            $("#errorMessage").css("display", "").text(error);
+            $("#login-button").removeClass('disabled');
+        } else {
+            $('#error-message-display').empty().text(error);
+            $('#alert-wrong-password').show();
+        }
+
+        return false;
+    }
+
+    var redirect = $('#actionCompletRedirect') ? $('#actionCompletRedirect').val() : "refresh";
+    if (typeof connexionFromHeader !== "undefined") {
+        if ((redirect == "freeoffers" || redirect == "Discovery") && connexionFromHeader == true) {
+            redirect = "refresh";
+        }
+    }
+
+    flagStartRequest();
+    $.ajax({
+        url: URLAction,
+        type: "Post",
+        data: {
+            email: userEmail,
+            password: userPassword,
+            redirect: redirect
+        },
+        datatype: "application/json",
+        success: function (response) {
+            if (loginPage) {
+                if (response.success == true) {
+                    window.location = appPath + "/HomePage.mvc/Homepageconnected";
+                }
+                else {
+                    $("#login-button").removeClass('disabled');
+                    $("#errorMessage").css("display", "").text(registerLoginResources.incorrectPassword);
+                }
+            } else {
+                if (response.success == true) {
+                    userConnectedSuccess(response.redirect, response.partial);
+                }
+                else {
+                    $('#error-message-display').empty().text(registerLoginResources.incorrectPassword);
+                    $('#alert-wrong-password').show();
+                }
+            }
+        }
+    }).always(flagEndRequest);
+}
+
+function extractDataLayerFromPartial(partial) {
+    var script1 = $('<div>').html(partial).find('script')[0];
+    var stringData = $(script1).html();
+    //change var name so that the eval doesn't affect original bindings
+    stringData = stringData.replace("dataLayer", "newDataLayer");
+    var newDataLayer = eval(stringData);
+
+    return newDataLayer[0];
+}
+
+function userConnectedSuccess(redirect, partial) {
+    switch (redirect) {
+        case "freeoffers":
+            goToAtosPayment();
+            if (paymentMethod == '7' && partial) {
+                if (Layer && typeof Layer.close === "function") {
+                    Layer.close();
+                }
+                dataLayer[0] = extractDataLayerFromPartial(partial);
+                $("#googleTracking").replaceWith(partial);
+                $('#btn-connexion-layer').html(dataLayer[0].email);
+                $('#btn-connexion-layer').removeAttr("href");
+                $('#btn-connexion-layer').unbind('click');
+            }
+            break;
+        case "paywall":
+            UserConnectedPaywall();
+            break;
+        case "SearchApi":
+            RefreshConnexionBlock();
+            if (partial) {
+                dataLayer[0] = extractDataLayerFromPartial(partial);
+                $("#googleTracking").replaceWith(partial);
+            }
+            break;
+        case "Discovery":
+            UserConnectedDecouverte();
+            break;
+        case "#goToNoResults":
+            showProcessingUp();
+            sessionStorage["KEY"] = KEY;
+            $('#noResults').val(totalCount === 0);
+            $('#goToNoResults').submit();
+            break;
+        default:
+            if (redirect && redirect.search('/') > -1) {
+                window.location = redirect;
+            } else if (window.location.href.search("Paywall") > 1) {
+                window.location = window.location.href + "?forceRedirect=" + $("#forceRedirect").val();
+            } else {
+                window.location.reload();
+            }
+            break;
+    }
+}
+
+function opneLayerFor(nextPage) {
+    if (!$('#actionCompletRedirect').length) {
+        $('<input>').attr({
+            type: 'hidden',
+            id: 'actionCompletRedirect',
+            name: 'actionCompletRedirect'
+        }).appendTo('body')
+    }
+
+    var defaultRedirect = $('#actionCompletRedirect').val();
+    $('#actionCompletRedirect').val(nextPage);
+    $('.closebt').one('click', function () {
+        $('#actionCompletRedirect').val(defaultRedirect);
+    })
+    Layer.open();
+}
+
+function opneLayerMandatory() {
+    $('.closebt').remove();
+    Layer.open();
+}

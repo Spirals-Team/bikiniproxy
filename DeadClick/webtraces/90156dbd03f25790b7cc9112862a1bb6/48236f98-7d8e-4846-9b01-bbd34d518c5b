@@ -1,0 +1,165 @@
+function semaine_suivante(){
+	var semaine_courante = $(".semaine").attr('id');
+	
+	if( semaine_courante == 'undefined')
+		semaine_courante = 0;
+	
+	semaine_courante = parseInt(semaine_courante) + 1;
+	
+	
+	$(".semaine").attr('id', semaine_courante);
+		
+	if($("#filter_2 option:selected").val() == undefined) f2 = 0;
+	else f2 = $("#filter_2 option:selected").val();
+	if($("#filter_3 option:selected").val() == undefined) f3 = 0;
+	else f3 = $("#filter_3 option:selected").val();
+	create_tableau($(".semaine").attr('id'), $("#filter_1 option:selected").val(), f2, f3);
+}
+
+function semaine_precedente(mois, annee){
+	
+	var semaine_courante = $(".semaine").attr('id');
+	
+	semaine_courante = parseInt(semaine_courante) - 1;
+	
+	$(".semaine").attr('id', semaine_courante);
+	
+	if($("#filter_2 option:selected").val() == undefined) f2 = 0;
+	else f2 = $("#filter_2 option:selected").val();
+	if($("#filter_3 option:selected").val() == undefined) f3 = 0;
+	else f3 = $("#filter_3 option:selected").val();
+	create_tableau($(".semaine").attr('id'), $("#filter_1 option:selected").val(), f2, f3);
+}
+
+function create_filter_1(){
+	
+	if(typeof(base_language) == 'undefined')
+		base_language = 'fr';
+	
+	$.ajax({
+		type: "GET",
+		url: Drupal.settings.basePath +"themes/catacombes/includes/agenda/activitesFilters.php",
+		data: "plid="+$("#filter_1 option:selected").val()+"&language="+base_language,
+		dataType: "html",
+		success: function(result){
+			$("#filter_1").html(result);
+		}
+	});
+}
+
+function create_filter_2(){
+	
+	if(typeof(base_language) == 'undefined')
+		base_language = 'fr';
+	
+	$.ajax({
+		type: "GET",
+		url: Drupal.settings.basePath +"themes/catacombes/includes/agenda/activitesFilters.php",
+		data: "plid="+$("#filter_1 option:selected").val()+"&language="+base_language,
+		dataType: "html",
+		success: function(result){
+			if(result != ""){
+				$("#div_filter_2").html('<select id="filter_2" onchange="filter_2();">' + result + '</select>');
+			}
+		}
+	});
+}
+
+function create_filter_3(){
+	
+	if(typeof(base_language) == 'undefined')
+		base_language = 'fr';
+	
+	$.ajax({
+		type: "GET",
+		url: Drupal.settings.basePath +"themes/catacombes/includes/agenda/activitesFilters.php",
+		data: "plid="+$("#filter_2 option:selected").val()+"&language="+base_language,
+		dataType: "html",
+		success: function(result){
+			if(result != ""){
+				$("#div_filter_3").html('<select id="filter_3" onchange="filter_3();">' + result + '</select>');
+			}
+		}
+	});
+}
+
+function filter_1(){
+		if($("#filter_1 option:selected").val() != 0){ $("#div_filter_2").html(''); $("#div_filter_3").html(''); create_filter_2(); }
+		else{ $("#div_filter_2").html(''); $("#div_filter_3").html(''); }
+		create_tableau($(".semaine").attr('id'), $("#filter_1 option:selected").val(), 0, 0);
+}
+
+function filter_2(){
+	if($("#filter_2 option:selected").val() != 0){ $("#div_filter_3").html(''); create_filter_3(); }
+	else $("#div_filter_3").html('');
+	create_tableau($(".semaine").attr('id'), $("#filter_1 option:selected").val(), $("#filter_2 option:selected").val(), 0);
+}
+
+function filter_3(){
+	create_tableau($(".semaine").attr('id'), $("#filter_1 option:selected").val(), $("#filter_2 option:selected").val(), $("#filter_3 option:selected").val());
+}
+
+function create_tableau(semaine,f1,f2,f3){
+	
+//	console.log(semaine);
+	
+	
+	if(typeof(semaine) == 'undefined')
+		semaine = 0;
+	
+	$.ajax({
+		type: "GET",
+		url: Drupal.settings.basePath +"themes/catacombes/includes/agenda/activitesDatesSemaine.php",
+		data: "semaine="+semaine+"&language="+base_language,
+		dataType: "html",
+		success: function(result){
+			$('#affiche_mois .mois_annee .semaine').text(result);
+//			create_style('#agenda');
+		}
+		});
+	
+//	console.log( semaine );
+	
+	
+	$('#agenda tbody').html('<tr><td colspan="5" style="text-align: center; padding-top: 20px;"><img src="' + Drupal.settings.basePath + 'themes/catacombes/images/ajax-loader.gif" /><td></tr>');
+	$.ajax({
+	type: "GET",
+	url: Drupal.settings.basePath +"themes/catacombes/includes/agenda/activitesResults.php",
+	data: "semaine="+semaine+"&f1="+f1+"&f2="+f2+"&f3="+f3+"&language="+base_language,
+	dataType: "html",
+	success: function(result){
+		$('#agenda tbody').html(result);
+//		create_style('#agenda');
+	}
+	});
+}
+
+//function create_style(tableau){
+//	//$("tbody tr", tableau).css("background-color","none");
+//
+//	$("tbody tr", tableau).each(function(){
+//		//if($(this).attr('id')/2 == Math.round($(this).attr('id')/2)) $(this).css("background-color","#f6f5f4");
+//		
+//		ma_class = $(this).prev().attr('class');
+//		// Si la date est la même que la ligne d'avant
+//		if($(this).prev().attr('id') == $(this).attr('id')){
+//			$(this).addClass(ma_class);
+//		}
+//		else{
+//			if(ma_class == 'beige') $(this).removeClass('beige');
+//			else $(this).addClass('beige');
+//		}
+//		
+//    });
+//	
+//	$("tbody tr td#public", tableau).each(function(){
+//		if($(this).html() == "Enfants") $(this).addClass("rouge");
+//		else if($(this).html() == "En famille") $(this).addClass("beige");
+//    });
+//
+//}
+
+$(document).ready(function(){
+	create_filter_1();
+	create_tableau($(".mois").attr('id'), $(".annee").text(), 0, 0, 0);
+});

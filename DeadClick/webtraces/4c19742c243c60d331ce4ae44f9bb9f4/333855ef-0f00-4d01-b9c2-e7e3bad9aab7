@@ -1,0 +1,569 @@
+define(['angular/core/services', 'angular/security/services'],
+	function() {
+
+		var securityCtrl = angular.module('graphdb.framework.security.controllers', [
+			'ngCookies',
+			'ui.bootstrap',
+			'graphdb.framework.security.services',
+			'toastr'
+		]);
+
+		var setGrantedAuthorities = function ($scope) {
+			$scope.user.grantedAuthorities = []
+
+			$scope.repositoryCheckError = true;
+			if ($scope.grantedAuthorities.ROLE_ADMIN) {
+				$scope.repositoryCheckError = false;
+				$scope.user.grantedAuthorities[0] = 'ROLE_USER';
+				$scope.user.grantedAuthorities[1] = 'ROLE_REAL_USER';
+				$scope.user.grantedAuthorities[2] = 'ROLE_REPO_ADMIN';
+				$scope.user.grantedAuthorities[3] = 'ROLE_ADMIN';
+			} else if ($scope.grantedAuthorities.ROLE_REPO_ADMIN) {
+				$scope.repositoryCheckError = false;
+				$scope.user.grantedAuthorities[0] = 'ROLE_USER';
+				$scope.user.grantedAuthorities[1] = 'ROLE_REAL_USER';
+				$scope.user.grantedAuthorities[2] = 'ROLE_REPO_ADMIN';
+			} else {
+				$scope.user.grantedAuthorities[0] = 'ROLE_USER';
+				$scope.user.grantedAuthorities[1] = 'ROLE_REAL_USER';
+				for (index in $scope.grantedAuthorities.WRITE_REPO) {
+					if ($scope.grantedAuthorities.WRITE_REPO[index]) {
+						$scope.repositoryCheckError = false;
+						$scope.user.grantedAuthorities.push('WRITE_REPO_' + index);
+						$scope.user.grantedAuthorities.push('READ_REPO_' + index);
+					}
+				}
+				for (index in $scope.grantedAuthorities.READ_REPO) {
+					if ($scope.grantedAuthorities.READ_REPO[index]) {
+						$scope.repositoryCheckError = false;
+						$scope.user.grantedAuthorities.push('READ_REPO_' + index);
+					}
+				}
+			}
+		}
+
+		securityCtrl.controller('LoginCtrl', ['$scope', '$http', 'toastr', '$jwtAuth', '$window', '$timeout', '$location', '$cookies', '$rootScope',
+		                                      function ($scope, $http, toastr, $jwtAuth, $window, $timeout, $location, $cookies, $rootScope) {
+			if ($jwtAuth.authenticationHasExpired()){
+				toastr.error('Your authentication token has expired. Please login again.');
+				$jwtAuth.clearAuthentication();
+			}
+
+			$scope.username = "";
+			$scope.password = "";
+
+			$scope.login = function () {
+				$http.post('rest/login', {username: $scope.username, password: $scope.password}).
+					success(function (data, status, headers, config) {
+						$jwtAuth.authenticate(data, headers);
+						// toastr.success("Signed in", "Welcome");
+						var timer = $timeout(function () {
+						    if ($rootScope.returnToUrl) {
+						        // go back to remembered url
+						        $location.url($rootScope.returnToUrl);
+						    } else {
+						        // no remembered url, go to home
+							    $location.path('/');
+                            }
+						}, 500);
+						$scope.$on("$destroy", function(event) {
+							$timeout.cancel(timer);
+						});
+					}).
+					error(function (data, status, headers, config) {
+						if (status == 401) {
+							toastr.error('Wrong credentials!', 'Error');
+							$scope.wrongCredentials = true;
+							$scope.username = "";
+							$scope.password = "";
+						}
+						else {
+							msg = getError(data);
+							toastr.error(msg, status);
+						}
+
+					});
+			}
+		}]);
+
+		securityCtrl.controller('UsersCtrl', ['$scope', '$http', '$modal', 'toastr', '$window', '$jwtAuth', '$timeout', 'ModalService',
+		                                      function ($scope, $http, $modal, toastr, $window, $jwtAuth, $timeout, ModalService) {
+
+			$scope.loader = true;
+			$scope.securityEnabled = function () {
+				return $jwtAuth.isSecurityEnabled();
+			}
+			$scope.freeAccessEnabled = function () {
+				return $jwtAuth.isFreeAccessEnabled();
+			}
+			$scope.getUsers = function () {
+				$http.get('rest/security/user').
+					success(function (data, status, headers, config) {
+						$scope.users = data;
+						$scope.loader = false;
+					}).
+					error(function (data, status, headers, config) {
+						var msg = getError(data);
+						toastr.error(msg, 'Error');
+						$scope.loader = false;
+					});
+			}
+			$scope.getUsers();
+
+			$scope.$on('repositoryIsSet', function(){
+				$scope.getUsers();
+			});
+
+			$scope.toggleSecurity = function () {
+				$jwtAuth.toggleSecurity(!$jwtAuth.isSecurityEnabled());
+				if ($jwtAuth.isSecurityEnabled()) {
+					var timer = $timeout(function () {
+						$window.location.reload();
+					}, 500);
+					$scope.$on("$destroy", function(event) {
+						$timeout.cancel(timer);
+					});
+				}
+			};
+			
+			$scope.toggleFreeAccess = function () {
+				if(!$jwtAuth.isFreeAccessEnabled()){
+                    $http.get('rest/security/freeaccess').then(function(res){
+                        var authorities = res.data.authorities;
+                        var modalInstance = $modal.open({
+                            templateUrl: 'v/8.4.0-TR02/js/angular/security/templates/modal/default-authorities.html',
+                            controller: 'DefaultAuthoritiesCtrl',
+                            resolve: {
+                                // converts the array rights to hash ones. why, oh, why do we have both formats?
+                                defaultAuthorities: function() {
+                                    var defaultAuthorities = {'ROLE_USER': true, 'READ_REPO': {}, 'WRITE_REPO': {}};
+                                    // We might have old (no longer existing) repositories so we have to check that
+                                    var repoIds = _.mapKeys($scope.getRepositories(), function (r) { return r.id });
+                                    _.each(authorities, function(a) {
+                                        // indexOf works in IE 11, startsWith doesn't
+                                        if (a.indexOf('WRITE_REPO_') === 0) {
+                                            if (repoIds.hasOwnProperty(a.substr(13))) {
+                                                defaultAuthorities['WRITE_REPO'][a.substr(11)] = true;
+                                            }
+                                        } else if (a.indexOf('READ_REPO_') === 0) {
+                                            if (repoIds.hasOwnProperty(a.substr(12))) {
+                                                defaultAuthorities['READ_REPO'][a.substr(10)] = true;
+                                            }
+                                        }
+                                    });
+                                    return defaultAuthorities;
+                                }
+                            }
+                        });
+                        modalInstance.result.then(function (givenAuthorities) {
+                            authorities = givenAuthorities;
+                            $jwtAuth.toggleFreeAccess(!$jwtAuth.isFreeAccessEnabled(), authorities);
+                        });
+                    });
+				}
+				else{
+					$jwtAuth.toggleFreeAccess(!$jwtAuth.isFreeAccessEnabled(), []);
+				}
+			}
+
+			$scope.removeUser = function (username) {
+                ModalService.openSimpleModal({
+                    title: 'Confirm delete',
+                    message: "Are you sure you want to delete the user '" + username + "'?",
+                    warning: true
+                }).result.then(function () {
+					$scope.loader = true;
+					$http.delete('rest/security/user/' + username).
+						success(function (data, status, headers, config) {
+							$scope.getUsers();
+
+						}).
+						error(function (data, status, headers, config) {
+							msg = getError(data);
+							toastr.error(msg, 'Error');
+
+							$scope.loader = false;
+						});
+
+				});
+			}
+		}]);
+					
+		securityCtrl.controller('DefaultAuthoritiesCtrl', ['$scope', '$http', '$modalInstance', 'defaultAuthorities', '$rootScope',
+		                                                   function ($scope, $http, $modalInstance, defaultAuthorities, $rootScope) {
+			$scope.currentLocation = "*";
+			$scope.grantedAuthorities = defaultAuthorities;
+
+            $scope.hasActiveLocation = function() {
+                // Hack to get this from root scope to avoid cyclic dependency
+                return !_.isEmpty($rootScope.globalLocation);
+            }
+
+            $scope.getRepositories = function() {
+                // Hack to get this from root scope to avoid cyclic dependency
+                return $rootScope.globalRepositories;
+            }
+
+			$scope.ok = function(){
+				var auth = [];
+    			$scope.repositoryCheckError = true;
+                auth[0] = 'ROLE_USER';
+                for (index in $scope.grantedAuthorities.WRITE_REPO) {
+                    if ($scope.grantedAuthorities.WRITE_REPO[index]) {
+                        auth.push('WRITE_REPO_' + index);
+                        auth.push('READ_REPO_' + index);
+            			$scope.repositoryCheckError = false;
+                    }
+                }
+                for (index in $scope.grantedAuthorities.READ_REPO) {
+                    if ($scope.grantedAuthorities.READ_REPO[index] && auth.indexOf('READ_REPO_' + index) == -1) {
+                        auth.push('READ_REPO_' + index);
+            			$scope.repositoryCheckError = false;
+                    }
+                }
+                if (! $scope.repositoryCheckError) {
+				    $modalInstance.close(auth);
+				}
+			}
+			$scope.cancel = function(){
+				$modalInstance.dismiss('cancel');
+			}
+		}]);
+
+		securityCtrl.controller('AddUserCtrl', ['$scope', '$http', 'toastr', '$window', '$timeout', '$location', '$jwtAuth',
+		                                        function ($scope, $http, toastr, $window, $timeout, $location, $jwtAuth) {
+
+			$scope.saveButtonText = "Create";
+			$scope.goBack = function(){
+				var timer = $timeout(function() {
+					$window.history.back();
+				}, 100);
+				$scope.$on("$destroy", function(event) {
+					$timeout.cancel(timer);
+				});
+			}
+			$scope.currentLocation = "*";
+			$scope.activeLocation = $scope.getActiveLocation().uri;
+			$scope.pageTitle = 'Create new user';
+			$scope.passwordPlaceholder = "Password";
+
+			$scope.isAdmin = function () {
+				return $jwtAuth.hasRole('ROLE_ADMIN')
+			}
+
+			$scope.grantedAuthorities = {'ROLE_USER': true, 'ROLE_REAL_USER': true, 'READ_REPO': {}, 'WRITE_REPO': {}};
+			$scope.user = {
+				"username": "",
+				"password": "",
+				"confirmpassword": "",
+				"grantedAuthorities": []
+			}
+
+			$scope.submit = function () {
+				$scope.createUser();
+			}
+
+			$scope.setGrantedAuthorities = function () {
+				setGrantedAuthorities($scope);
+			}
+
+			$scope.createUserHttp = function(){
+				$scope.loader = true;
+				$http.post("rest/security/user", $scope.user).
+					success(function (data, status, headers, config) {
+						toastr.success('The user ' + $scope.user.username + ' has been created.');
+						var timer = $timeout(function () {
+							$scope.loader = false;
+							$window.history.back();
+						}, 2000);
+						$scope.$on("$destroy", function(event) {
+							$timeout.cancel(timer);
+						});
+					}).
+					error(function (data, status, headers, config) {
+						msg = getError(data);
+						$scope.loader = false;
+						toastr.error(msg, 'Error');
+					});
+			}
+
+			$scope.createUser = function () {
+
+				if ($scope.validateForm()) {
+					$scope.setGrantedAuthorities();
+
+					if (!$scope.repositoryCheckError) {
+						$scope.createUserHttp();
+					}
+				}
+			}
+
+			$scope.validateForm = function () {
+				var result = true;
+				if (!$scope.user.username) {
+					$scope.usernameError = 'Enter username!';
+					result = false;
+				} else {
+					$scope.usernameError = '';
+				}
+				if (!$scope.user.password) {
+					$scope.passwordError = 'Enter password!';
+					result = false;
+				} else {
+					$scope.passwordError = '';
+				}
+				if (!$scope.user.confirmpassword || $scope.user.password != $scope.user.confirmpassword) {
+					$scope.confirmPasswordError = 'Confirm password!';
+					result = false;
+				} else {
+					$scope.confirmPasswordError = '';
+				}
+				return result;
+			}
+		}]);
+
+		securityCtrl.controller('EditUserCtrl', ['$scope', '$http', 'toastr', '$window', '$routeParams', '$timeout', '$location', '$jwtAuth',
+		                                         function ($scope, $http, toastr, $window, $routeParams, $timeout, $location, $jwtAuth) {
+
+
+			$scope.saveButtonText = "Save";
+			$scope.goBack = function(){
+				var timer = $timeout(function() {
+					if($scope.isAdmin()){
+						$location.url('users');
+					}
+					else{
+						$window.history.back();
+					}
+				}, 100);
+				$scope.$on("$destroy", function(event) {
+					$timeout.cancel(timer);
+				});
+			}
+			$scope.params = $routeParams;
+			$scope.pageTitle = 'Edit user: ' + $scope.params.userId;
+			$scope.passwordPlaceholder = "New password";
+			$scope.grantedAuthorities = {'ROLE_USER': true, 'ROLE_REAL_USER': true, 'READ_REPO': {}, 'WRITE_REPO': {}};
+			$scope.isAdmin = function () {
+				return $jwtAuth.hasRole('ROLE_ADMIN');
+			}
+			
+			$scope.currentLocation = "*";
+			$scope.activeLocation = $scope.getActiveLocation().uri;
+
+			if (!$scope.isAdmin()) {
+				$location.url('change-password');
+			}
+			$scope.getUserData = function () {
+				$http.get('rest/security/user/' + $scope.params.userId).
+					success(function (data, status, headers, config) {
+						$scope.userData = data;
+						$scope.readonly = true;
+						$scope.user = {username: $scope.userData.username}
+						$scope.user.password = '';
+						$scope.user.confirmpassword = '';
+						var onlyNonWildcardAuthorities = true;
+						for (var i = 0; i < data.grantedAuthorities.length; i++) {
+							if (data.grantedAuthorities[i] == 'ROLE_ADMIN' || data.grantedAuthorities[i] == 'ROLE_REPO_ADMIN'
+							        || data.grantedAuthorities[i] == 'ROLE_USER' || data.grantedAuthorities[i] == 'ROLE_REAL_USER') {
+								$scope.grantedAuthorities[data.grantedAuthorities[i]] = true;
+							} else {
+								if (data.grantedAuthorities[i].indexOf('*') > 0) {
+									onlyNonWildcardAuthorities = false;
+								}
+								var index = data.grantedAuthorities[i].indexOf('_', data.grantedAuthorities[i].indexOf('_') + 1);
+								$scope.grantedAuthorities[data.grantedAuthorities[i].substr(0, index)][data.grantedAuthorities[i].substr(index + 1)] = true;
+							}
+						}
+						if (onlyNonWildcardAuthorities && !$scope.grantedAuthorities['ROLE_REPO_ADMIN']) {
+							$scope.currentLocation = $scope.activeLocation;
+						}
+					}).
+					error(function (data, status, headers, config) {
+						msg = getError(data);
+						toastr.error(msg, 'Error');
+					});
+			}
+
+			$scope.getUserData();
+
+			$scope.submit = function () {
+				$scope.updateUser();
+			}
+
+			$scope.setGrantedAuthorities = function () {
+				setGrantedAuthorities($scope);
+			}
+
+			$scope.updateUserHttp = function(){
+				$scope.loader = true;
+				$http.put("rest/security/user", $scope.user).
+					success(function (data, status, headers, config) {
+						toastr.success('The user ' + $scope.user.username + ' was updated.');
+						var timer = $timeout(function () {
+							$scope.loader = false;
+							$window.history.back();
+						}, 2000);
+						$scope.$on("$destroy", function(event) {
+							$timeout.cancel(timer);
+						});
+					}).
+					error(function (data, status, headers, config) {
+						msg = getError(data);
+						$scope.loader = false;
+						toastr.error(msg, 'Error');
+					});
+			}
+
+			$scope.updateUser = function () {
+
+				if (!$scope.validateForm()) {
+					return false;
+				}
+
+				$scope.setGrantedAuthorities();
+
+				if (!$scope.repositoryCheckError) {
+					$scope.updateUserHttp();
+				}
+			}
+
+			$scope.validateForm = function () {
+				var result = true;
+				if ($scope.user.password && (!$scope.user.confirmpassword || $scope.user.password != $scope.user.confirmpassword)) {
+					$scope.passwordError = '';
+					$scope.confirmPasswordError = 'Confirm password!';
+					return false;
+				} else {
+				    $scope.passwordError = '';
+					$scope.confirmPasswordError = '';
+				}
+				return result;
+			};
+
+		}]);
+
+		securityCtrl.controller('ChangeUserPasswordCtrl', ['$scope', '$http', 'toastr', '$window', '$timeout', '$location', '$jwtAuth', '$rootScope',
+		                                                   function ($scope, $http, toastr, $window, $timeout, $location, $jwtAuth, $rootScope) {
+
+			$scope.saveButtonText = "Save";
+			$scope.readonly = true;
+			$scope.goBack = function(){
+				var timer = $timeout(function() {
+					$window.history.back();
+				}, 100);
+				$scope.$on("$destroy", function(event) {
+					$timeout.cancel(timer);
+				});
+			}
+			$scope.currentLocation = $scope.getActiveLocation().uri;
+			$scope.activeLocation = $scope.getActiveLocation().uri;
+			$scope.isAdmin = function () {
+				return false;
+			}
+			$scope.currentUserData = function () {
+				return $jwtAuth.getPrincipal();
+			}
+
+			//call it as a function so I can make test on it
+			$scope.redirectAdmin = function(){
+				if (!$scope.currentUserData()) {
+					$rootScope.redirectToLogin();
+				}
+			}
+			$scope.redirectAdmin();
+
+			$scope.pageTitle = 'Change password';
+			$scope.passwordPlaceholder = "New password";
+			$scope.grantedAuthorities = {'READ_REPO': {}, 'WRITE_REPO': {}};
+
+			$scope.userData = $scope.currentUserData();
+			$scope.user = {username: $scope.userData.username}
+			$scope.user.password = '';
+			$scope.user.confirmpassword = '';
+			for (var i = 0; i < $scope.userData.authorities.length; i++) {
+			    var role = $scope.userData.authorities[i];
+				if (role === 'ROLE_ADMIN' || role === 'ROLE_REPO_ADMIN' || role === 'ROLE_USER' || role === 'ROLE_REAL_USER') {
+					$scope.grantedAuthorities[role] = true;
+				} else if (role.indexOf('READ_REPO') === 0 || role.indexOf('WRITE_REPO') === 0) {
+					var index = role.indexOf('_', role.indexOf('_') + 1);
+					$scope.grantedAuthorities[role.substr(0, index)][role.substr(index + 1)] = true;
+				} // else ignore unknown roles
+			}
+			$scope.loader = false;
+
+			$scope.submit = function () {
+				$scope.updateUser();
+			}
+
+			$scope.setGrantedAuthorities = function () {
+				setGrantedAuthorities($scope);
+			}
+
+			$scope.updateUserHttp = function(){
+				$scope.loader = true;
+				$http.put("rest/security/user/password", $scope.user).
+					success(function (data, status, headers, config) {
+						toastr.success('The user ' + $scope.user.username + ' was updated.');
+						var timer = $timeout(function () {
+							$scope.loader = false;
+							$window.history.back();
+						}, 2000);
+						$scope.$on("$destroy", function(event) {
+							$timeout.cancel(timer);
+						});
+					}).
+					error(function (data, status, headers, config) {
+						msg = getError(data);
+						$scope.loader = false;
+						toastr.error(msg, 'Error');
+					});
+			}
+
+			$scope.updateUser = function () {
+
+				if (!$scope.validateForm()) {
+					return false;
+				}
+
+				$scope.setGrantedAuthorities();
+
+				if (!$scope.repositoryCheckError) {
+					$scope.updateUserHttp();
+				}
+			}
+
+			$scope.validateForm = function () {
+				var result = true;
+				if ($scope.user.password && (!$scope.user.confirmpassword || $scope.user.password != $scope.user.confirmpassword)) {
+					$scope.passwordError = '';
+					$scope.confirmPasswordError = 'Confirm password!';
+					return false;
+				} else {
+					$scope.confirmPasswordError = '';
+				}
+				if (!$scope.user.password) {
+					$scope.passwordError = 'Password field is empty!';
+					result = false;
+				} else {
+					$scope.passwordError = '';
+				}
+				return result;
+			}
+
+		}]);
+
+		securityCtrl.controller('DeleteUserCtrl', ["$scope", "$modalInstance", "username", function ($scope, $modalInstance, username) {
+            $scope.username = username;
+
+			$scope.ok = function () {
+				$modalInstance.close();
+			};
+
+			$scope.cancel = function () {
+				$modalInstance.dismiss('cancel');
+			};
+		}]);
+
+		return securityCtrl;
+	});

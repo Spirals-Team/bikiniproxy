@@ -1,0 +1,222 @@
+// Search App
+var fsApp = angular.module('productcart.facets', []);
+
+fsApp.config(['$compileProvider', '$locationProvider', function ($compileProvider, $locationProvider) {
+    $locationProvider.html5Mode({ enabled: true, requireBase: false });
+}]);
+
+fsApp.directive('htmldiv', ['$compile', '$parse', function($compile, $parse) {
+return {
+  restrict: 'E',
+  link: function(scope, element, attr) {
+    scope.$watch(attr.content, function() {      
+      if (scope.roundtrip == 1) {
+          element.html($parse(attr.content)(scope));
+          $compile(element.contents())(scope);
+      }      
+    }, true);
+  }
+}
+}]);
+
+fsApp.controller('solrSearchCtrl', ['$scope', '$location', '$http', '$timeout', '$log', '$compile', 'httpRequest', 'pcService', function($scope, $location, $http, $timeout, $log, $compile, httpRequest, pcService) {
+ 
+      $scope.productList = [];
+    
+        // Defaults
+        $scope.roundtrip = 0;
+        $scope.page = 1;
+        $scope.pageSize = 40;
+        $scope.total = 0; 
+        
+        $scope.type = '';
+        $scope.myhtml = '';
+
+        $scope.categories= [];
+        $scope.sizes = [];
+        $scope.brands = [];
+        $scope.prices = [];
+        $scope.colors = [];
+
+        $scope.url = decodeURI($location.url());
+
+        // Async Data Load Callback
+        $scope.$on('handleProductList', function(event, data) {
+            $scope.roundtrip = 1;
+            console.log('load');
+            $scope.myhtml = data;         
+        });
+        
+        // Paging
+        $scope.DoPageRefresh = function(text, page, pageSize, total){
+            $scope.page = page;
+            $location.search('page', $scope.page);    
+            loadData();
+        };
+
+        // Load Data
+        function loadData() { 
+            $scope.url = $location.absUrl().split('?')[1]             
+            pcService.getProductList($scope.url, false);
+        };
+
+
+        // Start: Category
+        $scope.AddRemoveCat = function (val) {  
+            if (typeof $scope.categories == 'undefined') {
+                $scope.categories = [];
+            }  
+            if ($scope.categories.indexOf(val) == -1){
+                $scope.categories.push(val);
+            } else {
+                var index = $scope.categories.indexOf(val);
+                $scope.categories.splice(index, 1);
+            } 
+            $location.search('categories[]', $scope.categories);    
+            loadData();
+        };
+        // End: Category
+
+        // Start: Size
+        $scope.AddRemoveSize = function (val) {  
+            if (typeof $scope.sizes == 'undefined') {
+                $scope.sizes = [];
+            }  
+            if ($scope.sizes.indexOf(val) == -1){
+                $scope.sizes.push(val);
+            } else {
+                var index = $scope.sizes.indexOf(val);
+                $scope.sizes.splice(index, 1);
+            } 
+            $location.search('sizes[]', $scope.sizes);    
+            loadData();
+        };
+        // End: Size
+    
+        // Start: Brand
+        $scope.AddRemoveBrand = function (val) {  
+            if (typeof $scope.brands == 'undefined') {
+                $scope.brands = [];
+            }  
+            if ($scope.brands.indexOf(val) == -1){
+                $scope.brands.push(val);
+            } else {
+                var index = $scope.brands.indexOf(val);
+                $scope.brands.splice(index, 1);
+            } 
+            $location.search('brands[]', $scope.brands);    
+            loadData();
+        };
+        // End: Brand
+        
+        // Start: Price
+        $scope.AddRemovePrice = function (val) {  
+            if (typeof $scope.prices == 'undefined') {
+                $scope.prices = [];
+            }  
+            if ($scope.prices.indexOf(val) == -1){
+                $scope.prices.push(val);
+            } else {
+                var index = $scope.prices.indexOf(val);
+                $scope.prices.splice(index, 1);
+            } 
+            $location.search('prices[]', $scope.prices);    
+            loadData();
+        };
+        // End: Price
+        
+        // Start: Color
+        $scope.AddRemoveColor = function (val) {  
+            if (typeof $scope.colors == 'undefined') {
+                $scope.colors = [];
+            }  
+            if ($scope.colors.indexOf(val) == -1){
+                $scope.colors.push(val);
+            } else {
+                var index = $scope.colors.indexOf(val);
+                $scope.colors.splice(index, 1);
+            } 
+            $location.search('colors[]', $scope.colors);    
+            loadData();
+        };
+        // End: Color
+        
+        // Start: Sort
+        $scope.AddRemoveSort = function (val) {  
+            console.log('sorted');
+            if (typeof $scope.sort == 'undefined') {
+                $scope.sort = '';
+            } else {
+                $scope.sort = val;
+            }  
+            $location.search('sort', $scope.sort);    
+            loadData();
+        };
+        // End: Sort 
+
+
+        function refreshView() {  
+    
+            if (typeof $scope.productList.pageInfo == 'undefined') {
+                $scope.total = 0;
+            } else {
+                $scope.total = $scope.productList.pageInfo.total; 
+            }
+            
+            $scope.type = $location.search()['type'];
+            
+            $scope.categories = $location.search()['categories[]'];
+            if (!angular.isObject($scope.categories)) {
+                if ($scope.categories) { $scope.categories = [$scope.categories] };
+            }
+    
+            $scope.sizes = $location.search()['sizes[]'];
+            if (!angular.isObject($scope.sizes)) {
+                if ($scope.sizes) { $scope.sizes = [$scope.sizes] };
+            }
+            $scope.brands = $location.search()['brands[]'];
+            if (!angular.isObject($scope.brands)) {
+                if ($scope.brands) { $scope.brands = [$scope.brands] };
+            }        
+            $scope.prices = $location.search()['prices[]'];
+            if (!angular.isObject($scope.prices)) {
+                if ($scope.prices) { $scope.prices = [$scope.prices] };
+            }
+            $scope.colors = $location.search()['colors[]'];
+            if (!angular.isObject($scope.colors)) {
+                if ($scope.colors) { $scope.colors = [$scope.colors] };
+            }
+            $scope.url = $location.absUrl().split('?')[1]  
+
+        };
+
+
+        $scope.Evaluate = function (val) {
+            if (val == 'true' || val == true) {
+                return true;
+            } else {
+                return false;
+            }
+        };
+
+
+        $scope.IsEmpty = function (val) {
+            if (val) {
+                return false;
+            } else {
+                return true;
+            }
+        };
+
+        refreshView();
+
+}]);
+
+
+// Bootstrap
+angular.element(document).ready(function () {
+    //angular.bootstrap($('#searchApp'), ['productcart.facets']);
+    //$('#searchApp').removeClass('cloak');
+});
+
+

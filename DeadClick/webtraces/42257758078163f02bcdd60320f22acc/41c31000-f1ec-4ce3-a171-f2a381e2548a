@@ -1,0 +1,271 @@
+var isLanguagesFormVisible = false;
+var logOff = false;
+var isVisible = false;
+
+$(document).ready(function () {
+    //dodaj wszystkim linkom zewnetrznym target blank
+    $("a.external").attr("target", "_blank");
+
+    //jezyki
+    var currentLanguage = $("#language").val();
+    var langSelector = $("div#languageSelector");
+
+    var langSelected = $("li#languageSelected");
+    var currentLang = $("li#" + currentLanguage)
+    langSelected.html("<div><img src='http://assets.truck.pl/images/img/fl/fl_" + currentLanguage.toUpperCase() + ".gif' />&nbsp;" + currentLang.html() + "</div>");
+
+    langSelected.addClass("Lang");
+
+    $("li#languageSelected a, li#languageSelected").click(function () {
+
+        //ukrycie formy logowania, gdy klikamy na jezyk
+        if (isVisible)
+            hideLoginForm();
+
+        showSelector();
+        return false;
+    });
+
+    $("#languageSelector").click(function () {
+        showSelector();
+        return false;
+    });
+
+    langSelected.show();
+
+    $("div#languageSelector li").click(function () {
+        var url = $(this).children("a:first").attr("href");
+        window.location.href = url;
+    });
+
+    setautocomplete(true, currentLanguage);
+    //$("#categoryid_ddl").change(function() { setautocomplete(false) })
+
+    //formularz logowania
+    if ($("#LoginError").val() == "1") { /*błędne logowanie - pokazujemy formularz logowania*/
+        showLoginForm();
+    }
+
+    if (document.getElementById("loginSelected") != null && document.getElementById("loginSelected").innerHTML.indexOf("logoff") != -1)
+        logOff = true;
+
+    $("li#loginSelected a, li#loginSelected").click(function () {
+
+        //ukrycie okna z jezykami, gdy klikamy na forme logowania
+        if (isLanguagesFormVisible)
+            hideSelector();
+
+        if (logOff)
+            return true;
+
+        showLoginForm();
+        return false;
+    });
+
+    //zamkniecie okna logowania
+    $("#closeLoginForm").click(function () {
+        hideLoginForm();
+        return false;
+    });
+
+    //zamkniecie okna z jezykami
+    $("#closeDivLang").click(function () {
+        hideSelector();
+        return false;
+    });
+
+    SetWidth();
+
+    if ($.cookie("foot") == "-1") { //-1-stopka zwinieta, 1-stopka rozwinieta
+        $("div#foot").hide();
+        $("div#rozwin").show();
+    }
+    else {
+        $("div#foot").show();
+        $("div#rozwin").hide();
+    }
+
+   
+    $("div#zwin").click(function () {
+        SetWidth();
+
+        $("div#foot").hide("slide", { direction: GetDirection() }, 1000);
+        $.cookie("foot", "-1");
+        $("div#rozwin").show();
+    });
+
+    $("div#rozwin").click(function () {
+        SetWidth();
+
+        $("div#foot").show("slide", { direction: GetDirection() }, 1000);
+
+        $.cookie("foot", 1, { expires: 1, path: '/' });  //0-stopka zwinieta, 1-stopka rozwinieta        
+        $("div#rozwin").hide();
+    });
+
+
+    $("#body").click(function (e) {
+        if (isVisible) {
+            var parents = $(e.target).parents()
+                          .map(function () {
+                              return this.className;
+                          })
+                          .get().join(" ");
+
+            if (parents.indexOf("Logowanie") == -1)
+                hideLoginForm();
+        }
+
+        if (isLanguagesFormVisible) {
+            hideSelector();
+        }
+    });
+
+    if (!isVisible && $(".f2").find("input#userName").val() == "") {
+        $(".f2").find("input#userName").focus();
+    }
+
+    $(".open").click(function () { ShowHiddenText($(this).attr("id")) });
+    $("#SelectedCurrency").change(function () { RefreshView() });
+});
+
+function setautocomplete(init, currentLanguage) {
+
+    //focus / blur dla freetexta
+    var initText = "";
+    $("#main-freetext").focus(function() {
+        if ($(this).hasClass("inactive")) {
+            $(this).removeClass("inactive");
+            initText = $(this).val();
+            $(this).val("");
+        }
+    });
+
+    $("#main-freetext").blur(function() {
+        if (initText != "" && $(this).val() == "") {
+            $(this).addClass("inactive");
+            $(this).val(initText);
+            initText = "";
+        }
+    });
+
+    $(".searchButton button").click(function() {
+        if ($("#main-freetext").hasClass("inactive")) {
+            $("#main-freetext").val("");
+        }
+    });
+
+    var acurl = "/" + currentLanguage + "/ad/FreeTextAutocomplete";
+
+    if (init) {
+        $("#main-freetext").autocomplete(acurl, { delay: 100, selectFirst: false, autoFill: false, autoFillSelected: true });
+    } else {
+        $("#main-freetext").setOptions({ url: acurl });
+        $("#main-freetext").flushCache();
+    }
+}
+
+function ShowHiddenText(articleId) {
+
+    articleId = articleId.replace("img", "article");
+    var klasa = document.getElementById(articleId).className;
+
+    if (klasa == "hidden") {
+        $("#" + articleId).removeClass("hidden");
+        $("#" + articleId).addClass("article");
+    }
+    else {
+        $("#" + articleId).removeClass("article");
+        $("#" + articleId).addClass("hidden");
+    }
+}
+
+function hideLoginForm() {
+    $("#logowanie").hide();
+    $("#loginSelected").removeClass("LogHovered");
+    $("#loginSelected").addClass("Log");
+    isVisible = false;
+}
+
+function showLoginForm() {
+    $("#logowanie").show();
+    $("#loginSelected").removeClass("Log");
+    $("#loginSelected").addClass("LogHovered");
+    isVisible = true;
+
+    if ($(".log").find("input#userName").val() == "")
+        $(".log").find("input#userName").focus();
+}
+
+function initLanguageSelector() {
+    currentLanguage = $("#language").val();
+    isLanguagesFormVisible = false;
+}
+
+function showSelector() {
+
+    var url = window.location.pathname;
+    if (url.indexOf("customerservice") != -1 || url.indexOf("article") != -1) {
+        $("div#languageSelector").hide();
+        isLanguagesFormVisible = false;
+    }
+    else {
+        if (!isLanguagesFormVisible) {
+            $("#languageSelected").removeClass("Lang");
+            $("#languageSelected").addClass("LangHovered");
+            if ($("div#languageSelector").find("ul>li").size() > 0) {
+                $("div#languageSelector").show();
+                isLanguagesFormVisible = true;
+            }
+        }
+    }
+}
+function hideSelector() {
+    $("#languageSelected").removeClass("LangHovered");
+    $("#languageSelected").addClass("Lang");
+    $("div#languageSelector").hide();
+    isLanguagesFormVisible = false;
+}
+
+function checkUncheck(mainCheckbox, checkboxes) {
+    $(document).ready(function() {
+        $(mainCheckbox).click(function() {
+            var checked = $(this).attr("checked");
+            $(checkboxes).attr("checked", checked);
+        })
+    });
+}
+
+function RefreshView() {
+    document.getElementById('refresh').click();
+}
+
+function SetWidth() {
+
+    if ($("body").attr("class") == "rtl") {
+
+        var width = $("body").width();
+        var foot = parseInt($("div#foot").css('width'), 10);
+        var margin = width < foot ? width : (width - foot);
+       
+        $("div#foot").css('marginLeft', margin);
+    }
+}
+
+function GetDirection() {
+    var direction = "left";
+    if ($("body").attr("class") == "rtl")
+        direction = "right";
+
+    return direction;
+}
+
+
+
+
+
+
+
+
+
+

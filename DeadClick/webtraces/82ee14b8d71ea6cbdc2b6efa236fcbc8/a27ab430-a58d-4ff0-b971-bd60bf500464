@@ -1,0 +1,478 @@
+// JavaScript Document
+({
+	datetime: (function(bam) {
+		bam.loadSync(bam.homePath + "bam.validation.js");
+		/*
+			NOTE: ~~+ = parseInt(n, 10)
+		*/
+		/* Updated Implementation */
+		var util = {
+			//Alters attribute and collection names to comply with JS
+			inherit: function(subclass, superclass) {
+				subclass.prototype = new superclass();
+				subclass.prototype.constructor = subclass;
+			},
+			//Adds a method to the object
+			method: function(){
+				var aLen = arguments.length, to, method, fn, map;			
+				switch(aLen) {
+					case 2: to =  arguments[0]; 
+							map = arguments[1];
+							for(method in map) {
+								fn = map[method];
+								to[method] = fn;
+							}
+							break;
+					case 3: to =  arguments[0]; 
+							map = arguments[1];
+							fn = arguments[2];
+							if(util.isFn(fn) && util.isStr(method)) {
+								to[method] = fn;	
+							}
+							break;
+				}
+			}
+		};
+		$.extend(util, bam.validation);
+		
+		var months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
+			full_months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"],
+			dows = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
+			full_dows = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"],
+		//Spanish Dates
+			months_es = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"],
+			full_months_es = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"],
+			dows_es = ["dom", "lun", "mar", "mi&eacute;", "jue", "vie", "s&aacute;b"],
+			full_dows_es = ["domingo", "lunes", "martes", "mi&eacute;rcoles", "jueves", "viernes", "s&aacute;bado"];		
+		
+		var _self = {
+			DateFormats: {
+				ShortDate: "MM/dd/yyyy",
+				LongDate: "EEEE, dd MMMM yyyy",
+				FullDateTime: "EEEE, dd MMMM yyyy HH:mm:ss",
+				MonthDay: "MMMM dd",
+				RFC1123: "EEE, dd MMM yyyy HH':'mm':'ss 'GMT'",
+				ISO8601: "yyyy'-'MM'-'dd'T'HH':'mm':'ss",
+				SortableDateTime: "yyyy'-'MM'-'dd'T'HH':'mm':'ss",
+				ShortTime: "HH:mm",
+				LongTime: "HH:mm:ss",
+				UniversalDateTime: "yyyy'-'MM'-'dd HH':'mm':'ss'Z'",
+				YearMonth: "yyyy MMMM",
+				YMD: "yyyyMMdd",
+				YMDHM: "yyyyMMddHHmm",
+				XMLDate: "yyyy-MM-ddTHH:mm:ss.S'Z'"
+			},
+			//TimeSpan
+			TimeSpan: (function() {
+				var _msSec = 1000,
+					_msMin = _msSec*60,
+					_msHrs = _msMin*60,
+					_msDay = _msHrs*24,
+					_msValue = 0,
+					_mf = Math.floor,
+				_self = {
+					Milliseconds: 0,		
+					TotalMilliseconds: function(){return _self.Milliseconds;},
+					TotalSeconds: function(){return _mf(_self.Milliseconds/_msSec);},
+					TotalMinutes: function(){return _mf(_self.Milliseconds/_msMin);},
+					TotalHours: function(){return _mf(_self.Milliseconds/_msHrs);},
+					TotalDays: function(){return _mf(_self.Milliseconds/_msDay);},
+					FromMilliseconds: function(n){return n;},
+					FromSeconds: function(n){return n*_msSec;},
+					FromMinutes: function(n){return n*_msMin;},
+					FromHours: function(n){return n*_msHrs;},
+					FromDays: function(n){return n*_msDay;}
+				};
+				return _self;
+			})(),
+			//DateDiff object for comparing dates
+			DateDiff: function(d1, d2){
+				var out = _self.TimeSpan;
+				if(($.type(d1) === "date") && ($.type(d2) === "date")) {
+					out.Milliseconds = d1 - d2;
+				}
+				return out;
+			},			
+			//Helpers					
+			//Is DST (Daylight Savings Time)
+			isDST: function(dtObj) {
+				if(util.isDt(dtObj)) {
+					var _jan = _self.clone(dtObj);
+					_jan.setUTCMonth(0);
+					return (dtObj.getHours() !== _jan.getHours());
+				} else { return null; }
+			},
+			//Parses XML Date format (i.e. "2002-05-30T09:30:10-05:00" or "2002-05-30T09:30:10Z")
+			parseXMLDate: function(dtStr) {
+				 if(util.isStr(dtStr)) {							 
+					 try {
+						 var R = /^(\d{4})-(\d{2})-(\d{2})T([0-9:]{8})([.0-9]*)(.)(.*)$/.exec(dtStr);
+						 if(!!R && R.length > 7) {
+							 var tzOffset = ~~+(R[6] + parseInt(R[7],10))*(-1);
+							 	 tzOffset = (tzOffset>12)?tzOffset/100:tzOffset;
+							 var _t = R[4].split(":"), dt = _self.DateTime(new Date(1970, 0, 1, 0, 0, 0, 0));
+								dt.setUTCFullYear(R[1]);
+								dt.setUTCMonth((~~+R[2]-1));
+								dt.setUTCDate(~~+R[3]);
+								dt.setUTCMilliseconds(R[5]);
+								dt.setUTCSeconds(~~+_t[2]);
+								dt.setUTCMinutes(~~+_t[1]);
+								dt.setUTCHours(~~+_t[0]);
+							 var _utcHours = dt.getUTCHours(), _utcOffset = dt.getHours() - _utcHours, _isDST = _self.isDST(dt);
+							 	 _utcOffset = _utcOffset > 12?_utcOffset-24:_utcOffset; //Fix - overlapping date
+							 if(!isNaN(tzOffset)){
+								dt.incrementHours((tzOffset + _utcOffset)*(-1));
+							 } else {
+								if(!!_isDST){dt.incrementHours(-1);}
+							 }
+							 return dt;
+						 } return null;
+					 } catch(e) {
+						throw new Error("Unable to parse XML Date"); 
+					 }
+				 }	
+			},
+			//Parses ISO8601/Sortable Date format (i.e. "2002-05-30T09:30:10")
+			parseISODate: function(dtStr) {
+				 if(util.isStr(dtStr)) {							 
+					 try {
+						 var R = /^(\d{4})-(\d{2})-(\d{2})T([0-9:]{8})$/.exec(dtStr);
+						 if(!!R && R.length > 4) {							 
+							 var _t = R[4].split(":");
+							 var dt = _self.DateTime(new Date(1970, 0, 1, 0, 0, 0, 0));
+							 	dt.setFullYear(R[1]);
+							 	dt.setMonth((~~+R[2]-1));
+								dt.setDate(~~+R[3]);
+								dt.setSeconds(~~+_t[2]);
+								dt.setMinutes(~~+_t[1]);
+								dt.setHours(~~+_t[0]);
+							 return dt;
+						 } return null;
+					 } catch(e) {
+						throw new Error("Unable to parse ISO Date"); 
+					 }
+				 }	
+			},
+			//Parse short date as Date
+			parseShortDate: function(dtStr) {
+				if(util.isStr(dtStr)) {
+					var dp = dtStr.split("/");
+					if(dp.length >= 3) {
+						return _self.DateTime(new Date(~~+dp[2],(~~+dp[0]-1),~~+dp[1]));
+					} 
+				}
+			},
+			//Parse YMD
+			parseYMD: function(ymdStr) {						
+				if(util.isStr(ymdStr) && ymdStr.length >= 8 && bam.validation.isNumeric(ymdStr)) {
+					var yy = ymdStr.substr(0, 4),
+						mm = ~~+ymdStr.substr(4, 2)-1,
+						dd = ~~+ymdStr.substr(6, 2);
+					return _self.DateTime(new Date(yy, mm, dd));
+				}
+			},
+			//Parse YMDHM (i.e. 201006151716)
+			parseYMDHM: function(ymdhmStr,daystart) {						
+				if(util.isStr(ymdhmStr) && ymdhmStr.length >= 12 && bam.validation.isNumeric(ymdhmStr)) {
+					daystart = (!!daystart)?daystart:0;
+					var yy = ymdhmStr.substr(0, 4),
+						mm = ~~+ymdhmStr.substr(4, 2)-1,
+						dd = ~~+ymdhmStr.substr(6, 2),
+						hh = ~~+ymdhmStr.substr(8, 2)-daystart,
+						mi = ~~+ymdhmStr.substr(10, 2);
+					return _self.DateTime(new Date(yy, mm, dd, hh, mi));
+				}
+			},
+			//To short date
+			toShortDate: function(dtObj) {
+				if(util.isDt(dtObj)) {
+					return _self.formatDate(dtObj, _self.DateFormats.ShortDate);
+				}
+			},
+			//To YMD format (i.e. 20080101)
+			toYMD: function(dtObj) {
+				if(util.isDt(dtObj)) {
+					return _self.formatDate(dtObj, _self.DateFormats.YMD);
+				}
+			},
+			//To YMDHM format (i.e. 200801011325)
+			toYMDHM: function(dtObj) {
+				if(util.isDt(dtObj)) {
+					return _self.formatDate(dtObj, _self.DateFormats.YMDHM);
+				}
+			},
+			//To XML format (i.e. 2000-01-01T13:01:00.0000Z)
+			toXMLDate: function(dtObj) {
+				if(util.isDt(dtObj)) {
+					var _gmt = _self.clone(dtObj);
+						_gmt.setTimeZone(0, _self.isDST());
+					return _self.formatDate(_gmt, _self.DateFormats.XMLDate);
+				}
+			},
+			//Is Leap year
+			isLeapYear: function(y) {  
+				var leap = (y % 4===0) && ((y % 100!==0) || (y % 400===0));
+				return leap;
+			},
+			//Days in a month
+			getMonthLength: function(mo, yr) {
+				return 32 - new Date(yr, (mo-1), 32).getDate();
+			},
+			//Month names
+			getMonthName: function(m) {
+				return ((m-1) < months.length)?months[m-1]:"";
+			},
+			getMonthFullName: function(m) {
+				return ((m-1) < full_months.length)?full_months[m-1]:"";
+			},
+			//Get day name
+			getDayName: function(d) {
+				return ((d-1) < dows.length)?dows[d-1]:"";
+			},
+			getDayFullName: function(d) {
+				return ((d-1) < full_dows.length)?full_dows[d-1]:"";
+			},
+			//Get Spanish month names
+			getMonthNameEs: function(m) {
+					return ((m-1) < months_es.length)?months_es[m-1]:"";
+			},
+			getMonthFullNameEs: function(m) {
+					return ((m-1) < full_months_es.length)?full_months_es[m-1]:"";
+			},			
+			//Get Spanish day name
+			getDayNameEs: function(d) {
+					return ((d-1) < dows_es.length)?dows_es[d-1]:"";
+			},
+			getDayFullNameEs: function(d) {
+					return ((d-1) < full_dows_es.length)?full_dows_es[d-1]:"";
+			},
+			//Returns Time Zone offset (despite of DST)
+			getTimeZone: function() {
+				var _now = new Date();						
+				var _isDST = _self.isDST(_now);
+				var _ts = _self.TimeSpan;
+					_ts.Milliseconds = _ts.FromMinutes(_now.getTimezoneOffset());
+				var _tz = (_ts.TotalHours()+((!!_isDST)?1:0)) * (-1);
+				return _tz;
+			},
+			//Returns a Week of the Year number (1 - 52)
+			getWOY: function(y, m, d) {
+				//Returns Week of the year for the current date
+				var firstDay = new Date(y, 0, 1).getDay();
+				var diff = 7 - firstDay + 1;
+				var doy = 0;
+				var i = 0;
+				do {
+					doy += _self.getMonthLength(i, y);		
+				} while(i++ < (m-1));		
+				doy -= (_self.getMonthLength(m-1, y) - d);
+				
+				return Math.round(((doy+diff)-firstDay) / 7); 		
+			},			
+			//Formats Date according to patterns
+			/*
+				@date - date object to format
+				@mask - string mask to use for formatting
+				@utc - string "UTC:" forces all dates to UTC values
+				@es - boolean flag that if set to "true" will convert all week and month values to spanish
+			*/
+			formatDate: function () {
+				var	token = /d{1,2}|E{3,4}|M{1,4}|yy(?:yy)?|([HhmsAa])\1?|[LloSZ]|"[^"]*"|'[^']*'/g,
+					timezone = /\b(?:[PMCEA][SDP]T|(?:Pacific|Mountain|Central|Eastern|Atlantic) (?:Standard|Daylight|Prevailing) Time|(?:GMT|UTC)(?:[-+]\d{4})?)\b/g,
+					timezoneClip = /[^-+\dA-Z]/g,
+					pad = function (v) {
+						return((v<10)?"0":"")+v;
+					};
+					
+				// Regexes and supporting functions are cached through closure
+				return function (date, mask, utc, es) {		
+					// You can't provide utc if you skip other args (use the "UTC:" mask prefix)
+					if (arguments.length == 1 && Object.prototype.toString.call(date) == "[object String]" && !/\d/.test(date)) {
+						mask = date;
+						date = undefined;
+					}
+			
+					// Passing date through Date applies Date.parse, if necessary
+					date = date ? new Date(date) : new Date();
+					if (isNaN(date)) throw SyntaxError("invalid date");
+			
+					mask = String(_self.DateFormats[mask] || mask || _self.DateFormats.FullDateTime);
+			
+					// Allow setting the utc argument via the mask
+					if (mask.slice(0, 4) == "UTC:") {
+						mask = mask.slice(4);
+						utc = true;
+					}
+			
+					var	_ = utc ? "getUTC" : "get",
+						d = date[_ + "Date"](),
+						E = date[_ + "Day"](),
+						M = date[_ + "Month"](),
+						y = date[_ + "FullYear"](),
+						H = date[_ + "Hours"](),
+						m = date[_ + "Minutes"](),
+						s = date[_ + "Seconds"](),
+						S = date[_ + "Milliseconds"](),
+						o = utc ? 0 : date.getTimezoneOffset(),
+						flags = {
+							d:    d,
+							dd:   pad(d),
+							EEE:  (es)?dows_es[E]:dows[E],
+							EEEE: (es)?full_dows_es[E]:full_dows[E],						
+							M:    M + 1,
+							MM:   pad(M + 1),
+							MMM:  (es)?months_es[M]:months[M],
+							MMMM: (es)?full_months_es[M]:full_months[M],						
+							yy:   String(y).slice(2),
+							yyyy: y,
+							h:    H % 12 || 12,
+							hh:   pad(H % 12 || 12),
+							H:    H,
+							HH:   pad(H),
+							m:    m,
+							mm:   pad(m),
+							s:    s,
+							ss:   pad(s),							
+							S:    pad(S > 99 ? Math.round(S / 10) : S),
+							a:    H < 12 ? "am" : "pm",					
+							A:    H < 12 ? "AM" : "PM",
+							Z:    utc ? "UTC" : (String(date).match(timezone) || [""]).pop().replace(timezoneClip, ""),
+							o:    (o > 0 ? "-" : "+") + pad(Math.floor(Math.abs(o) / 60) * 100 + Math.abs(o) % 60, 4),
+							P:    ["th", "st", "nd", "rd"][d % 10 > 3 ? 0 : (d % 100 - d % 10 != 10) * d % 10]
+						};
+			
+					return mask.replace(token, function ($0) {
+						return $0 in flags ? flags[$0] : $0.slice(1, $0.length - 1);
+					});
+				};
+			}(),
+			//Retuns a week range based on week of the year number (format {first:  fd, last: ld})
+			getWeekByWOY: function(wk, y) {
+				if((typeof(wk) === "number" && typeof(y) === "number") && (wk > 0 && wk <= 53)) {
+					var foy = _self.DateTime(new Date(y, 0, 1));
+						foy.incrementDate(0 - foy.getDay());
+						foy.incrementWeeks((wk-1));
+					var fd = foy.clone();
+						foy.incrementDate(6);
+						return {first: fd, last: foy};
+				} return {first: null, last: null};
+			},
+			//Returns number of weeks per month
+			getWeeksInMonth: function(mo, yr) {
+				var fdom = _self.DateTime(new Date(yr, mo-1, 1)).getDay();
+				var maxDays = _self.getMonthLength(mo, yr);
+				var weeks = Math.ceil((maxDays+(fdom-7))/7);
+				return weeks;
+			},
+			//Creates a new date object based on existing date
+			clone: function(dtObj) {				
+				return _self.DateTime(new Date(dtObj.valueOf()));
+			},
+			//Floors a date object to the first day of the year at 0 hour
+			floorDate: function(flr /*, date, clone */) {
+				var clone = (arguments[2] === true),
+				  date = (typeof arguments[1] !== 'undefined') ? arguments[1] : new Date();
+				
+				if (clone || !(date instanceof Date)) {
+				date = new Date(date);
+				}
+				
+				switch(flr) {
+					case 'year': date.setMonth(0);
+					case 'month': date.setDate(1);
+					case 'day': date.setHours(0);
+					case 'hour': date.setMinutes(0);
+					case 'minute': date.setSeconds(0);
+					default: date.setMilliseconds(0);
+				}
+				
+				return date;
+			},			
+			//BamDate wrapper with additional functionality
+			DateTime: function(dtObj) {						
+				return new IBAMDate(dtObj);
+			}
+		};
+		
+		/* Interface for BAM DateTime */
+		function IBAMDate(val) {
+			var dtObj;
+			switch($.type(val)) {				
+				case "string": dtObj = new Date(val); break;
+				case "number": dtObj = new Date(val); break;
+				case "date": dtObj = val; break;
+				default: dtObj = new Date();
+			}
+			return $.extend(dtObj, IBAMDate.prototype);
+		}
+		IBAMDate.prototype = {
+			isDST: function() {
+				return _self.isDST(this);
+			},
+			incrementYear: function(val) {
+				this.setFullYear(this.getFullYear() + val);
+				return this;
+			},
+			incrementMonth: function(val) {
+				this.setMonth(this.getMonth() + val);
+				return this;
+			},
+			incrementDate: function(val) {
+				this.setDate(this.getDate() + val);
+				return this;
+			},
+			incrementWeeks: function(val) {
+				var wDays = val * 7;
+				this.setDate(this.getDate() + wDays);
+				return this;
+			},
+			incrementHours: function(val) {
+				this.setHours(this.getHours() + val);
+				return this;
+			},
+			incrementMinutes: function(val) {
+				this.setMinutes(this.getMinutes() + val);
+				return this;
+			},
+			setTimeZone: function(val, dst) {
+				var _ts = _self.TimeSpan;
+				_ts.Milliseconds = _ts.FromMinutes(this.getTimezoneOffset());
+				var _utcOffset = _ts.TotalHours();
+				if(!(dst||false)){this.incrementHours(_utcOffset + val);} else 
+				{this.incrementHours((_utcOffset+1) + val);}
+				return this;
+			},
+			toShortDate: function() {
+				return _self.toShortDate(this);
+			},
+			toYMD: function() {
+				return _self.toYMD(this);
+			},
+			toXMLDate: function() {
+				return _self.toXMLDate(this);
+			},
+			getWOY: function() {
+				return _self.getWOY(this.getFullYear(), (this.getMonth()+1), this.getDate());
+			},
+			getMonthLength: function() {
+				return _self.getMonthLength((this.getMonth()+1), this.getFullYear());
+			},
+			/*
+				@_pattern - string mask to use for formatting
+				@es - boolean flag that if set to "true" will convert all week and month values to spanish
+			*/
+			formatDate: function(_pattern, es) {
+				return _self.formatDate(this, _pattern, null, es);
+			},
+			clone: function() {
+				return _self.clone(this);
+			},
+			floorDate: function(flr) {
+				return _self.floorDate(flr, this);
+			}
+		};
+		
+		
+		return _self;
+	})(bam)
+})

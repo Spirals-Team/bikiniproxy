@@ -1,0 +1,567 @@
+GrahamTechnology.ui.devutils = function() {
+   var errorBoxToggled = false, errorBox = '', warnings, errors,limit;
+
+   var COMPONENT_XPATH = "//div[starts-with(@id, 'f')]/@id";
+   var FORM_INFO_XPATH = "//input[@type='hidden' and starts-with(@id, 'f') and substring(@id, string-length(@id) - 8)='_formInfo']/@id";
+   var MAIN_FORM_INFO_XPATH = "//input[@type='hidden' and substring(@id, string-length(@id) - 12)='_mainFormInfo']/@id";
+   var FORM_PATH_REGEX = "\\+?[^\\+]*,formID=\\d+$";
+   var FORM_ELEM_XPATH = "//form/@id";
+    var formMapping = {};
+    var formBox = '';
+    var formBoxInner = '';
+    var displayForm = false;
+    var formBoxStats = '';
+    var formBoxStatsInner = '';
+    var formBoxComponents = '';
+    var formBoxComponentsInner = '';
+    var formBoxLayout = '';
+    var formBoxLayoutInner = '';
+    var ports = 'http://localhost';
+
+   showBox = function() {
+      if (errorBox.css('display') == 'none')  errorBox.css('display','block');
+      else {
+        errorBox.css('display','none');
+        _clearErrormarkup();
+        _resetErrors();
+     }
+   };
+
+   _add_mapping = function(inputId) {
+     var input = $('#' + inputId);
+     var holderId = "";
+     var inputId = input.attr('id');
+     if (inputId) {
+     if(inputId.indexOf("_mainFormInfo") != -1)  {
+       holderId = inputId.substring(0, inputId.length - "_mainFormInfo".length);
+     } else {
+       holderId = inputId.substring(0, inputId.length - "_formInfo".length);
+     }}
+
+     var formPath = "" + input.val().match(FORM_PATH_REGEX);
+     if(formPath.indexOf("url=") == 0) {
+        formPath = formPath.substring("url=".length);
+     }
+     if(formPath.indexOf("+") == 0) {
+        formPath = formPath.substring(1);
+     }
+
+     formPath = formPath.substring(0,formPath.indexOf(",formID"));
+     formMapping[holderId] = formPath;
+  };
+
+  _rebuild_mapping = function() {
+    var formInfos = document.evaluate(FORM_INFO_XPATH, document, null, XPathResult.ANY_TYPE, null);
+    var formInfo = formInfos.iterateNext();
+    while(formInfo) {
+        _add_mapping(formInfo.textContent);
+        formInfo = formInfos.iterateNext();
+    }
+
+    formInfos = document.evaluate(MAIN_FORM_INFO_XPATH, document, null, XPathResult.ANY_TYPE, null);
+    formInfo = formInfos.iterateNext();
+    while(formInfo) {
+        _add_mapping(formInfo.textContent);
+        formInfo = formInfos.iterateNext();
+    }
+};
+
+_getFormPaths = function (target) {
+   if ((target.className && target.className.indexOf && target.className.indexOf('GTFormHolder') > -1) || (target.tagName && target.tagName.toLowerCase() === "form"))  {
+     var targetId = target.id;
+     if (targetId) {
+       var formPath = formMapping[targetId];
+       if (formPath) {
+         var parts = formPath.split(":");
+         displayForm = true;
+         formBoxInner.append("<em title='Open Process " + parts[0] + "' class='processFinderForm' onClick='gtDevUtils.sendForm(\"" + parts[0] + "\");'>"+ parts[0] + "</em>&nbsp;:&nbsp;<em title='Open Form " + parts[1] + "' onClick='gtDevUtils.sendForm(\"" + parts[0] + "/" + parts[1] + "\");' class='formFinderForm'>" + parts[1] + "</em><br/>");
+         return parts[1];
+       }
+     }
+   }
+};
+
+   _errorElement = function(element,shortMessage,longMessage) {
+      this.element = element;
+      this.shortMessage = shortMessage;
+      this.longMessage = longMessage;
+   };
+
+   _checkNode = function(jnode) {
+           var deepest = 0;
+            jnode.children().each(function(index){
+                if($(this).is(':hidden')){
+                  return 0;
+                }
+                var depth = _checkNode($(this));
+                if (this.clientHeight == this.parentNode.clientHeight && this.clientWidth == this.parentNode.clientWidth){
+                    depth = depth + 1;
+                    if(depth > deepest){
+                        deepest = depth;
+                    }
+                }else if(depth > 0 && depth <= limit){
+                    var sameSize = depth+1;
+                    warnings.push(new _errorElement(this, sameSize+"x same size", sameSize + " redundant nodes (all same size) ["+this.id+"]"));
+                }else if(depth > limit ){
+                    var sameSize = depth+1;
+                    errors.push(new _errorElement(this, sameSize+"x same size", sameSize + " redundant nodes (all same size) ["+this.id+"]"));
+                }
+            });//each
+            if(deepest > 0){
+                return deepest;
+            }else{
+                return 0;
+            }
+   };
+
+  _markError = function(n, shortMessage,longMessage ){
+        if(!n.hasClass('flagged-error-box')) {
+            n.addClass("flagged-error-box");
+        }
+        var t = $("<div class='flagged-error' title='" + longMessage + "'> "+shortMessage+"</div>").insertBefore(n);
+    };
+
+    _markWarning = function(n, shortMessage,longMessage ){
+        if(n.hasClass('flagged-error-box')) {return;}
+       if(!n.hasClass('flagged-warning-box')) {
+            n.addClass("flagged-warning-box");
+        }
+        var t = $("<div class='flagged-warning' title='" + longMessage + "'> "+shortMessage+"</div>").insertBefore(n);
+    };
+
+    _removeWarnings = function() {
+      $('.flagged-error').remove();
+      $('.flagged-warning').remove();
+    };
+
+    _count = function(searchCriteria,message) {
+        var s = $(searchCriteria).size();
+        var e = $('#divcount');
+        e.text(e.text() + " " + s + ' ' + message  );
+    };
+
+    _countErrors = function() {
+        var e = $('#divcount');
+        e.text(" ");
+        _count('.flagged-error',"errors found.");
+//        _count('.flagged-warning',"warnings found.");
+    };
+
+    _resetErrors = function() {
+        var e = $('#divcount');
+        e.text(" ");
+   };
+    _markupWarningsAndErrors = function(errors,warnings) {
+        for (index in errors){
+           e = errors[index];
+           _markError($(e.element), e.shortMessage, e.longMessage);
+        }
+        if($('#show-warnings').is(':checked')){
+            for (index in warnings){
+            w = warnings[index];
+            _markWarning($(w.element), w.shortMessage, w.longMessage);
+            }
+        }
+    };
+    _clearErrormarkup = function () {
+        $('.flagged-error').remove();
+        $('.flagged-error-box').removeClass('flagged-error-box');
+        $('.flagged-warning').remove();
+        $('.flagged-warning-box').removeClass('flagged-warning-box');
+    };
+
+   _checkPageForErrors = function () {
+        _clearErrormarkup();
+        warnings = new Array();
+        errors = new Array();
+        limit = $("#errorLimit option:selected").val() -1;
+        _checkNode($('body'));
+        _markupWarningsAndErrors(errors, warnings);
+        _countErrors();
+    };
+
+   _hideFormFinder = function() {
+     $(document).unbind('keyup.formFinder');
+     formBox.css('display','none');
+     formBoxInner.html('');
+     _hideAdditionalStats();
+   };
+
+   _hideAdditionalStats = function() {
+      _clearData();
+      formBoxLayout.css('display', 'none');
+      formBoxStats.css('display', 'none');
+      formBoxComponents.css('display', 'none');
+   };
+
+   _showAdditionalStats = function() {
+      _clearData();
+      formBoxLayout.css('display', 'block');
+      formBoxStats.css('display', 'block');
+      formBoxComponents.css('display', 'block');
+   };
+
+   _clearData = function() {
+      formBoxLayoutInner.html('');
+      formBoxStatsInner.html('');
+      formBoxComponentsInner.html('');
+   };
+
+   _getTotalDivsOnForm = function(targ) {
+     var total = 1;
+     var hiddenTotal = 1;
+     var topTarget;
+     if (targ) {
+         topTarget = '#'+_getParentFormHolder(targ)+'';
+     } else {
+         topTarget = document;
+     }
+
+     var countObj = { hidden: 0, visible: 0 };
+
+     $(topTarget).find('div').each(function() {
+         var hasHiddenParent = false;
+         $(this).parents('div').each(function() {
+            if ($(this).css("display") === "none" || $(this).css("visibility") === "hidden") {
+                hasHiddenParent = true;
+            }
+         });
+
+         if (hasHiddenParent) {
+            countObj.hidden++;
+         } else {
+            countObj.visible++;
+         }
+     });
+
+     formBoxStatsInner.append("<span class='nowrap-text'>Total Number of Divs</span><span class='formFinderForm nowrap-text'> : "+(countObj.visible+countObj.hidden)+" (V:"+countObj.visible+" / H:"+countObj.hidden+")</span><br/>");
+   };
+
+   _countTotalDivs = function(divElement, countObj) {
+       divElement.children('div').each(function() {
+            if ($(this).parents('div').css("display") === "none" || $(this).parents('div').css("visibility") === "hidden") {
+                countObj.hidden = countObj.hidden+1;
+            } else {
+                countObj.visible = countObj.visible+1;
+            }
+
+            _countTotalDivs($(this), countObj);
+       });
+   };
+
+   _countDivDepth = function(targ) {
+        var deepest = 0;
+        targ.children('div').each(function(index){
+            var depth = _countDivDepth($(this));
+            depth = depth + 1;
+            if(depth > deepest){
+               deepest = depth;
+            }
+        });//each
+
+        if(deepest > 0){
+           return deepest;
+        }else{
+           return 0;
+        }
+   };
+
+   _getDeepestDiv = function(targ) {
+       var depth;
+       if (targ) {
+          depth = _countDivDepth($('#'+_getParentFormHolder(targ)));
+       } else {
+          depth = _countDivDepth($('div'));
+       }
+
+       formBoxStatsInner.append("<span class='nowrap-text'>Deepest Level of Nesting</span><span class='formFinderForm nowrap-text'> : "+(depth+1)+"</span><br/>");
+   };
+
+   _getComponentsPage = function() {
+        var totalComponents = _countComponentsByType($('body'));
+        _displayComponentStats(totalComponents);
+   };
+
+   _getComponentsForm = function(targ) {
+        var totalComponents = _countComponentsByType($('#'+_getParentFormHolder(targ)));
+        _displayComponentStats(totalComponents);
+   };
+
+   _countComponentsByType = function(targ) {
+        var hide = true;
+        var content = $(targ).html();
+
+        if (content) {
+            var components = {};
+            var matches = content.match(/<!--.*?GT_WEB(?!.*END).*?-->/g);
+            for (var i in matches) {
+                if (i !== "index" && i !== "input" && i !== "lastIndex") {
+                    var componentName = _removeComments(matches[i]);
+                    if (components[componentName]) {
+                        components[componentName] = components[componentName] + 1;
+                    } else {
+                        components[componentName] = 1;
+                    }
+                }
+            }
+            return components;
+       }
+   };
+
+   _displayComponentStats = function(components) {
+        var total = 0;
+        var hide = true;
+
+        for (var component in components) {
+            formBoxComponentsInner.append("<span class='nowrap-text'>"+component+"</span><span class='formFinderForm nowrap-text'> : "+components[component]+"</span><br/>");
+            formBoxComponentsInner.css('display', 'block');
+            total = total + components[component];
+            hide = false;
+        }
+
+        if (total > 1) {
+           formBoxComponentsInner.append("<br/><span class='nowrap-text'><b>Total Count</b></span><span class='formFinderForm nowrap-text'> : "+total+"</span>");
+        }
+
+        if (hide) {
+           formBoxComponents.css('display', 'none');
+           formBoxComponentsInner.css('display', 'none');
+           formBoxComponentsInner.html('');
+        }
+   };
+
+   _removeComments = function(componentName) {
+      componentName = componentName.replaceAll("*", "").replace("<!--", "").replace("-->","");
+      componentName = $.trim(componentName);
+      return componentName;
+   };
+
+   _getParentFormHolder = function(targ) {
+     var parent = targ;
+     while(parent)  {
+       if (parent.className && parent.className.indexOf('GTFormHolder') > -1)  {
+         var targetId = parent.id;
+         if (targetId) {
+           return targetId;
+         }
+       }
+       parent = parent.parentNode;
+     }
+   };
+
+   _getLayoutManagersPage = function() {
+        var totalLayoutManagers = _countLayoutManagers($('body'));
+        _displayLayoutManagerStats(totalLayoutManagers);
+   };
+
+   _getLayoutManagersForm = function(target) {
+        var totalLayoutManagers = _countLayoutManagers($('#'+_getParentFormHolder(target)));
+        _displayLayoutManagerStats(totalLayoutManagers);
+   };
+
+   _displayLayoutManagerStats = function(layoutManagers) {
+     var count = 0;
+     var hide = true;
+
+     for (var i in layoutManagers) {
+         formBoxLayoutInner.append("<span class='nowrap-text'>"+ i + "</span><span class='formFinderForm nowrap-text'> : " + layoutManagers[i] + "</span><br/>");
+         count += layoutManagers[i];
+         hide = false;
+     }
+
+     if (count > 1) {
+        formBoxLayoutInner.append("<br/><span class='nowrap-text'><b>Total Count</b></span><span class='formFinderForm nowrap-text'> : " + count + "</span><br/>");
+        container = null;
+        formBoxLayoutInner.css('display','block');
+     }
+
+     if (hide) {
+        formBoxLayout.css('display','none');
+        formBoxLayoutInner.css('display','none');
+        formBoxLayoutInner.html('');
+     }
+   };
+
+   _countLayoutManagers = function (target) {
+     var hide = true;
+     var parent = target;
+     var count = 0;
+     var content = $(target).html();
+     var container = [];
+
+     if (content) {
+         var data = content.match(/<!--.*? Layout -->/g);
+
+         for (i in data) {
+           var layout = data[i];
+           var temp = '';
+
+           if (i !== "index" && i !== "input" && i !== "lastIndex") {
+               if (layout.indexOf('fill') > -1 || layout.indexOf('typeofHeight') > -1) {
+                 temp = layout.substring(layout.lastIndexOf('<!--'));
+                 if (temp && temp.indexOf('typeof') == -1) {
+                    temp = _removeComments(temp);
+                 } else {
+                    temp = '';
+                 }
+               } else {
+                  temp = _removeComments(layout);
+               }
+
+               if (container[temp]) {
+                  container[temp] = container[temp] + 1;
+               } else if (temp) {
+                  container[temp] = 1;
+               }
+           }
+        }
+     }
+     return container;
+   };
+
+
+  _clickEventHandler = function(e) {
+      if (e.ctrlKey) {
+        if (!YAHOO.env.ua.ie) {
+            e.stopPropagation();
+            e.preventDefault();
+        } else {
+            e.cancelBubble = true;
+        }
+
+        $(document).bind('keyup.formFinder',function(e) {
+            if (e.ctrlKey) {
+                _hideFormFinder();
+            }
+        });
+        formBoxInner.html('');
+        formBoxFinder.css('display','block');
+        var sessionId = $('#gtxReserved_actionString').val();
+        if (sessionId) {
+          sessionId = sessionId.replace("sessionID=","");
+          $('#formfindersession').html("<b>Session Id :</b> " + sessionId);
+        }
+
+        formMapping = {};
+        _rebuild_mapping();
+        var targ;
+        if (!e) var e = window.event;
+        if (e.target) targ = e.target;
+        else if (e.srcElement) targ = e.srcElement;
+        if (targ.nodeType == 3)  targ = targ.parentNode;
+        displayForm = false;
+        _getFormPaths(targ);
+        var parent = targ.parentNode;
+        while(parent)  {
+          _getFormPaths(parent);
+          parent = parent.parentNode;
+        }
+
+        if (e.shiftKey) {
+            _showAdditionalStats();
+            _getLayoutManagersForm(targ);
+            _getTotalDivsOnForm(targ);
+            _getDeepestDiv(targ);
+            _getComponentsForm(targ);
+
+            formBoxStats.html("Form Statistics");
+            formBoxComponents.html("Form Components");
+        } else {
+            _hideAdditionalStats();
+        }
+
+        if (displayForm)  formBox.css('display','block');
+        else formBox.css('display','none');
+        return false;
+    }
+  };
+
+  sendForm = function(form) {
+      var form = form.replaceAll('/','.');
+      $.ajax({
+          url: 'http://' + ports + '/open/' + form + '?response=jsonp',
+          dataType: 'json',
+          contentType: 'application/json'
+      });
+  };
+
+  setPort = function(_port) {
+      if (_port) {
+          ports = _port;
+      }
+  };
+
+  init = function() {
+
+   $('<div class="toggle-box"> <div id="error-controls"> <h2>Page Depth</h2><div>Highlight areas with <select id="errorLimit"><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6" selected>6</option> </select> or more nested html<br>elements which are the same size as their parent.</div><div id="divcount"> </div><div class="showWarnings"><input type="checkbox" id="show-warnings"/> Show Warnings</div> </div><div class="toggle-button"><button type="button" class="GTMenuButton" onclick="gtDevUtils.checkPageForErrors();"> Highlight </button></div></div>').prependTo($('body'));
+   errorBox = $('.toggle-box');
+   $('<div id="formFinderWrapper"><h3 id="sc-gm-hax-formfinder-heading">Form Finder</h3><div id="sc-gm-hax-formpath"></div><div class="column-wrapper"><div class="inner-box"><h3 id="sc-gm-hax-layout-heading">Layout Managers</h3><div id="sc-gm-hax-layout"></div></div><div class="inner-box"><h3 id="sc-gm-hax-formstats-heading">Form Statistics</h3><div id="sc-gm-hax-formstats"></div></div><div class="inner-box"><h3 id="sc-gm-hax-formcomponents-heading">Form Components</h3><div id="sc-gm-hax-formcomponents"></div></div><div id="formfindersession"></div></div>').prependTo($('body'));
+     formBox = $('#formFinderWrapper');
+     formBoxInner = $('#sc-gm-hax-formpath');
+     formBoxFinder = $('#sc-gm-hax-formfinder-heading');
+     formBoxStats = $('#sc-gm-hax-formstats-heading');
+     formBoxStatsInner = $('#sc-gm-hax-formstats');
+     formBoxComponents = $('#sc-gm-hax-formcomponents-heading');
+     formBoxComponentsInner = $('#sc-gm-hax-formcomponents');
+     formBoxLayout = $('#sc-gm-hax-layout-heading');
+     formBoxLayoutInner = $('#sc-gm-hax-layout');
+    $(document).keypress(function(e) {
+      var keycode = (e.keyCode ? e.keyCode : e.which);
+      if (keycode == 0) {
+        keycode = e.which;
+      }
+
+      if((keycode == 69 || keycode == 5) &&  e.ctrlKey && e.shiftKey) {
+       showBox();
+        e.preventDefault();
+        e.stopPropagation();
+        }
+
+     if((keycode == 83 || keycode == 19) &&  e.ctrlKey && e.shiftKey) {
+        if (formBox.css('display') === "block") {
+            formBox.css('display','none');
+        } else {
+            _showAdditionalStats();
+            _getLayoutManagersPage();
+            _getTotalDivsOnForm();
+            _getDeepestDiv();
+            _getComponentsPage();
+            formBox.css('display','block');
+            formBoxStats.html("Page Statistics");
+            formBoxComponents.html("Page Components");
+            formBoxFinder.css('display', 'none');
+        }
+
+        e.preventDefault();
+        e.stopPropagation();
+        }
+
+    });
+
+    if (!YAHOO.env.ua.ie) {
+        document.addEventListener('click',function(e) {
+            var origEl = e.target || e.srcElement;
+            if (origEl.tagName === 'EM' || origEl.tagName === 'em') {}
+            else {
+                _clickEventHandler(e);
+            }
+       }, true);
+    }
+
+  };
+  $(document).ready(function() {
+     init();
+  });
+   publicObj = {
+     init : init,
+     showBox : showBox,
+     checkPageForErrors : _checkPageForErrors,
+     sendForm : sendForm,
+     setPort : setPort
+   };
+    return publicObj;
+}();
+
+var gtDevUtils = GrahamTechnology.ui.devutils;
+
+

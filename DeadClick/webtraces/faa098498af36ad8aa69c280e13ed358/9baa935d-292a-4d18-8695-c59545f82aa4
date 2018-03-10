@@ -1,0 +1,388 @@
+$pdk.ns("$pdk.plugin.NielsenSDK");
+
+// intialize beacon code
+$pdk.plugin.NielsenSDK = $pdk.extend(function(){},
+{
+	_ldrparams : {
+	  sfcode: "dcr",
+	  apid: ""
+	},
+	gg1:null,
+	glblVar: {
+		_deb: 0,  // write debug log
+		_useAltAd: 0,   // use the _experience module to listen to Ad events (used by Panache)
+		_isOverlay: false,
+		_currAdwp: 0,   // state of what's currently showing, values are 0-notstarted, 1-playing, 2-paused, 3-stopped
+		_currContwp: 0,
+		_currvt: 0,   // video currently playing,  0-content, 1-ad
+		_currAdID:'',       // url/id of what's currently playing
+		_currContID:'',
+		_currAdDur: 0,  // duration of current ad (needed for generating stop and unload events)
+		_currContDur: 0,  // duration of current content video
+		_sbf: 0,  // Was a segment break forced because of AD/Chapter cuepoints? If so, need to issue a 3 or 15 next time
+		_proccp: 3,                  // Cuepoint Processing, 0-none, 1-ad cues only, 2-chapter cues only, 3-ad and chapter cues
+		_metamod: 0,       // category and subcategory modifier. If 1, will add "Full" or "Clip" to category or subcategory
+		_sstrpend: 0,
+		_atCuePoint: 0,  // 1 iff there was a ad cue point from last content
+		_videoLoadTS: 0,
+		_startBufTS: 0,
+		_lastProgress: 0,
+		_last49Progress: 0,
+		_timeInc: 1,
+		_lastAbsProgress: 0,
+		_lastAdProgress: 0,
+		 _contType:"ad",
+		_ou: "",
+		_cues: [],
+		_curSeg: 0,
+		_defaultOU: { url: '', state: "" },
+		_addrProtocol: window.location.protocol || "http:",
+		_cmbFileName: "ggcmb500.js",
+		coreTag: document.createElement("script"),
+		_contStarted: false,
+		_adStarted: false,
+	 	_adOrContent: "ad",     // what's playing now
+		_releaseUrl:"",
+		_lastProgress: 0,
+		_lastMedia: null,   // last media played; content or ad
+		_adType: null, // used to calcualte postroll
+		_chaptersLength: 0,  // used to compare chapters length from release event
+		_iag_preroll_vi: {},
+		_playlist: "",
+		_currentChapter:0,
+		_currentRetry:0,
+		_maxRetry:5,
+		vi:{},
+		ggCount:0,
+		buildVersion: "5.0.0.5"
+	},
+	createGG: function()  {
+		var me = this;
+		var _ldrparams = {};
+		if (window.NOLCMB) {
+			//Adding the below fix to allow for the passing of instanceName to the getinstance
+			var _instanceName = (typeof(me._ldrparams.instanceName) !== 'undefined') ? me._ldrparams.instanceName : me._ldrparams.apid || 'undefined';
+			me.gg1 = NOLCMB.getInstance(_instanceName);
+			for (var s in me._ldrparams) {
+				if(s.search(/ncstm*._/) !== 0) {
+					_ldrparams[s] = me._ldrparams[s];
+				}
+			}
+			me.gg1.ggInitialize(_ldrparams);
+		} else {
+			me.glblVar.ggCount++;
+			setTimeout(function() {me.createGG()}, 100);
+		}
+	},
+
+//Method calls first
+ initialize : function(loadObj) {
+		var me = this;
+    this._controller = loadObj.controller;
+		me._lo = loadObj;
+
+		this.controller = loadObj.controller;
+		this.controller.addEventListener("OnMediaStart", function(){ me.mediaBeginEventHandler.apply(me, arguments);});
+		this.controller.addEventListener("OnReleaseStart", function(args) {me.onReleaseStart.apply(me, arguments);});
+		this.controller.addEventListener("OnMediaPlaying", function(){ me.mediaProgressEventHandler.apply(me, arguments);});
+		this.controller.addEventListener("OnMediaEnd", function(){ me.mediaStopEventHandler.apply(me, arguments);});
+		this.controller.addEventListener("OnMediaComplete", function(args) {me.mediaCompleteEventHandler.apply(me, arguments);});
+		this.controller.addEventListener("OnReleaseEnd", function() {me.mediaCompleteEventHandler.apply(me, arguments);});
+
+
+		for(var i in loadObj.vars) {
+			me._ldrparams[i] = loadObj.vars[i];
+		}
+
+		//Added the check below to see if we have already loaded the NOLCMB on the page, then we just proceed to createGG.
+		if (!window.NOLCMB){
+			me.addScript(me.glblVar._addrProtocol + "//secure-" + me._ldrparams.sfcode + ".imrworldwide.com/novms/js/2/" + me.glblVar._cmbFileName);
+		}
+		me.createGG();
+	},
+
+	addScript : function (val) {
+		if (typeof val === "undefined" || val.length === 0) {return;}
+		var scriptTag = window.document.createElement('script'), me = this;
+		scriptTag.type = "text/javascript";
+		if(val.indexOf("?") !== -1) {
+			val += "&";
+		} else {
+			val += "?";
+		}
+		scriptTag.src = val +"rnd=" + Math.round(Math.random() * 1000000);
+		scriptTag.onerror = function(evt) {
+			var _url = evt.target.src, me=this;
+			if(window.document.head) {
+				window.document.head.removeChild(evt.target);
+			} else {
+				window.document.getElementsByTagName('head')[0].removeChild(evt.target);
+			}
+			if(me.glblVar._currentRetry < me.glblVar._maxRetry) {
+				me.glblVar._currentRetry += 1;
+				window.setTimeout(function() {
+					me.addScript(_url);
+				}, 5000);
+			}
+		}
+		scriptTag.onload = function(eEvt) {
+			me.glblVar._currentRetry = 0;
+			if(window.document.head) {
+				window.document.head.removeChild(eEvt.target);
+			} else {
+				window.document.getElementsByTagName('head')[0].removeChild(eEvt.target);
+			}
+		}
+		if(window.document.head) {
+			window.document.head.appendChild(scriptTag);
+		} else {
+			window.document.getElementsByTagName('head')[0].appendChild(scriptTag);
+		}
+	},
+
+
+	//This is the event that fires when multi-chapter / ads start
+
+	onReleaseStart : function(e){
+			this.glblVar._playlist = e.data;
+			this.glblVar._adType = null;
+			this.glblVar._chaptersLength = this.glblVar._playlist.chapters.chapters.length;
+			this.glblVar._currentChapter = 0;
+			var vi = this.glblVar.vi, clip = this.glblVar._playlist.clips[this.glblVar._playlist.chapters.chapters[0].contentIndex];
+			this.getMetadata(clip, vi);
+			this.gg1.ggPM("loadMetadata", vi);	// "3"
+		},
+
+	mediaBeginEventHandler : function(e,args) {
+		var vi = this.glblVar.vi, clip = e.data;
+		this.getMetadata(clip, vi);
+		this.glblVar._last49Progress = 0;
+		this.gg1.ggPM("loadMetadata", vi);		// "3"
+		/*Added additional check below, as isAd is sometimes in clip and other times in baseClip.  
+		  This may have been a change in pdk5. The below value was getting set to 'undefined'*/
+		this.glblVar._contType = ( 	(clip.hasOwnProperty('isAd') && clip.isAd) || 
+									(clip.hasOwnProperty("baseClip") && clip.baseClip.isAd) ) ? "ad" : "content";
+   },
+
+	getMetadata: function (clip, vi) {
+		var bco = clip.baseClip, clipTitle = clip.title || bco.title, mediaLength=0;
+		if (!clipTitle || clipTitle.length == 0) {
+			clipTitle = "undefined";
+		}
+		mediaLength = Math.floor((bco.releaseLength || bco.trueLength) / 1000);
+		vi.length = mediaLength;
+		vi.title = clipTitle;
+		vi.assetid = bco.contentID;
+		vi.chapter = clip.chapter? clip.chapter.index+1 : 1;
+		if(bco.isAd || clip.chapter == null) {
+			vi.type = this.glblVar._adType;
+			if(this.glblVar._playlist.clips && this.glblVar._currentChapter == 0) {
+					this.glblVar._currentChapter = 1;
+					this.getIagParams(this.glblVar._playlist.clips[this.glblVar._currentChapter]);
+				}
+		} else {
+			vi.type = "content";
+			if(!this.glblVar._adType) {
+				this.glblVar._adType = "preroll"
+			} else if(this.glblVar._adType == "preroll") {
+					this.glblVar._adType = "midroll";
+			} else if (clip.chapter.index+1 == this.glblVar._chaptersLength) {
+					this.glblVar._adType = "postroll";
+			}
+			this.getIagParams(clip);
+		}
+		if(bco.contentCustomData) {
+			vi = this.parseMetadata(vi, bco.contentCustomData);
+		}
+		if(bco.categories) {
+			vi = this.parseMetadata(vi, bco.categories);
+		}
+		for(var a in this.glblVar._iag_preroll_vi) {
+			vi[a] = this.glblVar._iag_preroll_vi[a];
+		}
+		for (var sI in this._ldrparams) {
+			if(sI.indexOf('ncstm') === 0) {
+				var processor = {
+					name:sI,
+					value:this._ldrparams[sI],
+					data:vi
+				};
+				this.procressCustomVar(processor);
+				//console.log(processor)
+			}
+		}
+	},
+
+	parseMetadata: function(oVi, oData) {
+		var _data;
+		//console.log(this._ldrparams)
+		for (var sI in oData) {
+			_data = oData[sI];
+			if(_data && typeof _data == "object") {
+				if(_data.name)
+					oVi[sI] = this.parseCategoryName(_data.name);
+			} else if(_data) {
+				oVi[sI] = _data;
+			}
+		}
+		return oVi;
+	},
+
+	procressCustomVar: function (oIn) {
+		//console.log(oIn)
+		var aName = oIn.name.split('_')
+		,	aVal = oIn.value.split(',')
+		,	keys = aVal[0].split('||');
+		for(var i=0; i<keys.length; i++) {
+			aVal[0] = oIn.data.hasOwnProperty(keys[i]) ? oIn.data[keys[i]] : keys[i];
+			switch(aName[0].charAt(5)) {
+				case 'D':
+					aVal[0] = new Date(aVal[0]).getTime();
+					aVal[2] = aVal[2]==='UTC' ? Date.now() : new Date(aVal[2]).getTime();
+				break;
+				case 'N':
+					aVal[0] = Number(aVal[0]);
+					aVal[2] = Number(aVal[2]);
+				break;
+				case 'S':
+					if(aVal[0].indexOf('+')) {
+						aCurrVal = [];
+						for(var arr = aVal[0].split('+'), j=0; j<arr.length; j++) {
+							aCurrVal.push(oIn.data.hasOwnProperty(arr[j]) ? oIn.data[arr[j]] : arr[j]);
+						}
+
+					}
+					oIn.data[aName[1]] = aCurrVal.join(aVal[1]);
+					return;
+				break;
+			}
+			oIn.data[aName[1]] = this.conditionor(aVal);
+		}
+	},
+
+	conditionor: function (oCond) {
+		var cond = oCond[1]
+		,	val1 = oCond[0]
+		,	aVal2 = isNaN(oCond[2]) ? oCond[2].split('||') : [oCond[2]]
+		,	returnVal;
+		//console.log(aVal2.split("||"));
+		for (var i=0; i<aVal2.length; i++) {
+			returnVal = false;
+			val2 = aVal2[i];
+			if(isNaN(val1) && isNaN(val2)) {
+				val1 = val1.toLowerCase();
+				val2 = val2.toLowerCase();
+			}
+			switch(cond) {
+				case "lt":
+					returnVal = val1 < val2;
+				break;
+				case 'gt':
+					returnVal = val1 > val2;
+				break;
+				case "lte":
+					returnVal = val1 <= val2;
+				break;
+				case 'gte':
+					returnVal = val1 >= val2;
+				break;
+				case 'eq':
+					returnVal = val1 === val2;
+				break;
+			}
+			if(returnVal) {break};
+		}
+		return returnVal ? oCond[3] : oCond[4];
+	},
+
+	parseCategoryName: function(name) {
+		var value = "";
+		switch(this._ldrparams['enablecustomparse']) {
+			case "nbc":
+				var a = [];
+				if (name.indexOf(" - ") == -1)
+				{
+					a = name.split("/");
+					value = a[1];
+				}
+				else
+				{
+					a = name.split("/");
+					var b = String(a[1]).split(" - ");
+					value = b[0];
+				}
+			break;
+			default:
+				value = name.substr(name.indexOf("/")+1);
+		}
+		return value;
+	},
+
+	getIagParams : function(clip) {
+		var aigViCC = false, j = null, bco, me=this, _iag_preroll_vi = this.glblVar._iag_preroll_vi;
+		if(!clip || !clip.title){return;}
+		bco = clip.baseClip;
+		if(this._ldrparams["displayprefix"] && this._ldrparams["displayfieldname"] && clip.baseClip.contentCustomData && clip.baseClip.contentCustomData.getValue(this._ldrparams["displayfieldname"], true) && String(this._ldrparams["displayprefix"]).length > 0) {
+			displayName = this._ldrparams["displayprefix"]+" "+clip.baseClip.contentCustomData.getValue(this._ldrparams["displayfieldname"], true)+" - ";
+			_iag_preroll_vi.iag_epi = displayName + clip.title
+			_iag_preroll_vi.iag_seg = clip.clipIndex;
+		} else {
+			_iag_preroll_vi.iag_epi = clip.title;
+			_iag_preroll_vi.iag_seg = clip.clipIndex;
+		}
+		_iag_preroll_vi.iag_cte = bco.URL;
+		if(bco.contentCustomData) {
+				_iag_preroll_vi = this.parseMetadata(_iag_preroll_vi, bco.contentCustomData);
+		}
+		if(bco.categories) {
+				_iag_preroll_vi = this.parseMetadata(_iag_preroll_vi, bco.categories);
+		}
+	},
+
+	 mediaProgressEventHandler: function(pEvent) {
+		var to = pEvent.data, me=this, mediaTime;
+		mediaTime = to.currentTimeAggregate;
+		mediaTime = Number(mediaTime/1000);
+		if( mediaTime !== me.glblVar._last49Progress) {
+			this.gg1.ggPM("49", mediaTime);
+			me.glblVar._last49Progress = mediaTime;
+			if(mediaTime > 0 && this.glblVar._contType === 'content') {
+				this.glblVar._adType = "midroll";
+			} else if(mediaTime === 0 && this.glblVar._contType === 'content') {
+				this.glblVar._adType = "preroll";
+			}
+		}
+	},
+
+	 mediaStopEventHandler: function(pEvent) {
+		var clip = pEvent.data, me=this, bco, position;
+		bco = clip.baseClip;
+	  	position = bco.lengthPlayed;
+		if(!position || position <= 0) {
+			position = clip.currentMediaTime;
+		}
+		if (bco.isAd) {
+			this.gg1.ggPM("7", me.glblVar._last49Progress);
+		} else {
+			if (pEvent.data.chapter.index+1 != this.glblVar._chaptersLength) {
+				position = clip.currentMediaTime/1000;
+				this.gg1.ggPM( "7", position);
+			}
+		}
+    },
+
+	 mediaCompleteEventHandler: function(pEvent) {
+		if (!pEvent.data.baseClip) {return};
+		var clip = pEvent.data;
+		var bco = clip.baseClip;
+		if ( !bco.isAd && pEvent.data.chapter.index+1 == this.glblVar._chaptersLength ) {
+			var pos = this.glblVar._last49Progress;
+			this.gg1.ggPM("57", pos);
+			this.glblVar._adType = "postroll";
+		}
+    },
+
+});
+// Calls when player loads the plugin
+var ap = new $pdk.plugin.NielsenSDK();
+tpController.plugInLoaded(ap);

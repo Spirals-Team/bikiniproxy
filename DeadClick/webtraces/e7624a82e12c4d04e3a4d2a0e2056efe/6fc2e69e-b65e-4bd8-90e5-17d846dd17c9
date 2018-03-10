@@ -1,0 +1,85 @@
+$(document).ready(function() {
+  
+  initSiteSearch();
+  searchPlaceHolder();  
+  contactMap();
+
+  
+/* Sample code fancybox */
+    $("#single_1").fancybox({
+          helpers: {
+              title : {
+                  type : 'float'
+              }
+          }
+      });
+/* Sample code cycle */  
+    $('.slideshow').cycle({
+    fx: 'fade' // choose your transition type, ex: fade, scrollUp, shuffle, etc...
+  });
+});
+
+/* Contact page Google Maps */
+function contactMap() {
+  var map = $('#gMapContact');
+  var pos = $('#latLongContact').val();
+  
+  if(map.length > 0 && pos.length > 0) {
+    var splitPos = pos.split(',');
+    var myLatlng = new google.maps.LatLng(splitPos[0],splitPos[1]);
+    var myOptions = {
+      zoom: parseInt(splitPos[2]),
+      center: myLatlng,
+      mapTypeId: google.maps.MapTypeId.ROADMAP
+    }
+    var map = new google.maps.Map(map[0], myOptions);
+    
+    var marker = new google.maps.Marker({
+      position: myLatlng, 
+      map: map
+    });
+  }
+}
+//-- Placeholder voor zoekveld --//
+function searchPlaceHolder() {
+ 
+	
+	
+  var phText = $('#searchText').val();
+  var searchField = $('.search input');
+
+  
+  searchField.val(phText);
+  searchField.focus(function() {
+    if($(this).val() == phText) $(this).val('');
+  });
+  searchField.blur(function() {
+    if($.trim($(this).val()).length == 0) $(this).val(phText);
+  });
+}
+
+
+//-- Search the site --//
+function initSiteSearch() {
+  $('.search input').keypress(function(e) {
+    if(e.keyCode == 13) {
+      e.preventDefault();
+      submitSearch();
+    }
+  });
+  
+  $('.button').click(function(e) {
+    e.preventDefault();
+    submitSearch();
+  });
+}
+
+//-- Searchbox and button behaviour --//
+function submitSearch() {
+  var str = $('.search input').val().trim();
+  var searchlink = $('#searchLink').val();		
+  if(str.length > 0 && str != '') location.href = "/" + searchlink + "/?search=" + encodeURIComponent(str);
+}
+
+
+

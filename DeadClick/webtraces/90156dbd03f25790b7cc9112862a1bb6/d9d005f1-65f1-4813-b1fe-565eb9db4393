@@ -1,0 +1,81 @@
+
+$(document).ready( function() {
+
+	Boutique.init();
+
+} );
+
+var Boutique = {
+
+	init: function()
+	{
+		setTimeout("Boutique._initVerticalAligns();", 1000 );
+		setTimeout("Boutique._initDivVerticalAligns();", 1000);
+
+	},
+	
+	
+	_initVerticalAligns: function()
+	{
+		$('.verticalAligned').each( function() {
+			
+			if( this.nodeName.toLowerCase()=='img' && this.height==0 )
+				this.onload = Boutique._handleVerticalAlignedElement;
+			else
+				Boutique._handleVerticalAlignedElement.call( this );
+			
+		});
+		
+	},
+	
+	_initDivVerticalAligns : function() {
+		
+		$('.divVerticalAligned').children(".field-name-field-oeuvre-visuel-principal").children(".field-items").children(".field-item").each( function() {
+			Boutique._handleVerticalAlignedElement.call( this );
+			
+		});
+	},
+	
+	
+	_handleVerticalAlignedElement: function()
+	{
+	
+		if ($(this).hasClass("field-item")){
+			var myParentHeight = $(".views-row").innerHeight()-4; // Le -4 correspond au padding supplémentaire ajouté au cadre de l'image
+		}
+		else {
+			if (($(this).parent().get(0).tagName) != "LI"){
+				var myParentHeight = $(this).parent().parent().innerHeight()-4; // Le -4 correspond au padding supplémentaire ajouté au cadre de l'image
+			}
+			else {
+				var myParentHeight = $(this).parent().innerHeight()-4; // Le -4 correspond au padding supplémentaire ajouté au cadre de l'image
+			}
+		} 
+		
+		
+		var myHeight;
+		myHeight = $(this).innerHeight();
+				
+		var myMargin = Math.round( ( myParentHeight  - myHeight ) / 2 );
+
+		if (myMargin < 0)
+			myMargin = 0;
+			
+		if ($(this).parent(".image") || $(this).parent().hasClass('bordure_colonne_gauche')){
+			$(this).css( {
+				'margin-top': 		myMargin 
+			} );
+		}
+		else {
+			$(this).css( {
+				'display': 		'block',
+				'margin-top': 		myMargin 
+			} );
+		}
+			
+		//console.log('nodeName='+this.nodeName+', myParentHeight='+myParentHeight+', myHeight='+myHeight+' > myMargin='+myMargin);	
+		
+	}
+	
+
+};

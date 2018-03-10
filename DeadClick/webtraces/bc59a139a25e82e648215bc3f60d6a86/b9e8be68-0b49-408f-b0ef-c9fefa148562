@@ -1,0 +1,121 @@
+jQuery(document).ready(function() {
+	
+	/**
+	 * @desc ajout d'un produit perso
+	 */
+	
+	/**
+	 * @desc controle du nombre de caractere dans les commentaires
+	 */
+	jQuery('.backoffice_review').keyup(function() {
+		if (jQuery(this).attr('value').length > 2000) {
+			jQuery(this).attr('value', jQuery(this).attr('value').slice(0, 2000));
+		}
+	}).blur(function() {
+		if (jQuery(this).attr('value').length > 2000) {
+			jQuery(this).attr('value', jQuery(this).attr('value').slice(0, 2000));
+		}
+	});
+	
+	jQuery('#backoffice_review').keyup(function() {
+		if (jQuery(this).attr('value').length > 2000) {
+	    	jQuery(this).attr('value', jQuery(this).attr('value').slice(0, 2000));
+		}
+	}).blur(function() {
+		if (jQuery(this).attr('value').length > 2000) {
+			jQuery(this).attr('value', jQuery(this).attr('value').slice(0, 2000));
+		}
+	});
+
+	jQuery('#qty').focus(function() { jQuery('#custom_price').val(''); });
+	jQuery('#custom_price').focus(function() { jQuery('#qty').val('1'); });
+
+	/**
+	 * GESTION DES INVITES
+	 *
+	 **
+	 * @desc ajout d'un invité - choix de la civilité
+	 */
+	jQuery('input[type=radio][name=prefix]').click( function() {
+		jQuery('#total_personnes input').val('').removeAttr("disabled");
+		if( jQuery(this).attr('value') == 'Famille' || jQuery(this).attr('value') == 'Mme & M.') 
+		{
+			jQuery('#total_personnes').show();
+			if (jQuery(this).attr('value') == 'Mme & M.') {
+				jQuery('#total_personnes input').val('2').attr('disabled', 'disabled');
+			}
+		}
+		else
+		{
+			jQuery('#total_personnes').hide();
+		}
+	});
+	/**
+	 * @desc ajout d'un invité - prévisualisation du message en fancybox
+	 */	
+	jQuery('#preview-link').click( 	function() {
+		/* Prevent javascript injection */
+		function htmlEntities(str) {
+		    return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+		}			
+		
+		var headerMessage	= (typeof(jQuery('#header_message').val()) != 'undefined' ? jQuery('#header_message').val() : '');
+		var texte = headerMessage + htmlEntities(jQuery('#message').val());
+		if (newGuest)
+		{
+			texte	+= '<br><br>S\'ils décident de restreindre l\'accès, utilisez le mot de passe suivant :<br><b>Mot de passe : </b><br><br>';	
+		}
+		jQuery('#preview').empty().append(nl2br('<p style="text-align: left;widht:100%;">' + texte + '</p>', true)).dialog('open');
+		return false;
+	})/*.fancybox({
+		'autoDimensions'	: false
+	})*/;
+	
+	jQuery('#preview').dialog({
+		autoOpen: false,
+		modal: true	
+	});	
+	
+	/**
+	 * @desc gestion des invités - changement de civilité...
+	 */
+	jQuery('select.change-prefix').change( function() {
+		var guest_id = jQuery(this).attr('id');
+		
+		if (jQuery(this).val() == 'Famille') 
+		{
+			jQuery('#nb_personnes_' + guest_id).val('').removeAttr("disabled").focus();
+		}
+		else
+		{
+			jQuery('#nb_personnes_' + guest_id).attr('disabled', 'disabled');
+			if (jQuery(this).attr('value') == 'Mme & M.') {
+				jQuery('#nb_personnes_' + guest_id).val('2');
+			} else {
+				jQuery('#nb_personnes_' + guest_id).val('1');
+			}
+		}
+	});	
+	/**
+	 * FIN GESTION DES INVITES
+	 */	
+
+	/**
+	 * @desc acces rapide
+	 */
+	jQuery('#acces-rapide').change(function() {
+		if (jQuery(this).val() != '') {
+			jQuery(location).attr('href', jQuery(this).val());
+		}
+	});
+	
+	/**
+
+	 * @desc nl2br en javascript
+	 */
+	function nl2br (str, is_xhtml) {
+	    var breakTag = (is_xhtml || typeof is_xhtml === 'undefined') ? '<br />' : '<br>';
+
+	    return (str + '').replace(/([^>\r\n]?)(\r\n|\n\r|\r|\n)/g, '$1'+ breakTag +'$2');
+	}
+});

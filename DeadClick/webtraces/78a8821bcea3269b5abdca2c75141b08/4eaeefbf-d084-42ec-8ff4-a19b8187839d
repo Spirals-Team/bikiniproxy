@@ -1,0 +1,51 @@
+_satellite.pushAsyncScript(function(event, target, $variables){
+  /*
+OnlineOpinion v5.9.3
+Released: 09/21/2015. Compiled 09/30/2015 12:09:31 PM -0500
+Branch: 5.9.3 efe6bf2541deb563c2a9884b2a3034c881047acf
+Components: Full
+UMD: disabled
+The following code is Copyright 1998-2015 Opinionlab, Inc. All rights reserved. Unauthorized use is prohibited. This product and other products of OpinionLab, Inc. are protected by U.S. Patent No. 6606581, 6421724, 6785717 B1 and other patents pending. http://www.opinionlab.com
+*/
+/* global window, OOo */
+(function checkReady_Object(c) {
+    var count = c;
+    var waitingLimit = 10; //How many times to run function 
+    var recursionFrequency = 500; //How often to call the function  	
+    if (typeof window.OOo === "object") { 
+		try{	  
+			fireDependant(window, window.OOo);
+			}catch(err){
+				console.log("DTM:error:", err);  
+			}
+    } else { //Prevent infinite loop if elements not found
+        if (count >= waitingLimit) {   
+        } else {  
+            count++;
+            window.setTimeout(function () {
+                checkReady_Object(count);
+            }, recursionFrequency);
+        }
+    }
+})(1);
+
+function fireDependant(w, o) {
+  'use strict';  
+  var OpinionLabInit = function () {
+
+    /* [+] Floating Configuration*/
+    o.oo_floating = new o.Ocode({
+
+      floating: {
+        id: 'oo_float',
+        position: 'fixedPreserveContent',
+        contentId: 'oo_float',
+        caption: 'Feedback',
+        hoverCaption: 'Click here to <br /> rate this page'
+      }
+    });
+
+  };  
+  o.addEventListener(w, 'load', OpinionLabInit, false);  
+} 
+});

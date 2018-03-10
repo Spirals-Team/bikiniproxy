@@ -1,0 +1,68 @@
+
+var k2c_baseLoad = 0;
+var k2c_url = 'https://rlauren.klick2contact.com/v03';
+var k2c_launchServe = k2c_url;
+
+var k2c_provider = 'RLauren';
+var k2c_pid = 770; // Provider ID
+
+if(typeof(k2c_lang)=='undefined') {
+ var k2c_lang = 'en';
+}
+
+var k2c_skin = '';
+
+if(document.URL.indexOf('ralphlauren.co.uk')!=-1) {
+ if(document.URL.indexOf('shoppingcart.jsp')!=-1 || document.URL.indexOf('checkout.jsp')!=-1 || document.URL.indexOf('orderlogin.jsp')!=-1 || document.URL.indexOf('/category/')!=-1 || document.URL.indexOf('/family/')!=-1 || document.URL.indexOf('/product/')!=-1 || document.URL.indexOf('/helpdesk/')!=-1) {
+  k2c_skin = 'RLaurenChatbot';
+ }
+}
+else {
+ if(document.URL.indexOf('shoppingcart.jsp')!=-1 || document.URL.indexOf('checkout.jsp')!=-1 || document.URL.indexOf('orderlogin.jsp')!=-1) {
+  var k2c_skin = 'RLaurenCart';
+ }
+ if(document.URL.indexOf('/category/')!=-1) {
+  k2c_skin = 'RLaurenCategory';
+ }
+ if(document.URL.indexOf('/family/')!=-1) {
+  k2c_skin = 'RLaurenFamily';
+ }
+ if(document.URL.indexOf('/product/')!=-1) {
+  k2c_skin = 'RLaurenProduct';
+ }
+ if(document.URL.indexOf('/helpdesk/')!=-1) {
+  k2c_skin = 'RLaurenHelpdesk';
+ }
+}
+
+if(document.URL.indexOf('/showcase/category')!=-1 ) {
+ k2c_skin = 'RLaurenCategory';
+}
+else if(document.URL.indexOf('/showcase/family')!=-1 ) {
+ k2c_skin = 'RLaurenFamily';
+}
+else if(document.URL.indexOf('/showcase/product')!=-1 ) {
+ k2c_skin = 'RLaurenProduct';
+}
+else if(document.URL.indexOf('/showcase/helpdesk')!=-1 ) {
+ k2c_skin = 'RLaurenHelpdesk';
+}
+
+if(k2c_skin!='') {
+ var k2c_base = document.createElement('script');
+ k2c_base.type = 'text/javascript'; 
+ k2c_base.id = 'k2c_base';
+ k2c_base.src = k2c_url + '/providers/base/dialog.js';
+ var k2c_first = document.getElementsByTagName('script')[0];
+ k2c_first.parentNode.insertBefore(k2c_base,k2c_first);
+ k2c_checkBase(k2c_skin);
+}
+
+function k2c_checkBase(k2c_skin) {
+ if(k2c_baseLoad==0) {  
+  setTimeout(function(){k2c_checkBase(k2c_skin);},200);
+ }
+ else {
+  k2c_loadServiceStatus (k2c_pid);
+ }
+}

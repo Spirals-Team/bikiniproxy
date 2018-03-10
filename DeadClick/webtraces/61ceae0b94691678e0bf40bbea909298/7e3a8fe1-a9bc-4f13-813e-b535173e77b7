@@ -1,0 +1,216 @@
+//this used for common functions for the drugs application
+
+//check to see if user is signed in
+var _signin = "WLMDAUTH=";
+var _signinca = document.cookie.split(';');
+var _signcookie = false;
+var s_tab = "";
+for(var i=0;i < _signinca.length;i++)
+{
+	var _signinc = _signinca[i];
+	while (_signinc.charAt(0)==' ') _signinc = _signinc.substring(1,_signinc.length);
+	if (_signinc.indexOf(_signin) == 0) 
+	{ 
+		if(_signinc.length > _signin.length)
+		{
+			_signcookie = true;
+		}
+	}
+
+}
+
+ function OpenFDBCopyrightWindow(pageUrl)
+ {
+	 if(window.opener != null)
+	 {
+		 if(window.opener.parent != null)
+		 {
+			window.opener.parent.location.href = pageUrl;
+		 }
+		 else
+		 {
+			 winodw.opener.location.href = pageUrl;
+		 }
+	 }
+	 else
+	 {
+		 document.location.href = pageUrl;
+	 }
+
+	 return false;
+ }
+
+function wmdTrackReferring(moduleId,searchText)
+{
+    s_query = searchText;
+    wmdSearchTrack(moduleId);
+    s_query = '';
+}
+
+function initReviewsPromo () { 
+		if (!document.getElementsByTagName) return false;
+		if (!document.getElementById) return false;
+		var mainDrugSrchContainer = document.getElementById("main_drug_search_rdr");
+		if(mainDrugSrchContainer == null)
+			return false;
+	
+		var reviewPromoMap = document.createElement("div");
+		reviewPromoMap.setAttribute("id","promoInsightsNew");
+		reviewPromoMap.innerHTML = '<img src="https://img.webmd.com/webmdportal61/images/spacer.gif" height="60" width="145">';
+		
+		var reviewPromoPop = document.createElement("div");
+		reviewPromoPop.setAttribute("id","promoLayer");
+		reviewPromoPop.className = "promoNewOff";
+		reviewPromoPop.innerHTML = "<p>User Reviews on WebMD are a great way to learn from other people like you or share your experience with medications. Select a drug or medication from the list below to get started.</p>";
+
+		mainDrugSrchContainer.insertBefore(reviewPromoPop, mainDrugSrchContainer.firstChild);		
+		mainDrugSrchContainer.insertBefore(reviewPromoMap, mainDrugSrchContainer.firstChild);
+	
+		var ttLayer = document.getElementById("promoLayer");
+		var ttArea = document.getElementById("promoInsightsNew");
+
+		ttArea.onmouseover=function() {
+			ttLayer.className = "promoNewOn";
+		}
+		ttLayer.onmouseout=function() {
+			ttLayer.className = "promoNewOff";
+		}
+	}
+	
+	addLoadEvent(initReviewsPromo);	
+function GetActiveTab(currentTab,isDrug)
+{
+   var qrStr = window.location.search;
+   var spQrStr = qrStr.substring(1);
+   // splits each of pair
+   var arr = spQrStr.split('&');
+   var val;
+   var isPageNumber;
+   for (var i=0;i<arr.length;i++)
+   {
+        // splits each of field-value pair
+        var index = arr[i].indexOf('=');
+        var key = arr[i].substring(0,index);
+        val = arr[i].substring(index+1);
+        if(key == 'tabno')
+        {
+            isPageNumber = true;
+            break;
+        }
+   }
+   
+   if(isPageNumber == true)
+   {
+       if(isDrug == true)
+       {
+            currentTab = GetActiveTabForDrugs(val,currentTab);
+       }
+       else
+       {
+            currentTab = GetActiveTabForNaturalTreatments(val,currentTab);
+       }
+   }
+   
+  return currentTab;
+}
+
+function GetActiveTabForNaturalTreatments(val,currentTab)
+{
+    var activeTab;
+    
+    switch (val)
+    {
+       case "1":
+           activeTab = "vit_overview";
+           break;
+       case "2":
+           activeTab = "vit_uses";
+           break;
+        case "3":
+           activeTab = "vit_sideeffects";
+           break;
+        case "6":
+           activeTab = "vit_interactions";
+           break;
+        case "7":
+           activeTab = "vit_dosing";
+           break;
+        case "9":
+           activeTab = "vit_ingred";
+           break;
+        default:
+            activeTab = currentTab;
+            break;                     
+   }
+   
+   return activeTab;
+}
+
+function GetActiveTabForDrugs(val,currentTab)
+{
+   var activeTab;
+    
+    switch (val)
+    {
+       case "2":
+           activeTab = "uses";
+           break;
+        case "3":
+           activeTab = "sideeffects";
+           break;
+        case "4":
+           activeTab = "precautions";
+           break;
+        case "6":
+           activeTab = "interactions";
+           break;
+        case "7":
+           activeTab = "overdose";
+           break;
+        case "8":
+           activeTab = "warnings";
+           break;
+        default:
+            activeTab = currentTab;
+            break;                     
+   }
+   
+   return activeTab;
+}
+
+function OpenUserGeneratedContent()
+{
+    wmdTrack('dr-faqinsdisc_2');
+    window.open(this.href, 'popup','width=512,height=400,scrollbars=no,resizeable=no,status=yes');
+    return false;
+}
+
+function wmdPageModuleTrack(pageName,moduleName,moduleId,tabName)
+{
+    var trackModule = moduleName + '_' + moduleId;
+    wmdTrack(trackModule);
+    wmdPageview(pageName,moduleId);
+    //return getTab(tabName);
+}
+
+// mbrewer 201403251856 - GoogleAd HOTFIX
+$(document).ready(function(){
+  $('#submitRatings #sName').on('keyup', function(){
+    gadCleanScreenName($(this));
+  }).on('blur', function(){
+    gadCleanScreenName($(this));
+  });
+  
+  function gadCleanScreenName(el){
+    var characters = el.val();
+
+    if(el.data('previous-val') !== characters){
+      // hotfix for googleads, remove @ character from value
+      var regex = /@/g,
+      replaced = characters.replace(regex,'');
+      el.val(replaced);
+      el.data('previous-val', replaced);
+      webmd.debug('===== values: ', characters, replaced);
+    }
+  }
+});

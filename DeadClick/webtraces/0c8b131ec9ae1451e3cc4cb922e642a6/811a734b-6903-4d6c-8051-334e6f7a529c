@@ -1,0 +1,50 @@
+var searchModule = (function ($) {
+  var searchInputId = '#search-field',
+      noMatchesMsg = 'No matches found.',
+      searchTermId = '#search-term';
+  var searchInput = $(searchInputId);
+
+
+  // handler of selection click
+  var searchJournal = function(e, term) {
+    e.preventDefault();
+    $.ajax({
+      type: "GET",
+      url: constantsModule.journalRedirectUrl + encodeURIComponent(term),
+      success: function (data) {
+        if (data && data.url) {
+          // redirect to journal page
+          window.location.href = data.url;
+        }
+      }
+    });
+  };
+
+  var suggestionsLoadedCallback = function(event, ui) {
+    if (ui.content.length === 0) {
+      searchInput.prop('title', noMatchesMsg);
+    } else {
+      searchInput.prop('title', '');
+    }
+  };
+
+  var customSelect = function(event, ui) {
+    var selectedValue = ui.item.value;
+    searchJournal(event, selectedValue);
+  };
+
+  var populateSearchInputWithTerm = function() {
+    var searchTerm = $(searchTermId);
+    if (searchTerm.length > 0) {
+      var term = searchTerm.text();
+      searchInput.val(term);
+    }
+  };
+
+  return {
+    suggestionsLoadedCallback: suggestionsLoadedCallback,
+    customSelect: customSelect,
+    searchInput: searchInput,
+    populateSearchInputWithTerm: populateSearchInputWithTerm
+  };
+})(jQuery);

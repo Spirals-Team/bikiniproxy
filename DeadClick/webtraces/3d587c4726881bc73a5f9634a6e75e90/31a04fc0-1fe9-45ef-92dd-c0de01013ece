@@ -1,0 +1,64 @@
+function setInitialStates() {
+    hideAll([
+        ".cta"
+        ]);
+}
+
+// ---------Preloader----------------------------------------------------------
+var preloadImages = [
+    "assets/frame1.jpg",
+    "assets/logo.png",
+    "assets/cta.png"
+];
+
+function preload() {
+    var lastLoadedImage = -1;
+    loadNext();
+
+    function loadNext() {
+        lastLoadedImage++;
+        if (lastLoadedImage >= preloadImages.length) {
+            mainInit();
+        } else {
+            var img = new Image();
+            img.onload = loadNext;
+            img.src = preloadImages[lastLoadedImage];
+        }
+    }
+}
+
+
+function mainInit() {
+    setInitialStates();
+    $('.container').show();
+    seq01();
+}
+
+function seq01() {
+
+    var TL = new TimelineMax();
+    var twnDelay = 0;
+    console.log("sprite");
+    $('.cta').show();
+
+
+    TL.to(".sprite_1", 0.7, {backgroundPosition:"-2700px 0px", ease: SteppedEase.config(9) });
+    TL.set(".sprite_1", { backgroundPosition: "0 -250px" });
+    TL.to(".sprite_1", 0.7, {backgroundPosition:"-2700px -250px", ease: SteppedEase.config(9) });
+    TL.set(".sprite_1", { backgroundPosition: "0 -500px" });
+    TL.to(".sprite_1", 0.7, {backgroundPosition:"-2700px -500px", ease: SteppedEase.config(9) });
+    TL.to(".logo", 0.1, {opacity:0, ease:Power1.easeOut, delay: twnDelay-0.1});
+    TL.from(".cta", 0.1, {opacity:0, ease:Power1.easeOut});
+    TL.set(".sprite_1", { backgroundPosition: "0 -750px" });
+    TL.to(".sprite_1", 0.7, {backgroundPosition:"-2700px -750px", ease: SteppedEase.config(9) });
+}
+
+
+
+function hideAll(whichOnes) {
+    for (q = 0; q < whichOnes.length; q++) {
+        $(whichOnes[q]).hide();
+    }
+}
+
+window.onload = preload();

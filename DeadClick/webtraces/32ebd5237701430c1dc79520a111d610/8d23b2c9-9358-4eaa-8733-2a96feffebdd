@@ -1,0 +1,37 @@
+
+$(document).ready(function(){if($('a[rel="lightbox"]').size()>0)
+{$('a[rel="lightbox"]').lightBox();}
+calcAttrPrice();});function calcAttrPrice()
+{var price_diff=0;var weight_diff=0;var attributes_list="";var attributes_hash="";var hasMissingAttribute=false;$.each(product_attributes,function(i,attribute){var t=$("input[name='oa_attributes["+attribute.paid+"]'],select[name='oa_attributes["+attribute.paid+"]']").attr('type');if(t=='select-one'||t=='radio')
+{var ctrl=(t=='select-one')?$("#attribute_input_"+attribute.paid):$("input[name='oa_attributes["+attribute.paid+"]']:checked");var val=urldecode($(ctrl).val());if(typeof(attribute.options[val])!='undefined')
+{price_diff=price_diff+attribute.options[val].price_difference;weight_diff=weight_diff+attribute.options[val].weight_difference;if(attribute.track_inventory==1)
+{if(attributes_hash!='')attributes_hash=attributes_hash+'\n';attributes_hash+=attribute.paid+': '+val;if(attributes_list!='')attributes_list=attributes_list+'\n';attributes_list+=attribute.name+': '+val;}}
+else
+{hasMissingAttribute=true;ctrl.parent().parent().hide();}}});if(displayPricesWithTax&&tax_rate>0)
+{price_diff=price_diff+(price_diff/100*tax_rate);}
+setHTMLPrice("product_price",product_price+price_diff);setHTMLPrice("product_price2",product_price2+price_diff);setHTMLPrice("case_price",(product_price+price_diff)*product_case_pack);setHTMLPrice("case_price2",(product_price2+price_diff)*product_case_pack);if(userLevel>0)
+{if(WholesaleDiscountType=="PRODUCT")
+{setHTMLPrice("product_price_wholesale",product_price_wholesale+price_diff);setHTMLPrice("case_price_wholesale",(product_price_wholesale+price_diff)*product_case_pack);}
+else
+{setHTMLPrice("product_price_wholesale",(product_price_wholesale+price_diff)/100*(100-product_price_wholesale_discount));setHTMLPrice("case_price_wholesale",(product_price_wholesale+price_diff)*product_case_pack/100*(100-product_price_wholesale_discount));}}
+setHTMLWeight("product_weight",number_format(product_weight+weight_diff,2,".",","));if(inventory_control=="AttrRuleExc"||inventory_control=="AttrRuleInc")
+{var current_hash=hex_md5(attributes_hash);var product_may_be_added=false;inventory_hash_found=false;$.each(inventory_hashes,function(i,inventory_hash)
+{if(inventory_hash.attributes_hash==current_hash)
+{inventory_hash_found=true;product_stock=inventory_hash.stock;if(product_stock>0)
+{$('#div-out-of-stock').hide();$('#div-add-button').show();$('.product-quantity').show();product_may_be_added=true;}
+else
+{$('#div-add-button').hide();$('.product-quantity').hide();$('#div-out-of-stock').show();product_may_be_added=false;}}});if(!inventory_hash_found)
+{product_stock=0;if(inventory_control=='AttrRuleInc'&&!hasMissingAttribute)
+{$('#div-out-of-stock').hide();$('#div-add-button').show();$('.product-quantity').show();product_may_be_added=true;}
+else
+{$('#div-add-button').hide();$('.product-quantity').hide();$('#div-out-of-stock').show();product_may_be_added=false;}}}}
+$(document).ready(function(){$('#form-wishlist').submit(addToWishlist);});function addToWishlist()
+{attributes=$('form[name="frmAddItem"] :input[name^="oa_attributes"]');$(attributes).each(function()
+{hasVal=true;val=$(this).val();if($(this).is(':radio')&&!$(this).is(':checked'))
+{hasVal=false;}
+if(hasVal)
+{input=$('<input>').attr({type:'hidden',name:$(this).attr('name'),value:val});$('#form-wishlist').append(input);}});}
+function setHTMLPrice(el_id,amount)
+{$('#'+el_id).html(getPrice(amount));}
+function setHTMLWeight(el_id,weight)
+{$('#'+el_id).html(weight+' '+weight_unit);}

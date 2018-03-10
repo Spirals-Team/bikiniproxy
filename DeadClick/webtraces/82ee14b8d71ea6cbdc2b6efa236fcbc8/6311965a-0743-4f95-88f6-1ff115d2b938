@@ -1,0 +1,243 @@
+/**
+ * Parallel and Sequential Script loader
+ * Author: Sam Tsvilik
+ **/
+
+var $js = (function(document, head, script, undef) {
+	//loader configuration
+	var
+	//Stack of callback executions
+	callbackStack = [],
+		//history of already loaded scripts
+		history = {},
+		//constants
+		noop = function() {},
+		tos = Object.prototype.toString,
+		bTrue = !0,
+		strObject = 'object',
+		strArray = 'array',
+		strString = 'string',
+		strFunction = 'function',
+		strReadyState = 'readyState',
+		strOnReadyStateChange = 'onreadystatechange',
+		strOnLoad = 'onload',
+		strOnError = 'onerror',
+		isAsync = ("async" in script),
+		configOptions = ['scriptLoadRetryMax', 'scriptLoadRetryTimeout', 'useAsync', 'useDefer', 'ignoreExtension', 'bundlerPath', 'bundleScripts', 'compressBundledScripts', 'version'],
+		config = {
+			scriptLoadRetryMax: 10,
+			scriptLoadRetryTimeout: 15,
+			useAsync: bTrue,
+			useDefer: bTrue,
+			ignoreExtension: !bTrue,
+			//this should be set to true if you fant to disable auto-append of .js
+			//MLB Bundler speciffic settings
+			bundlerPath: '/bundle',
+			bundleScripts: !bTrue,
+			compressBundledScripts: bTrue,
+			clearBundleCache: !bTrue,
+			version: !bTrue
+		},
+		//Class to retain script dependency group, and processing progress
+		Group = function(s, a, async) {
+			this.scripts = s; //what scripts to load asynchronously (order is irrelevant)
+			this.i = 0; //what script is requested now
+			this.c = this.scripts.length; //total scripts count to process
+			this.f = 0; //finished scripts/loaded scripts count
+			this.async = (async !== undef) ? async : config.useAsync;
+			/* Since execution is never guaranteed right after script has loaded
+			 *  we anticipate a failure during the callback and attempt to reload a Group
+			 *  after a short delay.	Retry is used to limit amount of attempts to call a callback.
+			 *  If error in the callback is legitimate, the code will throw the error */
+			this.retries = a || 0; //retry attempt in case callback failed to execute
+		};
+	Group.prototype = {
+		/**
+		 * Loads all files in a script group in parralel
+		 * Fires a callback only when all scripts in a group are finished loading (not neccessarily executing)
+		 */
+		loadGroup: function(cb) {
+			var dfrag = document.createDocumentFragment(),
+				that = this;
+			for (; this.i < this.c; this.i++) {
+				dfrag.appendChild(
+				makeScript(this.scripts[this.i], this.async, function onScriptLoaded() {
+					that.f++;
+					if (that.c === that.f) {
+						cb.apply(that);
+					}
+				}));
+			}
+			//Append all scripts at once to head
+			head.insertBefore(dfrag, head.firstChild);
+		}
+	};
+
+	//Type check function
+
+
+	function isType(o, t) {
+		var oType = tos.apply(o).slice(8, -1);
+		return t + '' === oType.toLowerCase();
+	}
+
+	//Runs through the list of scripts, filtering what was already loaded in the same session
+
+
+	function prepareScripts(aScripts) {
+		var scripts = typeof(aScripts) === strString ? [aScripts] : aScripts,
+			l = scripts.length,
+			a = 0,
+			bundle = [],
+			script, jsTest = /.js$/,
+			out = bundle,
+			pathTrimRx = /\/shared\/scripts\//g;
+		//Run through scripts and filter out what we loaded already
+		for (; l > a; a++) {
+			script = (!config.ignoreExtension) ? jsTest.test(scripts[a]) ? scripts[a] : scripts[a] + '.js' : scripts[a];
+			if (!(script in history)) {
+				bundle.push(script);
+				history[script] = bTrue;
+			}
+		}
+		//MLB Bundler speciffic code
+		if (config.bundleScripts && bundle.length) {
+			var params = "?js=" + bundle.join('&js=');
+			if (!config.compressBundledScripts) {
+				params += '&compress=false';
+			}
+			if(config.clearBundleCache || location.search.indexOf("clear_bundles=true")  > 0) {
+				params += '&useCache=false';
+			}
+
+            if(!!config.version) {
+				params += '&version='+ config.version;
+			}
+
+			out = [config.bundlerPath + params.replace(pathTrimRx, '')];
+		}
+
+		return out;
+	}
+
+	//Document ready check (IE mostly)
+
+
+	function isScriptReady(script) {
+		return (!script[strReadyState] || script[strReadyState] === 'loaded' || script[strReadyState] === 'complete');
+	}
+
+	function makeScript(url, async, callback) {
+		var newElem = script.cloneNode(false);
+		newElem[strOnError] = newElem[strOnReadyStateChange] = newElem[strOnLoad] = function() {
+			if (isScriptReady(newElem)) {
+				callback();
+				newElem[strOnError] = newElem[strOnReadyStateChange] = newElem[strOnLoad] = null;
+				newElem.parentNode.removeChild(newElem);
+			}
+		};
+		if (isAsync) {
+			newElem.async = async;
+		}
+		if (('defer' in newElem) && config.useDefer) {
+			newElem.defer = bTrue;
+		}
+
+		newElem.src = url;
+		return newElem;
+	}
+	/**
+	 * Retries a callback after a short delay
+	 */
+
+	function retryCallback(err, async, attempt, scripts, callback) {
+		var that = this;
+		if (attempt <= config.scriptLoadRetryMax) {
+			setTimeout(function() {
+				that.load(scripts, callback, async, attempt);
+			}, config.scriptLoadRetryTimeout);
+		} else {
+			//If error persists after several retries, perhaps script is faulty, so return original error
+			throw err;
+		}
+	}
+
+	//Public members
+	return {
+		setConfig: function(opt) {
+			if (isType(opt, strObject)) {
+				var oLen = configOptions.length,
+					conf;
+				while (oLen--) {
+					conf = configOptions[oLen];
+					if ((conf in opt) && opt[conf] !== null) {
+						config[conf] = opt[conf];
+					}
+				}
+			}
+			return this;
+		},
+		/** Loads one or more scripts in parallel and calls a callback after all scripts are done loading
+		 *  @scripts <String | Array> - a single string url or an array of url's
+		 *  @callback <Function> - Callback function that will fire after all parallel scripts are loaded
+		 *	@async <boolean> - for HTML5 browsers this controls if loaded scripts are executed synchronously or not (default: true)
+		 *  @attempt <number> - internal counter, used to determine number of retries if callback fails during execution delay
+		 */
+		load: function(scripts, callback, async, attempt) {
+			scripts = prepareScripts(scripts);
+			var len = scripts.length,
+				group, that = this,
+				nextCallback;
+			callbackStack.unshift(isType(callback, strFunction) ? callback : noop);
+			if (len) {
+				group = new Group(scripts, attempt, async);
+				group.loadGroup(function onGroupLoadedCallback() {
+					group = this;
+					nextCallback = callbackStack.shift();
+					try {
+						nextCallback();
+					} catch (e) {
+						retryCallback.call(that, e, async, group.retries++, group.scripts, nextCallback);
+					}
+				});
+			} else {
+				nextCallback = callbackStack.shift();
+				if (isType(nextCallback, strFunction)) {
+					try {
+						nextCallback();
+					} catch (e) {
+						retryCallback.call(that, e, async, attempt + 1, [], nextCallback);
+					}
+				}
+			}
+
+			return this;
+		},
+		/** Loads scripts sequentially, will only execute next script if previous is done loading/executing(will retry if execution fails).
+		 * This method is used if there is a direct dependency between scripts.
+		 * @scripts <Array> - array of script url's
+		 * @callback <Function> - Callback function to fire after ordered scripts are done loading
+		 */
+		ordered: function(scripts, callback) {
+			if (isType(scripts, strArray)) {
+				//For HTML5 browsers - just disable async to preserve order
+				if (isAsync) {
+					this.load.apply(this, [scripts, callback, false]);
+				} else {
+					var len = scripts.length,
+						url, i = 0,
+						that = this;
+					//Chaining dependent script callbacks one after another
+					(function chainOrderedScripts() {
+						if (i < len) {
+							that.load(scripts[i++], arguments.callee);
+						} else if (isType(callback, strFunction)) {
+							callback();
+						}
+					})();
+				}
+			}
+			return this;
+		}
+	};
+})(document, document.getElementsByTagName('head')[0] || document.documentElement, document.createElement('script'));

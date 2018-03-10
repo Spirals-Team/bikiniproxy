@@ -1,0 +1,33 @@
+(function($) {
+  'use strict';
+
+  Drupal.behaviors.webformGatedFile = {
+    attach: function(context, settings) {
+      $('fieldset[id$="webform-gated-file"], fieldset#edit-webform').once('webform-gated-file', function() {
+        var $this = $(this), $select = $this.find('select'), $textField = $this.find('input[type="text"]'),
+        regx = /.+\[(\d+)\]$/, intervalId = null;
+
+        $textField.bind('keydown', function() {
+          clearInterval(intervalId);
+
+          intervalId = setInterval(function() {
+            var matches = $textField.val().match(regx);
+
+            if (matches !== null) {
+              clearInterval(intervalId);
+
+              $.get('/webform_gated_file/webform_components/' + matches[1], function(data, status) {
+                $select.html('');
+
+                if (status == 'success') {
+                  $select.html(data);
+                }
+              });
+            }
+          }, 100);
+        });
+      });
+    }
+  };
+
+})(jQuery);

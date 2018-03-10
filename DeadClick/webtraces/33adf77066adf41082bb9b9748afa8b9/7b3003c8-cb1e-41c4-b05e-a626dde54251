@@ -1,0 +1,93 @@
+// JavaScript Document
+
+function walkTheDOM(node, func) {
+    if (node != null) {
+	func(node);
+    node = node.firstChild;
+    while (node) {
+        walkTheDOM(node, func);
+        node = node.nextSibling;	
+    }
+	}
+}
+
+function fixSoftwareTitles(findnode,querylocation) {
+	
+	walkTheDOM(findnode, function (node) {
+	if (node != null) {
+	  // Is it a Text node?       
+	  if (node.nodeType === 3) { 
+		  var text = node.data.trim();
+		  // Does it have non white-space text content?       
+		  if (text.length > 0) {              
+			  node.data = text.replace(/(FLACDEM|FLAC3D|FLAC|PFC3D|PFC|FLAC3D|SLOPE|3DEC|UDEC|MINEDW|InSite-Lab|InSite-Viewer|InSite-FracManager|InSite-ArrayDesigner|InSite-QC|InSite|FISHTank|FISH|KUBRIX Geo|KUBRIX Hex|BlockRanger|Tank|KUBRIX|Griddle)/gi, '###$1###'); 
+		   }
+	  }
+	  }
+	});
+	
+	
+	jQuery(querylocation).html(function (i,h) {
+    	return h.replace(/(###FLACDEM###|###FLAC3D###|###PFC3D###|###PFC###|###FLAC\/\SLOPE###|###FLAC###|###3DEC###|###UDEC###|###MINEDW###|###InSite-Lab###|###InSite-Viewer###|###InSite-FracManager###|###InSite-ArrayDesigner###|###InSite-QC###|###InSite###|###FISHTank###|###FISH###|###KUBRIX Geo###|###KUBRIX Hex###|###BlockRanger###|###Tank###|###KUBRIX###|###Griddle###)/gi, '<span class="timesitalics"> $1 </span>');
+	});
+	
+	jQuery(querylocation).html(function (i,h) {
+    	return h.replace(/(###)/gi, '');
+	});	
+}
+
+jQuery(window).load(function() {		
+		
+	node = document.getElementById('sidebar-second');
+	fixSoftwareTitles(node, '#sidebar-second');
+
+	node = document.getElementById('block-views-software-video-related-videos');
+	fixSoftwareTitles(node, '#block-views-software-video-related-videos');
+
+	node = document.getElementById('content-bottom-wrap');
+	fixSoftwareTitles(node, '#content-bottom-wrap');
+
+	node = document.getElementById('content-middle');
+	fixSoftwareTitles(node, '#content-middle');
+	
+	node = document.getElementById('block-views-symposium-block-1');
+	fixSoftwareTitles(node, '#block-views-symposium-block-1');
+	
+	node = document.getElementById('field-name-field-title');
+	fixSoftwareTitles(node, '#field-name-field-title');
+	
+	node = document.getElementsByClassName('image-caption')[0];
+	fixSoftwareTitles(node, '.image-caption');
+	
+	node = document.getElementsByClassName('image-caption')[1];
+	fixSoftwareTitles(node, '.image-caption');
+	
+	node = document.getElementsByClassName('image-caption')[2];
+	fixSoftwareTitles(node, '.image-caption');
+	
+	node = document.getElementsByClassName('image-caption')[3];
+	fixSoftwareTitles(node, '.image-caption');
+	
+	node = document.getElementsByClassName('image-caption')[4];
+	fixSoftwareTitles(node, '.image-caption');
+	
+	node = document.getElementsByClassName('image-caption')[4];
+	fixSoftwareTitles(node, '.image-caption');
+	
+	node = document.getElementsByTagName('h1')
+	for(i=0; i < node.length; i++) {	
+		fixSoftwareTitles(node[i], 'h1');
+	}
+	node = document.getElementsByTagName('h2')
+	for(i=0; i < node.length; i++) {	
+		fixSoftwareTitles(node[i], 'h2');
+	}
+	node = document.getElementsByTagName('h3')
+	for(i=0; i < node.length; i++) {	
+		fixSoftwareTitles(node[i], 'h3');
+	}
+	
+
+
+});
+

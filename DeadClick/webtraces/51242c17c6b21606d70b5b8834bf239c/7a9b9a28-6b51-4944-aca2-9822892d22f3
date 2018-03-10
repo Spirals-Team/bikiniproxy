@@ -1,0 +1,171 @@
+/*! Colour Rich cart v1.0.0 colourrich.co.uk */
+(function() {
+    // Store a copy of the original function that will be extended so that we can call
+    // it in our new function
+	var UpdateItemQuantity;
+    var UpdateItemQuantity1 = UpdateItemQuantity;
+
+    // Create a new function with the same name as the function we're extending.
+    // This overrides the existing one, so that all calls to that function call this
+    // new one instead
+    UpdateItemQuantity = function() {
+
+        // Now, inside our extended function, we have the opportunity to take
+        // actions before calling the original:
+        console.log("Before");
+        $("#respcart").hide();
+
+        // Call the original function, and pass the arguments to it, storing the return
+        // value in a new variable
+        UpdateItemQuantity1.apply(this, arguments);
+        //$("#respcart").hide();
+
+        // Additional work can be done after the original function has run as well:
+        console.log("After");
+        
+        var products = get_products();
+        $("#respcart").after('<div id="mobilecart">Mobile Cart...</div>');
+		$("#mobilecart").html(products).hide();
+		
+		$("#respcart .productrow").addClass('default-productrow');
+		$("#respcart .productrow").after('<div class="mobile-productrow productrow clearfix">Mobile Cart...</div>');
+		$(".mobile-productrow").html(products).hide();
+		check_if_mobile();
+
+        // Return the result of the original function, or return something different
+        // thanks to further processing that you may have done, to the original
+        // caller of the base function.
+        
+        
+        window.location.reload();
+    }
+})();
+
+function get_products(){
+	var products = '';
+	var ctr = 0;
+	$('.product .productitemcell').each(function(i, obj) {
+		ctr++;
+		products+= '<div class="prod-row" id="prod-' + ctr + '">';
+		
+		/*products+= '<div class="titles clearfix">';
+		products+= '<div class="product">Price</div>';
+		products+= '<div class="product">Quantity</div>';
+		products+= '<div class="product">Total</div>';
+		products+= '</div>';*/
+		products+= '<div class="product"><div class="productitemcell">' + $(this).html() + '</div></div>';
+		products+= '<div class="prod-titles clearfix"><div class="price">Price</div><div class="quantity">Qty</div><div class="tax">Tax</div><div class="total">Total</div></div>';
+		products+= '<div class="price"><div class="productitemcell">' + $( ".price div:nth-of-type(" +ctr+ ")" ).html() + '</div></div>';
+		products+= '<div class="quantity"><div class="productitemcell">' + $( ".quantity div:nth-of-type(" +ctr+ ")" ).html() + '</div></div>';
+		products+= '<div class="tax"><div class="productitemcell">' + $( ".tax div:nth-of-type(" +ctr+ ")" ).html() + '</div></div>';		
+		products+= '<div class="total"><div class="productitemcell">' + $( ".total div:nth-of-type(" +ctr+ ")" ).html() + '</div></div>';
+		products+= '<div class="remove clearfix "><div class="productitemcell">' + $( ".remove div:nth-of-type(" +ctr+ ")" ).html() + '</div></div>';
+		products+= '</div>';
+	})
+	return products;
+}
+function check_if_mobile(adjusted){
+	var w = $(window).width();
+	var products = '';
+	if( w < 769){
+		console.log( "mobile!" );
+		
+		if($("#respcart .default-productrow").is(':visible')){
+			
+			$("#respcart .default-productrow").hide();
+			$("#respcart .mobile-productrow").show();
+		}		
+		/*$('.product .productitemcell').each(function(i, obj) {
+			$(this).append('<div> '+ i +'</div>');
+		});
+		
+		adjusted = true;
+		return adjusted;*/
+	}else{
+		//if ($('#respcart').css('display') == 'none')) {
+		if($("#respcart .default-productrow").is(':visible') == false){
+			$("#respcart .default-productrow").show();
+			$("#respcart .mobile-productrow").hide();
+		}
+	}
+}
+
+
+
+$(function() {	
+	var adjusted = false;
+	var products = get_products();
+	
+	//$("#catCartDetails").addClass('my-cart').html($("#catCartDetails").html());
+	$("#respcart").after('<div id="mobilecart">Mobile Cart...</div>');
+	$("#mobilecart").html(products).hide();
+	
+	$("#respcart .productrow").addClass('default-productrow');
+	$("#respcart .productrow").after('<div class="mobile-productrow productrow clearfix">Mobile Cart...</div>');
+	$(".mobile-productrow").html(products).hide();
+	check_if_mobile();
+
+	/*$(".remove a").on( "click", function() {
+		$("#respcart").after('<div id="mobilecart">Mobile Cart...</div>');
+		$("#mobilecart").html(products).hide();
+	});*/
+	
+	
+	$(".remove a").on( "click", function() {
+		//alert('test');
+	});	
+	
+	$(window).resize(function() {
+		check_if_mobile();
+	});
+	
+//	$('body').on('change', '#shippingState', function() {
+//		setTimeout(fixCartCurrencyDecimals(), 500);
+//		console.log('on change triggered');
+//	});
+	
+});
+
+
+var waitForFinalEvent = (function() {
+  var timers = {};
+  return function(callback, ms, uniqueId) {
+    if (!uniqueId) {
+      uniqueId = "Don't call this twice without a uniqueId";
+    }
+    if (timers[uniqueId]) {
+      clearTimeout(timers[uniqueId]);
+    }
+    timers[uniqueId] = setTimeout(callback, ms);
+  };
+})();
+
+// Usage
+$(window).resize(function() {
+  
+  // Wait for it...
+  waitForFinalEvent(function() {
+	console.log('EVENT FIRED');
+    //$(output).text('EVENT FIRED!');
+    //...
+  }, 500, "some unique string");
+});
+
+
+	function customApplyTaxRate(e, t, a, n, i) {
+		ApplyTaxRate(e, t, a, n, i);
+		fixCartCurrencyDecimals();
+	}
+
+
+	function fixCartCurrencyDecimals() {
+		console.log('function triggered');
+		$('.shop-cart td').each(function() {
+		 var value = $(this).text();
+		 if (value.indexOf('$') >= 0) {
+			  value = value.replace('$', '');
+			  value = parseFloat(value).toFixed(2);
+			  $(this).text('$' + value);
+		 }
+		});
+	}

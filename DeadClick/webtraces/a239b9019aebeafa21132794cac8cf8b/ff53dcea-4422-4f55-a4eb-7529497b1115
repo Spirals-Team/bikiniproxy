@@ -1,0 +1,414 @@
+function validate_TEXT(obj, sFieldName) { var exp = /^(\S|\s)+$/; return checkExp(exp, obj, "The " + sFieldName + " must be filled out"); return true; }
+function validate_USERNAME(obj, sFieldName) { var exp = /^[a-zA-Z]+\w{4,}[0-9a-zA-Z]+$/; return checkExp(exp, obj, "The username must be at least 6 characters long (it accepts a-zA-Z0-9 and _ only)"); }
+function validate_CODE(obj, sFieldName) { var exp = /^[a-zA-Z]+[\w|\-]{4,}[0-9a-zA-Z]+$/; return checkExp(exp, obj, "Please enter valid code"); }
+function validate_EMAIL(obj, sFieldName) { var exp = /^\w+([-+.]\w+)*@\w+([-.]\w+)*\.\w+([-.]\w+)*$/; return checkExp(exp, obj, "Please enter a valid E-Mail address"); }
+function validate_UPC(obj, sFieldName) { var exp = /(^\d{6}$)|(^\d{12}$)/; return checkExp(exp, obj, "Please enter a valid UPC code (6 or 12 digits)"); }
+function validate_SSN(obj, sFieldName) { var exp = /^\d{3}-\d{2}-\d{4}$/; return checkExp(exp, obj, "Please enter a valid tax ID or SSN in the format nnn-nn-nnnn"); }
+function validate_WEIGHT(obj, sFieldName) { if (validate_DOUBLE(obj, sFieldName)) { if (obj.value <= 0) { alert("Please enter a number greater than zero for the weight"); obj.focus(); return false; } else { return true; } } else { return false; } }
+function validate_CURRENCY(obj, sFieldName) { obj.value = obj.value.replace("$", ""); obj.value = strReplace(obj.value, ",", ""); if (validate_DOUBLE(obj, sFieldName)) { if (obj.value < 0) { alert("Please enter a number greater or equal to zero for the " + sFieldName); obj.focus(); return false; } else { obj.value = parseInt((parseFloat(obj.value) + 0.005) * 100) / 100; return true; } } else { return false; } }
+function validate_INTEGER(obj, sFieldName) { var val; if (parseInt(obj.value) < 0) { val = parseInt(parseInt(obj.value) - 0.5); } else { if (parseInt(obj.value) == 0) { val = 0; } else { val = parseInt(parseInt(obj.value) + 0.5); } } if (isNaN(val) || obj.value == "") { alert("Please enter a numeric " + sFieldName + " value"); obj.focus(); return false; } else { obj.value = val; return true; } }
+function validate_DOUBLE(obj, sFieldName) { var val = parseFloat(strReplace(obj.value, ",", "")); if (isNaN(val) || obj.value == "") { alert("Please enter a numeric value for the " + sFieldName); obj.focus(); return false; } obj.value = val; return true; }
+function validate_DATE(obj, sFieldName) { var testDate = new Date(Date.parse(obj.value)); if (!testDate.getYear()) { alert("Please enter a valid " + sFieldName); obj.focus(); return false; } obj.value = testDate.getMonth() + 1 + "/" + testDate.getDate() + "/" + testDate.getFullYear(); return true; }
+function validate_DROPDOWN(obj, sFieldName) { if (obj.selectedIndex == 0) { alert("Please select an option for the " + sFieldName); obj.focus(); return false; } return true; }
+function validate_CUSTOM(obj) { return true; }
+function validate_FILE(obj, sFieldName) { if (obj.value == "") { alert("Please browse for a file"); obj.focus(); return false; } return true; }
+function validate_TEXTAREA(obj, maxlen) { if (validate_TEXT(obj)) { if (obj.value.length > parseInt(maxlen)) { alert("The maximum length for this text field is " + maxlen + " characters.\nPlease shorten the amount of text you entered."); obj.focus(); return false; } else { return true; } } else { return false; } }
+function validate_CHECKBOX(obj, sFieldName) { return true; }
+function validate_PASSWORD(obj) { var exp = /^([0-9a-zA-Z]){4,}$/; return checkExp(exp, obj, "The password must be at least 4 characters long (letters and numbers only)"); }
+function validate_CONFIRMPASSWORD(obj1, obj2) { if (obj1.value != obj2.value) { alert("Please confirm your password"); obj2.focus(); return false; } return true; }
+function validate_HIDDEN(obj, sFieldName) { return true; }
+function trim(value) { var exp = /^(\s*)(\S*)(\s*$)/; if (exp.test(value)) { value = value.replace(exp, "$2"); } return value; }
+function checkExp(exp, obj, message) { if (!exp.exec(trim(obj.value))) { alert(message); obj.focus(); return false; } return true; }
+function strReplace(strVal, strFrom, strTo) { var i; var strRes = ""; for (i = 0; i < strVal.length; i++) { ch = strVal.substring(i, i + 1); strRes += ch == strFrom ? strTo : ch; } return strRes; }
+function validateCC(CCno, CCname) { Cno = CCno; Cno = Cno.split(" ").join(""); CCname = strReplace(CCname, " ", ""); CCname = CCname.toLowerCase().split(" ").join(); switch (CCname) { case "visa": if (((Cno.length == 16) || (Cno.length == 13)) && (Cno.substring(0, 1) == 4)) { return DOmod10(Cno); } return false; case "mastercard": chr1 = Cno.substring(0, 1); chr2 = Cno.substring(1, 2); if ((Cno.length == 16) && (chr1 == 5) && ((chr2 >= 1) && (chr2 <= 5))) { return DOmod10(Cno); } return false; case "amex", "americanexpress": chr1 = Cno.substring(0, 1); chr2 = Cno.substring(1, 2); if ((Cno.length == 15) && (chr1 == 3) && ((chr2 == 4) || (chr2 == 7))) { return DOmod10(Cno); } return false; case "dinersclub", "diner'sclub": chr1 = Cno.substring(0, 1); chr2 = Cno.substring(1, 2); if ((Cno.length == 14) && (chr1 == 3) && ((chr2 == 0) || (chr2 == 6) || (chr2 == 8))) { return DOmod10(Cno); } return false; case "discover": chr1to4 = Cno.substring(0, 4); if ((Cno.length == 16) && (chr1to4 == "6011")) { return DOmod10(Cno); } return false; } return false; }
+function DOmod10(numstr) { if (numstr.length > 19) { return (false); } tot = 0; len = numstr.length; mult = 1; Totval = 0; for (i = 0; i < len; i++) { chrval = numstr.substring(len - i - 1, len - i); Totval = parseInt(chrval, 10) * mult; if (Totval >= 10) { tot += (Totval % 10) + 1; } else { tot += Totval; } if (mult == 1) { mult++; } else { mult--; } } if ((tot % 10) == 0) { return true; } else { return false; } }
+function check_len(field, max) { if (field.value.length > max) { field.value = field.value.substring(0, max - 1); alert("The length of this field cannot exceed " + max + " characters.\nIt has been truncated to this size."); } }
+function trimLT(trimString) { while ("" + trimString.charAt(0) == " ") { trimString = trimString.substring(1, trimString.length); } while (trimString.charAt(trimString.length - 1) == " ") { trimString = trimString.substring(0, trimString.length - 1); } return trimString; }
+function validateZIP(field) { var valid = "0123456789-"; var hyphencount = 0; if (field.length != 5 && field.length != 10) { alert("Please enter your 5-digit or 5-digit + 4 zip code."); return false; } for (var i = 0; i < field.length; i++) { temp = "" + field.substring(i, i + 1); if (temp == "-") { hyphencount++; } if (valid.indexOf(temp) == "-1") { alert("Invalid characters in your zip code.  Please try again."); return false; } if ((hyphencount > 1) || ((field.length == 10) && "" + field.charAt(5) != "-")) { alert("The hyphen character should be used with a properly formatted 5 digit+four zip code, like '12345-6789'.   Please try again."); return false; } } return true; }
+function stripCharsInBag(s, bag) { var i; var returnString = ""; for (i = 0; i < s.length; i++) { var c = s.charAt(i); if (bag.indexOf(c) == -1) { returnString += c; } } return returnString; }
+function handlespace(theField) { var Delimiters = " "; var Delimiters2 = "-"; var normalizedCCN = stripCharsInBag(theField, Delimiters); normalizedCCN = stripCharsInBag(normalizedCCN, Delimiters2); theField.value = normalizedCCN; return true; }
+function CheckPhoneNumber(TheNumber) { var valid = true; var GoodChars = "0123456789()-+ "; var i = 0; if (TheNumber == "") { valid = false; } for (i = 0; i <= TheNumber.length - 1; i++) { if (GoodChars.indexOf(TheNumber.charAt(i)) == -1) { valid = false; } } return valid; }
+function isCreditCard(st) { if (st.length > 19 || st.length < 15) { return (false); } sum = 0; mul = 1; l = st.length; for (i = 0; i < l; i++) { digit = st.substring(l - i - 1, l - i); tproduct = parseInt(digit, 10) * mul; if (tproduct >= 10) { sum += (tproduct % 10) + 1; } else { sum += tproduct; } if (mul == 1) { mul++; } else { mul--; } } if ((sum % 10) == 0) { return (true); } else { return (false); } }
+var defaultEmptyOK = false; var phoneNumberDelimiters = "()- "; var validUSPhoneChars = digits + phoneNumberDelimiters; var digits = "0123456789"; var validWorldPhoneChars = digits + phoneNumberDelimiters + "+"; var digitsInUSPhoneNumber = 10;
+var iUSPhone = "This field must be a 10 digit U.S. phone number (like 415 555 1212). Please reenter it now."; var pUSPhone = "10 digit U.S. phone number (like 415 555 1212)."; var pWorldPhone = "international phone number."; var reInteger = /^\d+$/;
+function isUSPhoneNumber(s) { if (isEmpty(s)) { if (isUSPhoneNumber.arguments.length == 1) { return defaultEmptyOK; } else { return (isUSPhoneNumber.arguments[1] == true); } } return (isInteger(s) && s.length == digitsInUSPhoneNumber); }
+function isInternationalPhoneNumber(s) { if (isEmpty(s)) { if (isInternationalPhoneNumber.arguments.length == 1) { return defaultEmptyOK; } else { return (isInternationalPhoneNumber.arguments[1] == true); } } return (isPositiveInteger(s)); }
+function reformatUSPhone(USPhone) { return (reformat(USPhone, "(", 3, ") ", 3, "-", 4)); }
+function checkUSPhone(theField, emptyOK) { if (checkUSPhone.arguments.length == 1) { emptyOK = defaultEmptyOK; } if ((emptyOK == true) && (isEmpty(theField.value))) { return true; } else { var normalizedPhone = stripCharsInBag(theField.value, phoneNumberDelimiters); if (!isUSPhoneNumber(normalizedPhone, false)) { return warnInvalid(theField, iUSPhone); } else { theField.value = reformatUSPhone(normalizedPhone); return true; } } }
+function checkInternationalPhone(theField, emptyOK) { if (checkInternationalPhone.arguments.length == 1) { emptyOK = defaultEmptyOK; } if ((emptyOK == true) && (isEmpty(theField.value))) { return true; } else { if (!isInternationalPhoneNumber(theField.value, false)) { return warnInvalid(theField, iWorldPhone); } else { return true; } } }
+function stripCharsInBag(s, bag) { var i; var returnString = ""; for (i = 0; i < s.length; i++) { var c = s.charAt(i); if (bag.indexOf(c) == -1) { returnString += c; } } return returnString; }
+function isEmpty(s) { return ((s == null) || (s.length == 0)); }
+function isInteger(s) { var i; if (isEmpty(s)) { if (isInteger.arguments.length == 1) { return defaultEmptyOK; } else { return (isInteger.arguments[1] == true); } } return reInteger.test(s); }
+function warnInvalid(theField, s) { theField.focus(); theField.select(); alert(s); return false; }
+function reformatUSPhone(USPhone) { return (reformat(USPhone, "(", 3, ") ", 3, "-", 4)); }
+function reformat(s) { var arg; var sPos = 0; var resultString = ""; for (var i = 1; i < reformat.arguments.length; i++) { arg = reformat.arguments[i]; if (i % 2 == 1) { resultString += arg; } else { resultString += s.substring(sPos, sPos + arg); sPos += arg; } } return resultString; } var blnNetscape4_7 = false; if (navigator.appVersion.charAt(0) == "4" && navigator.appName == "Netscape") { blnNetscape4_7 = true; }
+function fnSetfocus() { for (var intFormscnt = 1; intFormscnt < document.forms.length; intFormscnt++) { for (var intEleCount = 1; intEleCount < document.forms[intFormscnt].elements.length; intEleCount++) { if (document.forms[intFormscnt].name == "form1" && document.forms[intFormscnt].elements[intEleCount].name == "email" && document.forms[intFormscnt].elements[intEleCount].type == "text") { document.forms[intFormscnt].email.focus(); } } } }
+$(function () { $("ul.dropdown li").hover(function () { $(this).addClass("hover"); $("ul:first", this).css("visibility", "visible"); }, function () { $(this).removeClass("hover"); $("ul:first", this).css("visibility", "hidden"); }); $("ul.dropdown li ul li:has(ul)").find("a:first").append(" &raquo; "); });
+function CheckXMLHTTP(asyncCall) { var xmlhttp, bComplete = false; try { xmlhttp = new ActiveXObject("Msxml2.XMLHTTP"); } catch (e) { try { xmlhttp = new ActiveXObject("Microsoft.XMLHTTP"); } catch (e) { try { xmlhttp = new XMLHttpRequest(); } catch (e) { xmlhttp = false; } } } if (!xmlhttp) { return null; } this.connect = function (sURL, sMethod, sVars, fnDone) { if (!xmlhttp) { return false; } bComplete = false; sMethod = sMethod.toUpperCase(); try { if (sMethod == "GET") { xmlhttp.open(sMethod, sURL + "?" + sVars, asyncCall); sVars = ""; } else { xmlhttp.open(sMethod, sURL, asyncCall); xmlhttp.setRequestHeader("Content-Type", "application/x-www-form-urlencoded"); } xmlhttp.onreadystatechange = function () { if (xmlhttp.readyState == 4 && !bComplete) { bComplete = true; fnDone(xmlhttp); } }; xmlhttp.send(sVars); if (xmlhttp.readyState == 4 && !bComplete) { bComplete = true; fnDone(xmlhttp); } } catch (z) { return false; } return true; }; return this; }
+var doAJAXCall = function (PageURL, ReqType, PostStr, FunctionName) { var myConn = new CheckXMLHTTP(true); if (myConn) { myConn.connect("" + PageURL + "", "" + ReqType + "", "" + PostStr + "", FunctionName); } else { alert("XMLHTTP not available. Try a newer/better browser, this application will not work!"); } }; 
+var doSYNCCall = function (PageURL, ReqType, PostStr, FunctionName) { var myConn = new CheckXMLHTTP(false); if (myConn) { myConn.connect("" + PageURL + "", "" + ReqType + "", "" + PostStr + "", FunctionName); } else { alert("XMLHTTP not available. Try a newer/better browser, this application will not work!"); } };
+
+function guidednavFilterOverlayBefore() {
+    $menuDiv = $("#GuidedNavLeftMenu");
+    $("#GuidedNavLeftMenu").css({ opacity: 0.2 });
+    $("#guidednavmenuprocessingdiv").css({
+        top: $menuDiv.top,
+        width: $menuDiv.width(),
+        height: $menuDiv.height()
+    });
+
+    $("#guidednavmenuprocessingdiv").fadeIn();
+}
+function guidednavFilterOverlayAfter() {
+    $("#GuidedNavLeftMenu").css({ opacity: 1 });
+    $("#guidednavmenuprocessingdiv").fadeOut(); 
+}
+function guidednavResultOverlayBefore() {
+    $contentDiv = $("#GuidedNavRightContent");
+
+    $("#GuidedNavRightContent").css({ opacity: 0.2 });
+    $("#guidednavdataprocessingdiv").css({
+        top: $contentDiv.top + 100,
+        width: $contentDiv.width(),
+        height: $contentDiv.height()
+    });
+
+    $("#guidednavdataprocessingdiv").fadeIn();
+}
+function guidednavResultOverlayAfter() {
+    $("#GuidedNavRightContent").css({ opacity: 1 }); 
+    $("#guidednavdataprocessingdiv").fadeOut(); 
+}
+
+var fnGetGuidedNav = function (strURL, PostStr, IsInit) {
+    var SortField = '';
+//    if (sessionStorage.scrollPos > 0) {
+//        sessionStorage.pageLoaded = false;
+//    }
+//    console.log('scroll1-' + sessionStorage.scrollPos);
+    if (document.getElementById("hidGuidedSortBy") != null) {
+        SortField = SortField + '&SortBy=' + document.getElementById("hidGuidedSortBy").value;
+    } else {
+        SortField = SortField + '&SortBy=';
+    }
+    if (document.getElementById("hidGuidedPageSize") != null) {
+        SortField = SortField + '&GdPageSize=' + document.getElementById("hidGuidedPageSize").value;
+    } else {
+        SortField = SortField + '&GdPageSize=';
+    }
+    if (IsInit == true) {
+    } else {
+        manualStateChange = false; History.pushState(null, History.options.initialTitle, PostStr + SortField);
+    }
+    guidednavFilterOverlayBefore();
+    var strDataURL = strURL + "getguidednavigationpagecontent.asp" + PostStr + SortField;
+    doAJAXCall(strDataURL, "GET", "", fnGetGuidedNavDataResponse);
+    //GuidedNavDataProcess.style.visibility = "visible";
+    //GuidedNavDataProcess.style.display = "block";
+    guidednavResultOverlayBefore();
+    var strNavURL = strURL + "getguidednavigationmenucontent.asp" + PostStr;
+    doAJAXCall(strNavURL, "GET", "", fnGetGuidedNavResponse);
+};
+
+var fnGetGuidedNavResponse = function (oXML) {
+//    console.log('s2' + sessionStorage.scrollPos);
+    var response = oXML.responseText; document.getElementById("GuidedNavLeftMenu").innerHTML = response; 
+    guidednavFilterOverlayAfter();    
+};
+var fnGetGuidedNavDataResponse = function (oXML) {
+//    console.log('s3' + sessionStorage.scrollPos);
+    var response = oXML.responseText; document.getElementById("GuidedNavRightContent").innerHTML = response; guidednavResultOverlayAfter();
+    GuidedNavDataProcess.style.visibility = "hidden"; GuidedNavDataProcess.style.display = "none"; window.scrollTo(0, 0); $(".guidednavdataprocessing").hide();
+    if (response.indexOf('no products found matching your search criteria') > 0) {
+        $("#guidedNavViewAllDiv").css({ 'margin-top': '300px' });
+    }
+    else {
+        $("#guidedNavViewAllDiv").css({ 'margin-top': '0px' });
+    }
+    $(document).scrollTop(sessionStorage.scrollPos || 0);
+//    console.log(sessionStorage.scrollPos);
+//    sessionStorage.pageLoaded = true;
+};
+var fnGetGuidedNavNextPage = function (strURL, QueryString) { manualStateChange = false; History.pushState(null, History.options.initialTitle, QueryString); guidednavResultOverlayBefore(); doAJAXCall(strURL, "GET", "", fnGetGuidedNavNextPageDataResponse); if (strURL.indexOf('pgID=1') > 0) { categorydescriptiondiv.style.visibility = 'visible'; categorydescriptiondiv.style.display = 'block'; } else { categorydescriptiondiv.style.visibility = 'visible'; categorydescriptiondiv.style.display = 'block'; } };
+var fnGetGuidedNavNextPageDataResponse = function (oXML) { var response = oXML.responseText; document.getElementById("GuidedNavRightContent").innerHTML = response; guidednavResultOverlayAfter(); GuidedNavDataProcess.style.visibility = "hidden"; GuidedNavDataProcess.style.display = "none"; window.scrollTo(0, 0); };
+function fnShowHide(obj, objdiv, MoreImageLink, LessImageLink) { var objControl = document.getElementById(obj); var objdivControl = document.getElementById(objdiv); if (objControl.style.visibility == "hidden") { objControl.style.visibility = "visible"; objControl.style.display = "block"; objdivControl.innerHTML = "<img src='" + LessImageLink + "' alt='' style='border:0;'>"; } else { objControl.style.visibility = "hidden"; objControl.style.display = "none"; objdivControl.innerHTML = "<img src='" + MoreImageLink + "' alt='' style='border:0;'>"; } }
+function fnGuidedNavHelp(strURL) { var objHelpWin = window.open(strURL, "GuidedNavHelp", "height=500,width=500,top=25,left=100,help=0,resizable=yes,toolbar=0,location=0,status=0,menubar=0,scrollbars=yes"); objHelpWin.focus(); } var ns6_index = 0; var curImageItem, curLinkItem, curLinkSubItem, curLinkItem2, curLinkSubItem2; var currentCatTreeItem; var bRunTree; var bOpenItem = true; var strClosingImage = "images/StoreFront_System_Images/CatTreeClose.gif"; var strOpeningImage = "images/StoreFront_System_Images/CatTreeOpen.gif";
+function getImageItem(sourceID) { var tmpVarSource; if (!document.all && !document.getElementById) { return; } if (document.all) { tmpVarSource = document.all("flipImage" + sourceID); } else { tmpVarSource = document.getElementById("flipImage" + sourceID); } return tmpVarSource; }
+function flipMenuByID(sourceID, strCloseImageID, strOpenImageID) { if (!document.all && !document.getElementById) { return; } return flipMenu(getImageItem(sourceID, strCloseImageID, strOpenImageID)); }
+function flipMenu(source, strCloseImage, strOpenImage) { if (!document.all && !document.getElementById) { return; } if (!document.all && document.getElementById) { ns6_index = 1; } var source2 = document.getElementById && !document.all ? source.parentNode.childNodes : source.parentElement.all; if (source2[2 + ns6_index]) { if (source2[2 + ns6_index].style.display == "none") { if (curImageItem) { currentCatTreeItem = document.getElementById && !document.all ? curImageItem.parentNode.childNodes : curImageItem.parentElement.all; } if (currentCatTreeItem) { currentCatTreeItem[2 + ns6_index].style.display = "none"; currentCatTreeItem[0].src = strCloseImage; } source.src = strOpenImage; source2[2 + ns6_index].style.display = ""; bOpenItem = true; } else { source.src = strCloseImage; source2[2 + ns6_index].style.display = "none"; bOpenItem = false; } curImageItem = source; } }
+function change(e) { if (!document.all && !document.getElementById) { return; } if (!document.all && document.getElementById) { ns6_index = 1; } var source = document.getElementById && !document.all ? e.target : event.srcElement; if (bRunTree) { bRunTree = false; var source2 = document.getElementById && !document.all ? source.parentNode.childNodes : source.parentElement.all; if (source2[2 + ns6_index]) { if (source2[2 + ns6_index].style.display == "none") { if (curImageItem) { currentCatTreeItem = document.getElementById && !document.all ? curImageItem.parentNode.childNodes : curImageItem.parentElement.all; } if (currentCatTreeItem) { currentCatTreeItem[2 + ns6_index].style.display = "none"; currentCatTreeItem[0].src = strClosingImage; } source2[0].src = strOpeningImage; source2[2 + ns6_index].style.display = ""; } else { source.src = strClosingImage; source2[2 + ns6_index].style.display = "none"; } curImageItem = source; } } }
+function RestoreCatImage(imgfld, img) { var imagefld = eval(imgfld); imagefld.src = img; }
+function SwapCatImage(imgfld, img) { var imagefld = eval(imgfld); imagefld.src = img; }
+function ResetMfgAction(QueryStr) { var textst = document.form1x.elements[0].value; if (document.form1x.elements[0].selectedIndex == 0 || document.form1x.elements[0].selectedIndex == -1) { alert("Please select a manufacturer name"); return false; } if (textst.indexOf(".") > -1) { document.form1x.action = textst; document.form1x.elements[0].value = ""; document.form1x.submit(); } else { document.form1x.action = "/mfgr.asp?" + QueryStr + "=" + textst; document.form1x.elements[0].value = ""; document.form1x.submit(); } }
+function ValidateSellerSelection() { if (document.formVx.vID.selectedIndex == 0) { alert("Please select a Seller"); return false; } var textst = document.formVx.vID.value; if (textst.indexOf(".") > -1) { document.formVx.action = textst; document.formVx.vID.value = ""; location.href = textst; return false; } return true; }
+function validate_jmEMAIL(obj, sFieldName) { var exp1 = /^\w+([-+.]\w+)*@\w+([-.]\w+)*\.\w+([-.]\w+)*$/; return checkExp(exp1, obj, "Please enter a valid E-Mail address"); }
+function openLocationTypePopup() { var objPopWin = window.open("/AddressLocationTypeDetails.asp", "AddressLocationType", "height=500,width=600,top=25,left=100,help=0,resizable=yes,toolbar=0,location=0,status=0,menubar=0,scrollbars=yes"); objPopWin.focus(); }
+function RetDisplayOutOfStockMessageCommon(iBackOrderOption, sProdName, iStockQt, iMinQty, iQuantityEntered) { if (iBackOrderOption == 1 && iStockQt < iQuantityEntered) { alert(sBackOrderItemNotInStockMessage.replace("{{PRODUCTNAME}}", sProdName).replace("{{PRODUCTSTOCK}}", parseInt(iStockQt) + parseInt(iQuantityEntered))); return false; } if (iBackOrderOption == 3 && iStockQt < iQuantityEntered) { alert(sBackOrderItemNotInStockMessage.replace("{{PRODUCTNAME}}", sProdName).replace("{{PRODUCTSTOCK}}", parseInt(iStockQt) + parseInt(iQuantityEntered))); return false; } if (iBackOrderOption == 2 && iStockQt < iMinQty) { alert(sBackOrderWhenItemWillbeBack.replace("{{PRODUCTNAME}}", sProdName).replace("{{PRODUCTSTOCK}}", iStockQt)); } if (iBackOrderOption == 5 && iStockQt < iQuantityEntered) { alert(sBackOrderItemNotInStockMessage.replace("{{PRODUCTNAME}}", sProdName).replace("{{PRODUCTSTOCK}}", parseInt(iStockQt) + parseInt(iQuantityEntered))); return false; } return true; }
+function GetReviewsAjax(ProductId, ProductGroupId, Sortdropdown) {var SortOption = document.getElementById("ReviewSorting").value; var PageNo = document.getElementById("ReviewPaging").value; if (SortOption == "0" && Sortdropdown == "1") { return; } divRatingProcess.style.visibility = "visible"; divRatingProcess.style.display = "block"; $.ajax({ type: "POST", url: "/ProductReview-ajax.asp?FormAction=ItemFormat5Reviews&PId=" + ProductId + "&PgpId=" + ProductGroupId + "&SortOption=" + SortOption + "&PageNo=" + PageNo, success:
+function (data) { if (data != "") { document.getElementById("divRatingList").innerHTML = data; $("#tabs > ul").tabs(); } } }); divRatingProcess.style.visibility = "hidden"; divRatingProcess.style.display = "none";}
+function move_box(an, box) { var cleft = -550; var ctop = 0; var obj = an; while (obj.offsetParent) { cleft += obj.offsetLeft; ctop += obj.offsetTop; obj = obj.offsetParent; } box.style.left = cleft + "px"; ctop += an.offsetHeight + 8; if (document.body.currentStyle && document.body.currentStyle.marginTop) { ctop += parseInt(document.body.currentStyle.marginTop); } box.style.top = ctop + "px"; } 
+function show_hide_box(an, width, height, borderStyle) { var href = an.href; var boxdiv = document.getElementById(href); if (boxdiv != null) { if (boxdiv.style.display == "none") { move_box(an, boxdiv); boxdiv.style.display = "block"; if (!boxdiv.contents.contentWindow) { boxdiv.contents.src = href; } } else { boxdiv.style.display = "none"; } return false; } boxdiv = document.createElement("div"); boxdiv.setAttribute("id", href); boxdiv.style.display = "block"; boxdiv.style.position = "absolute"; boxdiv.style.width = width + "px"; boxdiv.style.height = height + "px"; boxdiv.style.border = borderStyle; boxdiv.style.textAlign = "right"; boxdiv.style.padding = "4px"; boxdiv.style.background = "#FFFFFF"; document.body.appendChild(boxdiv); var offset = 0; var close_href = document.createElement("a"); close_href.href = "javascript:void(0);"; close_href.onclick = function () { show_hide_box(an, width, height, borderStyle); }; close_href.appendChild(document.createTextNode("Close Window")); boxdiv.appendChild(close_href); offset = close_href.offsetHeight; var contents = document.createElement("iframe"); contents.overflowX = "hidden"; contents.overflowY = "scroll"; contents.frameBorder = "0"; contents.style.width = width + "px"; contents.style.height = (height - offset) + "px"; boxdiv.contents = contents; boxdiv.appendChild(contents); move_box(an, boxdiv); if (contents.contentWindow) { contents.contentWindow.document.location.replace(href); } else { contents.src = href; } return false; }
+var animatedcollapse = { divholders: {}, divgroups: {}, lastactiveingroup: {}, preloadimages: [], show: function (divids) { if (typeof divids == "object") { for (var i = 0; i < divids.length; i++) { this.showhide(divids[i], "show"); } } else { this.showhide(divids, "show"); } }, hide: function (divids) { if (typeof divids == "object") { for (var i = 0; i < divids.length; i++) { this.showhide(divids[i], "hide"); } } else { this.showhide(divids, "hide"); } }, toggle: function (divid) { if (typeof divid == "object") { divid = divid[0]; } this.showhide(divid, "toggle"); }, addDiv: function (divid, attrstring) { this.divholders[divid] = ({ id: divid, $divref: null, attrs: attrstring }); this.divholders[divid].getAttr = function (name) { var attr = new RegExp(name + "=([^,]+)", "i"); return (attr.test(this.attrs) && parseInt(RegExp.$1) != 0) ? RegExp.$1 : null; }; this.currentid = divid; return this; }, showhide: function (divid, action) { var $divref = this.divholders[divid].$divref; if (this.divholders[divid] && $divref != null && $divref.length == 1) { var targetgroup = this.divgroups[$divref.attr("groupname")]; if ($divref.attr("groupname") && targetgroup.count > 1 && (action == "show" || action == "toggle" && $divref.css("display") == "none")) { if (targetgroup.lastactivedivid && targetgroup.lastactivedivid != divid) { this.slideengine(targetgroup.lastactivedivid, "hide"); } this.slideengine(divid, "show"); targetgroup.lastactivedivid = divid; } else { this.slideengine(divid, action); } } }, slideengine: function (divid, action) { var $divref = this.divholders[divid].$divref; var $togglerimage = this.divholders[divid].$togglerimage; if (this.divholders[divid] && $divref.length == 1) { var animateSetting = { height: action }; if ($divref.attr("fade")) { animateSetting.opacity = action; } $divref.animate(animateSetting, $divref.attr("speed") ? parseInt($divref.attr("speed")) : 500, function () { if ($togglerimage) { $togglerimage.attr("src", ($divref.css("display") == "none") ? $togglerimage.data("srcs").closed : $togglerimage.data("srcs").open); } if (animatedcollapse.ontoggle) { try { animatedcollapse.ontoggle(jQuery, $divref.get(0), $divref.css("display")); } catch (e) { alert('An error exists inside your "ontoggle" function:\n\n' + e + "\n\nAborting execution of function."); } } }); return false; } }, generatemap: function () { var map = {}; for (var i = 0; i < arguments.length; i++) { if (arguments[i][1] != null) { map[arguments[i][0]] = arguments[i][1]; } } return map; }, init: function () { var ac = this; jQuery(document).ready(function ($) { animatedcollapse.ontoggle = animatedcollapse.ontoggle || null; var urlparamopenids = animatedcollapse.urlparamselect(); var persistopenids = ac.getCookie("acopendivids"); var groupswithpersist = ac.getCookie("acgroupswithpersist"); if (persistopenids != null) { persistopenids = (persistopenids == "nada") ? [] : persistopenids.split(","); } groupswithpersist = (groupswithpersist == null || groupswithpersist == "nada") ? [] : groupswithpersist.split(","); jQuery.each(ac.divholders, function () { this.$divref = $("#" + this.id); if ((this.getAttr("persist") || jQuery.inArray(this.getAttr("group"), groupswithpersist) != -1) && persistopenids != null) { var cssdisplay = (jQuery.inArray(this.id, persistopenids) != -1) ? "block" : "none"; } else { var cssdisplay = this.getAttr("hide") ? "none" : null; } if (urlparamopenids[0] == "all" || jQuery.inArray(this.id, urlparamopenids) != -1) { cssdisplay = "block"; } else { if (urlparamopenids[0] == "none") { cssdisplay = "none"; } } this.$divref.css(ac.generatemap(["height", this.getAttr("height")], ["display", cssdisplay])); this.$divref.attr(ac.generatemap(["groupname", this.getAttr("group")], ["fade", this.getAttr("fade")], ["speed", this.getAttr("speed")])); if (this.getAttr("group")) { var targetgroup = ac.divgroups[this.getAttr("group")] || (ac.divgroups[this.getAttr("group")] = {}); targetgroup.count = (targetgroup.count || 0) + 1; if (jQuery.inArray(this.id, urlparamopenids) != -1) { targetgroup.lastactivedivid = this.id; targetgroup.overridepersist = 1; } if (!targetgroup.lastactivedivid && this.$divref.css("display") != "none" || cssdisplay == "block" && typeof targetgroup.overridepersist == "undefined") { targetgroup.lastactivedivid = this.id; } this.$divref.css({ display: "none" }); } }); jQuery.each(ac.divgroups, function () { if (this.lastactivedivid && urlparamopenids[0] != "none") { ac.divholders[this.lastactivedivid].$divref.show(); } }); if (animatedcollapse.ontoggle) { jQuery.each(ac.divholders, function () { animatedcollapse.ontoggle(jQuery, this.$divref.get(0), this.$divref.css("display")); }); } var $allcontrols = $("a[rel]").filter('[rel^="collapse["], [rel^="expand["], [rel^="toggle["]'); $allcontrols.each(function () { this._divids = this.getAttribute("rel").replace(/(^\w+)|(\s+)/g, "").replace(/[\[\]']/g, ""); if (this.getElementsByTagName("img").length == 1 && ac.divholders[this._divids]) { animatedcollapse.preloadimage(this.getAttribute("data-openimage"), this.getAttribute("data-closedimage")); $togglerimage = $(this).find("img").eq(0).data("srcs", { open: this.getAttribute("data-openimage"), closed: this.getAttribute("data-closedimage") }); ac.divholders[this._divids].$togglerimage = $(this).find("img").eq(0); ac.divholders[this._divids].$togglerimage.attr("src", (ac.divholders[this._divids].$divref.css("display") == "none") ? $togglerimage.data("srcs").closed : $togglerimage.data("srcs").open); } $(this).click(function () { var relattr = this.getAttribute("rel"); var divids = (this._divids == "") ? [] : this._divids.split(","); if (divids.length > 0) { animatedcollapse[/expand/i.test(relattr) ? "show" : /collapse/i.test(relattr) ? "hide" : "toggle"](divids); return false; } }); }); $(window).bind("unload", function () { ac.uninit(); }); }); }, uninit: function () { var opendivids = "", groupswithpersist = ""; jQuery.each(this.divholders, function () { if (this.$divref.css("display") != "none") { opendivids += this.id + ","; } if (this.getAttr("group") && this.getAttr("persist")) { groupswithpersist += this.getAttr("group") + ","; } }); opendivids = (opendivids == "") ? "nada" : opendivids.replace(/,$/, ""); groupswithpersist = (groupswithpersist == "") ? "nada" : groupswithpersist.replace(/,$/, ""); this.setCookie("acopendivids", opendivids); this.setCookie("acgroupswithpersist", groupswithpersist); }, getCookie: function (Name) { var re = new RegExp(Name + "=[^;]*", "i"); if (document.cookie.match(re)) { return document.cookie.match(re)[0].split("=")[1]; } return null; }, setCookie: function (name, value, days) { if (typeof days != "undefined") { var expireDate = new Date(); expireDate.setDate(expireDate.getDate() + days); document.cookie = name + "=" + value + "; path=/; expires=" + expireDate.toGMTString(); } else { document.cookie = name + "=" + value + "; path=/"; } }, urlparamselect: function () { window.location.search.match(/expanddiv=([\w\-_,]+)/i); return (RegExp.$1 != "") ? RegExp.$1.split(",") : []; }, preloadimage: function () { var preloadimages = this.preloadimages; for (var i = 0; i < arguments.length; i++) { if (arguments[i] && arguments[i].length > 0) { preloadimages[preloadimages.length] = new Image(); preloadimages[preloadimages.length - 1].src = arguments[i]; } } } };
+function returnObjById(b) { var a = null; if (document.getElementById) { a = document.getElementById(b); } else { if (document.all) { a = document.all[b]; } else { if (document.layers) { a = document.layers[b]; } } } return a; }
+function setHiddenForLargeImg(d, c, f, e) { var b = returnObjById(d); var a = returnObjById(c); b.value = f; a.value = e; }
+function changeImg(b, d, c, f, e) { imgSetSrc(b, d); imgSetAlt(b, c); setHiddenForLargeImg("main_img_SRC", "main_img_ALT", f, e); }
+function imgCopySrc(d, c) { var f = returnObjById(d); var e = returnObjById(c); f.src = e.src; }
+function imgSetAlt(b, c) { var d = returnObjById(b); d.alt = c; }
+function imgSetSrc(b, c) { var d = returnObjById(b); d.src = c; }
+function fnOpenLargeImageEU(){var a=returnObjById("main_img_SRC");var b=returnObjById("main_img_ALT");fnOpenLargeImage(a.value,b.value);}
+function validate_NAME(obj, sFieldName,isMessage) { var exp = /^[a-zA-Z]+(\S|\s)*[0-9a-zA-Z]+$/; return checkExp(exp, obj, (isMessage) ? sFieldName : "Please enter a valid " + sFieldName); return true; }
+function validate_PHONE(obj, sFieldName,isMessage) { var exp = /^(1\s*[-\/\.]?)?(\((\d{3})\)|(\d{3}))\s*[-\/\.]?\s*(\d{3})\s*[-\/\.]?\s*(\d{4})\s*(([xX]|[eE][xX][tT])\.?\s*(\d+))*$/; return checkExp(exp, obj,(isMessage) ? sFieldName : "Please enter a valid US phone number"); }
+function validate_PHONEIntl(obj, sFieldName, isMessage) { var exp = /([0-9\s\-]{7,})(?:\s*(?:#|x\.?|ext\.?|extension)\s*(\d+))?$/; return checkExp(exp, obj, (isMessage) ? sFieldName : "Please enter a valid phone number"); }
+function validate_ZIP(obj, sFieldName, isMessage) { var exp = /^\d{5}$|^\d{5}-\d{4}$/; return checkExp(exp, obj, (isMessage) ? sFieldName : "Please enter a valid zip code (5 or 10 digits only)"); }
+function validateEmail(emailStr, message) { var emailPat = /^(.+)@(.+)$/; var specialChars = '\\(\\)<>@,;:\\\\\\"\\.\\[\\]'; var validChars = "[^\\s" + specialChars + "]"; var firstChars = validChars; var quotedUser = '("[^"]*")'; var ipDomainPat = /^\[(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})\]$/; var atom = "(" + firstChars + validChars + "*)"; var word = "(" + atom + "|" + quotedUser + ")"; var userPat = new RegExp("^" + word + "(\\." + word + ")*$"); var domainPat = new RegExp("^" + atom + "(\\." + atom + ")*$"); var matchArray = emailStr.match(emailPat); if (matchArray == null) { alert((message != null) ? message : "Email address seems incorrect (check @ and .'s)"); return false; } var user = matchArray[1]; var domain = matchArray[2]; if (user.match(userPat) == null) { alert((message != null) ? message : "The name part of the email address seems to be invalid."); return false; } var IPArray = domain.match(ipDomainPat); if (IPArray != null) { for (var i = 1; i <= 4; i++) { if (IPArray[i] > 255) { alert((message != null) ? message : "The IP part of the email address is invalid!"); return false; } } return true; } var domainArray = domain.match(domainPat); if (domainArray == null) { alert((message != null) ? message : "The domain name of the email address doesn't seem to be valid."); return false; } var atomPat = new RegExp(atom, "g"); var domArr = domain.match(atomPat); var len = domArr.length; if (domArr[domArr.length - 1].length < 2 || domArr[domArr.length - 1].length > 4) { alert((message != null) ? message : "The email address must end in a three-letter or four-letter domain, or two letter country."); return false; } if (domArr[domArr.length - 1].length == 3 && len < 2) { var errStr = (message != null) ? message : "This address is missing a hostname!"; alert(errStr); return false; } return true; }
+function validateEmailLanguage(emailStr, displaymessage) {var emailPat = /^(.+)@(.+)$/;var specialChars = '\\(\\)<>@,;:\\\\\\"\\.\\[\\]';var validChars = "[^\\s" + specialChars + "]";var firstChars = validChars;var quotedUser = '("[^"]*")';var ipDomainPat = /^\[(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})\]$/;var atom = "(" + firstChars + validChars + "*)";var word = "(" + atom + "|" + quotedUser + ")";var userPat = new RegExp("^" + word + "(\\." + word + ")*$");var domainPat = new RegExp("^" + atom + "(\\." + atom + ")*$");var matchArray = emailStr.match(emailPat);if (matchArray == null) {alert(displaymessage);return false;}var user = matchArray[1];var domain = matchArray[2];if (user.match(userPat) == null) {alert(displaymessage);return false;}return true;}
+function showProdAlert(strProdAdded, strAddCartAlert, blnProdAlertShown, strRedirectToCart) {
+    /*if (strProdAdded == "1" && strAddCartAlert == "1" && blnProdAlertShown != "True" && blnProdAlertShown != "")
+    {
+        openDialog('#productAddedAlert', 250, 200);
+    }*/
+    if (strProdAdded == "1" && strAddCartAlert == "1" && blnProdAlertShown != "True" && blnProdAlertShown != "") {
+        if (strRedirectToCart == "1") {
+            alert("Shopping Cart has been successfully updated!");
+        } else {
+            alert("The item has been successfully added to your shopping cart. You can either continue shopping \nor click on the shopping cart link at the top right to checkout");
+        }
+    }
+}
+
+
+     
+
+$(document).ready(function () {
+    $(".persmainlink").click(function () {
+        $(this).siblings('.persmaindiv').show();
+    })
+    $(".closebutton").click(function () {
+        $(this).parent('.persheader').parent('.persmaindiv').hide();
+    })
+});
+function openDialog(dialogName, dialogWidth, dialogHeight)
+{
+	$( dialogName ).dialog({
+		autoOpen: true,
+		width: dialogWidth, 
+		minWidth: dialogWidth, 
+		height: dialogHeight,
+		minHeight: dialogHeight,
+		modal: true,
+		draggable: false
+		
+	});		
+}
+function openProcessDialog(dialogName, dialogWidth, dialogHeight)
+{
+	$( dialogName ).dialog({
+		width: dialogWidth, 
+		minWidth: dialogWidth, 
+		height: dialogHeight,
+		minHeight: dialogHeight,
+		modal: true,
+		draggable: false,
+		resizable: false,
+		closeOnEscape: false,
+		open: function(event, ui) { $(".ui-dialog-titlebar-close").hide(); }
+	});		
+}
+function closeDialog(dialogName)
+{
+	$(dialogName).dialog("close");
+}
+function openDetailWindow(sPath, intWidth, intHeight) {
+    var objPopWin = window.open(sPath, 'detail', "Height=" + intHeight + ",Width=" + intWidth + ",top=25,left=0,resizable=1,toolbar=0,location=0,status=0,menubar=0,scrollbars=yes")
+    objPopWin.focus();
+}
+
+function openProcessDialog(dialogName, dialogWidth, dialogHeight) {
+    //$( "#dialog:ui-dialog" ).dialog( "destroy" );
+    $(dialogName).dialog({
+        width: dialogWidth,
+        minWidth: dialogWidth,
+        height: dialogHeight,
+        minHeight: dialogHeight,
+        modal: true,
+        draggable: false,
+        resizable: false,
+        closeOnEscape: false,
+        open: function (event, ui) { $(".ui-dialog-titlebar-close").hide(); }
+    });
+}
+function fnGetGuidedNavSort(PageUrl, strUrl, Field) {
+    if (Field.value != '') {
+        strUrl = strUrl + '&SortBy=' + Field.value;
+    }
+    if (document.getElementById("cboresultsguided").value != '') {
+        strUrl = strUrl + '&GdPageSize=' + document.getElementById("cboresultsguided").value;
+    }
+    fnGetGuidedNavNextPage(PageUrl + strUrl, strUrl);
+}
+function fnGetGuidedNavPageSize(PageUrl, strUrl, Field) {
+    if (Field.value != '') {
+        strUrl = strUrl + '&GdPageSize=' + Field.value;
+    }
+    if (document.getElementById("cbosortbyguided").value != '') {
+        strUrl = strUrl + '&SortBy=' + document.getElementById("cbosortbyguided").value;
+    }
+    fnGetGuidedNavNextPage(PageUrl + strUrl, strUrl);
+}
+function fnGetGuidedNavPaging(PageUrl, strUrl) {
+    fnGetGuidedNavNextPage(PageUrl + strUrl, strUrl);
+}
+function showProdAlertMobile(strProdAdded, strAddCartAlert, blnProdAlertShown, strRedirectToCart) {
+    //Display dialog in Mobile irrespective of the setting
+    if (strProdAdded == "1" && strAddCartAlert == "1" && blnProdAlertShown != "True" && blnProdAlertShown != "") {
+        $('#productAddedAlert').dialog({
+            autoOpen: true,
+            width: 250,
+            minWidth: 250,
+            height: 250,
+            minHeight: 250,
+            modal: true,
+            resizable: false,
+            draggable: false,
+            title: 'Item Added'
+        });
+    }
+   }
+
+function changeLanguage(lang, page) {
+    location.href = '/action.asp?FormAction=changelanguage&lang=' + $(lang).val() + '&redirect=' + page;
+}
+function roundNum(num, dec) {return parseFloat(num).toFixed(dec);}
+function submitOutOfStockNotificationEmail(productId, message) {
+    if (!validateEmailLanguage($("#outOfStockNotificationEmail").val(), message)) {
+        return false;
+    }
+    $(".outOfStockNotificationForm").hide();
+    $.ajax({
+        type: "POST",
+        url: "/action.asp?FormAction=submitoutofstocknotificationemail&email=" + $("#outOfStockNotificationEmail").val() + "&productid=" + productId,
+        success: function (data) {
+
+            $(".outOfStockNotificationConfirm").show();
+        }
+    });
+}
+$("#outOfStockNotificationEmail").keypress(function (e) {
+    if (e.which == 13) {
+        submitOutOfStockNotificationEmail("")
+    }
+});
+function fnOpenDialogPopupPage(PageUrl, Width, Height, Title) {
+    var winW = $(window).width() - 30;
+    var winH = $(window).height() - 100;
+
+    $("#dialog-Help").dialog({
+        autoOpen: false,
+        title: Title,
+        modal: true,
+        height: winH,
+        width: winW
+    });
+    $("#dialog-Help").dialog("open");
+    $("#iframe-Help").attr("src", PageUrl);
+    return false;
+}
+function maskPhoneNumber(id,country) {
+    if (country == "US") {
+        $(id).mask("(999) 999-9999");
+    } else {
+        $(id).unmask("");
+    }
+}
+
+function setSubscriptionType(typeIndex) {
+    if (typeIndex == 0) {
+        $("#subscriptionSection-0").addClass("activeSub");
+        $("#subscriptionSection-0 .subscriptionSubSection").show();
+        $("#subscriptionSection-1").removeClass("activeSub");
+        $("#subscriptionSection-1 .subscriptionSubSection").hide();
+    } else {
+        $("#subscriptionSection-1").addClass("activeSub");
+        $("#subscriptionSection-1 .subscriptionSubSection").show();
+        $("#subscriptionSection-0").removeClass("activeSub");
+        $("#subscriptionSection-0 .subscriptionSubSection").hide();
+
+    }
+
+}
+function subscriptionCheckCart(form) {
+  
+       
+            //if there are no subscription items in cart and there are items in cart
+        $("#subMoveToWishListAndAdd").on("click", function () {
+            form.FormAction.value = 'movetowishlistandadd';
+            form.submit();
+
+        });
+        $("#subRemoveAndAdd").on("click", function () {
+            form.FormAction.value = 'subremoveandadd';
+            form.submit();
+
+        });
+        if ($('input[name=isSubscription]:checked').val() == "1") {
+            if ($("#hasSubscriptionItemsInCart").length == 0 && parseInt($("#cartCounter").val()) > 0) {
+                $("#dialog-subscription").dialog({
+                    autoOpen: false,
+                    title: 'What would you like to do?',
+                    modal: true,
+                    height: 290,
+                    width: 370
+                });
+
+                $("#subscriptionMessage1").show();
+                if ($("#moveToWishListAndAdd").length > 0) {
+                    $("#subMoveToWishListAndAdd").show();
+                   
+                    $("#subRemoveAndAdd").hide();
+                }
+                $("#dialog-subscription").dialog("open");
+                return false;
+            }
+        } else {
+            //non subscripitoin item added and has subscription items in cart
+            if ($("#hasSubscriptionItemsInCart").length > 0 && parseInt($("#cartCounter").val()) > 0) {
+                $("#dialog-subscription").dialog({
+                    autoOpen: false,
+                    title: 'What would you like to do?',
+                    modal: true,
+                    height: 290,
+                    width: 370
+                });
+
+                $("#subscriptionMessage2").show();
+                if ($("#moveToWishListAndAdd").length > 0) {
+                    $("#subMoveToWishListAndAdd").show();
+                    $("#subRemoveAndAdd").hide();
+                }
+                $("#dialog-subscription").dialog("open");
+                return false;
+            }
+            
+        }
+        if ($("#IsProductInCart").val()=="1") {
+            return confirm("This item already exists in the cart, would you like to add more?");
+        }
+  
+    return true
+}
+
+function hoverMouseOver(img) {
+    var src = $(img).attr("data-hover")
+    if (src != "" && src != "undefined") {
+        $(img).attr("src", src);
+        $(this).attr("alt", $(this).attr("data-hover-alt"));
+    }
+}
+
+function hoverMouseOut(img) {
+    var src = $(img).attr("data-image")
+    if (src != "" && src != "undefined") {
+        $(img).attr("src", src);
+        $(this).attr("alt", $(this).attr("data-image-alt"));
+    }
+}

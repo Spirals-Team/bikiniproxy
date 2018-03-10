@@ -1,0 +1,85 @@
+var Emuseum = {
+	openPopup: function(url) {
+		window.open(url,null,"height=900,width=900,scrollbars=1,resizable=1,menubar=0,toolbar=0,status=0,location=0,directories=0,left=150,top=100");
+		return false;
+	},
+	
+	stripPrefix: function(prefix, str) {
+		return str.startsWith(prefix) ? str.substring(prefix.length) : str;
+	},
+	
+	/**
+     * Execute onclick event on space-button pressed. 
+     */
+    onkeypressExecuteOnclick: function(event, elem) {
+        var keynum;
+		var keychar;
+		
+		if(window.event) // IE
+		  {
+		  keynum = event.keyCode;
+		  }
+		else if(event.which) // Netscape/Firefox/Opera
+		  {
+		  keynum = event.which;
+		  }
+		
+		// If space-button was pressed then execute select function.
+		keychar = String.fromCharCode(keynum);
+		if (keychar == ' ')
+		  {
+		  elem.onclick(event);	
+		  }
+    },	
+    
+	/**
+	 * Select single checkbox.
+	 */
+	select: function(elem, url) {
+		var allselected = true;
+		$$('.selection').each(function(item) {
+			if(!item.checked) {
+				allselected = false;
+			}
+		});
+		if(typeof applySelectAllOnPageCBSelection != 'undefined') {
+		  applySelectAllOnPageCBSelection(allselected);
+		}
+		this.selectAjax(elem.checked, url, [elem]);
+	},
+	
+	/**
+	 * Calls when administrator select an object for role assign/remove.
+	 * @param items - either single item id, or an array of items identifiers.
+	 */
+	selectAjax: function(checked, url, items) {
+		if(url && url != 'null') {
+		    var idsJoined = "-1";
+		    if(items) {
+				var ids = items.collect(function(item) {
+			    	return Emuseum.stripPrefix('selection:', item.id);
+			    });
+			    idsJoined = ids.join('/');
+			}
+		    new Ajax.Request(url.replace("_id", idsJoined).replace("_state", checked),
+	    		{ asynchronous: false });
+		}
+	},
+
+	setFocus: function(page){
+		if(page=='search/Quick'){
+			$('searchQueryField').activate();
+		}
+		if(page=='Login'){
+			$('j_username').activate();
+		}
+		if(page=='PasswordRecovery'){
+			$('email').activate();
+		}	
+		if(page=='Registration'){
+			$('firstName').activate();
+		}		
+	}
+	
+}
+

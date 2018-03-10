@@ -1,0 +1,31 @@
+if(typeof imagesFileIncluded != 'boolean' || !imagesFileIncluded){
+	var imagesFileIncluded = true;
+
+	function drawMainImage(key, pers, type, fromElement, altElement){
+		var skip = false;
+
+		if(altElement && altElement != 'undefined' && altElement != ''){
+			var elementName = altElement + key;
+		} else {
+			var elementName = 'prodMainImage' + key;
+		}
+
+		//If you select pers A which changes the main image and then change pers B that doesn't have an image, don't revert the main image to the product default NM 18572
+		if(!pers && !document.getElementById(elementName)){
+			elementName = 'prodMainImage0';
+		}
+
+		if(currentElement = document.getElementById(elementName)){
+			//If a checkbox has been clicked and it's now unchecked then skip this stuff.
+			if(pers && pers != '' && pers != 'undefined' && type && type != '' && type != 'undefined' && type == 'checkbox'){
+				if(fromElement.checked == false){
+					skip = true;
+				}
+			}
+
+			if(!skip){
+				$('#photos').galleryView('forceShowItem', elementName);
+			}
+		}
+	}
+}

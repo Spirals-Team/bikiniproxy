@@ -1,0 +1,593 @@
+define(['angular/core/services'],
+    function () {
+
+        var importCtrl = angular.module('graphdb.framework.impex.import.controllers', [
+            'ui.bootstrap',
+            'graphdb.framework.repositories.services',
+            'toastr'
+        ]);
+
+        importCtrl.controller('CommonCtrl', ['$scope', '$http', 'toastr', '$interval', '$timeout', '$repositories', '$modal', '$filter', '$rootScope', function ($scope, $http, toastr, $interval, $timeout, $repositories, $modal, $filter, $rootScope) {
+            $scope.files = [];
+            $scope.fileChecked = {};
+            $scope.checkAll = false;
+            $scope.popoverTemplateUrl = 'settingsPopoverTemplate.html';
+
+            $scope.getAppData = function () {
+                $http.get('rest/info/properties').success(function (data, status, headers, config) {
+                    $scope.appData = {};
+
+                    $scope.appData.properties = {};
+
+                    for (var i = 0; i < data.length; i++) {
+                        $scope.appData.properties[data[i].key] = {
+                            source: data[i].source,
+                            value: data[i].value
+                        };
+                    }
+                    $scope.maxUploadFileSizeMB = $scope.appData.properties['graphdb.workbench.maxUploadSize'].value / (1024 * 1024);
+                }).error(function (data, status, headers, config) {
+                    msg = getError(data);
+                    toastr.error(msg, 'Error');
+                });
+            };
+
+            $scope.getAppData();
+
+            $scope.fileFormats = ['ttl', 'rdf', 'rj', 'n3', 'nt', 'nq', 'trig', 'trix', 'brf', 'owl'];
+
+            {
+                var gzs = _.map($scope.fileFormats, function (f) {
+                    return '.' + f + '.gz'
+                });
+                var basics = _.map($scope.fileFormats, function (f) {
+                    return '.' + f
+                });
+                $scope.fileFormatsExtended = _.reduce(_.union(gzs, basics, ['.zip']), function (el, all) {
+                    return el + ', ' + all;
+                });
+                $scope.fileFormatsHuman = _.reduce(basics, function (el, all) {
+                        return el + ' ' + all;
+                    }) + ' and their gz versions and zip archives'
+            }
+
+            $scope.updateListHttp = function (force) {
+                $http({
+                    method: 'GET',
+                    url: $scope.url,
+                    params: {repository: $scope.activeRepository()}
+                }).success(function (data, status, headers, config) {
+                    if ($scope.files.length === 0 || $scope.viewType == 'url' || force) {
+                        $scope.files = _.filter(data, function (f) {
+                            // we do not want to support bz2 compressed file because RDF4J does not
+                            // support handling this compressed format
+                            return f.name.substr(f.name.lastIndexOf('.') + 1) !== "bz2";
+                        });
+                        $scope.loader = false;
+                    } else {
+                        $scope.files.forEach(function (f) {
+                            var remoteStatus = _.find(data, _.matches({'name': f.name}));
+                            if (force) {
+                                if (remoteStatus) {
+                                    _.merge(f, remoteStatus);
+                                } else {
+                                    f.status = undefined;
+                                    f.message = "";
+                                }
+                            } else {
+                                if (f.status && remoteStatus) {
+                                    _.merge(f, remoteStatus);
+                                }
+                            }
+                        });
+                    }
+                    // Need new status here
+                    if (force && 'upload' === $scope.viewType) {
+                        $scope.files = _.filter($scope.files, function (f) {
+                            return f.status != undefined;
+                        });
+                    }
+                    $scope.showClearSuccessful = _.filter($scope.files, function (file) {
+                            return file.status == 'DONE'
+                        }).length > 0;
+                    $scope.loader = false;
+                }).error(function (data, status, headers, config) {
+                    toastr.warning('Could not get files; ' + getError(data));
+                    $scope.loader = false;
+                });
+            };
+
+            $scope.showParserSettings = false;
+            $scope.switchParserSettings = function () {
+                $scope.showParserSettings = !$scope.showParserSettings;
+            }
+
+            // update the list instantly when the tab is changed
+            $scope.$watch(function () {
+                return $($scope.tabId).is(':visible');
+            }, function () {
+                if ($($scope.tabId).is(':visible')) {
+                    $scope.updateListHttp(false);
+                }
+            });
+
+            $scope.updateList = function (force) {
+                if (!$scope.canWriteActiveRepo()) {
+                    return;
+                }
+
+                if (!$($scope.tabId).is(':visible')) {
+                    return;
+                }
+                $scope.updateListHttp(force);
+            };
+
+            $scope.$on('repositoryIsSet', function () {
+                $scope.updateList(true);
+                $scope.getSettings();
+            });
+
+            $scope.pullList = function () {
+                var timer = $interval(function () {
+                    $scope.updateList(false)
+                }, 4000);
+                $scope.$on("$destroy", function (event) {
+                    $interval.cancel(timer);
+                });
+            };
+
+            $scope.getVisibleFiles = function () {
+                return $filter('filter')($scope.files, $scope.fileQuery);
+            };
+
+            $scope.selectAllFiles = function () {
+                $scope.getVisibleFiles().forEach(function (file) {
+                    $scope.fileChecked[file.name] = $scope.checkAll;
+                });
+            };
+
+            $scope.setSettingsFor = function (fileName) {
+                $scope.settingsFor = fileName;
+                if (!_.isEmpty(fileName) && !_.isEmpty($scope.savedSettings[fileName])) {
+                    $scope.settings = $scope.savedSettings[fileName];
+                } else if ($scope.savedSettings && _.isEmpty($scope.savedSettings[fileName])) {
+                    // TODO default settings
+                    $scope.settings = $scope.defaultSettings;
+                }
+                /*if (_.isEmpty(fileName)) {
+
+                 $scope.settings = {};
+                 }*/
+
+                var modalInstance = $modal.open({
+                    templateUrl: 'v/8.4.0-TR02/js/angular/import/templates/settingsModal.html',
+                    controller: 'SettingsModalCtrl',
+                    scope: $scope
+                });
+
+
+                modalInstance.result.then(function (settings) {
+                        $scope.settings = settings;
+                        if ($scope.settingsFor == '') {
+                            $scope.importSelected();
+                        } else {
+                            $scope.importFile($scope.settingsFor);
+                        }
+
+                    }, function (settings) {
+                        $scope.settings = settings;
+                    }
+                );
+            };
+
+            $scope.stopImport = function (fileName) {
+                var params = {repository: $scope.activeRepository()};
+                // The param is url for remote imports and fileName otherwise
+                // Here we can guess it's a remote import by the url ending in /url :)
+                if ($scope.url.endsWith('/url')) {
+                    params['url'] = fileName;
+                } else {
+                    params['fileName'] = fileName;
+                }
+                $http({
+                    method: 'DELETE',
+                    url: $scope.url,
+                    params: params
+                })
+                    .success(function (data, status, headers, config) {
+                        $scope.updateList();
+                    }).error(function (data, status, headers, config) {
+                    toastr.warning('Could not stop import; ' + getError(data)
+                    );
+                });
+            };
+
+            $scope.importable = function (file) {
+                return true;
+            };
+
+            $scope.hasImportable = function () {
+                return _.filter($scope.files, function (f) {
+                        return $scope.importable(f)
+                    }).length > 0;
+            };
+
+            $scope.showTable = function () {
+                var showTable = $scope.files.length > 0 && ('upload' == $scope.viewType || 'server' == $scope.viewType);
+                if ($scope.checkAll) {
+                    $scope.switchBatch(true);
+                }
+                return showTable;
+            };
+
+            $scope.switchBatch = function (all) {
+                if (all) {
+                    $scope.selectAllFiles();
+                } else {
+                    if ($scope.checkAll) {
+                        $scope.checkAll = false;
+                    }
+                }
+                $scope.batch = _.map(_.filter($scope.files, function (f) {
+                        return $scope.fileChecked[f.name] && $scope.importable(f)
+                    }), 'name').length > 0;
+            };
+
+            $scope.importSelected = function () {
+                var timer;
+                var selectedFileNames = _.map(_.filter($scope.getVisibleFiles(), function (f) {
+                    return $scope.fileChecked[f.name] && $scope.importable(f)
+                }), 'name');
+
+                _.forEach(selectedFileNames, function (fileName, i) {
+                    timer = $timeout(function () {
+                        $scope.importFile(fileName);
+                    }, 1000 * i);
+                });
+
+                $scope.$on("$destroy", function (event) {
+                    $timeout.cancel(timer);
+                });
+            };
+
+            $scope.removeStatus = function (file) {
+                $http({
+                    method: 'DELETE',
+                    url: $scope.url + '/status',
+                    params: {status: file, repository: $scope.activeRepository()}
+                }).success(function (data) {
+                    _.remove($scope.files, function (cFile) {
+                        return file == cFile.name;
+                    });
+                }).error(function (data) {
+                    toastr.warning('Could not clear loaded file; ' + getError(data));
+                });
+            };
+
+            $scope.clearSuccessful = function () {
+                $http({
+                    method: 'DELETE',
+                    url: $scope.url + '/successful',
+                    params: {repository: $scope.activeRepository()}
+                }).success(function (data) {
+                    $scope.files = _.filter($scope.files, function (file) {
+                        return file.status != 'DONE'
+                    });
+                    $scope.showClearSuccessful = false;
+                }).error(function (data) {
+                    toastr.warning('Could not clear successfully urls; ' + getError(data));
+                });
+            };
+
+            $scope.activeRepository = function () {
+                return $repositories.getActiveRepository();
+            };
+
+            $scope.getActiveLocation = function () {
+                return $repositories.getActiveLocation();
+            };
+
+            $scope.isLocalLocation = function () {
+                if ($scope.getActiveLocation()) {
+                    return $scope.getActiveLocation().uri.substr(0, 4) != 'http';
+                }
+            };
+            // Settings
+
+            $scope.filterSettings = function (fileName) {
+                var filtered = _.omitBy($scope.savedSettings[fileName], _.isNull);
+                filtered = _.omit(_.omit(filtered, 'repoLocationHash'), ['status', 'message', 'name']);
+                return _.map(_.keys(filtered), function (key) {
+                    return [key, filtered[key]]
+                });
+            };
+
+            $scope.getSettings = function () {
+                if (!$scope.canWriteActiveRepo()) {
+                    return;
+                }
+
+                if (!$scope.settingsUrl) {
+                    return;
+                }
+
+                $http({
+                    method: 'GET',
+                    url: 'rest/data/import/settings/default',
+                }).success(function (data, status, headers, config) {
+                    $scope.defaultSettings = data;
+                }).error(function (data, status, headers, config) {
+                    toastr.warning('Could not get default settings; ' + getError(data));
+                });
+
+                $http({
+                    method: 'GET',
+                    url: $scope.settingsUrl,
+                    params: {repository: $scope.activeRepository()}
+                })
+                    .success(function (data, status, headers, config) {
+                        $scope.savedSettings = data;
+                    }).error(function (data, status, headers, config) {
+                    toastr.warning('Could not get settings; ' + getError(data));
+                });
+            };
+
+            $scope.hasError = function (error, input) {
+                return _.find(error, function (o) {
+                    return input == o['$name'];
+                });
+            }
+
+            $scope.$watch(function () {
+                return $repositories.getActiveRepository();
+            }, $scope.getSettings);
+
+            $scope.$watch(function () {
+                return $repositories.getActiveLocation();
+            }, $scope.getSettings);
+
+            $scope.$watch($scope.settingsUrl, $scope.getSettings);
+
+            $scope.pritifySettings = function (settings) {
+                return JSON.stringify(settings, null, " ");
+            }
+        }]);
+
+        importCtrl.controller('ImportCtrl', ['$scope', '$http', 'toastr', '$interval', '$controller', function ($scope, $http, toastr, $interval, $controller) {
+            $scope.loader = true;
+            angular.extend(this, $controller('CommonCtrl', {$scope: $scope}));
+            $scope.viewType = 'server';
+            $scope.settingsUrl = 'rest/data/import/settings/server';
+            $scope.getSettings();
+            $scope.tabId = '#import-server';
+
+            $scope.pullList();
+            $scope.url = 'rest/data/import/server';
+
+            var importServerFiles = function (selectedFileNames) {
+                if (!$scope.canWriteActiveRepo()) {
+                    return;
+                }
+//                var fileSettings = _.assign({}, $scope.settings || {}, {fileName: selectedFileNames})
+
+                $http({
+                    method: 'POST',
+                    url: 'rest/data/import/server/' + $scope.activeRepository(),
+                    data: _.merge($scope.settings || {}, {fileNames: selectedFileNames})
+                }).success(function (data) {
+                    $scope.updateList();
+                    $scope.getSettings();
+                    $scope.batch = false;
+                    $scope.fileChecked = {};
+                }).error(function (data, status, headers, config) {
+                    toastr.error('Could not send file for import; ' + getError(data));
+                });
+            };
+
+            $scope.importSelected = function () {
+                var selectedFileNames = _.map(_.filter($scope.getVisibleFiles(), function (f) {
+                    return $scope.fileChecked[f.name] && $scope.importable(f)
+                }), 'name');
+                importServerFiles(selectedFileNames);
+            };
+
+            $scope.importFile = function (fileName) {
+                importServerFiles([fileName]);
+            };
+        }]);
+
+        importCtrl.controller('UploadCtrl', ['$scope', 'Upload', '$http', 'toastr', '$controller', '$rootScope', function ($scope, Upload, $http, toastr, $controller, $rootScope) {
+            $scope.loader = true;
+            angular.extend(this, $controller('CommonCtrl', {$scope: $scope}));
+            $scope.tabId = '#import-upload';
+            $scope.url = 'rest/data/import/load';
+            $scope.updateList();
+            $scope.pullList();
+
+            $scope.viewType = 'upload';
+            $scope.currentFiles = [];
+
+            $scope.importable = function (file) {
+                return undefined === file.status;
+            };
+
+            $scope.settingsUrl = 'rest/data/import/settings/upload';
+
+            $scope.fileSelected = function ($files, $file, $newFiles, $duplicateFiles, $invalidFiles, $event) {
+                if ($invalidFiles.length > 0) {
+                    $invalidFiles.forEach(function (f) {
+                        toastr.warning('File ' + f.name + ' too big ' + Math.floor(f.size / (1024 * 1024)) + ' MB. Use Server Files import.');
+                    });
+                }
+            };
+
+            $scope.$watch('currentFiles', function () {
+                function disallowBZip2Files() {
+                    $scope.currentFiles.forEach(function (f) {
+                        if (f.name.substr(f.name.lastIndexOf('.') + 1) === "bz2") {
+                            var fileIdx = $scope.currentFiles.indexOf(f);
+                            if (fileIdx > -1) {
+                                $scope.currentFiles.splice(fileIdx, 1);
+                            }
+                            toastr.error('Could not upload file ' + f.name + ' . BZip2 archives are not supported.');
+                        }
+                    });
+                }
+
+                if ($scope.currentFiles) {
+                    // RDF4J does not support decompressing .bz2 files so we want to reject importing them
+                    disallowBZip2Files();
+                }
+                $scope.files = _.uniqBy(_.union($scope.currentFiles, $scope.files), function (file) {
+                    return file.name;
+                });
+            });
+
+            $scope.importFile = function (fileName) {
+                var fileIndex = _.findIndex($scope.files, {name: fileName});
+                if (fileIndex < 0) {
+                    toastr.warning('No such file; ' + fileName);
+                }
+                else {
+                    var file = $scope.files[fileIndex];
+                    file.status = 'UPLOADING';
+                    Upload.upload({
+                        url: 'rest/data/import/upload/' + $scope.activeRepository(),
+                        data: {file: file, importSettings: JSON.stringify($scope.settings || {})}
+                    }).progress(function (evt) {
+                        var progressPercentage = parseInt(100.0 * evt.loaded / evt.total);
+                        file.message = 'progress: ' + progressPercentage + '% ' + evt.config.data.file.status;
+                    }).success(function (data, status, headers, config) {
+                        $scope.updateList();
+                        $scope.getSettings();
+                        $scope.batch = false;
+                    }).error(function (data, status, headers, config) {
+                        toastr.error('Could not upload file; ' + getError(data));
+                        file.status = 'ERROR';
+                        file.message = getError(data);
+                    });
+                }
+            };
+        }]);
+
+        importCtrl.controller('UrlCtrl', ['$scope', '$http', 'toastr', '$interval', '$controller', function ($scope, $http, toastr, $interval, $controller) {
+            $scope.loader = true;
+            angular.extend(this, $controller('CommonCtrl', {$scope: $scope}));
+
+            $scope.importFormat = {name: 'Auto', type: ''};
+
+            $scope.viewType = 'url';
+            $scope.settingsUrl = 'rest/data/import/settings/url';
+            $scope.tabId = '#import-url';
+            $scope.url = 'rest/data/import/url';
+            $scope.pullList();
+
+            $scope.importUrlForm = function ($event) {
+                $event.preventDefault();
+                $scope.importUrl();
+            };
+            $scope.importUrl = function () {
+                if ($scope.dataUrl) {
+                    $scope.importFile($scope.dataUrl);
+                }
+            };
+
+            $scope.switchBatch = function () {
+            };
+
+            $scope.importFile = function (url) {
+                if (!$scope.canWriteActiveRepo()) {
+                    return;
+                }
+
+                $http({
+                    method: 'POST',
+                    url: 'rest/data/import/url/' + $scope.activeRepository(),
+                    params: {url: url, dataFormat: $scope.importFormat.type},
+                    data: $scope.settings || {}
+                })
+                    .success(function (data) {
+                        // Do not pull list for each file
+                    }).error(function (data, status, headers, config) {
+                    toastr.error('Could not send url for import; ' + getError(data)
+                    );
+                });
+            }
+
+        }]);
+
+        importCtrl.controller('TextCtrl', ['$scope', '$http', '$controller', 'toastr', function ($scope, $http, $controller, toastr) {
+            angular.extend(this, $controller('CommonCtrl', {$scope: $scope}));
+            $scope.sample = 'Example: \n' +
+                'rdf:predicate a rdf:Property .';
+
+            $scope.viewType = 'text';
+
+
+            $scope.importFormat = {name: 'Turtle', type: 'text/turtle'};
+            $scope.importSelected = function () {
+
+                if (!$scope.rdfText) {
+                    return;
+                }
+
+                if ($scope.settings && $scope.settings.context && $scope.settings.context.indexOf('<') != 0 && $scope.settings.context.indexOf('>') != ($scope.settings.context.length - 1)) {
+                    $scope.settings.context = '<' + $scope.settings.context + '>';
+                }
+                if ($scope.settings && $scope.settings.baseURI && $scope.settings.baseURI.indexOf('<') != 0 && $scope.settings.baseURI.indexOf('>') != ($scope.settings.baseURI.length - 1)) {
+                    $scope.settings.baseURI = '<' + $scope.settings.baseURI + '>';
+                }
+
+
+                $http({
+                    method: 'POST',
+                    url: 'repositories/' + $scope.activeRepository() + '/statements',
+                    data: $scope.rdfText,
+                    params: $scope.settings,
+                    headers: {
+                        'Content-Type': $scope.importFormat.type
+                    }
+                }).success(function (data) {
+                    toastr.success('Your data was successfully imported.');
+                }).error(function (data) {
+                    toastr.error('Could not import data; ' + data);
+                });
+            }
+
+        }]);
+
+
+        importCtrl.controller('TabCtrl', ['$scope', '$rootScope', function ($scope, $rootScope) {
+            $scope.viewType = 'upload';
+            $scope.isCollapsed = false;
+            // Hide the help info  queries when the user clicks somewhere else in the UI.
+            $(document).mouseup(function (event) {
+                if (!$(event.target).closest('#ot-help').length) { // if the target of the click isn't the container..
+                    if ($scope.isCollapsed == true) {
+                        $scope.isCollapsed = false;
+                    }
+                }
+            });
+            $scope.templateUrl = 'v/8.4.0-TR02/js/angular/import/templates/uploadInfo.html';
+            $scope.changeHelpTemplate = function (templateFile, files) {
+                $scope.templateUrl = 'v/8.4.0-TR02/js/angular/import/templates/' + templateFile;
+            };
+            $scope.commonUrl = 'v/8.4.0-TR02/js/angular/import/templates/commonInfo.html';
+        }]);
+
+        importCtrl.controller('SettingsModalCtrl', ["$scope", "$modalInstance", function ($scope, $modalInstance) {
+
+            $scope.settings
+
+            $scope.ok = function () {
+                $modalInstance.close($scope.settings);
+            };
+
+            $scope.cancel = function () {
+                $modalInstance.dismiss($scope.settings);
+            };
+        }]);
+
+        return importCtrl;
+
+    });

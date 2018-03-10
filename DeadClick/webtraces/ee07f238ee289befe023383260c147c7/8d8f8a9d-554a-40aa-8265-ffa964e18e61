@@ -1,0 +1,46 @@
+var gptevents = (function() {
+	var adSlots = {};
+	var afterRenderEvents = {};
+	
+	var addSlot = function(id, slot) {
+		adSlots[id] = slot;
+	}
+
+	/**
+	 * Invoke callback for the ad with identifer adSlotId when that
+	 * slot has finished rendering
+	 * 
+	 * Callback should accept 2 parameters:
+	 * callback(isEmpty, size)
+	 */
+	var afterRender = function(adSlotId, callback) {
+		afterRenderEvents[adSlotId] = callback;
+	};
+
+	/**
+	 * Load an ad slot that had been setup on delayed load
+	 */
+	var loadSlot = function(identifier)
+	{
+		googletag.cmd.push(function() {
+			googletag.display(identifier);
+		});
+	}
+	
+	/**
+	 * Callback function invoked when a slot has finished rendering
+	 * Called by the GPT API via the slotRenderEnded event
+	 */
+	var trigger = function(event) {
+		renderedSlotId = event.slot.getSlotId().getDomId();
+		afterRenderEvents[renderedSlotId].call(this, event.isEmpty, event.size);
+	}
+	
+    // Public API
+	return {
+		afterRender: afterRender,
+		loadSlot: loadSlot,
+		trigger: trigger,
+		addSlot: addSlot
+	};
+})();

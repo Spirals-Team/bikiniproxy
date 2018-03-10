@@ -1,0 +1,397 @@
+(function ($) {
+
+	var isiOS = navigator.userAgent.match(/iPad|iPhone|iPod/i) != null;
+
+
+
+	// TABS
+	$.fn.elementalTabs = function( options ) {
+
+		var tab_id = 0;
+		var defaults = {};
+		options = $.extend(defaults, options);
+
+		return this.each(function () {
+
+			var build_navigation = function() {
+
+				var nav = $this.find('nav');
+
+				// create nav if it doesn't exist
+				if (nav.length === 0) {
+					nav = $('<nav></nav>');
+					$this.prepend(nav);
+				}
+
+				// loop through articles and create buttons for the nav
+				sections.each(function () {
+					var title = $(this).find('h3');
+					tab_id ++;
+					$(this).attr('id', 'tab_' + tab_id);
+					if (title.length > 0) {
+						var tab = $('<a href="#tab_' + tab_id + '">' + title.text() + '</a>');
+						nav.append(tab);
+					}
+				});
+
+				return nav;
+
+			};
+
+			var $this = $(this);
+			var sections = $this.children('section');
+			var nav = build_navigation();
+
+			nav.find('a').click(function() {
+				sections.hide().filter(this.hash).show();
+				nav.find('a').removeClass('selected');
+				$(this).addClass('selected');
+				return false;
+			});
+
+			nav.find('a:first').click();
+		});
+	};
+
+	/**
+	 * TOOLTIPS
+	 * data-title = tooltip text
+	 */
+	$.fn.elementalTips = function( options ) {
+
+		var defaults = {
+			offset: 10
+		};
+		options = $.extend(defaults, options);
+
+		return this.each(function () {
+			var $this = $(this);
+			var content = _get_title($this);
+
+			if (content !== undefined) {
+				var location = $this.data('position') || 'bottom';
+
+				// create tooltip
+				var tip = $('<div class="tooltip">' + content + '</div>');
+				tip.css({'position':'absolute', 'opacity':0, 'width':140}).addClass(location);
+				$this.data('title', content).attr('title', '');
+
+				$this[($.fn.hoverIntent) ? 'hoverIntent' : 'hover'](function () {
+					tip.appendTo('body');
+
+					var xPos, yPos;
+					var pos = $.extend({}, $this.offset(), {'width':this.offsetWidth, 'height':this.offsetHeight});
+					var tipHeight = tip[0].offsetHeight;
+					var tipWidth = tip[0].offsetWidth;
+
+					switch (location) {
+						case 'top':
+							yPos = pos.top - tipHeight - options.offset;
+							xPos = pos.left + (pos.width / 2) - (tipWidth / 2);
+							break;
+
+						case 'left':
+							yPos = pos.top + (pos.height / 2) - (tipHeight / 2);
+							xPos = pos.left - tipWidth - options.offset;
+							break;
+
+						case 'right':
+							yPos = pos.top + (pos.height / 2) - (tipHeight / 2);
+							xPos = pos.left + pos.width + options.offset;
+							break;
+
+						default:
+						case 'bottom':
+							yPos = pos.top + pos.height + options.offset;
+							xPos = pos.left + (pos.width / 2) - (tipWidth / 2);
+							break;
+
+					}
+
+					tip.css({'top':yPos + 5, 'left':xPos}).stop(true, true).show().animate({'top':yPos, 'opacity':1}, 250);
+				}, function () {
+					tip.stop(true, true).delay(300).animate({'top':'-=5', 'opacity':0}, 250, 'swing', function() {
+						tip.remove();
+					});
+				});
+			}
+		});
+	};
+
+	// DROP DOWN MENUS
+	$.fn.elementalNav = function( options ) {
+
+		var defaults = {};
+		options = $.extend(defaults, options);
+
+		return this.each(function () {
+			var $this = $(this);
+
+			$this.find('li')[($.fn.hoverIntent) ? 'hoverIntent' : 'hover'](function(){
+				$(this).addClass('hover');
+				$('ul:first',this).stop(true, true).fadeIn(100);
+			}, function(){
+				$(this).removeClass('hover');
+				$('ul:first',this).delay(300).fadeOut(100);
+			});
+
+			$this.find('li:has(ul)').find('a:first').addClass('has-children');
+		});
+	};
+
+	// SLIDESHOW
+	$.fn.elementalSlides = function( options ) {
+
+		var total_slides = 0;
+
+		var defaults = {
+			interval: 4000
+		};
+		options = $.extend(defaults, options);
+
+		return this.each(function () {
+
+			var start_timer = function() {
+				clearInterval(timer);
+				timer = setInterval (function() { next(); }, interval);
+			};
+
+			var display = function(slide) {
+				articles.fadeOut(500).removeClass('current').filter(slide).fadeIn(500).addClass('current');
+			};
+
+			var next = function() {
+				var next_slide = nav.find('.selected').removeClass('selected').next();
+				if (next_slide.length === 0) {
+					next_slide = nav.find(':first');
+				}
+				next_slide.addClass('selected');
+				display(next_slide.attr('href'));
+			};
+
+			var $this = $(this);
+			var timer;
+			var slide_count = 0;
+
+			var articles = $this.children('article');
+			var nav = $this.find('nav');
+			var interval = $this.data('interval') || options.interval;
+
+			// create nav if it doesn't exist
+			if (nav.length === 0) {
+				nav = $('<nav></nav>');
+				$this.prepend(nav);
+			}
+
+			// loop through articles and create buttons for the nav
+			articles.each(function () {
+				slide_count ++;
+				total_slides ++;
+				$(this).attr('id', 'slide_' + total_slides);
+				var tab = $('<a href="#slide_' + total_slides + '">' + slide_count + '</a>');
+				nav.append(tab);
+			});
+
+			// click button
+			nav.find('a').click(function () {
+				display(this.hash);
+				nav.find('a').removeClass('selected');
+				$(this).addClass('selected');
+				start_timer();
+				return false;
+			});
+
+			// stop the animation when the mouse hovers the content (so user is reading content)
+			$this[($.fn.hoverIntent) ? 'hoverIntent' : 'hover'](function(){
+				clearInterval(timer);
+			}, function(){
+				start_timer();
+			});
+
+			nav.find(':first').click();
+			start_timer();
+
+		});
+
+	};
+
+	// MODAL WINDOW
+	$.fn.elementalModal = function (options) {
+
+		var defaults = {
+			width: 500,
+			height: 500,
+			template: '<div class="modal-title"><h3>[title]</h3><a class="modal-close">x</a></div><div class="modal-content">[content]</div>'
+		};
+		options = $.extend(defaults, options);
+
+		return this.each(function () {
+
+			var $this = $(this);
+
+			var overlay = $('#elementalOverlay');
+
+			// create overlay if it doesn't exist
+			if (overlay.length === 0) {
+				overlay = $('<div id="elementalOverlay"></div>');
+				$('body').append(overlay);
+				overlay.css({'position':'absolute', 'top':0, 'left':0, 'width':'100%', 'height':$(document).height(), 'background':'#000', 'z-index':999}).hide();
+				overlay.click(function(){ close_modal(); });
+			}
+
+			var modal = $('#elementalModal');
+
+			if (modal.length === 0) {
+				modal = $('<div id="elementalModal"></div>');
+				$('body').append(modal);
+				modal.css({'position':'fixed', 'top':0, 'left':'50%', 'background':'#fff', 'z-index':1000}).hide();
+			}
+
+			$this.click(function() {
+				var source = $(this).attr('href');
+				var content = options.template;
+				var title = _get_title($(this));
+				var extensions = /^.+\.((jpg)|(gif)|(jpeg)|(png))$/i;
+				var contentHTML = '';
+				var width = $this.data('width') || options.width;
+				var height = $this.data('height') || options.height;
+				var xOffset = width * -0.5;
+				var yOffset = ($(window).height() - height) / 3;
+
+				modal.css({'width':width + 'px', 'height':height + 'px', 'margin-left':xOffset + 'px'});
+
+				if (extensions.test(source)) {
+					contentHTML = '<img src="' + source + '" />';
+				} else if (source.charAt(0) === '#' && source.length > 1) {
+					contentHTML = $(source).html();
+				} else {
+					contentHTML = '<iframe frameborder="0" width="100%" height="100%" scrolling="no" allowtransparency="true" src="' + source + '"></iframe>';
+				}
+
+				if (title === undefined) { title = ''; }
+				content = content.replace('[title]', title);
+				content = content.replace('[content]', contentHTML);
+				modal.html(content);
+				modal.find('a.modal-close').click(function() { close_modal(); return false; });
+
+				// show the modal window and the overlay
+				overlay.fadeTo(250, 0.8);
+				modal.delay(300).show().css({'top':(height * -1) + 'px'}).animate({'top':yOffset + 'px'}, 200);
+				return false;
+			});
+
+			function close_modal() {
+				modal.fadeOut(150);
+				overlay.delay(100).fadeOut(250);
+			}
+
+		});
+
+	};
+
+	// STICKY SCROLLING
+	$.fn.elementalStickyScroll = function (options) {
+
+		var defaults = {};
+		options = $.extend(defaults, options);
+
+		return this.each(function () {
+			var $this = $(this);
+			var $parent = $this.parent();
+			// wrap a proxy div around the sticky content to keep the sticky contents size and shape
+			var wrapper = $('<div></div>').css({
+				'width':$this.outerWidth(),
+				'float':$this.css('float'),
+				'position':'relative',
+				'height':$this.outerHeight()
+			});
+			$this.wrap(wrapper);
+
+			var proxy = $this.parent();
+			var offset = $this.data('offset') || 0;
+
+			// funny how responsive designs make these things more complicated :)
+			$(window).resize(function() {
+				proxy.css({
+					'width':$this.outerWidth(),
+					'height':$this.outerHeight()
+				});
+			});
+
+			$(window).scroll(function() {
+				var default_css = {
+					'position':'relative',
+					'top':'auto'
+				};
+				if ($(window).width() >= _get_breakpoint()) {
+					var scroll_y = $(window).scrollTop();
+					var parent_top = $parent.offset().top;
+					var parent_height = $parent.height();
+					var this_height = $this.outerHeight();
+
+					if (scroll_y + this_height > parent_height + parent_top - offset) {
+						$this.css({
+							'position':'absolute',
+							'top':parent_height - this_height
+						});
+					} else if (scroll_y > parent_top - offset) {
+						$this.css({
+							'position':'fixed',
+							'top':offset + 'px'
+						});
+					} else {
+						$this.css(default_css);
+					}
+				} else {
+					$this.css(default_css);
+				}
+			});
+
+		});
+	};
+
+	// DROP DOWN MENUS
+	$.fn.elementalPopup = function( options ) {
+
+		var defaults = {
+			'width':600,
+			'height':320,
+			'scrollbars':false
+		};
+		options = $.extend(defaults, options);
+
+		return this.each(function () {
+			var $this = $(this);
+			$this.click(function() {
+				var popup_url = $(this).attr('href');
+				if ( popup_url !== undefined ) {
+					window.open(
+						popup_url,
+						'elemental_popup',
+						'scrollbars=' + options.scrollbars + ',width=' + options.width + ',height=' + options.height
+					);
+				}
+				return false;
+			});
+		});
+
+	};
+
+	$.fn.elementalInit = function() {
+
+		// remove hover on touch devices
+		if ( isiOS ) {
+			$('body').children().on('click', $.noop);
+		}
+
+	};
+
+	function _get_title(e) {
+		return e.attr('title') || e.data('title');
+	}
+
+	function _get_breakpoint() {
+		return $('body').data('breakpoint') || 320;
+	}
+
+})(jQuery);

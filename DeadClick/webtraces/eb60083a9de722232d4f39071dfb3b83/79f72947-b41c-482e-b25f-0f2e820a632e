@@ -1,0 +1,144 @@
+jQuery(document).ready(function() 
+{   
+	// Recently viewed events
+	jQuery("div.rvpContainer").on("click", "div.ImageLink a", function(e) 
+	{      
+		var rvpProductID = jQuery(this).parents("div.ItemContainer").find("div.hiddenProductID").html();
+		_gaq.push(["global._trackEvent", "ProductCategory", "RecentlyViewedClickedAction", rvpProductID]);
+		_gaq.push(["global._trackEvent", "ProductCategory", "RecentlyViewedClickedOnPageAction", ga_pageType]);
+	});
+	// Quicklook Open Button Click
+	jQuery("body").on("click", "a.qlStaticButton", function(e)
+	{
+		var productID = jQuery(this).data("pid");
+		productID = productID.toString();
+		var productURL = jQuery(this).attr("href");
+		_gaq.push(["global._trackPageview", "PDPQV"]);
+		starRating = getStarRating(this,"div.qlStaticButtonContainer ");
+		_gaq.push(["global._trackEvent", "PowerReviewsCategory", "PowerReviewsBrowseClickRating", starRating]);
+		_gaq.push(["global._trackEvent", "PowerReviewsCategory", "PowerReviewsBrowseClickPageType", ga_pageType]);
+	});
+	// Details Tab Click
+	jQuery("body").on("click", "div.qlTabDetails", function(e)
+	{
+		var productID = jQuery(this).data("pid");
+		productID = productID.toString();
+		_gaq.push(["global._trackEvent", "QuickViewCategory", "QuickViewDetailClickedAction", productID]); 
+	});
+	// Add to Cart Click
+	jQuery("body").on("click", "div.qlAddToCartContainer input#addToCart", function(e)
+	{
+		var productID = jQuery(this).data("pid");
+		productID = productID.toString();
+		_gaq.push(["global._trackEvent", "QuickViewCategory", "QuickViewAddToCartClickedAction", productID]); 
+	});
+	// Minicart Continue Shopping Button Click
+	jQuery("body").on("click", "a.mbContinueShopping", function(e)
+	{
+		_gaq.push(["global._trackEvent", "MiniCartCategory", "MiniCartContinueShoppingClickedAction"]); 
+	});
+	// Minicart Checkout Now Button Click
+	jQuery("body").on("click", "a.mbCheckout", function(e)
+	{
+		_gaq.push(["global._trackEvent", "MiniCartCategory", "MiniCartCheckoutNowClickedAction"]);
+	});
+	// Minicart Close Button Click
+	jQuery("body").on("click", "div.mbHeaderRightContainer", function(e)
+	{
+		_gaq.push(["global._trackEvent", "MiniCartCategory", "MiniCartCloseClickedAction"]);
+	});
+	// Minicart Remove Button Click
+	jQuery("body").on("click", "a.mbItemRemoveTarget", function(evt)
+	{
+		var productID = jQuery(this).data("sku");
+		_gaq.push(["global._trackEvent", "MiniCartCategory", "MiniCartRemoveClickedAction"]);
+	});
+	// Minicart Background Close Click
+	jQuery("body").on("click", "div.qlModalBackgroundContainer", function(e)
+	{
+		if ( jQuery("div.mbInsideContainer").hasClass("mbInsideContainer") )
+		{
+		   _gaq.push(["global._trackEvent", "MiniCartCategory", "MiniCartBackgroundClickedToCloseAction"]);
+		}
+	});
+	// Power Reviews
+	// Featured Product
+	jQuery("body").on("click", "div.tlpFeaturedProduct a", function(evt)
+	{
+		starRating = getStarRating(this,"div.tlpFeaturedRight ");
+		_gaq.push(["global._trackEvent", "PowerReviewsCategory", "PowerReviewsBrowseClickRating", starRating]);
+		_gaq.push(["global._trackEvent", "PowerReviewsCategory", "PowerReviewsBrowseClickPageType", ga_pageType]);
+	});
+	// Recommended Product
+	jQuery("body").on("click", "div.rvpRowContainer a", function(evt)
+	{
+		starRating = getStarRating(this,"");
+		_gaq.push(["global._trackEvent", "PowerReviewsCategory", "PowerReviewsBrowseClickRating", starRating]);
+		_gaq.push(["global._trackEvent", "PowerReviewsCategory", "PowerReviewsBrowseClickPageType", ga_pageType]);
+	});
+	// Product Suggestions
+	jQuery("body").on("click", "div#mwsBaynoteItemsContainer a", function(evt)
+	{
+		starRating = getStarRating(this,"div.ItemInfoContainer ");
+		_gaq.push(["global._trackEvent", "PowerReviewsCategory", "PowerReviewsBrowseClickRating", starRating]);
+		_gaq.push(["global._trackEvent", "PowerReviewsCategory", "PowerReviewsBrowseClickPageType", ga_pageType]);
+	});
+	// Browse - Method #1
+	jQuery("body").on("click", "div.ProductsContainer div.RowContainer div.ItemContainer div.Item div.ImageLink a", function(evt)
+	{
+		starRating = getStarRating(this,"");
+		_gaq.push(["global._trackEvent", "PowerReviewsCategory", "PowerReviewsBrowseClickRating", starRating]);
+		_gaq.push(["global._trackEvent", "PowerReviewsCategory", "PowerReviewsBrowseClickPageType", ga_pageType]);
+	});
+	// Browse - Method #2
+	jQuery("body").on("click", "div.ProductsContainer div.RowContainer div.ItemContainer div.Item div.BottomLink a", function(evt)
+	{
+		starRating = getStarRating(this,"");
+		_gaq.push(["global._trackEvent", "PowerReviewsCategory", "PowerReviewsBrowseClickRating", starRating]);
+		_gaq.push(["global._trackEvent", "PowerReviewsCategory", "PowerReviewsBrowseClickPageType", ga_pageType]);
+	});
+	// Browse - Search #1
+	jQuery("body").on("click", "div.dlpProductsContainer div.RowContainer div.ItemContainer div.Item div.ImageLink a", function(evt)
+	{
+		starRating = getStarRating(this,"");
+		_gaq.push(["global._trackEvent", "PowerReviewsCategory", "PowerReviewsBrowseClickRating", starRating]);
+		_gaq.push(["global._trackEvent", "PowerReviewsCategory", "PowerReviewsBrowseClickPageType", ga_pageType]);
+	});
+	// Browse - Search #2
+	jQuery("body").on("click", "div.dlpProductsContainer div.RowContainer div.ItemContainer div.Item div.BottomLink a", function(evt)
+	{
+		starRating = getStarRating(this,"");
+		_gaq.push(["global._trackEvent", "PowerReviewsCategory", "PowerReviewsBrowseClickRating", starRating]);
+		_gaq.push(["global._trackEvent", "PowerReviewsCategory", "PowerReviewsBrowseClickPageType", ga_pageType]);
+	});
+	// Shop Runner - Learn More Link
+	jQuery("body").on("submit", "form#sr_signinF", function(event)
+	{
+		var shoprunnerAnalyticsTimeout = setTimeout('shoprunnerAnalyticsTimeoutFunc()', 100);
+	});
+	function shoprunnerAnalyticsTimeoutFunc()
+	{
+		if ( typeof _shoprunner_com.status != "undefined" )
+		{
+			if ( _shoprunner_com.status == 1 )
+			{
+				_gaq.push(["global._trackEvent", "ShopRunnerCategory", "ShopRunnerSignInConvertClickedAction", ga_pageType]);
+			}
+		} else {
+			setTimeout('shoprunnerAnalyticsTimeoutFunc()', 100);
+		}
+	}
+});
+function getStarRating(startDIV,identifierDIV)
+{
+	var parentDIV = jQuery(startDIV).parents(":eq(2)").attr("class");
+	starRating = jQuery("div." + parentDIV + " " + identifierDIV + "div.prStarsOnlyContainer").data("stars");
+	if (starRating == undefined || starRating == "") {
+		parentDIV = jQuery(startDIV).parents(":eq(1)").attr("class");
+		starRating = jQuery("div." + parentDIV + " " + identifierDIV + "div.prStarsOnlyContainer").data("stars");
+		if (starRating == undefined || starRating == "") {
+			starRating = "0";
+		}
+	}
+	return starRating;
+}

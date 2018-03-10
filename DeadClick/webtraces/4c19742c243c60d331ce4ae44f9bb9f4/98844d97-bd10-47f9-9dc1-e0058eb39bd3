@@ -1,0 +1,30 @@
+define(['angular/core/services',
+        'angular/core/directives',
+        'angular/queries/controllers',
+        'angular/queries/directives'],
+    function(){
+
+		var queriesMonitoringApp = angular.module('graphdb.framework.jmx.queries',
+				['toastr',
+				 'ui.bootstrap',
+				 'graphdb.framework.jmx.queries.controllers',
+				 'graphdb.framework.jmx.queries.directives',
+				 'graphdb.framework.core.directives']);
+
+		queriesMonitoringApp.config(['$menuItemsProvider', '$routeProvider', function ($menuItemsProvider, $routeProvider) {
+
+			   	$routeProvider.when('/monitor/queries', {
+			  		templateUrl : 'v/8.4.0-TR02/pages/monitor/queries.html',
+			  		controller : 'QueriesCtrl',
+					title: 'Query monitoring',
+					helpInfo: 'The Query monitoring view shows all running queries in GraphDB. '
+					            + 'Any query can be killed by pressing the Abort query button.'
+			  	})
+
+			  	$menuItemsProvider.addItem({label : 'Monitor', href : '#', order : 1, role : 'ROLE_REPO_ADMIN', icon: "icon-monitoring"});
+				$menuItemsProvider.addItem({label : 'Queries', href : 'monitor/queries', order : 1, parent : 'Monitor'});
+
+		}]);
+
+		return queriesMonitoringApp;
+});

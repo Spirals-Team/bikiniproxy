@@ -1,0 +1,1060 @@
+function AdManager() {
+    var debugMode = false;
+    // be a singleton
+    if ( arguments.callee._singletonInstance )
+        return arguments.callee._singletonInstance;
+    arguments.callee._singletonInstance = this;
+
+    /**
+     * Define Ad Units here
+     *
+     * If an ad should be left out for a certain breakpoint
+     * just exclude that breakpoint altogether
+     *
+     * *Ad Categories (path suffix)*
+     * home
+     * blogs
+     */
+    var adUnits = { // NAMING CONVENTION: SECTION_TYPE_POSITION_NUMBER -> ARTICLE_LEADERBOARD_STUDIOS
+
+        //HOME
+        'home_leaderboard_top':{
+            desktop:	{ path: '/4697366/mentalfloss.com/homepage', sizes: [[728,90],[970,250],[970,90],[1,1]] },
+        },
+        'home_leaderboard_the_latest':{
+            desktop:	{ path: '/4697366/mentalfloss.com/homepage', sizes: [[728,90],[970,90],[920,90],[970,250],[1,1]] },
+            tablet:     { path: '/4697366/mentalfloss.com/homepage', sizes: [[728,90],[1,1]] },
+        },
+        'home_leaderboard_studios':{
+            desktop:	{ path: '/4697366/mentalfloss.com/homepage', sizes: [[728,90],[970,90],[920,90],[970,250],[1,1]] },
+            tablet:     { path: '/4697366/mentalfloss.com/homepage', sizes: [[728,90],[1,1]] },
+        },
+        'home_leaderboard_sections':{
+            desktop:	{ path: '/4697366/mentalfloss.com/homepage', sizes: [[728,90],[970,90],[920,90],[970,250],[1,1]] },
+            tablet:     { path: '/4697366/mentalfloss.com/homepage', sizes: [[728,90],[1,1]] },
+        },
+        'home_leaderboard_trending':{
+            desktop:	{ path: '/4697366/mentalfloss.com/homepage', sizes: [[728,90],[970,90],[920,90],[970,250],[1,1]] },
+            tablet:     { path: '/4697366/mentalfloss.com/homepage', sizes: [[728,90],[1,1]] },
+            mobile:		{ path: '/4697366/mentalfloss.com/homepage', sizes: [[300, 250],[1,1]] },
+        },
+        'home_leaderboard_footer':{
+            tablet:     { path: '/4697366/mentalfloss.com/homepage', sizes: [[728,90],[1,1]] },
+        },
+        'home_leaderboard_footer_fixed': {
+            tablet:	    { path: '/4697366/mentalfloss.com/homepage', sizes: [[728,90],[1,1]] },
+            mobile:     { path: '/4697366/mentalfloss.com/homepage', sizes: [[320,50],[300,50],[1, 1]]},
+        },
+        'home_vertical_hero':{
+            desktop:	{ path: '/4697366/mentalfloss.com/homepage', sizes: [[300,250],[1,1]] },
+            mobile:		{ path: '/4697366/mentalfloss.com/homepage', sizes: [[300, 250],[1,1]] },
+        },
+        'home_vertical_the_latest':{
+            desktop:    { path: '/4697366/mentalfloss.com/homepage', sizes: [[300,250],[300,600],[480,600],[1,1]] },
+            mobile:		{ path: '/4697366/mentalfloss.com/homepage', sizes: [[300, 250],[1,1]] },
+        },
+        'home_vertical_amazing_fact':{
+            desktop:    { path: '/4697366/mentalfloss.com/homepage', sizes: [[300,250],[300,600],[480,600],[1,1]] },
+            tablet:     { path: '/4697366/mentalfloss.com/homepage', sizes: [[300,250],[300,600],[480,600],[1,1]] },
+        },
+        'home_vertical_sections':{
+            desktop:    { path: '/4697366/mentalfloss.com/homepage', sizes: [[300,250],[300,600],[480,600],[1,1]] },
+            mobile:		{ path: '/4697366/mentalfloss.com/homepage', sizes: [[300, 250],[1,1]] },
+        },
+        'home_vertical_daily_floss':{
+            tablet:     { path: '/4697366/mentalfloss.com/homepage', sizes: [[300,250],[300,600],[480,600],[1,1]] },
+            mobile:		{ path: '/4697366/mentalfloss.com/homepage', sizes: [[300, 250],[1,1]] },
+        },
+        'home_mobile_amazing_fact':{
+            mobile:		{ path: '/4697366/mentalfloss.com/homepage', sizes: [[300, 250],[1,1]] },
+        },
+
+        //UPDATED ADS ABOVE, ORIGINAL BELOW
+        'skin-hp-ad':{
+            desktop:	{ path: '/4697366/mentalfloss.com/homepage', sizes: [[3,3],[1,1]] },
+        },
+        'welcome-hp-ad':{
+            desktop:	{ path: '/4697366/mentalfloss.com/homepage/welcome_ad', sizes: [[640,480],[1,1]] },
+        },
+
+
+        //ARTICLE
+        'welcome-ad':{
+            desktop:	{ path: '/4697366/mentalfloss.com/blogs/welcome_ad', sizes: [[640,480],[1,1]] },
+        },
+
+        'article_video_in_content':{
+            desktop:    { path: '/4697366/mentalfloss.com/blogs', sizes: [[640, 360], [1,1]]},
+            tablet:    { path: '/4697366/mentalfloss.com/blogs', sizes: [[640, 360], [1,1]]},
+        },
+
+        'article_sponsor_unit': {
+            desktop:	{ path: '/4697366/mentalfloss.com/blogs', sizes: [[380,70],[1,1]] },
+            tablet:	    { path: '/4697366/mentalfloss.com/blogs', sizes: [[350,60],[1,1]] },
+            mobile:	    { path: '/4697366/mentalfloss.com/blogs', sizes: [[230,60],[1,1]] },
+        },
+        'article_leaderboard_top': {
+            desktop:	{ path: '/4697366/mentalfloss.com/blogs', sizes: [[728,90],[970,90],[920,90],[970,250],[1,1]] },
+        },
+        'article_leaderboard_sections': {
+            desktop:	{ path: '/4697366/mentalfloss.com/blogs', sizes: [[728,90],[970,90],[920,90],[970,250],[1,1]] },
+            tablet:	    { path: '/4697366/mentalfloss.com/blogs', sizes: [[728,90],[970,90],[920,90],[970,250],[1,1]] },
+            mobile:	    { path: '/4697366/mentalfloss.com/blogs', sizes: [[300,250],[300,600],[1,1]] },
+        },
+        'article_leaderboard_sponsor_1': {
+            tablet:	    { path: '/4697366/mentalfloss.com/blogs', sizes: [[728,90],[970,90],[920,90],[970,250],[1,1]] },
+            mobile:	{ path: '/4697366/mentalfloss.com/MF_300x150', sizes:  [[300,250],[300,600],[1,1]] },
+        },
+        'article_leaderboard_footer': {
+            desktop:	{ path: '/4697366/mentalfloss.com/blogs', sizes: [[728,90],[970,90],[920,90],[970,250],[1,1]] },
+            tablet:	    { path: '/4697366/mentalfloss.com/blogs', sizes: [[728,90],[970,90],[920,90],[970,250],[1,1]] },
+        },
+        'article_leaderboard_footer_fixed': {
+            tablet:	    { path: '/4697366/mentalfloss.com/blogs', sizes: [[728,90],[1,1]] },
+            mobile:     { path: '/4697366/mentalfloss.com/blogs', sizes: [[320,50],[300,50],[1, 1]]},
+        },
+        'article_vertical_right_rail_1': {
+            desktop:	{ path: '/4697366/mentalfloss.com/blogs', sizes:  [[300,250],[300,600],[1,1]] },
+            tablet:	    { path: '/4697366/mentalfloss.com/blogs', sizes:  [[300,250],[300,600],[1,1]] },
+        },
+        'article_vertical_right_rail_12': {
+            desktop: {path: '/4697366/mentalfloss.com/blogs', sizes: [[300, 250], [300, 600], [1, 1]]},
+        },
+        'article_vertical_right_rail_13': {
+            desktop: {path: '/4697366/mentalfloss.com/blogs', sizes: [[300, 250], [300, 600], [1, 1]]},
+        },
+        'article_vertical_right_rail_14': {
+            desktop: {path: '/4697366/mentalfloss.com/blogs', sizes: [[300, 250], [300, 600], [1, 1]]},
+        },
+        'article_vertical_right_rail_15': {
+            desktop: {path: '/4697366/mentalfloss.com/blogs', sizes: [[300, 250], [300, 600], [1, 1]]},
+        },
+        'article_vertical_right_rail_16': {
+            desktop: {path: '/4697366/mentalfloss.com/blogs', sizes: [[300, 250], [300, 600], [1, 1]]},
+        },
+        'article_vertical_right_rail_2': {
+            desktop:    {path: '/4697366/mentalfloss.com/blogs', sizes: [[300, 250], [300, 600], [1, 1]]},
+            tablet:	    { path: '/4697366/mentalfloss.com/blogs', sizes:  [[300,250],[300,600],[1,1]] },
+        },
+        'article_vertical_right_rail_22': {
+            desktop:    {path: '/4697366/mentalfloss.com/blogs', sizes: [[300, 250], [300, 600], [1, 1]]},
+        },
+        'article_vertical_right_rail_23': {
+            desktop:    {path: '/4697366/mentalfloss.com/blogs', sizes: [[300, 250], [300, 600], [1, 1]]},
+        },
+        'article_vertical_right_rail_24': {
+            desktop:    {path: '/4697366/mentalfloss.com/blogs', sizes: [[300, 250], [300, 600], [1, 1]]},
+        },
+        'article_vertical_right_rail_25': {
+            desktop:    {path: '/4697366/mentalfloss.com/blogs', sizes: [[300, 250], [300, 600], [1, 1]]},
+        },
+        'article_vertical_right_rail_26': {
+            desktop:    {path: '/4697366/mentalfloss.com/blogs', sizes: [[300, 250], [300, 600], [1, 1]]},
+        },
+        'article_vertical_right_rail_3': {
+            desktop:	{ path: '/4697366/mentalfloss.com/blogs', sizes:  [[300,250],[300,600],[1,1]] },
+            tablet:	    { path: '/4697366/mentalfloss.com/blogs', sizes:  [[300,250],[300,600],[1,1]] },
+        },
+        'article_vertical_right_rail_32': {
+            desktop:	{ path: '/4697366/mentalfloss.com/blogs', sizes:  [[300,250],[300,600],[1,1]] },
+        },
+        'article_vertical_right_rail_33': {
+            desktop:	{ path: '/4697366/mentalfloss.com/blogs', sizes:  [[300,250],[300,600],[1,1]] },
+        },
+        'article_vertical_right_rail_34': {
+            desktop:	{ path: '/4697366/mentalfloss.com/blogs', sizes:  [[300,250],[300,600],[1,1]] },
+        },
+        'article_vertical_right_rail_35': {
+            desktop:	{ path: '/4697366/mentalfloss.com/blogs', sizes:  [[300,250],[300,600],[1,1]] },
+        },
+        'article_vertical_right_rail_36': {
+            desktop:	{ path: '/4697366/mentalfloss.com/blogs', sizes:  [[300,250],[300,600],[1,1]] },
+        },
+        'article_vertical_sections': {
+            desktop:	{ path: '/4697366/mentalfloss.com/blogs', sizes:  [[300,250],[300,600],[1,1]] },
+            tablet:	    { path: '/4697366/mentalfloss.com/blogs', sizes:  [[300,250],[300,600],[1,1]] },
+            mobile:		{ path: '/4697366/mentalfloss.com/blogs', sizes:  [[300,250],[300,600],[1,1]] },
+        },
+        'article_in_text_1': {
+            mobile:	{ path: '/4697366/mentalfloss.com/blogs', sizes: [[300,250],[320,50],[300,600],[1,1]] },
+        },
+        'article_in_text_2': {
+            mobile:	{ path: '/4697366/mentalfloss.com/blogs', sizes: [[320,50],[300,50],[300,250],[1,1]] },
+        },
+        'article_in_text_3': {
+            mobile:	{ path: '/4697366/mentalfloss.com/blogs', sizes: [[320,50],[300,250],[1,1]] },
+        },
+        'article_in_text_4': {
+            mobile:	{ path: '/4697366/mentalfloss.com/blogs', sizes: [[320,50],[300,250],[1,1]] },
+        },
+        'article_in_text_5': {
+            mobile:	{ path: '/4697366/mentalfloss.com/blogs', sizes: [[320,50],[300,250],[1,1]] },
+        },
+        'article_in_text_6': {
+            mobile:	{ path: '/4697366/mentalfloss.com/blogs', sizes: [[320,50],[300,250],[1,1]] },
+        },
+        'article_mobile_more_stories_1': {
+            mobile: { path: '/4697366/mentalfloss.com/blogs', sizes: [[300,250],[300,600],[1,1]] },
+        },
+        'article_mobile_more_stories_2': {
+            mobile:	    { path: '/4697366/mentalfloss.com/blogs', sizes: [[300,250],[300,600],[1,1]] },
+        },
+        'article_mobile_more_stories_3': {
+            mobile:	    { path: '/4697366/mentalfloss.com/blogs', sizes: [[300,250],[300,600],[1,1]] },
+        },
+        'article_replace_brightcove': {
+            desktop:	    { path: '/4697366/mentalfloss.com/blogs', sizes: [[777,100],[1,1]] },
+        },
+
+        //SHOPPING LIST
+        'best_deals_right_rail': {
+            desktop:    { path: '/4697366/mentalfloss.com/shopping', sizes:  [[300,250],[300,600],[1,1]] },
+        },
+        'best_deals_in_list_ad_1': {
+            tablet:    { path: '/4697366/mentalfloss.com/shopping', sizes: [[728,90],[1,1]] },
+            mobile:    { path: '/4697366/mentalfloss.com/shopping', sizes: [[320,50],[300,250],[1,1]] },
+        },
+        'best_deals_in_list_ad_2': {
+            tablet:    { path: '/4697366/mentalfloss.com/shopping', sizes: [[728,90],[1,1]] },
+            mobile:    { path: '/4697366/mentalfloss.com/shopping', sizes: [[320,50],[300,250],[1,1]] },
+        },
+        'best_deals_in_list_ad_3': {
+            tablet:    { path: '/4697366/mentalfloss.com/shopping', sizes: [[728,90],[1,1]] },
+            mobile:    { path: '/4697366/mentalfloss.com/shopping', sizes: [[320,50],[300,250],[1,1]] },
+        },
+        'best_deals_in_list_ad_4': {
+            tablet:    { path: '/4697366/mentalfloss.com/shopping', sizes: [[728,90],[1,1]] },
+            mobile:    { path: '/4697366/mentalfloss.com/shopping', sizes: [[320,50],[300,250],[1,1]] },
+        },
+        'best_deals_in_list_ad_5': {
+            tablet:    { path: '/4697366/mentalfloss.com/shopping', sizes: [[728,90],[1,1]] },
+            mobile:    { path: '/4697366/mentalfloss.com/shopping', sizes: [[320,50],[300,250],[1,1]] },
+        },
+        'best_deals_in_list_ad_6': {
+            tablet:    { path: '/4697366/mentalfloss.com/shopping', sizes: [[728,90],[1,1]] },
+            mobile:    { path: '/4697366/mentalfloss.com/shopping', sizes: [[320,50],[300,250],[1,1]] },
+        },
+        'gift_guides_right_rail': {
+            desktop:   { path: '/4697366/mentalfloss.com/shopping', sizes:  [[300,250],[300,600],[1,1]] },
+        },
+        'shopping_list_sponsor_ad': {
+            desktop:   { path: '/4697366/mentalfloss.com/shopping', sizes: [[380,70],[1,1]] },
+            tablet:    { path: '/4697366/mentalfloss.com/shopping', sizes: [[350,60],[1,1]] },
+            mobile:    { path: '/4697366/mentalfloss.com/shopping', sizes: [[230,60],[1,1]] },
+        },
+        'shopping_list_top_leaderboard': {
+            desktop:    { path: '/4697366/mentalfloss.com/shopping', sizes: [[728,90],[970,90],[920,90],[970,250],[1,1]] },
+        },
+
+
+        //REDESIGN ADS ABOVE, ORIGINAL ADS BELOW
+        sharethrough_unit:{
+            desktop:   { path: '/4697366/mentalfloss.com/knowledge_feed/KnowledgeFeed_Article_Sharethrough_320x240', sizes: [[780,170],[1,1], 'fluid'] },
+            tablet:    { path: '/4697366/mentalfloss.com/knowledge_feed/KnowledgeFeed_Article_Sharethrough_320x240', sizes: [[780,170],[1,1]] },
+            mobile:    { path: '/4697366/mentalfloss.com/knowledge_feed/KnowledgeFeed_Article_Sharethrough_320x240', sizes: [[780,170],[300,100],[1,1]] },
+        },
+
+        //AMAZING FACT GENERATOR
+        'afg_leaderboard_top': {
+            desktop:	{ path: '/4697366/mentalfloss.com/blogs', sizes: [[728,90],[970,90],[920,90],[1,1]] },
+        },
+        'afg_square_right_rail': {
+            desktop:	{ path: '/4697366/mentalfloss.com/blogs', sizes: [[300,250],[300,600],[1,1]] },
+            tablet:	    { path: '/4697366/mentalfloss.com/blogs', sizes: [[728,90],[1,1]] },
+            mobile:     { path: '/4697366/mentalfloss.com/blogs', sizes: [[320,50], [1,1]]},
+        },
+        'afg_leaderboard_footer_fixed': {
+            tablet:	    { path: '/4697366/mentalfloss.com/blogs', sizes: [[728,90],[1,1]] },
+            mobile:     { path: '/4697366/mentalfloss.com/blogs', sizes: [[320,50],[300,50],[1, 1]]},
+        },
+        'afg_interstitial_ad':{
+            desktop:	{ path: '/4697366/mentalfloss.com/blogs', sizes: [[300,250],[1,1]] },
+            tablet:	    { path: '/4697366/mentalfloss.com/blogs', sizes: [[300,250],[1,1]] },
+            mobile:     { path: '/4697366/mentalfloss.com/blogs', sizes: [[300,250],[1,1]]},
+        },
+
+        //AUTHORS
+        'author_leaderboard_top':{
+            desktop:	{ path: '/4697366/mentalfloss.com/homepage', sizes: [[728,90],[970,90],[920,90],[970,250],[1,1]] },
+        },
+        'author_leaderboard_footer_fixed': {
+            tablet:	    { path: '/4697366/mentalfloss.com/blogs', sizes: [[728,90],[1,1]] },
+            mobile:     { path: '/4697366/mentalfloss.com/blogs', sizes: [[320,50],[300,50],[1, 1]]},
+        },
+        'author_vertical_right_rail_top': {
+            desktop:	{ path: '/4697366/mentalfloss.com/MF_300x150', sizes: [[300,150]] },
+            tablet:	    { path: '/4697366/mentalfloss.com/blogs', sizes: [[300,150]] },
+        },
+        'author_square_right_rail_top': {
+            desktop:    { path: '/4697366/mentalfloss.com/MF_ROS_Sticky_300x250', sizes: [[1,1],[300,250],[300,600]]},
+            tablet:    { path: '/4697366/mentalfloss.com/MF_ROS_Sticky_300x250', sizes: [[1,1],[300,250],[300,600]]},
+        },
+        'author_right_rail_most_popular': {
+            desktop:    { path: '/4697366/mentalfloss.com/MF_ROS_Sticky_300x250', sizes: [[1,1],[300,250],[300,600]]},
+            tablet:    { path: '/4697366/mentalfloss.com/MF_ROS_Sticky_300x250', sizes: [[1,1],[300,250],[300,600]]},
+        },
+
+        //QUIZZES
+        'quiz_leaderboard_top':{
+            desktop:	{ path: '/4697366/mentalfloss.com/quizzes', sizes: [[728,90],[970,90],[920,90],[970,250],[1,1]] },
+        },
+        'quiz_square_top':{
+            desktop:	{ path: '/4697366/mentalfloss.com/quizzes', sizes: [[300, 250], [300, 600], [480, 600]] },
+        },
+        'quiz_square_right_rail':{
+            desktop:	{ path: '/4697366/mentalfloss.com/quizzes', sizes: [[300, 250], [300, 600], [480, 600]] },
+        },
+        'quiz_leaderboard_footer_fixed': {
+            tablet:	    { path: '/4697366/mentalfloss.com/quizzes', sizes: [[728,90],[1,1]] },
+            mobile:     { path: '/4697366/mentalfloss.com/quizzes', sizes: [[320,50],[300,50],[1,1]] },
+        },
+        'quiz_detail_right_rail':{
+            desktop:    { path: '/4697366/mentalfloss.com/quizzes', sizes: [[300, 250], [300, 600]] },
+        },
+        'quiz_detail_bottom_leaderboard':{
+            desktop:    { path: '/4697366/mentalfloss.com/quizzes', sizes: [[728,90],[970,90],[920,90],[970,250],[1,1]] },
+        },
+        'quiz_detail_top_leaderboard': {
+            tablet:     { path: '/4697366/mentalfloss.com/quizzes', sizes: [[728,90],[1,1]] },
+            mobile:     { path: '/4697366/mentalfloss.com/quizzes', sizes: [[320,50],[300,50],[1,1]] },
+        },
+        'quiz_detail_in_result_ad': {
+            desktop:    { path: '/4697366/mentalfloss.com/quizzes', sizes: [[728,90],[1,1]] },
+        },
+        'quiz_detail_sponsor_logo_upper': {
+            desktop:    { path: '/4697366/mentalfloss.com/quizzes', sizes: [[380,90],[1,1]] },
+            tablet:     { path: '/4697366/mentalfloss.com/quizzes', sizes: [[380,90],[1,1]] },
+            mobile:     { path: '/4697366/mentalfloss.com/quizzes', sizes: [[230,75],[1,1]] },
+        },
+        'quiz_detail_sponsor_logo_lower': {
+            desktop:    { path: '/4697366/mentalfloss.com/quizzes', sizes: [[180,75],[1,1]] },
+            tablet:     { path: '/4697366/mentalfloss.com/quizzes', sizes: [[150,65],[1,1]] },
+            mobile:     { path: '/4697366/mentalfloss.com/quizzes', sizes: [[150,65],[1,1]] },
+        },
+
+        //PUZZLES
+        'puzzle_leaderboard_footer_fixed': {
+            tablet:	    { path: '/4697366/mentalfloss.com/blogs', sizes: [[728,90],[1,1]] },
+            mobile:     { path: '/4697366/mentalfloss.com/blogs', sizes: [[320,50],[300,50],[1, 1]]},
+        },
+        'puzzle_square_right_rail':{
+            desktop:	{ path: '/4697366/mentalfloss.com/blogs', sizes: [[300,250],[300,600],[480,600],[1,1]] },
+            tablet:     { path: '/4697366/mentalfloss.com/blogs', sizes: [[300,250],[300,600],[480,600],[1,1]] },
+        },
+
+
+
+        'section_sponsor_unit': {
+            desktop:	{ path: '/4697366/mentalfloss.com/blogs', sizes: [[340,42],[380,70],[1,1]] },
+            tablet:	    { path: '/4697366/mentalfloss.com/blogs', sizes: [[275,30],[350,60],[1,1]] },
+            mobile:	    { path: '/4697366/mentalfloss.com/blogs', sizes: [[200,30],[230,60],[1,1]] },
+        },
+        'section_leaderboard_top':{
+            desktop:	{ path: '/4697366/mentalfloss.com/blogs', sizes: [[728,90],[970,90],[920,90],[970,250],[1,1]] },
+        },
+        'section_leaderboard_article_list_1':{
+            desktop:	{ path: '/4697366/mentalfloss.com/blogs', sizes: [[728,90],[970,90],[920,90],[970,250],[1,1]] },
+            tablet:     { path: '/4697366/mentalfloss.com/blogs', sizes: [[728,90],[970,90],[920,90],[970,250],[1,1]] },
+            mobile:     { path: '/4697366/mentalfloss.com/blogs', sizes: [[300, 250],[1,1]] },
+        },
+        'section_leaderboard_article_list_2':{
+            desktop:	{ path: '/4697366/mentalfloss.com/blogs', sizes: [[728,90],[970,90],[920,90],[970,250],[1,1]] },
+            tablet:     { path: '/4697366/mentalfloss.com/blogs', sizes: [[728,90],[970,90],[920,90],[970,250],[1,1]] },
+            mobile:     { path: '/4697366/mentalfloss.com/blogs', sizes: [[300, 250],[1,1]] },
+        },
+        'section_leaderboard_article_list_3':{
+            desktop:	{ path: '/4697366/mentalfloss.com/blogs', sizes: [[728,90],[970,90],[920,90],[970,250],[1,1]] },
+            tablet:     { path: '/4697366/mentalfloss.com/blogs', sizes: [[728,90],[970,90],[920,90],[970,250],[1,1]] },
+        },
+        'section_leaderboard_article_list_4':{
+            desktop:	{ path: '/4697366/mentalfloss.com/blogs', sizes: [[728,90],[970,90],[920,90],[970,250],[1,1]] },
+            tablet:     { path: '/4697366/mentalfloss.com/blogs', sizes: [[728,90],[970,90],[920,90],[970,250],[1,1]] },
+        },
+        'section_leaderboard_article_list_5':{
+            desktop:	{ path: '/4697366/mentalfloss.com/blogs', sizes: [[728,90],[970,90],[920,90],[970,250],[1,1]] },
+            tablet:     { path: '/4697366/mentalfloss.com/blogs', sizes: [[728,90],[970,90],[920,90],[970,250],[1,1]] },
+        },
+        'section_leaderboard_footer_fixed': {
+            tablet:	    { path: '/4697366/mentalfloss.com/blogs', sizes: [[728,90],[1,1]] },
+            mobile:     { path: '/4697366/mentalfloss.com/blogs', sizes: [[320,50],[300,50],[1, 1]]},
+        },
+        'section_vertical_hero':{
+            desktop:	{ path: '/4697366/mentalfloss.com/blogs', sizes: [[300,250],[300,600],[480,600],[1,1]] },
+            tablet:     { path: '/4697366/mentalfloss.com/blogs', sizes: [[728,90],[970,90],[920,90],[970,250],[1,1]] },
+            mobile:     { path: '/4697366/mentalfloss.com/blogs', sizes: [[300, 250],[1,1]] },
+        },
+        'section_vertical_article_list':{
+            desktop:	{ path: '/4697366/mentalfloss.com/blogs', sizes: [[300,250],[300,600],[480,600],[1,1]] },
+        },
+        'section_vertical_sections':{
+            desktop:	{ path: '/4697366/mentalfloss.com/blogs', sizes: [[300,250],[300,600],[480,600],[1,1]] },
+            tablet:     { path: '/4697366/mentalfloss.com/blogs', sizes: [[300,250],[300,600],[480,600],[1,1]] },
+        },
+        'section_vertical_top_section':{
+            desktop:	{ path: '/4697366/mentalfloss.com/blogs', sizes: [[300,250],[1,1]]},
+        },
+
+        //SEARCH
+        'search_leaderboard_top':{
+            desktop:	{ path: '/4697366/mentalfloss.com/blogs', sizes: [[728,90],[970,90],[920,90],[970,250],[1,1]] },
+        },
+        'search_square_top':{
+            desktop:	{ path: '/4697366/mentalfloss.com/search', sizes: [[300,250],[300,600],[480,600],[1,1]] },
+            tablet:     { path: '/4697366/mentalfloss.com/search', sizes: [[300,250],[300,600],[480,600],[1,1]] },
+        },
+        'search_leaderboard_footer_fixed': {
+            tablet:	    { path: '/4697366/mentalfloss.com/blogs', sizes: [[728,90],[1,1]] },
+            mobile:     { path: '/4697366/mentalfloss.com/blogs', sizes: [[320,50],[300,50],[1, 1]]},
+        },
+
+        'skin-ad':{
+            desktop:	{ path: '/4697366/mentalfloss.com', sizes: [[3,3]] },
+        },
+
+        //GALLERY ARTICLE
+        'gallery_leaderboard_top':{
+            desktop:	{ path: '/4697366/mentalfloss.com/quizzes', sizes: [[728,90],[970,90],[920,90],[970,250],[1,1]] },
+        },
+        'gallery_interstitial_ad_1':{
+            desktop:    { path: '/4697366/mentalfloss.com/photos', sizes: [[300,250],[1,1]] },
+        },
+        'gallery_interstitial_ad_2':{
+            desktop:    { path: '/4697366/mentalfloss.com/photos', sizes: [[300,250],[1,1]] },
+        },
+        'gallery_interstitial_ad_3':{
+            desktop:    { path: '/4697366/mentalfloss.com/photos', sizes: [[300,250],[1,1]] },
+        },
+        'gallery_interstitial_ad_4':{
+            desktop:    { path: '/4697366/mentalfloss.com/photos', sizes: [[300,250],[1,1]] },
+        },
+        'gallery_interstitial_ad_5':{
+            desktop:    { path: '/4697366/mentalfloss.com/photos', sizes: [[300,250],[1,1]] },
+        },
+        'gallery_interstitial_ad_6':{
+            desktop:    { path: '/4697366/mentalfloss.com/photos', sizes: [[300,250],[1,1]] },
+        },
+        'gallery_interstitial_ad_7':{
+            desktop:    { path: '/4697366/mentalfloss.com/photos', sizes: [[300,250],[1,1]] },
+        },
+        'gallery_interstitial_ad_8':{
+            desktop:    { path: '/4697366/mentalfloss.com/photos', sizes: [[300,250],[1,1]] },
+        },
+        'gallery_interstitial_ad_9':{
+            desktop:    { path: '/4697366/mentalfloss.com/photos', sizes: [[300,250],[1,1]] },
+        },
+        'gallery_interstitial_ad_10':{
+            desktop:    { path: '/4697366/mentalfloss.com/photos', sizes: [[300,250],[1,1]] },
+        },
+        'gallery_leaderboard_footer_fixed': {
+            tablet:     { path: '/4697366/mentalfloss.com/photos', sizes: [[728,90],[1,1]] },
+            mobile:     { path: '/4697366/mentalfloss.com/photos', sizes: [[320,50],[300,50],[1, 1]]},
+        },
+        'gallery_in_list_leaderboard_1':{
+            desktop:    { path: '/4697366/mentalfloss.com/photos', sizes: [[728,90],[970,90],[920,90],[970,250],[1,1]] },
+            tablet:     { path: '/4697366/mentalfloss.com/photos', sizes: [[728,90],[1,1]] },
+            mobile:     { path: '/4697366/mentalfloss.com/photos', sizes: [[320, 50],[320, 568],[320, 250],[1,1]] },
+        },
+        'gallery_in_list_leaderboard_2':{
+            desktop:    { path: '/4697366/mentalfloss.com/photos', sizes: [[728,90],[970,90],[920,90],[970,250],[1,1]] },
+            tablet:     { path: '/4697366/mentalfloss.com/photos', sizes: [[728,90],[1,1]] },
+            mobile:     { path: '/4697366/mentalfloss.com/photos', sizes: [[320, 50],[320, 568],[320, 250],[1,1]] },
+        },
+        'gallery_in_list_leaderboard_3':{
+            desktop:    { path: '/4697366/mentalfloss.com/photos', sizes: [[728,90],[970,90],[920,90],[970,250],[1,1]] },
+            tablet:     { path: '/4697366/mentalfloss.com/photos', sizes: [[728,90],[1,1]] },
+            mobile:     { path: '/4697366/mentalfloss.com/photos', sizes: [[320, 50],[320, 568],[320, 250],[1,1]] },
+        },
+        'gallery_in_list_leaderboard_4':{
+            desktop:    { path: '/4697366/mentalfloss.com/photos', sizes: [[728,90],[970,90],[920,90],[970,250],[1,1]] },
+            tablet:     { path: '/4697366/mentalfloss.com/photos', sizes: [[728,90],[1,1]] },
+            mobile:     { path: '/4697366/mentalfloss.com/photos', sizes: [[320, 50],[320, 568],[320, 250],[1,1]] },
+        },
+        'gallery_in_list_leaderboard_5':{
+            desktop:    { path: '/4697366/mentalfloss.com/photos', sizes: [[728,90],[970,90],[920,90],[970,250],[1,1]] },
+            tablet:     { path: '/4697366/mentalfloss.com/photos', sizes: [[728,90],[1,1]] },
+            mobile:     { path: '/4697366/mentalfloss.com/photos', sizes: [[320, 50],[320, 568],[320, 250],[1,1]] },
+        },
+        'gallery_in_list_leaderboard_6':{
+            desktop:    { path: '/4697366/mentalfloss.com/photos', sizes: [[728,90],[970,90],[920,90],[970,250],[1,1]] },
+            tablet:     { path: '/4697366/mentalfloss.com/photos', sizes: [[728,90],[1,1]] },
+            mobile:     { path: '/4697366/mentalfloss.com/photos', sizes: [[320, 50],[320, 568],[320, 250],[1,1]] },
+        },
+        'gallery_in_list_leaderboard_7':{
+            desktop:    { path: '/4697366/mentalfloss.com/photos', sizes: [[728,90],[970,90],[920,90],[970,250],[1,1]] },
+            tablet:     { path: '/4697366/mentalfloss.com/photos', sizes: [[728,90],[1,1]] },
+            mobile:     { path: '/4697366/mentalfloss.com/photos', sizes: [[320, 50],[320, 568],[320, 250],[1,1]] },
+        },
+        'gallery_in_list_leaderboard_8':{
+            desktop:    { path: '/4697366/mentalfloss.com/photos', sizes: [[728,90],[970,90],[920,90],[970,250],[1,1]] },
+            tablet:     { path: '/4697366/mentalfloss.com/photos', sizes: [[728,90],[1,1]] },
+            mobile:     { path: '/4697366/mentalfloss.com/photos', sizes: [[320, 50],[320, 568],[320, 250],[1,1]] },
+        },
+        'gallery_in_list_leaderboard_9':{
+            desktop:    { path: '/4697366/mentalfloss.com/photos', sizes: [[728,90],[970,90],[920,90],[970,250],[1,1]] },
+            tablet:     { path: '/4697366/mentalfloss.com/photos', sizes: [[728,90],[1,1]] },
+            mobile:     { path: '/4697366/mentalfloss.com/photos', sizes: [[320, 50],[320, 568],[320, 250],[1,1]] },
+        },
+        'gallery_in_list_leaderboard_10':{
+            desktop:    { path: '/4697366/mentalfloss.com/photos', sizes: [[728,90],[970,90],[920,90],[970,250],[1,1]] },
+            tablet:     { path: '/4697366/mentalfloss.com/photos', sizes: [[728,90],[1,1]] },
+            mobile:     { path: '/4697366/mentalfloss.com/photos', sizes: [[320, 50],[320, 568],[320, 250],[1,1]] },
+        },
+        'gallery_bottom_leaderboard':{
+            desktop:    { path: '/4697366/mentalfloss.com/photos', sizes: [[728,90],[970,90],[920,90],[970,250],[1,1]] },
+            tablet:     { path: '/4697366/mentalfloss.com/photos', sizes: [[728,90],[1,1]] },
+            mobile:     { path: '/4697366/mentalfloss.com/photos', sizes: [[320, 50],[320, 568],[320, 250],[1,1]] },
+        },
+
+        //KENNECTION
+        'kennection_leaderboard_top':{
+            desktop:	{ path: '/4697366/mentalfloss.com/quizzes', sizes: [[728,90],[970,90],[920,90],[970,250],[1,1]] },
+        },
+        'kennection_square_right_rail':{
+            desktop:	{ path: '/4697366/mentalfloss.com/kennection', sizes: [[300, 250], [300, 600], [480, 600]] },
+            tablet:     { path: '/4697366/mentalfloss.com/kennection', sizes: [[300, 250], [300, 600], [480, 600]] },
+        },
+        'kennection_leaderboard_footer_fixed': {
+            tablet:	    { path: '/4697366/mentalfloss.com/blogs', sizes: [[728,90],[1,1]] },
+            mobile:     { path: '/4697366/mentalfloss.com/blogs', sizes: [[320,50],[300,50],[1, 1]]},
+        },
+
+        //VIDEO
+        'video_leaderboard_top':{
+            desktop:	{ path: '/4697366/mentalfloss.com/video', sizes: [[728,90],[970,90],[920,90],[970,250],[1,1]] },
+        },
+        'video_leaderboard_list_1':{
+            desktop:	{ path: '/4697366/mentalfloss.com/video', sizes: [[728,90],[970,90],[920,90],[970,250],[1,1]] },
+            tablet:     { path: '/4697366/mentalfloss.com/video', sizes: [[728,90],[970,90],[920,90],[970,250],[1,1]] },
+            mobile:     { path: '/4697366/mentalfloss.com/video', sizes: [[300, 250],[1,1]] },
+        },
+        'video_leaderboard_list_2':{
+            desktop:	{ path: '/4697366/mentalfloss.com/video', sizes: [[728,90],[970,90],[920,90],[970,250],[1,1]] },
+            tablet:     { path: '/4697366/mentalfloss.com/video', sizes: [[728,90],[970,90],[920,90],[970,250],[1,1]] },
+            mobile:     { path: '/4697366/mentalfloss.com/video', sizes: [[300, 250],[1,1]] },
+        },
+        'video_leaderboard_list_3':{
+            desktop:	{ path: '/4697366/mentalfloss.com/video', sizes: [[728,90],[970,90],[920,90],[970,250],[1,1]] },
+            tablet:     { path: '/4697366/mentalfloss.com/video', sizes: [[728,90],[970,90],[920,90],[970,250],[1,1]] },
+            mobile:     { path: '/4697366/mentalfloss.com/video', sizes: [[300, 250],[1,1]] },
+        },
+        'video_leaderboard_footer_fixed': {
+            tablet:	    { path: '/4697366/mentalfloss.com/blogs', sizes: [[728,90],[1,1]] },
+            mobile:     { path: '/4697366/mentalfloss.com/blogs', sizes: [[320,50],[300,50],[1, 1]]},
+        },
+        'video_vertical_list_1':{
+            desktop:	{ path: '/4697366/mentalfloss.com/video', sizes: [[300, 250], [300, 600], [480, 600]] },
+        },
+        'video_vertical_right_rail':{
+            desktop:    { path: '/4697366/mentalfloss.com/blogs', sizes: [[300,250],[300,600],[480,600],[1,1]] },
+            tablet:     { path: '/4697366/mentalfloss.com/blogs', sizes: [[300,250],[300,600],[1,1]] },
+            mobile:     { path: '/4697366/mentalfloss.com/blogs', sizes: [[300, 250],[1,1]] },
+        },
+        'video_tablet_vertical_right_rail':{
+            tablet:    { path: '/4697366/mentalfloss.com/blogs', sizes: [[300,250],[300,600],[1,1]] },
+        },
+    };
+    var amazon_sizes = '';
+    var amazonSlots = [];
+
+    /**************
+     * Public API *
+     **************/
+
+    this.setGlobalTarget = function(key, val) {
+        globalTargeting[key] = val;
+        return this;
+    }
+    this.setGlobalTargets = function(pairs) {
+        for(p in pairs) {
+            if(pairs.hasOwnProperty(p)) this.setGlobalTarget(p, pairs[p]);
+        }
+    }
+
+
+    this.getGlobalTargets = function() {
+        return globalTargeting;
+    }
+
+    this.getSlots = function() {
+        return slots;
+    }
+
+    //This doesn't actually refresh based on the "position" targeting parameter, but just index in the array
+    this.refreshAd = function(position) {
+        var refreshSlot = AdManager.getSlots()[position];
+        googletag.pubads().refresh([refreshSlot], {changeCorrelator: false});
+
+    }
+    this.refreshAdRightRail = function(currentId, device) {
+        if (jQuery('#' + currentId).attr('data-next')) {
+            adId = jQuery('#' + currentId).attr('data-next');
+            jQuery("#" + currentId).replaceWith(jQuery("#" + adId));
+            AdManager.writeSingleAdForId(adId, device);
+        }
+
+    }
+
+    this.refreshAllAds = function() {
+        try {
+            apstag.fetchBids({
+                slots: amazonSlots,
+                timeout: 2e3
+            }, function(bids) {
+                apstag.setDisplayBids();
+                googletag.pubads().refresh();
+            });
+        }
+        catch(ex) {
+            debug("Error refreshing ads-" + ex.toString());
+        }
+    }
+
+    this.clearTargeting = function(position) {
+        var clearSlot = AdManager.getSlots()[position];
+        clearSlot.clearTargeting();
+    }
+
+    this.setManualTargeting = function(position, key, value) {
+        var setManualTargetingSlot = AdManager.getSlots()[position];
+        setManualTargetingSlot.setTargeting(key,value);
+    }
+
+    this.writeAllAds = function() {
+        var device = MentalFloss.getCurrentDevice();
+        var ads = getAdsForDevice(device);
+        for(var i=0; i < ads.length; i++) {
+            var targets = getTargetsFromAdEl(ads[i]);
+
+            var defer = ads[i].hasAttribute('data-defer') && ads[i].getAttribute('data-defer') == "true";
+            if(!defer) {
+                try {
+                    writeAd(ads[i], device, targets);
+                }
+                catch(e) {
+                    debug("ERROR");
+                    debug(e);
+                }
+
+            }
+        }
+        return this;
+    }
+
+    this.writeSingleAd =  function(ad, device, targets) {
+        writeAd(ad, device, targets);
+        return this;
+    }
+
+    this.writeSingleAdForId = function(id, device) {
+        var el = document.getElementById(id);
+        if(el == null) {
+            console.error("Failed to write single ad for element: " + id + " device: "+device);
+            return this;
+        }
+        try {
+            var targets = AdManager.getTargetingForSingleEl(el);
+            writeAd(el, device, targets);
+        }
+        catch (ex) {
+            console.log(ex);
+            console.log(el);
+        }
+
+        return this;
+    }
+
+    this.getTargetingForSingleEl = function(ad) {
+        var ret = {};
+        if(isElement(ad) && ad.hasAttribute('data-targets')) {
+            var targets = ad.getAttribute('data-targets');
+            targets = targets.split(';');
+            for(x=0; x < targets.length; x++) {
+                var pair = targets[x].split(':');
+                var key = pair[0];
+                var val = pair[1];
+                ret[key] = val;
+            }
+        }
+        return ret;
+    }
+
+    /**************/
+
+    // looks up and writes the device-specific ad if configured,
+    // replacing the dom elemenet el with an ad-enabled one
+    var writeAd = function(el, device, targeting) {
+        if(!isElement(el)) return;
+        var adId = el.getAttribute('data-ad-id');
+        var ads = lookup(adId, adUnits);
+        var amazonSlot;
+        amazon_sizes = '';
+        //adClass = el.getAttribute('class');
+        if(el.getAttribute('data-type-ad')){
+            var adType = el.getAttribute('data-type-ad');
+        }else{
+            var adType = "";
+        }
+
+        if(ads) {
+            var ad = lookup(device, ads);
+            debug("looked up ad");
+            debug(ad);
+            if(ad) {
+                var adDiv = document.createElement("div");
+                if(adType =='oop'){
+                    var divId = adId;
+                }else{
+                    var divId = adId + "-" + device + "-" + slots.length;
+                    if(el.hasAttribute('data-index')) {
+                        divId += '-' + el.getAttribute('data-index');
+                    }
+                }
+
+                debug("New Ad div id: "+divId);
+                adDiv.setAttribute('id', divId);
+
+                if(el && el.parentNode) {
+                    adDiv.setAttribute('class', el.getAttribute('class'));
+                    if( el.getAttribute('data-next')){
+                        adDiv.setAttribute('data-next', el.getAttribute('data-next'));
+                    }
+
+                    el.parentNode.replaceChild(adDiv, el);
+                }
+                else { // if original target can't be found, append to the body
+                    var adWrapper = document.createElement('div');
+                    adWrapper.setAttribute('class', 'body-ad-wrapper');
+                    adWrapper.appendChild(adDiv);
+                    document.getElementsByTagName('body')[0].appendChild(adWrapper);
+                }
+
+                // merge targeting with global targeting
+                if(typeof targeting != 'object') targeting = {};
+                var comment = 'TARGETING ['+divId+']:\n';
+                for (var attr in globalTargeting) {
+                    targeting[attr] = globalTargeting[attr];
+
+                }
+                for(var attr in targeting) {
+                    if(attr) {
+                        comment += '- ' + attr + ' = ' + targeting[attr] + '\n';
+                    }
+                }
+
+                if(ad.sizes.length > 0) {
+                    amazon_sizes += "[";
+                    comment += "- [";
+                    for(i=0; i<ad.sizes.length; i++) {
+                        if (Array.isArray(ad.sizes[i])) {
+                            comment += ad.sizes[i].join('x') +",";
+                            if( ad.sizes[i] != '1,1'){
+                                amazon_sizes += '['+ad.sizes[i].join(',') +"],";
+                            }
+                        }
+                        else {
+                            comment += ad.sizes[i] + ",";
+                        }
+
+                    }
+                    comment = comment.replace(/,$/, '') + "]";
+                    amazon_sizes = amazon_sizes.replace(/,$/, '') + "]";
+                }
+                comment = document.createComment(comment);
+                adDiv.parentNode.insertBefore(comment, adDiv);
+                if(window.JSON){ amazon_sizes=JSON.parse(amazon_sizes); }
+                console.log('amazon sizes: '+ amazon_sizes);
+
+                amazonSlot = {slotID: divId,
+                    sizes: amazon_sizes,
+                    slotName:ad.path,};
+
+
+                apstag.fetchBids({
+                    slots: [{
+                        slotID: divId,
+                        sizes: amazon_sizes,
+                        slotName:ad.path,
+                    }],
+                    timeout: 2e3
+                }, function(bids) {
+                    googletag.cmd.push(function(){
+                        if(adType == 'oop'){
+                            var slot = googletag.defineOutOfPageSlot(ad.path, divId).addService(googletag.pubads()) ;
+                            console.log('defineOutOfPageSlot');
+                        }else{
+                            var slot = googletag.defineSlot(ad.path, ad.sizes, divId).addService(googletag.pubads()) ;
+                            console.log('defineSlot');
+
+                        }
+                        var keys = Object.keys(targeting);
+                        keys.forEach(function(key){
+                            slot.setTargeting(key, targeting[key]);
+                            //console.log("slot.setTargeting("+ key +","+ targeting[key] +")");
+                        });
+
+                        setupIframeSandboxing();
+                        // Infinite scroll requires SRA
+                        googletag.pubads().enableSingleRequest();
+
+
+                        apstag.setDisplayBids();
+                        googletag.display(divId);
+                        googletag.pubads().refresh([slot], {changeCorrelator: false});
+
+                        amazonSlots.push(amazonSlot);
+                        slots.push(slot);
+
+                    });
+
+                });
+
+            }
+        }
+        else {
+            debug("No ad configured for "+adId+" / "+device);
+        }
+
+    };
+
+    // Holds DFP defined slots once they've been written to the DOM
+    var slots = [];
+
+    // global targets across all ads?
+    var globalTargeting = {};
+
+
+
+    // generic lookup function to find the value of a key value pair
+    var lookup = function(id, obj) {
+        var lookup = {};
+        for (var i = 0, len = obj.length; i < len; i++) {
+            lookup[obj[i].id] = obj[i];
+        }
+        return obj[id];
+    };
+
+    var isElement = function(o){
+        return (typeof HTMLElement === "object" ? o instanceof HTMLElement : //DOM2
+            o && typeof o === "object" && o !== null && o.nodeType === 1 && typeof o.nodeName==="string"
+        );
+    }
+
+    var getAdsForDevice = function(device) {
+        var allAds = document.getElementsByClassName('managed-ad');
+        var ads = [];
+        for(i=0; i < allAds.length; i++) {
+            var adDevice = allAds[i].getAttribute('data-device');
+            if(adDevice == device) {
+                ads.push(allAds[i]);
+            }
+        }
+        return ads;
+    };
+
+    var getTargetsFromAdEl = function(ad) {
+        var targets = ad.getAttribute('data-targets');
+        var ret = {};
+        if(targets) {
+            targets = targets.split(';');
+            for(x=0; x < targets.length; x++) {
+                var pair = targets[x].split(':');
+                if(pair.length > 0) {
+                    var key = pair[0];
+                    var val = pair[1];
+                    ret[key] = val;
+                }
+            }
+        }
+        return ret;
+    }
+
+    var debug = function(msg) {
+        if(debugMode) {
+            console.log(msg);
+        }
+    }
+
+};
+
+// need to shim googletag here to add sandboxing to rendering
+var SANDBOX_ALLOWED = [
+    // some ads track user behavior by perfoming a form submit, or have a lead capture.
+    // note that we may want to experiment with removing this permission, since it could
+    // potentially be used for redirection
+    'forms',
+    'same-origin',
+    'scripts',
+    'popups', // required so that ads can open landing pages via window.open()
+];
+
+// convert these properties into a sandbox property string
+// see here for an explanation of the values: https://www.html5rocks.com/en/tutorials/security/sandboxed-iframes/
+var SANDBOX_PROPERTY = jQuery.map(SANDBOX_ALLOWED, function(value) {
+    return 'allow-' + value;
+}).join(' ');
+
+/**
+ * Shim Element#appendChild,
+ * which is used inside the googletag pubads SDK
+ * to append the new ad iframe to the document.
+ */
+function setupIframeSandboxing() {
+    var Element = window.Element; // Element is the superclass of all DOM elements (eg <div>)
+    var appendChild = Element.prototype.appendChild; // get the original/native implementation
+
+    // replace the native method on the Element's prototype
+    // with our own logic
+    Element.prototype.appendChild = function(e) {
+        try {
+
+            // when used by googletag, 'this' will be an adslot div, e.g. having
+            // an id like google_ads_iframe/1234/my-unit. We only want to add the sandbox tag to IFRAMEs
+            if (!this.id || this.id.indexOf('google_ads_iframe') === -1 || !e || e.tagName !== 'IFRAME') {
+                console.log('sandbox id ' +this.className);
+                if(this.className.indexOf('skipsandbox') === -1 ){
+                    return appendChild.call(this, e);
+                }
+
+            }
+            // set the sandbox property, which will be a string
+            // like 'allow-scripts allow-popups' -- see above
+            e.setAttribute('sandbox', SANDBOX_PROPERTY);
+        } catch (e) {
+            // do nothing
+        }
+        return appendChild.call(this, e);
+    };
+}
+
+var googletag = googletag || {};
+googletag.cmd = googletag.cmd || [];
+
+(function() {
+    var gads = document.createElement('script');
+    gads.async = true;
+    gads.type = 'text/javascript';
+    var useSSL = 'https:' == document.location.protocol;
+    gads.src = (useSSL ? 'https:' : 'http:') +
+        '//www.googletagservices.com/tag/js/gpt.js';
+    var node = document.getElementsByTagName('script')[0];
+    node.parentNode.insertBefore(gads, node);
+})();
+
+googletag.cmd.push(function() {
+
+    // Infinite scroll requires SRA
+    googletag.pubads().enableSingleRequest();
+
+    // Disable initial load, we will use refresh() to fetch ads.
+    // Calling this function means that display() calls just
+    // register the slot as ready, but do not fetch ads for it.
+    googletag.pubads().disableInitialLoad();
+    googletag.pubads().collapseEmptyDivs();
+    // Enable services
+    googletag.enableServices();
+
+});
+
+AdManager = new AdManager();
+
+function MentalFloss() {
+
+    var syntheticPageviewUrls = [];
+
+    // be a singleton
+    if ( arguments.callee._singletonInstance )
+        return arguments.callee._singletonInstance;
+    arguments.callee._singletonInstance = this;
+
+    this.getDeviceBreakpoint = function(type) {
+        var prop;
+        switch(type) {
+            case 'mobile':
+                prop = 'margin-left';
+                break;
+            case 'tablet':
+                prop = 'margin-right';
+                break;
+            default:
+                prop = 'margin-top';
+        }
+        return jQuery('div#cssjsconfig').css(prop);
+    }
+
+    this.getCurrentDevice = function() {
+        // these have to go biggest to smallest
+        var devices = ['desktop', 'tablet', 'mobile'];
+        var found;
+        for(i=0; i < devices.length; i++) {
+            var d = this.getDeviceBreakpoint(devices[i]);
+
+            if(Modernizr.mq('only all and (min-width: '+ d +')')) {
+                return devices[i];
+            }
+        }
+    }
+
+    /*
+     * Allows you to push analytics events via the dataLayer
+     *
+     * ec - analytics event category
+     * ea - analytics event action
+     * el - analytics event label
+     * ev - analytics event value
+     */
+    this.pushUAEvent = function(ec, ea, el, ev) {
+        dataLayer.push({
+            'uaEvent.category': ec,
+            'uaEvent.action': ea,
+            'uaEvent.label': el,
+            'uaEvent.value': ev,
+            'event': 'uaEvent'
+        });
+    }
+
+    // used to "lock" a url so synthetic pageview won't be fired
+    // twice.  this happens automatically when you call
+    // pushSyntheticPageView, but for the url in the initial
+    // pageload, you will probably want to lock it using this method
+    this.syntheticPageviewLockUrl = function(url) {
+        syntheticPageviewUrls.push(url);
+    }
+
+    // return urls "locked" for syntheticPageView.  These urls
+    // synthetic pageviews will not fire for these urls using
+    // the pushSyntheticPageview method
+    this.syntheticPageviewUrls = function() {
+        return syntheticPageviewUrls;
+    }
+
+    this.pushSyntheticPageview = function(url, headline, tags, authors, pubdate) {
+        // don't send the same pageview event more than once per pageload
+        if(syntheticPageviewUrls.indexOf(url) < 0) {
+
+            if (tags == undefined) tags = [];
+            if (authors == undefined) authors = [];
+            if (pubdate == undefined) pubdate = '';
+
+            syntheticPageviewUrls.push(url);
+
+            dataLayer.push({
+                'article.url': url,
+                'article.headline': headline,
+                'tags': tags,
+                'article.authors': authors,
+                'article.publish_date': pubdate
+            });
+            dataLayer.push({'event': 'pageview'});
+        }
+        else {
+            console.log("Not sending duplicate pageview for "+url);
+        }
+    }
+
+}
+
+var MentalFloss = new MentalFloss();
+/* Modernizr 2.8.3 (Custom Build) | MIT & BSD
+ * Build: http://modernizr.com/download/#-shiv-mq-cssclasses-teststyles-load
+ */
+;window.Modernizr=function(a,b,c){function w(a){j.cssText=a}function x(a,b){return w(prefixes.join(a+";")+(b||""))}function y(a,b){return typeof a===b}function z(a,b){return!!~(""+a).indexOf(b)}function A(a,b,d){for(var e in a){var f=b[a[e]];if(f!==c)return d===!1?a[e]:y(f,"function")?f.bind(d||b):f}return!1}var d="2.8.3",e={},f=!0,g=b.documentElement,h="modernizr",i=b.createElement(h),j=i.style,k,l={}.toString,m={},n={},o={},p=[],q=p.slice,r,s=function(a,c,d,e){var f,i,j,k,l=b.createElement("div"),m=b.body,n=m||b.createElement("body");if(parseInt(d,10))while(d--)j=b.createElement("div"),j.id=e?e[d]:h+(d+1),l.appendChild(j);return f=["&#173;",'<style id="s',h,'">',a,"</style>"].join(""),l.id=h,(m?l:n).innerHTML+=f,n.appendChild(l),m||(n.style.background="",n.style.overflow="hidden",k=g.style.overflow,g.style.overflow="hidden",g.appendChild(n)),i=c(l,a),m?l.parentNode.removeChild(l):(n.parentNode.removeChild(n),g.style.overflow=k),!!i},t=function(b){var c=a.matchMedia||a.msMatchMedia;if(c)return c(b)&&c(b).matches||!1;var d;return s("@media "+b+" { #"+h+" { position: absolute; } }",function(b){d=(a.getComputedStyle?getComputedStyle(b,null):b.currentStyle)["position"]=="absolute"}),d},u={}.hasOwnProperty,v;!y(u,"undefined")&&!y(u.call,"undefined")?v=function(a,b){return u.call(a,b)}:v=function(a,b){return b in a&&y(a.constructor.prototype[b],"undefined")},Function.prototype.bind||(Function.prototype.bind=function(b){var c=this;if(typeof c!="function")throw new TypeError;var d=q.call(arguments,1),e=function(){if(this instanceof e){var a=function(){};a.prototype=c.prototype;var f=new a,g=c.apply(f,d.concat(q.call(arguments)));return Object(g)===g?g:f}return c.apply(b,d.concat(q.call(arguments)))};return e});for(var B in m)v(m,B)&&(r=B.toLowerCase(),e[r]=m[B](),p.push((e[r]?"":"no-")+r));return e.addTest=function(a,b){if(typeof a=="object")for(var d in a)v(a,d)&&e.addTest(d,a[d]);else{a=a.toLowerCase();if(e[a]!==c)return e;b=typeof b=="function"?b():b,typeof f!="undefined"&&f&&(g.className+=" "+(b?"":"no-")+a),e[a]=b}return e},w(""),i=k=null,function(a,b){function l(a,b){var c=a.createElement("p"),d=a.getElementsByTagName("head")[0]||a.documentElement;return c.innerHTML="x<style>"+b+"</style>",d.insertBefore(c.lastChild,d.firstChild)}function m(){var a=s.elements;return typeof a=="string"?a.split(" "):a}function n(a){var b=j[a[h]];return b||(b={},i++,a[h]=i,j[i]=b),b}function o(a,c,d){c||(c=b);if(k)return c.createElement(a);d||(d=n(c));var g;return d.cache[a]?g=d.cache[a].cloneNode():f.test(a)?g=(d.cache[a]=d.createElem(a)).cloneNode():g=d.createElem(a),g.canHaveChildren&&!e.test(a)&&!g.tagUrn?d.frag.appendChild(g):g}function p(a,c){a||(a=b);if(k)return a.createDocumentFragment();c=c||n(a);var d=c.frag.cloneNode(),e=0,f=m(),g=f.length;for(;e<g;e++)d.createElement(f[e]);return d}function q(a,b){b.cache||(b.cache={},b.createElem=a.createElement,b.createFrag=a.createDocumentFragment,b.frag=b.createFrag()),a.createElement=function(c){return s.shivMethods?o(c,a,b):b.createElem(c)},a.createDocumentFragment=Function("h,f","return function(){var n=f.cloneNode(),c=n.createElement;h.shivMethods&&("+m().join().replace(/[\w\-]+/g,function(a){return b.createElem(a),b.frag.createElement(a),'c("'+a+'")'})+");return n}")(s,b.frag)}function r(a){a||(a=b);var c=n(a);return s.shivCSS&&!g&&!c.hasCSS&&(c.hasCSS=!!l(a,"article,aside,dialog,figcaption,figure,footer,header,hgroup,main,nav,section{display:block}mark{background:#FF0;color:#000}template{display:none}")),k||q(a,c),a}var c="3.7.0",d=a.html5||{},e=/^<|^(?:button|map|select|textarea|object|iframe|option|optgroup)$/i,f=/^(?:a|b|code|div|fieldset|h1|h2|h3|h4|h5|h6|i|label|li|ol|p|q|span|strong|style|table|tbody|td|th|tr|ul)$/i,g,h="_html5shiv",i=0,j={},k;(function(){try{var a=b.createElement("a");a.innerHTML="<xyz></xyz>",g="hidden"in a,k=a.childNodes.length==1||function(){b.createElement("a");var a=b.createDocumentFragment();return typeof a.cloneNode=="undefined"||typeof a.createDocumentFragment=="undefined"||typeof a.createElement=="undefined"}()}catch(c){g=!0,k=!0}})();var s={elements:d.elements||"abbr article aside audio bdi canvas data datalist details dialog figcaption figure footer header hgroup main mark meter nav output progress section summary template time video",version:c,shivCSS:d.shivCSS!==!1,supportsUnknownElements:k,shivMethods:d.shivMethods!==!1,type:"default",shivDocument:r,createElement:o,createDocumentFragment:p};a.html5=s,r(b)}(this,b),e._version=d,e.mq=t,e.testStyles=s,g.className=g.className.replace(/(^|\s)no-js(\s|$)/,"$1$2")+(f?" js "+p.join(" "):""),e}(this,this.document),function(a,b,c){function d(a){return"[object Function]"==o.call(a)}function e(a){return"string"==typeof a}function f(){}function g(a){return!a||"loaded"==a||"complete"==a||"uninitialized"==a}function h(){var a=p.shift();q=1,a?a.t?m(function(){("c"==a.t?B.injectCss:B.injectJs)(a.s,0,a.a,a.x,a.e,1)},0):(a(),h()):q=0}function i(a,c,d,e,f,i,j){function k(b){if(!o&&g(l.readyState)&&(u.r=o=1,!q&&h(),l.onload=l.onreadystatechange=null,b)){"img"!=a&&m(function(){t.removeChild(l)},50);for(var d in y[c])y[c].hasOwnProperty(d)&&y[c][d].onload()}}var j=j||B.errorTimeout,l=b.createElement(a),o=0,r=0,u={t:d,s:c,e:f,a:i,x:j};1===y[c]&&(r=1,y[c]=[]),"object"==a?l.data=c:(l.src=c,l.type=a),l.width=l.height="0",l.onerror=l.onload=l.onreadystatechange=function(){k.call(this,r)},p.splice(e,0,u),"img"!=a&&(r||2===y[c]?(t.insertBefore(l,s?null:n),m(k,j)):y[c].push(l))}function j(a,b,c,d,f){return q=0,b=b||"j",e(a)?i("c"==b?v:u,a,b,this.i++,c,d,f):(p.splice(this.i++,0,a),1==p.length&&h()),this}function k(){var a=B;return a.loader={load:j,i:0},a}var l=b.documentElement,m=a.setTimeout,n=b.getElementsByTagName("script")[0],o={}.toString,p=[],q=0,r="MozAppearance"in l.style,s=r&&!!b.createRange().compareNode,t=s?l:n.parentNode,l=a.opera&&"[object Opera]"==o.call(a.opera),l=!!b.attachEvent&&!l,u=r?"object":l?"script":"img",v=l?"script":u,w=Array.isArray||function(a){return"[object Array]"==o.call(a)},x=[],y={},z={timeout:function(a,b){return b.length&&(a.timeout=b[0]),a}},A,B;B=function(a){function b(a){var a=a.split("!"),b=x.length,c=a.pop(),d=a.length,c={url:c,origUrl:c,prefixes:a},e,f,g;for(f=0;f<d;f++)g=a[f].split("="),(e=z[g.shift()])&&(c=e(c,g));for(f=0;f<b;f++)c=x[f](c);return c}function g(a,e,f,g,h){var i=b(a),j=i.autoCallback;i.url.split(".").pop().split("?").shift(),i.bypass||(e&&(e=d(e)?e:e[a]||e[g]||e[a.split("/").pop().split("?")[0]]),i.instead?i.instead(a,e,f,g,h):(y[i.url]?i.noexec=!0:y[i.url]=1,f.load(i.url,i.forceCSS||!i.forceJS&&"css"==i.url.split(".").pop().split("?").shift()?"c":c,i.noexec,i.attrs,i.timeout),(d(e)||d(j))&&f.load(function(){k(),e&&e(i.origUrl,h,g),j&&j(i.origUrl,h,g),y[i.url]=2})))}function h(a,b){function c(a,c){if(a){if(e(a))c||(j=function(){var a=[].slice.call(arguments);k.apply(this,a),l()}),g(a,j,b,0,h);else if(Object(a)===a)for(n in m=function(){var b=0,c;for(c in a)a.hasOwnProperty(c)&&b++;return b}(),a)a.hasOwnProperty(n)&&(!c&&!--m&&(d(j)?j=function(){var a=[].slice.call(arguments);k.apply(this,a),l()}:j[n]=function(a){return function(){var b=[].slice.call(arguments);a&&a.apply(this,b),l()}}(k[n])),g(a[n],j,b,n,h))}else!c&&l()}var h=!!a.test,i=a.load||a.both,j=a.callback||f,k=j,l=a.complete||f,m,n;c(h?a.yep:a.nope,!!i),i&&c(i)}var i,j,l=this.yepnope.loader;if(e(a))g(a,0,l,0);else if(w(a))for(i=0;i<a.length;i++)j=a[i],e(j)?g(j,0,l,0):w(j)?B(j):Object(j)===j&&h(j,l);else Object(a)===a&&h(a,l)},B.addPrefix=function(a,b){z[a]=b},B.addFilter=function(a){x.push(a)},B.errorTimeout=1e4,null==b.readyState&&b.addEventListener&&(b.readyState="loading",b.addEventListener("DOMContentLoaded",A=function(){b.removeEventListener("DOMContentLoaded",A,0),b.readyState="complete"},0)),a.yepnope=k(),a.yepnope.executeStack=h,a.yepnope.injectJs=function(a,c,d,e,i,j){var k=b.createElement("script"),l,o,e=e||B.errorTimeout;k.src=a;for(o in d)k.setAttribute(o,d[o]);c=j?h:c||f,k.onreadystatechange=k.onload=function(){!l&&g(k.readyState)&&(l=1,c(),k.onload=k.onreadystatechange=null)},m(function(){l||(l=1,c(1))},e),i?k.onload():n.parentNode.insertBefore(k,n)},a.yepnope.injectCss=function(a,c,d,e,g,i){var e=b.createElement("link"),j,c=i?h:c||f;e.href=a,e.rel="stylesheet",e.type="text/css";for(j in d)e.setAttribute(j,d[j]);g||(n.parentNode.insertBefore(e,n),m(c,0))}}(this,document),Modernizr.load=function(){yepnope.apply(window,[].slice.call(arguments,0))};

@@ -1,0 +1,13 @@
+function emailThisPage() {
+	var temp = location.href.split("?");
+	if (temp[1]) {
+		var content_id, vkey, ymd;
+		var params = temp[1].split("&");
+		for (var i=0; i<params.length; i++ ) {
+			if (/content_id=/.test(params[i])) content_id = params[i].substr(11);
+			else if (/vkey=/.test(params[i])) vkey = params[i].substr(5);
+			else if (/ymd=/.test(params[i])) ymd = params[i].substr(4);
+		}
+		popWin('/news/email/send.jsp?ymd='+ymd+'&content_id='+content_id+'&vkey='+vkey,'email',500,470,'location=no,menubar=no,scrollbars=yes,status=yes,toolbar=no,resizable=yes');
+	} else return false;
+}

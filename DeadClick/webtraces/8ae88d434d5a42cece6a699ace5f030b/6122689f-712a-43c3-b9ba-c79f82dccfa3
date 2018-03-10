@@ -1,0 +1,469 @@
+<!--//
+5.1.1: 
+//-->
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<title>Telegraph media Group - Ooyala Embedded Player</title>
+<style type="text/css">
+* {
+  margin:0;
+  padding:0;
+}
+html,body {
+  height:100%;
+  width:100%;
+}
+</style>
+<!--<script src="http://player.ooyala.com/v3/7dfd98005dba40baacc82277f292e522?platform=html5-fallback&version=f8e418e93cff39637390070b7a659110185bec4d"></script>-->
+<script src="http://player.ooyala.com/v3/7dfd98005dba40baacc82277f292e522?platform=html5-fallback"></script>
+<!-- <script src="//ajax.googleapis.com/ajax/libs/jquery/1.8.2/jquery.min.js"></script> -->
+<script src="//code.jquery.com/jquery-1.11.3.min.js"></script>
+<!-- <script src="//assets.adobedtm.com/71dcbb11123ce6b2e1ce4d47fd79a130aad3fc95/satelliteLib-1c3d0c3b3e3b492ca058647975687e6b485ad5c8-staging.js"></script> -->
+<script type="text/javascript">
+document.domain="telegraph.co.uk";
+ if(window.parent._satellite){
+ _satellite = window.parent._satellite;
+ }
+// firstly lets sanitize the input
+// as used at Stackoverflow: http://stackoverflow.com/questions/205923/best-way-to-handle-security-and-avoid-xss-with-user-entered-urls
+/// returns "safe" URL, stripping anything outside normal charsets for URL
+console.log("1.0.5");
+var dataStr = window.location.href;
+var tmgAds  = tmgAds || {};
+tmgAds.embedPlayer = {
+  targetId     : 'embedPlayerWrapper',
+  platform     : urlParam('platform',dataStr), 
+  width        : urlParam('width',dataStr),
+  height       : urlParam('height',dataStr),
+  vidEmbed     : urlParam('vidEmbed',dataStr),
+  // This removes the tile value from the adtag, ensures we can deliver the same blanking ads into those ads when there are multple sv ads on the page at any go
+  adTag        : urlParam('adTag',dataStr).replace(";tile=",";unused=").replace(";ord=",";ord="+Math.floor(Math.random()*10000+1)),
+  relatedVideo : urlParam('relatedVideo',dataStr),
+  adobeDTM     : urlParam('adobeDTM',dataStr)
+}
+
+
+////////////////////////////////////////////////////////////////////
+// get param value from url
+function urlParam(strParamName,URL){
+  var strReturn = "";
+  var strHref = URL;
+  if ( strHref.indexOf("?") > -1 ){
+    var strQueryString = strHref.substr(strHref.indexOf("?"));
+    var aQueryString = strQueryString.split("&");
+    for ( var iParam = 0; iParam < aQueryString.length; iParam++ ){
+      if (aQueryString[iParam].indexOf(strParamName + "=") > -1 ){
+        var aParam = aQueryString[iParam].split("=");
+        strReturn = aParam[1];
+        break;
+      }
+    }
+  } else {
+    strReturn = "";
+  }
+  return unescape(strReturn);
+}
+
+////////////////////////////////////////////////////////////////////
+// Load adobeDTM library to track OoyalaEmbedded videos trough preformtag
+var adobeDTMstaging = "http://assets.adobedtm.com/71dcbb11123ce6b2e1ce4d47fd79a130aad3fc95/satelliteLib-1c3d0c3b3e3b492ca058647975687e6b485ad5c8-staging.js";
+var adobeDTMlive = "http://assets.adobedtm.com/71dcbb11123ce6b2e1ce4d47fd79a130aad3fc95/satelliteLib-1c3d0c3b3e3b492ca058647975687e6b485ad5c8.js"; 
+/* if (tmgAds.embedPlayer.adobeDTM == "staging") {	
+	var x = document.createElement('script');
+	x.src = adobeDTMstaging;
+	document.getElementsByTagName("head")[0].appendChild(x);
+} else if(tmgAds.embedPlayer.adobeDTM == "live"){
+var x = document.createElement('script');
+	x.src = adobeDTMlive;
+	document.getElementsByTagName("head")[0].appendChild(x);
+} */
+
+////////////////////////////////////////////////////////////////////
+// Ooyala.js main script taken from: http://www.uat1.telegraph.co.uk/template/ver1-0/js/ooyala.js
+var tmg = tmg || {};
+tmg.utils=tmg.utils||{};
+
+tmg.utils.EventHandler = function() {
+	this._listeners = {};
+};
+tmg.utils.EventHandler.prototype = {
+	addListener : function(name, triggerFunc) {
+		if (this._listeners[name]) {
+			this._listeners[name].eventFunc.push(triggerFunc);
+		} else {
+			this._listeners[name] = {
+				"eventFunc" : new Array(triggerFunc)
+			};
+		}
+	},
+	removeListener : function(name) {
+		delete this._listeners[name];
+	},
+
+	dispatchEvent : function(event, params) {
+		if (this._listeners[event]) {
+			for ( var i = 0 in this._listeners[event].eventFunc) {
+				if (!params)
+					params = [ "" ];
+				this._listeners[event].eventFunc[i].apply(this, params);
+			}
+		}
+	}
+};
+
+var ooyala = ooyala || {};
+
+ooyala.CheckSkip = function(time, player, Events) {
+	var _this = this;
+	this.Events = Events;
+	var t = time/1000;
+	var countFrom = 5;
+	var countPos = countFrom+1;
+	if(player.adPlaying && player.duration>t) {
+		adInt = setInterval(function() {
+			if(player.playheadTime > t) {
+				_this.Events.dispatchEvent('CAN_SKIP');
+			} else if(player.playheadTime > (t-countFrom)) {
+				var c = t - player.playheadTime + 1;
+				if(countPos>c) {
+					countPos = c;
+					_this.Events.dispatchEvent('SKIP_COUNTDOWN', ['skip available in '+countPos+' seconds']);
+				}
+			}
+			
+		}, 100);
+	}
+	
+
+};
+
+
+ooyala.SkipAdLnk = function(Events, txt, position) {
+	var _this = this;
+	this.inDom = false;
+	this.Events = Events;
+	this.origTxt = txt;
+	this.clickable = false;
+	this.lnk = $('<a />', {
+		'text' : this.origTxt,
+		'href' : 'javascript:void(0);',
+		'class': 'ooyalaSkipAd '+position
+	});
+	
+	this.lnk.click(function() {
+		if(_this.clickable) {
+			_this.Events.dispatchEvent('AD_SKIP');
+			_this.hide();
+		}
+	});
+};
+ooyala.SkipAdLnk.prototype.hide = function(interval) {
+	clearTimeout(interval);
+	this.lnk.fadeOut(500, function() {
+		$(this).remove();
+	});
+};
+ooyala.SkipAdLnk.prototype.show = function(targetRef, clickable) {
+	if(!this.inDom) {
+		$(targetRef).append(this.lnk.hide());
+		this.inDom=true;
+	}
+	this.lnk.text(this.origTxt);
+	this.lnk.fadeIn(500);
+	this.clickable=clickable;
+};
+ooyala.SkipAdLnk.prototype.setTxt=function(targetRef,txt) {
+	if(!this.inDom) this.show(targetRef, false);
+	this.lnk.text(txt);
+};
+
+var vidEmbedCaption;
+var MediaModule = function() {
+  if(window.parent.s_account){
+	var s_oo = window.parent.s_gi(window.parent.s_account);
+	s_oo.loadModule("Media");	
+	s_oo.Media.autoTrack = false;
+	s_oo.Media.trackWhilePlaying = true;
+	s_oo.Media.trackVars = "events,prop70,eVar70,eVar71,eVar72";
+	s_oo.Media.trackEvents = "event70,event71,event72,event73,event74,event75,event76,event77";
+	s_oo.Media.trackMilestones = "25,50,75";
+	s_oo.Media.segmentByMilestones = true;
+	s_oo.Media.trackUsingContextData = true;
+	s_oo.Media.adSegmentByMilestones = false;
+	s_oo.Media.completeByCloseOffset = true;
+	s_oo.Media.contextDataMapping = {
+	  "a.media.name":"eVar70,prop70",
+	  "a.contentType":"eVar72",
+	  "a.media.segment":"eVar71",
+	  "a.media.segmentView":"event71",
+	  "a.media.timePlayed":"event76",
+	  "a.media.view":"event70",
+	  "a.media.complete":"event75",
+	  "a.media.milestones":{
+		25:"event72",
+		50:"event73",
+		75:"event74"
+	  }
+	};
+    return s_oo;
+  }
+}
+ooyala.Player = function(data) {
+
+	var Events = new tmg.utils.EventHandler();
+	var skipAdLnk=new ooyala.SkipAdLnk(Events, data.skipAdTxt, data.skipAdPos);
+	if(!s_oo) var s_oo = MediaModule();
+	var getTimePercent = function (oplayer) {
+									return oplayer.getPlayheadTime() / oplayer.getTotalTime();
+								};
+	var per25 = false;
+    var per50 = false;
+    var per75 = false;
+	var videoEnd = false;
+	var videoPaused = false;
+	Events.addListener('AD_PLAYING', function() {
+		var skipChecker = new ooyala.CheckSkip(data.skipAdInt||20000, videoPlayer, Events);
+		if (typeof(window.parent.s_gi) === "function") {
+			s_oo.eVar70 = videoPlayer.getTitle();
+			s_oo.events = "event78";
+			s_oo.linkTrackVars = "eVar70,events";
+			s_oo.linkTrackEvents = "event78";
+			s_oo.tl(true,'o',"Video Ad Start");
+		}
+	});
+	Events.addListener('AD_CLICK', function() {
+		if (typeof(window.parent.s_gi) === "function") {
+			
+			s_oo.eVar70 = videoPlayer.getTitle();
+			s_oo.events = "event80";
+			s_oo.linkTrackVars = "eVar70,events";
+			s_oo.linkTrackEvents = "event80";
+			s_oo.tl(true,'o',"Video Ad Click");
+		}
+	});
+	
+      
+	Events.addListener('CAN_SKIP', function() {
+		skipAdLnk.show('#'+videoPlayer.elementId, true);
+	});
+	Events.addListener('SKIP_COUNTDOWN', function(txt) {
+		skipAdLnk.setTxt('#'+videoPlayer.elementId, txt);
+	});
+	Events.addListener('AD_SKIP', function() {
+		skipAdLnk.hide();
+		videoPlayer.skipAd();
+	});
+	Events.addListener('AD_COMPLETE', function() {
+		//skipAdLnk.hide(adInt);
+		if (typeof(window.parent.s_gi) === "function") {
+			oplayer._mediastate = "open";
+			s_oo.eVar70 = videoPlayer.getTitle();
+			s_oo.events = "event79";
+			s_oo.linkTrackVars = "eVar70,events";
+			s_oo.linkTrackEvents = "event79";
+			s_oo.tl(true,'o',"Video Ad End");
+	  }
+	});
+	Events.addListener('SHARE_PANEL', function() {
+	 if (typeof(window.parent.s_gi) === "function") {
+	  s_oo.eVar70 = videoPlayer.getTitle();
+      s_oo.events = "event77";
+      s_oo.linkTrackVars = "eVar70,events";
+      s_oo.linkTrackEvents = "event77";
+      s_oo.tl(true,'o',"Video Share");
+	  }
+	});
+	Events.addListener('READY', function() {
+	
+		if (typeof(window.parent.s_gi) === "function") {
+			if (!oplayer.adPlaying) {
+				//s_oo.Media.open(vidEmbedCaption, oplayer.getTotalTime(), "Ooyala");
+				oplayer._mediastate = "open";
+			}
+		}
+	  
+		videoPlayer.setVolume(data.volume || 0.7);
+		vidEmbedCaption = videoPlayer.getTitle();
+		
+		if (oplayer !== undefined){
+			oplayer._mediastate = "close";
+		}
+		
+		if (window.screen.width > 1000 || navigator.userAgent.indexOf('iPad') != -1 ) {
+			$('#video-title').remove();
+		} else {
+		$('#embedPlayerWrapper').css({"height": "169px"});
+		$('#video-title').css({ "color": "#727272", "font-family": "arial", "font-weight": "bold", "font-size": "15px", "margin-bottom": "30px" });
+		$('#video-title').append(vidEmbedCaption);
+		
+		}
+	});
+	Events.addListener('PLAY_INITIAL', function() {
+	
+		if (videoEnd){
+			var per25 = false;
+			var per50 = false;
+			var per75 = false;
+		}
+	});
+	Events.addListener('PLAY', function() {
+		if (!oplayer.adPlaying && typeof(window.parent.s_gi) === "function") {
+			if(videoPaused != true) {
+			
+			s_oo.eVar70 = videoPlayer.getTitle();
+			s_oo.events = "event77";
+			s_oo.linkTrackVars = "eVar70,events";
+			s_oo.linkTrackEvents = "event77";
+			
+			}
+			var TimePercent = getTimePercent(oplayer);
+			if (oplayer._mediastate == "close") {
+			 // s_oo.Media.open(vidEmbedCaption, oplayer.getTotalTime(), "Ooyala");
+			  oplayer._mediastate = "open";
+			} 
+			//s_oo.Media.play(vidEmbedCaption, oplayer.getPlayheadTime());
+			oplayer._mediastate = "play";
+			if (!per25 && TimePercent <= 0.1 ) {
+				s_oo.eVar70 = videoPlayer.getTitle();
+				s_oo.events = "event70";
+				s_oo.linkTrackVars = "eVar70,events";
+				s_oo.linkTrackEvents = "event70";
+				s_oo.tl(true,'o',"Video Start");
+			}
+      }	
+	});
+	Events.addListener('TIME_CHANGED', function() {
+			s_oo.prop70 = videoPlayer.getTitle();
+			var TimePercent = getTimePercent(oplayer);
+			if(!oplayer.adPlaying && TimePercent >= 0.25 && TimePercent <= 0.26 && !per25) {
+				per25 = true;
+				s_oo.eVar70 = videoPlayer.getTitle();
+				s_oo.events = "event72";
+				s_oo.linkTrackVars = "eVar70,eVar71,prop70,events";
+				s_oo.linkTrackEvents = "event72";
+				s_oo.tl(true,'o',"25% milestone");
+			}
+			if(!oplayer.adPlaying && TimePercent >= 0.50 && TimePercent <= 0.51 && !per50) {
+				per25 = true;
+				per50 = true;
+				s_oo.eVar70 = videoPlayer.getTitle();
+				s_oo.events = "event73";
+				s_oo.linkTrackVars = "eVar70,eVar71,prop70,events";
+				s_oo.linkTrackEvents = "event73";
+				s_oo.tl(true,'o',"50% milestone");
+			}
+			if(!oplayer.adPlaying && TimePercent >= 0.75 && TimePercent <= 0.76 && !per75) {
+				per25 = true;
+				per50 = true;
+				per75 = true;
+				s_oo.eVar70 = videoPlayer.getTitle();
+				s_oo.events = "event74";
+				s_oo.linkTrackVars = "eVar70,eVar71,prop70,events";
+				s_oo.linkTrackEvents = "event74";
+				s_oo.tl(true,'o',"75% milestone");
+			}
+	});
+	Events.addListener('PAUSED', function() {
+		if (!oplayer.adPlaying && oplayer._mediastate == "play") {
+        //s_oo.Media.stop(vidEmbedCaption, oplayer.getPlayheadTime());
+        oplayer._mediastate = "stop";
+      }
+	  videoPaused = true;
+	});
+	Events.addListener('PLAYEND', function() {
+		if (!oplayer.adPlaying) {
+		oplayer._mediastate = "close";
+        s_oo.events = "event75";
+        s_oo.linkTrackEvents = "event75";
+		s_oo.tl(true,'o',"Video Complete");
+		videoEnd = true;
+	  }
+	});
+	
+	var vidEmbedObj;
+	vidEmbedObj = {
+		'autoplay' : data.autoPlay,
+		//'adSetCode' : 'aa02950f01fc4cfcba71c5d092e2ce48',
+		'tmgui' : {
+			'relatedVideo' : data.relatedVideo
+		},
+		'google-ima-ads-manager' : {
+			adTagUrl : tmgAds.embedPlayer.adTag,
+			showInAdControlBar : true
+		},
+		'onCreate' : function(player) {
+			player.subscribe(OO.EVENTS.WILL_PLAY_ADS, 'keynote', function() {
+				Events.dispatchEvent('AD_PLAYING');
+			});
+			player.subscribe(OO.EVENTS.ADS_CLICKED, 'keynote', function() {
+				Events.dispatchEvent('AD_CLICK');
+			});
+			player.subscribe(OO.EVENTS.ADS_PLAYED, 'keynote', function() {
+				Events.dispatchEvent('AD_COMPLETE');
+			});
+			player.subscribe(OO.EVENTS.PLAYBACK_READY, 'keynote', function() {
+				Events.dispatchEvent('READY');
+			});
+			player.subscribe(OO.EVENTS.INITIAL_PLAY, 'keynote', function() {
+				Events.dispatchEvent('PLAY_INITIAL');
+			});
+			player.subscribe(OO.EVENTS.PLAYING, 'keynote', function() {
+				Events.dispatchEvent('PLAY');
+			});
+			player.subscribe(OO.EVENTS.PLAYHEAD_TIME_CHANGED, 'keynote', function() {
+				Events.dispatchEvent('TIME_CHANGED');
+			});
+			player.subscribe(OO.EVENTS.PAUSED, 'keynote', function() {
+				Events.dispatchEvent('PAUSED');
+			});
+			player.subscribe(OO.EVENTS.PLAYED, 'keynote', function() {
+				Events.dispatchEvent('PLAYEND');
+			});
+			player.subscribe(OO.EVENTS.SHARE_PANEL_CLICKED, 'keynote', function() {
+				Events.dispatchEvent('SHARE_PANEL');
+			});
+			
+		}
+	};
+	var videoPlayer = OO.Player.create(data.targetId, data.vidEmbed,vidEmbedObj);
+	return videoPlayer;
+
+};
+
+</script>
+</head>
+<body>
+<h2 id="video-title"></h2><div class="videoPlayer" id="embedPlayerWrapper"></div>
+<script type="text/javascript">
+////// set the size correctly
+//  document.getElementById("embedPlayerWrapper").style.width  = tmgAds.embedPlayer.width +"px";
+//  document.getElementById("embedPlayerWrapper").style.height = tmgAds.embedPlayer.height+"px";
+  ///////////////////////////////////////////////////////////
+  var oplayer = null;
+  if(typeof ooyala!=='undefined'){
+    var ooyalaData = {
+      'targetId'  : tmgAds.embedPlayer.targetId,
+      'width'     : tmgAds.embedPlayer.width,
+      'height'    : tmgAds.embedPlayer.height,
+      'vidEmbed'  : tmgAds.embedPlayer.vidEmbed,
+      'autoPlay'  : false,
+      'skipAdInt' : 20000,
+      'skipAdTxt' : 'skip advert',
+      'skipAdPos' : 'bottom right',
+      'volume'    : 0.50,
+      'relatedVideo' : decodeURIComponent(tmgAds.embedPlayer.relatedVideo)
+    };
+  }
+  // render the player:
+  var oplayer = new ooyala.Player(ooyalaData);
+ if(typeof _satellite != 'undefined'){
+  _satellite.setVar("workflowtype", "OoyalaPreform");
+  setTimeout(_satellite.track("OoyalaVideo2"),1000);
+ _satellite.pageBottom();
+ }
+</script>
+
+</body>
+</html>

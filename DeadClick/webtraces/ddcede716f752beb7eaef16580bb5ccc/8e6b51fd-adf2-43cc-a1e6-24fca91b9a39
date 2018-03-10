@@ -1,0 +1,469 @@
+// $Id: jquery.textsize.js,v 1.3 2009/12/10 23:16:50 christianzwahlen Exp $
+
+(function($) {
+  $(document).ready(function(){
+    $("a.ts_increase_variable").attr({ href: "#" });
+    $("a.ts_decrease_variable").attr({ href: "#" });
+    $("a.ts_normal_variable").attr({ href: "#" });
+    $("a.ts_increase_fix").attr({ href: "#" });
+    $("a.ts_decrease_fix").attr({ href: "#" });
+    $("a.ts_normal_fix").attr({ href: "#" });
+    function textsizeDisplayCalc(ts_v) {
+      if (textsizeDisplay == 1) {
+        ts_c = (100 * ts_v / textsizeNormal);
+        return Math.round(ts_c);
+      }
+      else {
+        return ts_v;
+      }
+    }
+    function textsizeIncrease(ts_a, ts_b) {
+      if (ts_a == textsizeMaximum) {
+        return ts_a;
+      }
+      else {
+        return 1*ts_a + 1*textsizeIncrement;
+      }
+    }
+    function textsizeDecrease(ts_a, ts_b) {
+      if (ts_a == textsizeMinimum) {
+        return ts_a;
+      }
+      else {
+        return 1*ts_a - 1*textsizeIncrement;
+      }
+    }
+    function TSremoveBC(){
+      var tsElement = $(textsizeElement + textsizeElementClass);
+      var tsClasses = tsElement.attr('class').split(' ');
+      for( var i in tsClasses ){
+        if( tsClasses[i].substring(0,8) == 'textsize' ){
+          tsElement.removeClass( tsClasses[i] );
+          break;
+        }
+      }
+    }
+    function tsIncrease(){
+      TSremoveBC();
+      $("#textsize_current").empty();
+      $("#textsize_current").append((textsizeNormalDisplay + textsizeIncrementDisplay) + '%');
+      $("#textsize_current").attr({ title: textsizeCurrentText + ": " + (textsizeNormalDisplay + textsizeIncrementDisplay) + '%'});
+      $(textsizeElement + textsizeElementClass).addClass('textsize-' + (textsizeNormal + textsizeIncrement));
+      $(textsizeElement + textsizeElementClass).css("font-size", (textsizeNormal + textsizeIncrement) + "%");
+      $.cookie('textsize', textsizeIncrease(textsizeNormalDisplay, textsizeIncrementDisplay), { expires: textsizeCookieExpires, path: textsizeCookieDomain});
+      return false;
+    }
+    function tsDecrease(){
+      TSremoveBC();
+      $("#textsize_current").empty();
+      $("#textsize_current").append((textsizeNormalDisplay - textsizeIncrementDisplay) + '%');
+      $("#textsize_current").attr({ title: textsizeCurrentText + ": " + (textsizeNormalDisplay - textsizeIncrementDisplay) + '%'});
+      $(textsizeElement + textsizeElementClass).addClass('textsize-' + (textsizeNormal - textsizeIncrement));
+      $(textsizeElement + textsizeElementClass).css("font-size", (textsizeNormal - textsizeIncrement) + "%");
+      $.cookie('textsize', textsizeDecrease(textsizeNormalDisplay, textsizeIncrementDisplay), { expires: textsizeCookieExpires, path: textsizeCookieDomain});
+      return false;
+    }
+    function tsNormal(){
+      TSremoveBC();
+      $("#textsize_current").empty();
+      $("#textsize_current").append(textsizeNormalDisplay + '%');
+      $("#textsize_current").removeClass('error');
+      $("#textsize_current").attr({ title: textsizeCurrentText + ": " + textsizeNormalDisplay + '%'});
+      $(textsizeElement + textsizeElementClass).addClass('textsize-' + textsizeNormal);
+      $(textsizeElement + textsizeElementClass).css("font-size", textsizeNormal + "%");
+      $.cookie('textsize', textsizeNormal, { expires: textsizeCookieExpires, path: textsizeCookieDomain});
+      return false;
+    }
+    function tsForm() {
+      var ts_val = $("#edit-textsize-select").val();
+      var ts_val_d = textsizeDisplayCalc($("#edit-textsize-select").val());
+      TSremoveBC();
+      $.cookie('textsize', ts_val, { expires: textsizeCookieExpires, path: textsizeCookieDomain});
+      $(textsizeElement + textsizeElementClass).addClass("textsize-" + ts_val);
+      $("#textsize_current").empty();
+      $("#textsize_current").append(ts_val_d + '%');
+      $("#textsize_current").attr({ title: textsizeCurrentText + ": " + ts_val_d + '%'});
+      $(textsizeElement + textsizeElementClass).addClass('textsize-' + ts_val);
+      $(textsizeElement + textsizeElementClass).css("font-size", ts_val + "%");
+    }
+    $("a.ts_increase_variable[href=#]").click(
+      function (){
+        if ($.cookie("textsize") && $.cookie("textsize") < textsizeMaximum) {
+          TSremoveBC();
+          $.cookie('textsize', textsizeIncrease($.cookie("textsize"), textsizeIncrement), { expires: textsizeCookieExpires, path: textsizeCookieDomain});
+          $("#textsize_current").empty();
+          $("#textsize_current").append( textsizeDisplayCalc($.cookie("textsize")) + '%');
+          $("#textsize_current").attr({ title: textsizeCurrentText + ": " + textsizeDisplayCalc($.cookie("textsize")) + '%'});
+          $("#textsize_current").removeClass('error');
+          $(textsizeElement + textsizeElementClass).addClass('textsize-' + $.cookie("textsize"));
+          $(textsizeElement + textsizeElementClass).css("font-size", $.cookie("textsize") + "%");
+          return false;
+        }
+        else if ($.cookie("textsize") && ($.cookie("textsize") == textsizeMaximum) && textsizeReset == 0) {
+          $("#textsize_current").empty();
+          $("#textsize_current").append( '<abbr title="' + Drupal.t('Maximum') + '" class="textsize">' + Drupal.t('Max.') + '</abbr> ' + textsizeDisplayCalc(textsizeMaximum) + '%');
+          $("#textsize_current").addClass('error');
+          return false;
+        }
+        else if ($.cookie("textsize") && ($.cookie("textsize") == textsizeMaximum) && textsizeReset == 1) {
+          tsNormal()
+          return false;
+        }
+      }
+    );
+    $("a.ts_increase_fix[href=#]").click(
+      function (){
+        if ($.cookie("textsize") && $.cookie("textsize") < (textsizeNormal + textsizeIncrement)) {
+          TSremoveBC();
+          $.cookie('textsize', (textsizeNormal + textsizeIncrement), { expires: textsizeCookieExpires, path: textsizeCookieDomain});
+          $("#textsize_current").empty();
+          $("#textsize_current").append( textsizeDisplayCalc($.cookie("textsize")) + '%');
+          $("#textsize_current").attr({ title: textsizeCurrentText + ": " + textsizeDisplayCalc($.cookie("textsize")) + '%'});
+          $("#textsize_current").removeClass('error');
+          $(textsizeElement + textsizeElementClass).addClass('textsize-' + (textsizeNormal + textsizeIncrement));
+          $(textsizeElement + textsizeElementClass).css("font-size", (textsizeNormal + textsizeIncrement) + "%");
+          return false;
+        }
+        else if ($.cookie("textsize") && $.cookie("textsize") == (textsizeNormal + textsizeIncrement)) {
+          $("#textsize_current").empty();
+          $("#textsize_current").append( '<abbr title="' + Drupal.t('Maximum') + '" class="textsize">' + Drupal.t('Max.') + '</abbr> ' + textsizeDisplayCalc((textsizeNormal + textsizeIncrement)) + '%');
+          $("#textsize_current").addClass('error');
+          return false;
+        }
+        else {
+          tsIncrease()
+        }
+      }
+    );
+    $("a.ts_decrease_variable[href=#]").click(
+      function (){
+        if ($.cookie("textsize") && $.cookie("textsize") > textsizeMinimum) {
+          TSremoveBC();
+          $.cookie('textsize', textsizeDecrease($.cookie("textsize"), textsizeIncrement), { expires: textsizeCookieExpires, path: textsizeCookieDomain});
+          $("#textsize_current").empty();
+          $("#textsize_current").append( textsizeDisplayCalc($.cookie("textsize")) + '%');
+          $("#textsize_current").attr({ title: textsizeCurrentText + ": " + textsizeDisplayCalc($.cookie("textsize")) + '%'});
+          $("#textsize_current").removeClass('error');
+          $(textsizeElement + textsizeElementClass).addClass('textsize-' + $.cookie("textsize"));
+          $(textsizeElement + textsizeElementClass).css("font-size", $.cookie("textsize") + "%");
+          return false;
+        }
+        else if ($.cookie("textsize") && ($.cookie("textsize") == textsizeMinimum) && textsizeReset == 0) {
+          $("#textsize_current").empty();
+          $("#textsize_current").append( '<abbr title="' + Drupal.t('Minimum') + '" class="textsize">' + Drupal.t('Min.') + '</abbr> ' + textsizeDisplayCalc(textsizeMinimum) + '%');
+          $("#textsize_current").addClass('error');
+          return false;
+        }
+        else if ($.cookie("textsize") && ($.cookie("textsize") == textsizeMinimum) && textsizeReset == 1) {
+          tsNormal()
+          return false;
+        }
+      }
+    );
+    $("a.ts_decrease_fix[href=#]").click(
+      function (){
+        if ($.cookie("textsize") && $.cookie("textsize") > (textsizeNormal - textsizeIncrement)) {
+          TSremoveBC();
+          $.cookie('textsize', (textsizeNormal - textsizeIncrement), { expires: textsizeCookieExpires, path: textsizeCookieDomain});
+          $("#textsize_current").empty();
+          $("#textsize_current").append( textsizeDisplayCalc($.cookie("textsize")) + '%');
+          $("#textsize_current").attr({ title: textsizeCurrentText + ": " + textsizeDisplayCalc($.cookie("textsize")) + '%'});
+          $("#textsize_current").removeClass('error');
+          $(textsizeElement + textsizeElementClass).addClass('textsize-' + (textsizeNormal - textsizeIncrement));
+          $(textsizeElement + textsizeElementClass).css("font-size", (textsizeNormal - textsizeIncrement) + "%");
+          return false;
+        }
+        else if ($.cookie("textsize") && $.cookie("textsize") == (textsizeNormal - textsizeIncrement)) {
+          $("#textsize_current").empty();
+          $("#textsize_current").append( '<abbr title="' + Drupal.t('Minimum') + '" class="textsize">' + Drupal.t('Min.') + '</abbr> ' + textsizeDisplayCalc((textsizeNormal - textsizeIncrement)) + '%');
+          $("#textsize_current").addClass('error');
+          return false;
+        }
+        else {
+          tsDecrease()
+        }
+      }
+    );
+    $("a.ts_normal_variable[href=#]").click(
+      function (){
+        tsNormal();
+        return false;
+      }
+    );
+    $("a.ts_normal_fix[href=#]").click(
+      function (){
+        tsNormal();
+        return false;
+      }
+    );
+    $("#edit-textsize-select").change(tsForm);
+    $("#edit-textsize-submit").hide();
+    $("img.ts_rollover").hover(
+      function(){
+        if($(this).attr("src").indexOf("16_hover") == -1) {
+          var newSrc = $(this).attr("src").replace("16.gif","16_hover.gif#hover");
+          $(this).attr("src",newSrc);
+        }
+      },
+      function(){
+        if($(this).attr("src").indexOf("16_hover.gif#hover") != -1) {
+          var oldSrc = $(this).attr("src").replace("16_hover.gif#hover","16.gif");
+          $(this).attr("src",oldSrc);
+        }
+        else if($(this).attr("src").indexOf("16_focus.gif#focus") != -1) {
+          var oldSrc = $(this).attr("src").replace("16_focus.gif#focus","16.gif");
+          $(this).attr("src",oldSrc);
+        }
+      }
+    );
+    $("a.ts_rollover").focus(
+      function(){
+        var tsIMG = $(this).children("img");
+        if($(tsIMG).attr("src").indexOf("16_hover.gif#hover") != -1) {
+          var newSrc = $(tsIMG).attr("src").replace("16_hover.gif#hover","16_focus.gif#focus");
+          $(tsIMG).attr("src",newSrc);
+        }
+      }
+    );
+  });
+})(jQuery);
+;
+
+/**
+ * Cookie plugin 1.0
+ *
+ * Copyright (c) 2006 Klaus Hartl (stilbuero.de)
+ * Dual licensed under the MIT and GPL licenses:
+ * http://www.opensource.org/licenses/mit-license.php
+ * http://www.gnu.org/licenses/gpl.html
+ *
+ */
+jQuery.cookie=function(b,j,m){if(typeof j!="undefined"){m=m||{};if(j===null){j="";m.expires=-1}var e="";if(m.expires&&(typeof m.expires=="number"||m.expires.toUTCString)){var f;if(typeof m.expires=="number"){f=new Date();f.setTime(f.getTime()+(m.expires*24*60*60*1000))}else{f=m.expires}e="; expires="+f.toUTCString()}var l=m.path?"; path="+(m.path):"";var g=m.domain?"; domain="+(m.domain):"";var a=m.secure?"; secure":"";document.cookie=[b,"=",encodeURIComponent(j),e,l,g,a].join("")}else{var d=null;if(document.cookie&&document.cookie!=""){var k=document.cookie.split(";");for(var h=0;h<k.length;h++){var c=jQuery.trim(k[h]);if(c.substring(0,b.length+1)==(b+"=")){d=decodeURIComponent(c.substring(b.length+1));break}}}return d}};
+;
+(function ($) {
+  Drupal.behaviors.ws_fl = {
+    attach: function (context, settings) {
+      $('a.service-links-facebook-like', context).each(function(){
+        var iframe = document.createElement('iframe');
+
+        iframe.src = $(this).attr('href').replace('http://', '//');
+        iframe.setAttribute('scrolling', 'no');
+        iframe.setAttribute('frameborder', 0);
+        iframe.setAttribute('allowTransparency', 'true');
+
+        $(iframe).css({
+          'border': 'none',
+          'overflow': 'hidden',
+          'width': Drupal.settings.ws_fl.width + 'px',
+          'height': Drupal.settings.ws_fl.height + 'px',
+        });
+       
+        $(iframe).addClass($(this).attr('class'));
+
+        $(this).replaceWith(iframe);
+      });
+    }
+  }
+})(jQuery);
+;
+(function ($) {
+  Drupal.behaviors.ws_tb ={
+    scriptadded: false,
+
+    attach: function(context, settings) {
+      if (this.scriptadded) {
+        twttr.widgets.load();
+      } else {
+        $('a.service-links-twitter-widget', context).each(function(){
+          $(this).attr('href', $(this).attr('href').replace(/((?:counturl\=|^))http[s]*\%3A\/\//g, "$1"));
+        });
+        $.getScript(window.location.protocol + '//platform.twitter.com/widgets.js', function () {
+          this.scriptadded = true;
+        });
+      }
+    }
+  }
+})(jQuery);
+;
+(function ($) {
+  Drupal.behaviors.ws_fs = {
+    scriptadded: false,
+
+    attach: function (context, settings) {
+      if (!this.scriptadded) {
+        var fdiv_root, js, div_root ;
+        var fjs = document.getElementsByTagName('script')[0];
+
+        if (!document.getElementById('fb-root')) {
+          div_root = document.createElement('div');
+          div_root.id = 'fb-root';
+          document.body.appendChild(div_root);
+        }
+
+        if (!document.getElementById('facebook-jssdk')) {
+          js = document.createElement('script'); 
+          js.id = 'facebook-jssdk';
+          js.src = "//connect.facebook.net/en_US/all.js#xfbml=1&appId=" + Drupal.settings.ws_fs.app_id;
+          fjs.parentNode.insertBefore(js, fjs);
+          this.scriptadded = true;
+        }
+      }
+
+      $('a.service-links-facebook-share', context).once(function(){
+        var f_text = document.createElement('fb:share-button');
+        var css = Drupal.settings.ws_fs.css.split(';');
+        var key_value = new Array();
+
+        f_text.setAttribute('type', Drupal.settings.ws_fs.type);
+        f_text.setAttribute('href', $(this).attr('rel'));
+
+        for (i = 0; i < css.length; i++){
+          key_value = css[i].split(':');
+          $(f_text).css(key_value[0], key_value[1]);
+        }
+
+        $(this).replaceWith(f_text);
+      });
+    }
+  }
+})(jQuery);
+;
+(function ($) {
+
+
+    Drupal.behaviors.Carnet = {
+        attach:function (context, settings) {
+            $(".add-to-guide-btn:not(.add-to-guide-btn-processed)").addClass('add-to-guide-btn-processed', context).click(function (e) {
+                e.preventDefault();
+                e.stopPropagation();
+                var link = $(this);
+                $.get(link.attr('href'), function () {
+                    if(Drupal.settings.carnet.use_inline_remove_from_bookmarks){
+                        link.replaceWith('<a href="'+Drupal.settings.carnet.remove_from_guide_link+'" class="remove-from-guide-btn">' + Drupal.t('Remove from bookmarks') + '</a>');
+                        Drupal.behaviors.Carnet.attach(context);
+                    }else{
+                        link.replaceWith('<span class="add-to-guide-added">' + Drupal.t('Added to bookmarks') + '</span>');
+                    }
+                });
+            });
+            $(".remove-from-guide-btn:not(.remove-from-guide-btn-processed)", context).addClass('remove-from-guide-btn-processed').click(function(e){
+                e.preventDefault();
+                e.stopPropagation();
+                var link = $(this);
+                $.get(link.attr('href'), function(){
+                    link.replaceWith('<a href="'+Drupal.settings.carnet.add_to_guide_link+'" class="add-to-guide-btn">' + Drupal.t('Add to bookmarks') + '</a>');
+                    Drupal.behaviors.Carnet.attach(context);
+                });
+            });
+        }
+    };
+
+    Drupal.behaviors.CarnetInList = {
+        attach:function (context, settings) {
+            $(".carnet-list-item .remove-from-guide-inlist-btn:not(.remove-from-guide-btn-processed)", context).addClass('remove-from-guide-btn-processed').click(function(e){
+                e.preventDefault();
+                e.stopPropagation();
+                var link = $(this);
+                $.get(link.attr('href'), function(){
+                    link.parents('.carnet-list-item').first().slideUp();
+                });
+            });
+        }
+    };
+
+}(jQuery));
+;
+(function ($) {
+
+$(document).ready(function() {
+
+  // Expression to check for absolute internal links.
+  var isInternal = new RegExp("^(https?):\/\/" + window.location.host, "i");
+
+  // Attach onclick event to document only and catch clicks on all elements.
+  $(document.body).click(function(event) {
+    // Catch the closest surrounding link of a clicked element.
+    $(event.target).closest("a,area").each(function() {
+
+      var ga = Drupal.settings.googleanalytics;
+      // Expression to check for special links like gotwo.module /go/* links.
+      var isInternalSpecial = new RegExp("(\/go\/.*)$", "i");
+      // Expression to check for download links.
+      var isDownload = new RegExp("\\.(" + ga.trackDownloadExtensions + ")$", "i");
+
+      // Is the clicked URL internal?
+      if (isInternal.test(this.href)) {
+        // Skip 'click' tracking, if custom tracking events are bound.
+        if ($(this).is('.colorbox')) {
+          // Do nothing here. The custom event will handle all tracking.
+        }
+        // Is download tracking activated and the file extension configured for download tracking?
+        else if (ga.trackDownload && isDownload.test(this.href)) {
+          // Download link clicked.
+          var extension = isDownload.exec(this.href);
+          _gaq.push(["_trackEvent", "Downloads", extension[1].toUpperCase(), this.href.replace(isInternal, '')]);
+        }
+        else if (isInternalSpecial.test(this.href)) {
+          // Keep the internal URL for Google Analytics website overlay intact.
+          _gaq.push(["_trackPageview", this.href.replace(isInternal, '')]);
+        }
+      }
+      else {
+        if (ga.trackMailto && $(this).is("a[href^='mailto:'],area[href^='mailto:']")) {
+          // Mailto link clicked.
+          _gaq.push(["_trackEvent", "Mails", "Click", this.href.substring(7)]);
+        }
+        else if (ga.trackOutbound && this.href.match(/^\w+:\/\//i)) {
+          if (ga.trackDomainMode == 2 && isCrossDomain($(this).attr('hostname'), ga.trackCrossDomains)) {
+            // Top-level cross domain clicked. document.location is handled by _link internally.
+            event.preventDefault();
+            _gaq.push(["_link", this.href]);
+          }
+          else {
+            // External link clicked.
+            _gaq.push(["_trackEvent", "Outbound links", "Click", this.href]);
+          }
+        }
+      }
+    });
+  });
+
+  // Colorbox: This event triggers when the transition has completed and the
+  // newly loaded content has been revealed.
+  $(document).bind("cbox_complete", function() {
+    var href = $.colorbox.element().attr("href");
+    if (href) {
+      _gaq.push(["_trackPageview", href.replace(isInternal, '')]);
+    }
+  });
+
+});
+
+/**
+ * Check whether the hostname is part of the cross domains or not.
+ *
+ * @param string hostname
+ *   The hostname of the clicked URL.
+ * @param array crossDomains
+ *   All cross domain hostnames as JS array.
+ *
+ * @return boolean
+ */
+function isCrossDomain(hostname, crossDomains) {
+  /**
+   * jQuery < 1.6.3 bug: $.inArray crushes IE6 and Chrome if second argument is
+   * `null` or `undefined`, http://bugs.jquery.com/ticket/10076,
+   * https://github.com/jquery/jquery/commit/a839af034db2bd934e4d4fa6758a3fed8de74174
+   *
+   * @todo: Remove/Refactor in D8
+   */
+  if (!crossDomains) {
+    return false;
+  }
+  else {
+    return $.inArray(hostname, crossDomains) > -1 ? true : false;
+  }
+}
+
+})(jQuery);
+;

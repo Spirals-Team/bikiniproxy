@@ -1,0 +1,1 @@
+define(["jquery","underscore","libs/plugins/jquery.infieldlabel.min"],function(a,b){var c={defaults:{selector:".overlay-label input"},init:function(d){return d=b.extend({},c.defaults,d),a(d.selector).each(function(){a(this).inFieldLabels()})}};return c})

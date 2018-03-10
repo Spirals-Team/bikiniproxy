@@ -1,0 +1,1218 @@
+YAHOO.namespace("geny.dt");
+
+YAHOO.geny.dt.HTML_LOGO_OEIL = ' <img src="/web/images/pictos/oeilleres.gif" alt="Logo oeilleres" width="9" height="11">';
+YAHOO.geny.dt.HTML_LOGO_OEIL_AUSTR = ' <img src="/web/images/pictos/oeilleres_australiennes.gif" alt="Logo oeilleres australiennes" width="9" height="11">';
+YAHOO.geny.dt.TXT_LEGENDE_OEIL = YAHOO.geny.dt.HTML_LOGO_OEIL + YAHOO.geny.l10n.PortentOeilleres + YAHOO.geny.dt.HTML_LOGO_OEIL_AUSTR + YAHOO.geny.l10n.PortentOeilleresAustraliennes;
+YAHOO.geny.dt.TXT_LEGENDE_DEFR = YAHOO.geny.l10n.LegendeDeferre;
+YAHOO.geny.dt.TXT_NON_PRT = 'Non-partant';
+YAHOO.geny.dt.TXT_NON_PRTE = 'Non-partante';
+YAHOO.geny.dt.ID_PERSONNE_INCONNUE = 1000000;
+
+/**
+* Paginator GENY
+*/
+YAHOO.geny.dt.Paginator = function () {
+	// recuperation du cookie
+	var rpp = YAHOO.util.Cookie.get("rowsPerPage", function (stringValue) {
+		return parseInt(stringValue, 10);
+	});
+	// test si cookie valid sinon valeur par defaut
+	rpp = YAHOO.lang.isNumber(rpp) ? rpp : 15;
+	// configuration du paginator
+	var config = {
+		rowsPerPage : rpp,
+		totalRecords : YAHOO.widget.Paginator.VALUE_UNLIMITED,
+        firstPageLinkLabel : "&lt;&lt;",
+        previousPageLinkLabel : "&lt;",
+        nextPageLinkLabel : "&gt;",
+        lastPageLinkLabel : "&gt;&gt;",
+        template : YAHOO.widget.Paginator.TEMPLATE_ROWS_PER_PAGE,
+		PageLinks : 5,
+		rowsPerPageOptions : [ 15, 25, 50, 100 ]
+	};
+	// ecriture du cookie si change
+	var onChangeRequest = function (c) {
+		// on explicite le nom de domaine .geny.com pour portabilité sur le(s) site(s) de troisième niveau (*.geny.com)
+		YAHOO.util.Cookie.set("rowsPerPage", c.rowsPerPage, { path: "/", expires: new Date("January 12, 2025"), domain: document.domain.substr(document.domain.lastIndexOf('geny')) });
+	};
+	// appel du constructeur du YAHOO.widget.Paginator
+	this.constructor.superclass.constructor.call(this, config);
+	// abonnement a l'evenement de la fonctione de sauvegarde des prefs
+	this.subscribe('changeRequest', onChangeRequest);
+};
+YAHOO.lang.extend(YAHOO.geny.dt.Paginator, YAHOO.widget.Paginator);
+
+/**
+* utilitaires
+*/
+// Suppression des balises HTML
+YAHOO.geny.dt.stripHTMLtag = function (oData) {
+    var re = new RegExp("(<([^>]+)>)", "ig");
+    return (oData !== null && oData !== "" && YAHOO.lang.isString(oData)) ? oData.replace(re, ""):' ';
+};
+
+/**
+* parseurs
+*/
+
+/**
+* Traitement du nom de personne
+*/
+YAHOO.geny.dt.parseNomPersonne = function (nom) {
+    var i = nom.indexOf(".") > 0 ? nom.lastIndexOf(".") + 1 : nom.lastIndexOf(" ") + 1;
+    return nom.substr(i) + nom.substring(0, i);
+};
+/**
+* Traitement de la colonne Allocation.
+*/
+YAHOO.geny.dt.parseAllocation = function (alloc, desc) {
+	var re = new RegExp("[0-9]+", "g");
+	var resultat = alloc.match(re);
+	var intAlloc = parseInt(resultat, 10);
+	if (isNaN(intAlloc) && desc === true) {
+		return -1;
+	} else if (isNaN(intAlloc) && desc === false) {
+		return 1000;
+	} else {
+		return intAlloc;
+	}
+};
+
+/**
+* Traitement de la colonne Date au format
+*/
+YAHOO.geny.dt.parseDate = function (sData) {
+    if (sData !== null && sData !== " ") {
+        var d = sData.split(/\//g);
+        return new Date('20' + d[2], d[1] - 1, d[0]);
+    }
+};
+
+/**
+* Traitement de la colonne Deferre dans le cas d'un tri descendant.
+*/
+YAHOO.geny.dt.parseDeferre = function (deferre) {
+	if (deferre === '' || deferre === null) {
+		deferre = '-1';
+	}
+	return deferre;
+};
+
+/**
+* Traitement de l'ecart
+*/
+YAHOO.geny.dt.parseEcart = function (ecart) {
+	var i = parseInt(ecart, 10);
+	if (isNaN(i)) {
+		return 1000;
+	} else if (i === 0) {
+		var count = 0;
+		var pos = ecart.indexOf("0");
+		while (pos !== -1) {
+			count += 1;
+			pos = ecart.indexOf("0", pos + 1);
+		}
+		return count * -1;
+	} else {
+		return i;
+	}
+};
+
+/**
+* Traitement du nom de personne
+*/
+YAHOO.geny.dt.parseNomPersonne = function (nom) {
+	var i = nom.indexOf(".") > 0 ? nom.lastIndexOf(".") + 1 : nom.lastIndexOf(" ") + 1;
+	return nom.substr(i) + nom.substring(0, i);
+};
+
+/**
+* Traitement de la colonne Rang.
+*/
+YAHOO.geny.dt.parseRang = function (rang) {
+	// Gestion des incidents.
+	if (rang === 'A') {
+		return 12;
+	}
+	if (rang === 'D') {
+		return 13;
+	}
+	if (rang === 'Dai') {
+		return 14;
+	}
+	if (rang === 'Ret') {
+		return 15;
+	}
+	if (rang === 'T') {
+		return 16;
+	}
+	if (rang === 'NP') {
+		return 17;
+	}
+	// Gestion du rang.
+	var intRang = parseInt(rang, 10);
+	if (isNaN(intRang)) {
+		return 13;
+	}
+	if (intRang >= 10) {
+		return 10;
+	}
+	if (intRang === 0) {
+		return 11;
+	} else {
+		return intRang;
+	}
+};
+
+/**
+*  Traitement de la colonne pour ne trier que les lignes contenant des informations.
+*/
+YAHOO.geny.dt.parseRapport = function (rapport, desc) {
+	if (desc === false && !(rapport.length > 0)) {
+		return 10000;
+	} else if (desc === "true" && !(rapport.length > 0)) {
+		return -1;
+	} else {
+		// convertir la "," en "."
+		return parseFloat(rapport.replace(/,/, '.'));
+	}
+};
+
+/**
+* Traitement de la Reduction kilometrique dans le cas d'un tri descendant.
+*/
+YAHOO.geny.dt.parseRedKm = function (redKm) {
+	if (redKm === '' || redKm === null) {
+		redKm = '-1';
+	}
+	return redKm;
+};
+
+/**
+* Fonction permettant de transformer une chaine de caracteres en un entier.
+*/
+YAHOO.geny.dt.parseStringToInt = function (str) {
+	var intFromStr = parseInt(str, 10);
+	if (isNaN(intFromStr)) {
+		return -1;
+	} else {
+		return intFromStr;
+	}
+};
+
+/**
+* Traitement de la colonne Valeur.
+*/
+YAHOO.geny.dt.parseValeur = function (valeur, desc) {
+	var floatValeur = parseFloat(valeur);
+	if (isNaN(floatValeur) && desc === true) {
+		return -100;
+	} else if (isNaN(floatValeur) && desc === false) {
+		return 1000;
+	} else {
+		return floatValeur;
+	}
+};
+
+/**
+* Traitement de la colonne pourcent
+*/
+YAHOO.geny.dt.parsePourcent = function (oData) {
+	var p = parseInt(oData, 10);
+	return YAHOO.lang.isNumber(p) ? p : undefined;
+};
+
+/**
+* Traitement de la colonne cote
+*/
+YAHOO.geny.dt.parseCote = function (oData) {
+	// transforme les cotes au format francais (virgule)
+	// au format anglais (point)
+	oData = oData.replace(/,/,".");
+	return YAHOO.util.DataSource.parseNumber(oData);
+};
+
+/*
+* formatteurs
+*/
+
+/**
+* Formattage de la colonne cheval avec gestion du lien vers la fiche cheval
+* avec les parametres : idCheval et idCourse.
+*/
+YAHOO.geny.dt.formatCheval = function (elCell, oRecord, oColumn, oData) {
+	var idCourse = YAHOO.geny.dt.ID_COURSE;
+	if (oRecord.getData("idCourse") !== undefined && oRecord.getData("idCourse") !== null) {
+		idCourse = oRecord.getData("idCourse");
+	}
+	var contenu = "<span style=\"float: left;\"><a href='/cheval?id_cheval=" + oRecord.getData("idCheval") + "&id_course=" + idCourse + "&info=" + oData + "' onClick='popUp(this.href,\"perf\",\"cheval\",550,550);return false;'>" + oData + "</a>";
+	if (YAHOO.lang.isString(oRecord.getData("deferre"))) {
+		contenu += " D" + oRecord.getData("deferre") + " ";
+	}
+	if (YAHOO.lang.isString(oRecord.getData("oeilleres"))) {
+		if(oRecord.getData("oeilleres")==='O'){
+			contenu += YAHOO.geny.dt.HTML_LOGO_OEIL;
+		}else{
+			contenu += YAHOO.geny.dt.HTML_LOGO_OEIL_AUSTR;
+		}
+	}
+	contenu += "</span>";
+	if (YAHOO.lang.isString(oRecord.getData("ecurie"))) {
+		contenu += " <span style=\"float: right;\">E" + oRecord.getData("ecurie") + "</span>";
+	}
+	elCell.innerHTML = contenu;
+};
+
+/**
+* Formattage de la colonne handicap avec gestion du lien vers la performance
+* avec les parametres : idCheval et idLastCourse.
+*/
+YAHOO.geny.dt.formatHandicap = function (elCell, oRecord, oColumn, oData) {
+	var idLastCourse = oRecord.getData("hStats.idLastCourse");
+	idLastCourse = parseInt(idLastCourse, 10);
+	var idLCourse = YAHOO.lang.isNumber(idLastCourse) ? idLastCourse : 0;
+	var contenu = "";
+
+	if (idLCourse !== 0) {
+		contenu = "<a href='/perf-cheval?id_cheval=" + oRecord.getData("idCheval") + "&id_course=" + idLCourse + "&id_course_ref=" + YAHOO.geny.dt.ID_COURSE + "' onClick='popUp(this.href,\"perf\",\"perf-cheval\",550,550);return false;'>";
+		if (YAHOO.lang.isString(oRecord.getData("hStats.dateLastCourse"))) {
+			contenu += " " + oRecord.getData("hStats.dateLastCourse");
+		}
+		contenu += "</a>";
+		if (YAHOO.lang.isString(oRecord.getData("hStats.nomHippoLastCourse"))) {
+			contenu += " " + oRecord.getData("hStats.nomHippoLastCourse");
+		}
+		if (YAHOO.lang.isString(oRecord.getData("hStats.distanceLastCourse"))) {
+			contenu += ", " + oRecord.getData("hStats.distanceLastCourse") + "m";
+		}
+		if (YAHOO.lang.isString(oRecord.getData("hStats.rangLastCourse"))) {
+			var i = parseInt(oRecord.getData("hStats.rangLastCourse"), 10);
+			var incident = oRecord.getData("hStats.incident");
+			var ieme = "&egrave;me";
+			if (incident !== null && incident !== "") {
+				contenu += ", " + incident;
+			} else {
+				if (i === 0) {
+					contenu += ", nc";
+				} else {
+					if (i === 1) {
+						ieme = "er";
+					}
+					contenu += ", " + oRecord.getData("hStats.rangLastCourse") + ieme;
+				}
+			}
+		}
+	} else {
+		if (YAHOO.geny.dt.IS_HANDICAP) {
+			contenu = "1<sup>er</sup> " + YAHOO.geny.l10n.handicap;
+		}
+	}
+	elCell.innerHTML = contenu;
+};
+
+/**
+* Formattage de la colonne variation handicap
+*/
+YAHOO.geny.dt.formatVariation = function (elCell, oRecord, oColumn, oData) {
+	var variation = oRecord.getData("hStats.variation");
+	var contenu = " 0,0 kg";
+	if ((typeof variation != 'undefined') && (variation !== "")) {
+		contenu = variation.toString().replace(".", ",") + " kg";
+	} else {
+		contenu = "";
+	}
+	elCell.innerHTML = contenu;
+};
+
+/**
+* Formattage de la colonne valeur handicap
+*/
+YAHOO.geny.dt.formatValeur = function (elCell, oRecord, oColumn, oData) {
+	var valeur = oRecord.getData("hStats.valeur");
+	elCell.innerHTML = valeur.replace(".", ",");
+};
+
+/**
+* Formattage de la colonne gains (espace comme separateur des milliers)
+*/
+YAHOO.geny.dt.formatGains = function (elCell, oRecord, oColumn, oData) {
+	oData += '';
+	var rgx = /(\d+)(\d{3})/;
+	while (rgx.test(oData)) {
+		oData = oData.replace(rgx, '$1' + '&nbsp;' + '$2');
+	}
+	// le gain peut etre '0' ou 'null'
+	elCell.innerHTML = (oData === '0' || oData === 'null') ? '' : oData;
+};
+
+/**
+* Formattage de la colonne pourcent
+*/
+YAHOO.geny.dt.formatPourcent = function (elCell, oRecord, oColumn, oData) {
+	elCell.innerHTML =  YAHOO.lang.isNumber(oData) ? oData + '%' : '';
+};
+
+/**
+* Formattage de la colonne Record.
+*/
+YAHOO.geny.dt.formatRecord = function (elCell, oRecord, oColumn, oData) {
+	var contenu = "";
+
+	if (oRecord.getData("recordStats.idCourse") !== null && oRecord.getData("recordStats.reductionKilometrique") !== null) {
+		var idCourseParam = oRecord.getData("recordStats.idCourse");
+		idCourseParam = parseInt(idCourseParam, 10);
+		var idCourse = YAHOO.lang.isNumber(idCourseParam) ? idCourseParam : 0;
+
+		if (idCourse !== 0) {
+			contenu = "<a href='/perf-cheval?id_cheval=" + oRecord.getData("idCheval") + "&id_course=" + idCourse + "&id_course_ref=" + YAHOO.geny.dt.ID_COURSE + "' onClick='popUp(this.href,\"perf\",\"perf-cheval\",550,550);return false;'>";
+			contenu += " " + oRecord.getData("recordStats.reductionKilometrique");
+			if (oRecord.getData("recordStats.specialite") === 'Mont\u00e9') {
+				contenu += " M";
+			}
+			contenu += "</a>";
+		}
+	} else {
+		contenu = oRecord.getData("recordStats.reductionKilometrique");
+	}
+	elCell.innerHTML = contenu;
+};
+
+/**
+* Formattage de la colonne Date du record.
+*/
+YAHOO.geny.dt.formatDateRecord = function (elCell, oRecord, oColumn, oData) {
+	var contenu = "";
+	if (YAHOO.lang.isString(oRecord.getData("recordStats.dateCourse")) && oRecord.getData("recordStats.dateCourse").length > 0) {
+		contenu += oRecord.getData("recordStats.dateCourse");
+	}
+	if (YAHOO.lang.isString(oRecord.getData("recordStats.hippodrome")) && oRecord.getData("recordStats.hippodrome").length > 0) {
+		contenu += " - " + oRecord.getData("recordStats.hippodrome");
+	}
+	//if (YAHOO.lang.isString(oRecord.getData("recordStats.distance")) && oRecord.getData("recordStats.distance").length > 0) {
+	if((typeof oRecord.getData("recordStats.distance")!= 'undefined') && (oRecord.getData("recordStats.distance")!== "")){
+		contenu += " " + oRecord.getData("recordStats.distance") + "m";
+	}
+	if (YAHOO.lang.isString(oRecord.getData("recordStats.piste")) && oRecord.getData("recordStats.piste").length > 0) {
+		contenu += " " + oRecord.getData("recordStats.piste");
+	}
+	if (YAHOO.lang.isString(oRecord.getData("recordStats.specialite")) && oRecord.getData("recordStats.specialite") === 'Mont\u00e9') {
+		if (oRecord.getData("recordStats.autostart") !== null && oRecord.getData("recordStats.autostart") === "true") {
+			contenu += " (Auto/" + oRecord.getData("recordStats.specialite") + ")";
+		} else {
+			contenu += " (" + oRecord.getData("recordStats.specialite") + ")";
+		}
+	} else {
+		if (oRecord.getData("recordStats.autostart") !== null && oRecord.getData("recordStats.autostart") === "true") {
+			contenu += " (Auto)";
+		}
+	}
+//	if (YAHOO.lang.isString(oRecord.getData("recordStats.rangArrivee"))	&& oRecord.getData("recordStats.rangArrivee").length > 0) {
+	if((typeof oRecord.getData("recordStats.rangArrivee")!= 'undefined') && (oRecord.getData("recordStats.rangArrivee")!== "")) {
+		contenu += ", " + oRecord.getData("recordStats.rangArrivee");
+		if (oRecord.getData("recordStats.rangArrivee") === "1") {
+			contenu += "er";
+		} else {
+			contenu += "&egrave;me";
+		}
+	}
+	elCell.innerHTML = contenu;
+};
+
+/**
+* Formattage de la colonne Jockey.
+*/
+YAHOO.geny.dt.formatJockey = function (elCell, oRecord, oColumn, oData) {
+	var id = (YAHOO.lang.isString(oRecord.getData("idJockey")) || YAHOO.lang.isNumber(oRecord.getData("idJockey")) )? oRecord.getData("idJockey") : oRecord.getData("idPersonne");
+    if (oData === undefined) {
+        oData = oRecord.getData("nomPersonne");
+    }
+	var contenu;
+	if (!parseInt(id, 10) || id <= YAHOO.geny.dt.ID_PERSONNE_INCONNUE) {
+		contenu = oData;
+	} else {
+		contenu = "<a href='/jockey?id_jockey=" + id + "' onClick='popUp(this.href,\"perf\",\"jockey\",550,550);return false;'>" + oData + "</a>";
+	}
+	if (oData !== undefined && oData !== null && oData.indexOf(YAHOO.geny.dt.TXT_NON_PRT) >= 0) {
+		if (oData.indexOf(YAHOO.geny.dt.TXT_NON_PRTE) >= 0) {
+			elCell.innerHTML = YAHOO.geny.l10n.NonPartante;
+		} else {
+			elCell.innerHTML = YAHOO.geny.l10n.NonPartant;
+		}
+		YAHOO.util.Dom.addClass(elCell, "nonPartant");
+	} else {
+		elCell.innerHTML = contenu;
+		if (YAHOO.util.Dom.hasClass(elCell, "nonPartant")) {
+			YAHOO.util.Dom.removeClass(elCell, "nonPartant");
+		}
+	}
+};
+
+/**
+* Formattage de la colonne Entraineur
+*/
+YAHOO.geny.dt.formatEntraineur = function (elCell, oRecord, oColumn, oData) {
+	var id = (YAHOO.lang.isString(oRecord.getData("idEntraineur")) || YAHOO.lang.isNumber(oRecord.getData("idEntraineur"))) ? oRecord.getData("idEntraineur") : oRecord.getData("idPersonne"); 
+    if (oData === undefined) {
+        oData = oRecord.getData("nomPersonne");
+    }
+	var contenu;
+	if (!parseInt(id, 10) || id <= YAHOO.geny.dt.ID_PERSONNE_INCONNUE) {
+		contenu = oData;
+	} else {
+		contenu = "<a href='/entraineur?id_entraineur=" + id + "' onClick='popUp(this.href,\"perf\",\"entraineur\",550,550);return false;'>" + oData + "</a>";
+	}
+	if (oData !== undefined && oData !== null && oData.indexOf(YAHOO.geny.dt.TXT_NON_PRT) >= 0) {
+		if (oData.indexOf(YAHOO.geny.dt.TXT_NON_PRTE) >= 0) {
+			elCell.innerHTML = YAHOO.geny.l10n.NonPartante;
+		} else {
+			elCell.innerHTML = YAHOO.geny.l10n.NonPartant;
+		}
+		YAHOO.util.Dom.addClass(elCell, "nonPartant");
+	} else {
+		elCell.innerHTML = contenu;
+		if (YAHOO.util.Dom.hasClass(elCell, "nonPartant")) {
+			YAHOO.util.Dom.removeClass(elCell, "nonPartant");
+		}
+	}
+};
+
+/**
+* Formattage de la colonne Date pour le tableau des prochains partants dans les fiches personnes.
+*/
+YAHOO.geny.dt.formatDateParticipation = function (elCell, oRecord, oColumn, oData) {
+	if (oData instanceof Date) {
+		var month = oData.getMonth() + 1;
+		if (month > 0 && month < 10) {
+			month = "0" + month;
+		}
+		var year = oData.getYear().toString();
+		if (parseInt(oData.getFullYear(), 10) >= 2000) {
+			year = year.substring(1);
+		}
+		elCell.innerHTML = oData.getDate() + "/" + month + "/" + year;
+	} else {
+		elCell.innerHTML = oData;
+	}
+};
+
+/**
+* Formattage de la colonne cote
+* la variable globale "language" doit etre renseignee
+*/
+YAHOO.geny.dt.formatCote = function (elCell, oRecord, oColumn, oData) {
+	if (oData !== null) {
+		var contenu = ''+oData; //transformation du nombre en chaine de caractères
+		elCell.innerHTML =  language == 'en' ? contenu : contenu.replace(".",",");
+	}else{
+		elCell.innerHTML = "-";
+	}
+};
+
+/**
+* trieurs
+*/
+var comp = YAHOO.util.Sort.compare;
+YAHOO.geny.dt.sortMulti = function (a, b, desc, d, p) {
+    var i = YAHOO.geny.dt.stripHTMLtag(a.getData(d));
+    var j = YAHOO.geny.dt.stripHTMLtag(b.getData(d));
+    if (i === j) {
+        if (a.getData("date") !== undefined && a.getData("date") !== null && b.getData("date") !== null) {
+            return comp(a.getData("date"), b.getData("date"), desc);
+        } else if (a.getData("numParticipation") !== undefined && a.getData("numParticipation") !== null && b.getData("numParticipation") !== null) {
+            return comp(a.getData("numParticipation"), b.getData("numParticipation"), desc);
+        } else {
+            return true;
+        }
+    } else {
+        return (p === true) ? comp(YAHOO.geny.dt.parseNomPersonne(i), YAHOO.geny.dt.parseNomPersonne(j), desc) : comp(i, j, desc);
+    }
+};
+YAHOO.geny.dt.sortCheval = function (a, b, desc) {
+    return YAHOO.geny.dt.sortMulti(a, b, desc, "nomCheval");
+};
+YAHOO.geny.dt.sortDriver = function (a, b, desc) {
+    return YAHOO.geny.dt.sortMulti(a, b, desc, "driver", true);
+};
+YAHOO.geny.dt.sortEntraineur = function (a, b, desc) {
+    return YAHOO.geny.dt.sortMulti(a, b, desc, "entraineur", true);
+};
+YAHOO.geny.dt.sortJockey = function (a, b, desc) {
+    return YAHOO.geny.dt.sortMulti(a, b, desc, "jockey", true);
+};
+YAHOO.geny.dt.sortPersonne = function (a, b, desc) {
+    return YAHOO.geny.dt.sortMulti(a, b, desc, "nomPersonne", true);
+};
+YAHOO.geny.dt.sortPoids = function (a, b, desc) {
+    return YAHOO.geny.dt.sortMulti(a, b, desc, "poids");
+};
+YAHOO.geny.dt.sortEcart = function (a, b, desc) {
+    return comp(YAHOO.geny.dt.parseEcart(a.getData('stats.ecart')), YAHOO.geny.dt.parseEcart(b.getData('stats.ecart')), desc);
+};
+YAHOO.geny.dt.sortLastHandicap = function (a, b, desc) {
+	return comp(YAHOO.geny.dt.parseDate(YAHOO.geny.dt.stripHTMLtag(a.getData("hStats.dateLastCourse"))), YAHOO.geny.dt.parseDate(YAHOO.geny.dt.stripHTMLtag(b.getData("hStats.dateLastCourse"))), desc);
+};
+YAHOO.geny.dt.sortVariation = function (a, b, desc) {
+	return comp(YAHOO.geny.dt.parseValeur(a.getData("hStats.variation"), desc), YAHOO.geny.dt.parseValeur(b.getData("hStats.variation"), desc), desc);
+};
+YAHOO.geny.dt.sortRecord = function (a, b, desc) {
+	if (a.getData("recordStats.reductionKilometrique") === b.getData("recordStats.reductionKilometrique")) {
+		return comp(YAHOO.geny.dt.parseDate(YAHOO.geny.dt.stripHTMLtag(a.getData("recordStats.dateCourse"))), YAHOO.geny.dt.parseDate(YAHOO.geny.dt.stripHTMLtag(b.getData("recordStats.dateCourse"))), desc);
+	} else {
+		return comp(a.getData("recordStats.reductionKilometrique"), b.getData("recordStats.reductionKilometrique"), desc);
+	}
+};
+YAHOO.geny.dt.sortDateRecord = function (a, b, desc) {
+	if (a.getData("recordStats.dateCourse") === b.getData("recordStats.dateCourse")) {
+		return YAHOO.geny.dt.sortRecord(a, b, desc);
+	} else {
+		return comp(YAHOO.geny.dt.parseDate(YAHOO.geny.dt.stripHTMLtag(a.getData("recordStats.dateCourse"))), YAHOO.geny.dt.parseDate(YAHOO.geny.dt.stripHTMLtag(b.getData("recordStats.dateCourse"))), desc);
+	}
+};
+YAHOO.geny.dt.sortAllocation = function (a, b, desc) {
+	return comp(YAHOO.geny.dt.parseAllocation(a.getData("allocation")), YAHOO.geny.dt.parseAllocation(b.getData("allocation")), desc);
+};
+YAHOO.geny.dt.sortValeur = function (a, b, desc) {
+	return comp(YAHOO.geny.dt.parseValeur(a.getData("valeur"), desc), YAHOO.geny.dt.parseValeur(b.getData("valeur"), desc), desc);
+};
+YAHOO.geny.dt.sortRang = function (a, b, desc) {
+	return comp(YAHOO.geny.dt.parseRang(a.getData("rang")), YAHOO.geny.dt.parseRang(b.getData("rang")), desc);
+};
+YAHOO.geny.dt.sortRedKm = function (a, b, desc) {
+	return comp(YAHOO.geny.dt.parseRedKm(a.getData("redkm")), YAHOO.geny.dt.parseRedKm(b.getData("redkm")), desc);
+};
+YAHOO.geny.dt.sortRapportGt = function (a, b, desc) {
+	return comp(YAHOO.geny.dt.parseValeur(a.getData("rapportGagnant"), desc), YAHOO.geny.dt.parseValeur(b.getData("rapportGagnant"), desc), desc);
+};
+YAHOO.geny.dt.sortRapportPl = function (a, b, desc) {
+	return comp(YAHOO.geny.dt.parseValeur(a.getData("rapportPlace"), desc), YAHOO.geny.dt.parseValeur(b.getData("rapportPlace"), desc), desc);
+};
+
+/**
+* colonnes
+*/
+YAHOO.geny.dt.colNumero = {key: "numParticipation", label: YAHOO.geny.l10n.NumeroAbr, abbr: YAHOO.geny.l10n.Numero, className : "numerique", sortable: true};
+YAHOO.geny.dt.colCheval = {key: "nomCheval", label: YAHOO.geny.l10n.Cheval, sortable: true, sortOptions: {sortFunction: YAHOO.geny.dt.sortCheval}};
+YAHOO.geny.dt.colCorde = {key: "corde", label: YAHOO.geny.l10n.CordeAbr, abbr: YAHOO.geny.l10n.Corde, className : "numerique", sortable: true};
+YAHOO.geny.dt.colSexeage = {key: "sexeAge", label: YAHOO.geny.l10n.SexeAgeAbr, abbr: YAHOO.geny.l10n.SexeAge, sortable: true};
+YAHOO.geny.dt.colPoids = {key: "poids", label: YAHOO.geny.l10n.Poids, sortable: true, sortOptions: {sortFunction: YAHOO.geny.dt.sortPoids}};
+YAHOO.geny.dt.colDecharge = {key: "decharge", label: YAHOO.geny.l10n.DechargeAbr, abbr: YAHOO.geny.l10n.Decharge, sortable: true};
+YAHOO.geny.dt.colDistance = {key: "distance", label: YAHOO.geny.l10n.DistanceAbr, abbr: YAHOO.geny.l10n.Distance, sortable: true, sortOptions: {sortFunction: YAHOO.geny.dt.sortDistance}};
+YAHOO.geny.dt.colJockey = {key: "jockey", label: YAHOO.geny.l10n.Jockey, sortable: true, sortOptions: {sortFunction: YAHOO.geny.dt.sortJockey}, formatter: YAHOO.geny.dt.formatJockey};
+YAHOO.geny.dt.colDriver = {key: "driver", label: YAHOO.geny.l10n.Driver, sortable: true, sortOptions: {sortFunction: YAHOO.geny.dt.sortDriver}, formatter: YAHOO.geny.dt.formatJockey};
+YAHOO.geny.dt.colEntraineur = {key: "entraineur", label: YAHOO.geny.l10n.Entraineur, sortable: true, sortOptions: {sortFunction: YAHOO.geny.dt.sortEntraineur}};
+YAHOO.geny.dt.colCourses = {key: "stats.nbCourses", label: YAHOO.geny.l10n.Courses, className : "numerique", sortable : true, sortOptions : {defaultDir : YAHOO.widget.DataTable.CLASS_DESC}};
+YAHOO.geny.dt.colVictoires = {key: "stats.nbVictoires", label: YAHOO.geny.l10n.Victoires, className : "numerique", sortable : true, sortOptions : {defaultDir : YAHOO.widget.DataTable.CLASS_DESC}};
+YAHOO.geny.dt.colPlaces = {key: "stats.nbPlaces", label: YAHOO.geny.l10n.Places, className : "numerique", sortable : true, sortOptions : {defaultDir : YAHOO.widget.DataTable.CLASS_DESC}};
+YAHOO.geny.dt.colEcart = {key: "stats.ecart", label: YAHOO.geny.l10n.Ecart, className : "numerique", sortable : true, sortOptions: {sortFunction: YAHOO.geny.dt.sortEcart}};
+YAHOO.geny.dt.colReussite = {key: "stats.pourcentageReussite", label: YAHOO.geny.l10n.Reussite, className : "numerique", sortable : true, sortOptions : {defaultDir : YAHOO.widget.DataTable.CLASS_DESC}, formatter: YAHOO.geny.dt.formatPourcent};
+YAHOO.geny.dt.colMusique = {key: "musique", label: YAHOO.geny.l10n.Musique};
+YAHOO.geny.dt.colMusiqueJ = {key: "stats.musique", label: YAHOO.geny.l10n.MusiqueJockey};
+YAHOO.geny.dt.colMusiqueD = {key: "stats.musique", label: YAHOO.geny.l10n.MusiqueDriver};
+YAHOO.geny.dt.colMusiqueE = {key: "stats.musique", label: YAHOO.geny.l10n.MusiqueEntraineur};
+YAHOO.geny.dt.colValeur = {key: "hStats.valeur", label: YAHOO.geny.l10n.Valeur, sortable: true, sortOptions : {defaultDir : YAHOO.widget.DataTable.CLASS_DESC}};
+YAHOO.geny.dt.colGains = {key: "gains", label: YAHOO.geny.l10n.Gains, className : "numerique", sortable: true, sortOptions : {defaultDir : YAHOO.widget.DataTable.CLASS_DESC}, formatter: YAHOO.geny.dt.formatGains};
+YAHOO.geny.dt.colDerHand = {key: "hStats.nomHippoLastCourse", label: YAHOO.geny.l10n.DernierHandicap, sortable: true, resizeable: true, formatter: YAHOO.geny.dt.formatHandicap, sortOptions: {sortFunction: YAHOO.geny.dt.sortLastHandicap, defaultDir: YAHOO.widget.DataTable.CLASS_DESC}};
+YAHOO.geny.dt.colEvolution = {key: "hStats.variation", label: YAHOO.geny.l10n.Evolution, sortable: true, className: "numerique", formatter: YAHOO.geny.dt.formatVariation, sortOptions: {sortFunction: YAHOO.geny.dt.sortVariation}};
+YAHOO.geny.dt.colRecord = {key: "recordStats.reductionKilometrique", label: YAHOO.geny.l10n.Record, sortable: true, sortOptions: {sortFunction: YAHOO.geny.dt.sortRecord}, formatter: YAHOO.geny.dt.formatRecord};
+YAHOO.geny.dt.colDateRecord = {key: "recordStats.dateCourse", label: YAHOO.geny.l10n.Date, sortable: true, resizeable: true, sortOptions: {sortFunction: YAHOO.geny.dt.sortDateRecord}, formatter: YAHOO.geny.dt.formatDateRecord};
+YAHOO.geny.dt.colDateParticipation = {key: "dateParticipation", label: YAHOO.geny.l10n.Date, sortable: true};
+YAHOO.geny.dt.colHippodrome = {key: "hippodrome", label: YAHOO.geny.l10n.Hippodrome, sortable: true, resizeable: true};
+YAHOO.geny.dt.colPiste = {key: "piste", label: YAHOO.geny.l10n.PisteAbr, sortable: true, className: "symbole", resizeable: true};
+YAHOO.geny.dt.colCordeFicheCheval = {key: "cordeFicheCheval", label: YAHOO.geny.l10n.Corde, sortable: true, className: "symbole", resizeable: true};
+YAHOO.geny.dt.colAutostart = {key: "autostart", label: YAHOO.geny.l10n.AutostartAbr, abbr: YAHOO.geny.l10n.Autostart, sortable: true, className: "symbole", sortOptions: {defaultDir: YAHOO.widget.DataTable.CLASS_DESC}};
+YAHOO.geny.dt.colSpecialite = {key: "specialite", label: YAHOO.geny.l10n.SpecialiteAbr, abbr: YAHOO.geny.l10n.Specialite, sortable: true, resizeable: true};
+YAHOO.geny.dt.colTerrain = {key: "terrain", label: YAHOO.geny.l10n.Terrain, sortable: true, resizeable: true};
+YAHOO.geny.dt.colDimension = {key: "course", label: YAHOO.geny.l10n.Course, sortable: true, resizeable: true};
+YAHOO.geny.dt.colQuinte = {key: "quinte", label: YAHOO.geny.l10n.QuintePlus, sortable: true, className: "symbole", sortOptions : {defaultDir: YAHOO.widget.DataTable.CLASS_DESC}};
+YAHOO.geny.dt.colAllocation = {key: "allocation", label: YAHOO.geny.l10n.AllocationAbr, abbr: YAHOO.geny.l10n.Allocation, sortable: true, className: "numerique", sortOptions: {sortFunction: YAHOO.geny.dt.sortAllocation}};
+YAHOO.geny.dt.colRang = {key: "rang", label: YAHOO.geny.l10n.Rang, sortable: true, className: "numerique", sortOptions: {sortFunction: YAHOO.geny.dt.sortRang}};
+YAHOO.geny.dt.colRedKm = {key: "redkm", label: YAHOO.geny.l10n.ReductionKilometriqueAbr, abbr: YAHOO.geny.l10n.ReductionKilometrique, sortable: true, className: "numerique", sortOptions: {descFunction: YAHOO.geny.dt.sortRedKm}};
+YAHOO.geny.dt.colDeferre = {key: "deferre", label: YAHOO.geny.l10n.DeferreAbr, abbr: YAHOO.geny.l10n.Deferre, sortable: true, className: "symbole", sortOptions: {defaultDir: YAHOO.widget.DataTable.CLASS_DESC}};
+YAHOO.geny.dt.colVal = {key: "valeur", label: YAHOO.geny.l10n.Valeur, sortable: true, className: "numerique", sortOptions: {sortFunction: YAHOO.geny.dt.sortValeur, defaultDir: YAHOO.widget.DataTable.CLASS_DESC}};
+YAHOO.geny.dt.colOeilleres = {key: "oeilleres", label: YAHOO.geny.l10n.OeilleresAbr, abbr: YAHOO.geny.l10n.Oeilleres, sortable: true, className: "symbole", sortOptions: {defaultDir: YAHOO.widget.DataTable.CLASS_DESC}};
+YAHOO.geny.dt.colRapportGt = {key: "rapportGagnant", label: YAHOO.geny.l10n.RapportGagnantAbr, abbr: YAHOO.geny.l10n.RapportGagnant, sortable: true, className: "numerique", sortOptions: {sortFunction: YAHOO.geny.dt.sortRapportGt}};
+YAHOO.geny.dt.colRapportPl = {key: "rapportPlace", label: YAHOO.geny.l10n.RapportPlaceAbr, abbr: YAHOO.geny.l10n.RapportPlace, sortable: true, className: "numerique", sortOptions: {sortFunction: YAHOO.geny.dt.sortRapportPl}};
+YAHOO.geny.dt.colNbCourses = {key: "courses", type: "number", label: YAHOO.geny.l10n.Courses, sortable: true, className: "numerique"};
+YAHOO.geny.dt.colNbVictoires = {key: "victoires", type: "number", label: YAHOO.geny.l10n.Victoires, sortable: true, className: "numerique"};
+YAHOO.geny.dt.colReussiteVictoires = {key: "reussiteVictoires", label: YAHOO.geny.l10n.ReussiteGagne, sortable: true, className: "numerique", formatter: YAHOO.geny.dt.formatPourcent};
+YAHOO.geny.dt.colNbPlaces = {key: "places", type: "number", label: YAHOO.geny.l10n.Places, sortable: true, className: "numerique"};
+YAHOO.geny.dt.colReussitePlaces = {key: "reussitePlaces", label: YAHOO.geny.l10n.ReussitePlace, sortable: true, className: "numerique", formatter: YAHOO.geny.dt.formatPourcent};
+YAHOO.geny.dt.colNomReunion = {key: "nomReunion", label: YAHOO.geny.l10n.Hippodrome, sortable: true, resizeable: true};
+YAHOO.geny.dt.colNomCourse = {key: "nomCourse", label: YAHOO.geny.l10n.NomCourse, sortable: true, resizeable: true};
+YAHOO.geny.dt.colRpPMU = {key: "RpPMU", label: YAHOO.geny.l10n.RpPMU, sortable: true, className: "numerique", resizeable: false, formatter: YAHOO.geny.dt.formatCote};
+YAHOO.geny.dt.colRpActuels = {key: "RpGENY", label: YAHOO.geny.l10n.RpGENY, sortable: true, className: "numerique", resizeable: false, formatter: YAHOO.geny.dt.formatCote};
+YAHOO.geny.dt.colRapportsProbables = {label: YAHOO.geny.l10n.RapportsProbables, className: "noliner", children: [YAHOO.geny.dt.colRpPMU, YAHOO.geny.dt.colRpActuels]};
+
+/**
+* fields
+*/
+YAHOO.geny.dt.fldNumero = {key: "numParticipation", parser: YAHOO.util.DataSource.parseNumber};
+YAHOO.geny.dt.fldCheval = {key: "nomCheval"};
+YAHOO.geny.dt.fldCorde = {key: "corde", parser: YAHOO.util.DataSource.parseNumber};
+YAHOO.geny.dt.fldSexeage = {key: "sexeAge"};
+YAHOO.geny.dt.fldPoids = {key: "poids"};
+YAHOO.geny.dt.fldDecharge = {key: "decharge"};
+YAHOO.geny.dt.fldDistance = {key: "distance", parser: YAHOO.util.DataSource.parseNumber};
+YAHOO.geny.dt.fldJockey = {key: "jockey"};
+YAHOO.geny.dt.fldDriver = {key: "driver"};
+YAHOO.geny.dt.fldEntraineur = {key: "entraineur"};
+YAHOO.geny.dt.fldCourses = {key: "stats.nbCourses", parser: YAHOO.util.DataSource.parseNumber};
+YAHOO.geny.dt.fldVictoires = {key: "stats.nbVictoires", parser: YAHOO.util.DataSource.parseNumber};
+YAHOO.geny.dt.fldPlaces = {key: "stats.nbPlaces", parser: YAHOO.util.DataSource.parseNumber};
+YAHOO.geny.dt.fldEcart = {key: "stats.ecart"};
+YAHOO.geny.dt.fldReussite = {key: "stats.pourcentageReussite", parser: YAHOO.geny.dt.parsePourcent};
+YAHOO.geny.dt.fldMusique = {key: "musique"};
+YAHOO.geny.dt.fldMusiqueS = {key: "stats.musique"};
+YAHOO.geny.dt.fldValeurHand = {key: "hStats.valeur"};
+YAHOO.geny.dt.fldGains = {key: "gains", parser : YAHOO.util.DataSource.parseNumber};
+YAHOO.geny.dt.fldIdJockey = {key: "idJockey"};
+YAHOO.geny.dt.fldIdEntraineur = {key: "idEntraineur"};
+YAHOO.geny.dt.fldIdCheval = {key: "idCheval"};
+YAHOO.geny.dt.fldDeferre = {key: "deferre"};
+YAHOO.geny.dt.fldEcurie = {key: "ecurie"};
+YAHOO.geny.dt.fldOeilleres = {key: "oeilleres"};
+YAHOO.geny.dt.fldDerHand = {key: "hStats.nomHippoLastCourse"};
+YAHOO.geny.dt.fldEvolution = {key: "hStats.variation"};
+YAHOO.geny.dt.fldRecord = {key: "recordStats.reductionKilometrique"};
+YAHOO.geny.dt.fldDateRecord = {key: "recordStats.dateCourse"};
+YAHOO.geny.dt.fldRpPMU = {key: "RpPMU", parser : YAHOO.geny.dt.parseCote};
+YAHOO.geny.dt.fldRpGENY = {key: "RpGENY", parser : YAHOO.geny.dt.parseCote};
+
+YAHOO.geny.dt.fldDateParticipation = {key: "dateParticipation"};
+YAHOO.geny.dt.fldHippodrome = {key: "hippodrome"};
+YAHOO.geny.dt.fldPiste = {key: "piste"};
+YAHOO.geny.dt.fldCordeFicheCheval = {key: "cordeFicheCheval"};
+YAHOO.geny.dt.fldAutostart = {key: "autostart"};
+YAHOO.geny.dt.fldSpecialite = {key: "specialite"};
+YAHOO.geny.dt.fldTerrain = {key: "terrain"};
+YAHOO.geny.dt.fldDimension = {key: "course"};
+YAHOO.geny.dt.fldQuinte = {key: "quinte"};
+YAHOO.geny.dt.fldAllocation = {key: "allocation"};
+YAHOO.geny.dt.fldRang = {key: "rang"};
+YAHOO.geny.dt.fldRedkm = {key: "redkm"};
+YAHOO.geny.dt.fldDeferre = {key: "deferre"};
+YAHOO.geny.dt.fldValeur = {key: "valeur"};
+YAHOO.geny.dt.fldOeilleres = {key: "oeilleres"};
+
+YAHOO.geny.dt.fldRapportGt = {key: "rapportGagnant"};
+YAHOO.geny.dt.fldRapportPl = {key: "rapportPlace"};
+
+YAHOO.geny.dt.fldNbCourses = {key: "courses", parser: YAHOO.util.DataSource.parseNumber};
+YAHOO.geny.dt.fldNbVictoires = {key: "victoires", parser: YAHOO.util.DataSource.parseNumber};
+YAHOO.geny.dt.fldReussiteVictoires = {key: "reussiteVictoires", parser: YAHOO.geny.dt.parsePourcent};
+YAHOO.geny.dt.fldNbPlaces = {key: "places", parser: YAHOO.util.DataSource.parseNumber};
+YAHOO.geny.dt.fldReussitePlaces = {key: "reussitePlaces", parser: YAHOO.geny.dt.parsePourcent};
+YAHOO.geny.dt.fldIdCourse = {key: "idCourse"};
+YAHOO.geny.dt.fldNomReunion = {key: "nomReunion"};
+YAHOO.geny.dt.fldNomCourse = {key: "nomCourse"};
+YAHOO.geny.dt.fldNomPersonne = {key: "nomPersonne"};
+YAHOO.geny.dt.fldIdPersonne = {key: "idPersonne"};
+
+
+YAHOO.geny.dt.setColDef = function (node) {
+    var dt = YAHOO.geny.dt;
+    var cd = [
+		dt.colNumero,
+		dt.colCheval,
+		dt.colCorde,
+		dt.colSexeage
+    ];
+    switch (node.dt.type) {
+    case 'part': // partants
+        cd.push(
+            dt.colPoids,
+            dt.colDecharge,
+            dt.colJockey,
+            dt.colEntraineur,
+            dt.colMusique,
+            dt.colVal,
+            dt.colRapportsProbables);
+        if (dt.spe !== 3) { // si different de plat
+            cd.splice(2, 1);
+        }
+        if (dt.spe === 1) { // trot monte
+            cd.splice(8, 1, dt.colGains);
+            cd.splice(4, 1, dt.colPoids);
+            cd.splice(3, 1, dt.colDistance);
+        }
+        if (dt.spe === 2) { // trot attele
+            cd.splice(8, 1, dt.colGains);
+            cd.splice(5, 1, dt.colDriver);
+            cd.splice(4, 1);
+            cd.splice(3, 1, dt.colDistance);
+        }
+        cd.splice(1, 1, {key: "nomCheval", label: YAHOO.geny.l10n.Cheval, className : "strong", sortable: true, sortOptions: {sortFunction: YAHOO.geny.dt.sortCheval}});
+        break;
+    case 'stat-j': // statistiques jockey
+    case 'stat-e': // statistiques driver
+    	cd.splice(1, 1, {key: "nomCheval", label: YAHOO.geny.l10n.Cheval, sortable: true, sortOptions: {sortFunction: YAHOO.geny.dt.sortCheval}, formatter : YAHOO.geny.dt.formatCheval});
+    	cd.splice(2, 2);
+        cd.push(
+            dt.colPoids,
+            dt.colDecharge,
+            {key: "jockey", label: YAHOO.geny.l10n.Jockey, className : "strong", sortable: true, sortOptions: {sortFunction: YAHOO.geny.dt.sortJockey}, formatter : YAHOO.geny.dt.formatJockey},
+            dt.colCourses,
+            dt.colVictoires,
+            dt.colEcart,
+            dt.colReussite,
+            dt.colMusiqueJ);
+        if (node.dt.type === 'stat-e') {
+			cd.splice(4, 1, {key: "entraineur", label: YAHOO.geny.l10n.Entraineur, className : "strong", sortable: true, sortOptions: {sortFunction: YAHOO.geny.dt.sortEntraineur}, formatter : YAHOO.geny.dt.formatEntraineur});
+			cd.splice(9, 1, dt.colMusiqueE);
+        }
+        if (dt.spe <= 2) { // trot
+			cd.splice(3, 1); // supprime decharge
+			cd.splice(2, 1, dt.colDistance);
+        }
+        if (node.dt.type === 'stat-j' && dt.spe === 2) {
+        	cd.splice(3, 1, {key: "driver", label: YAHOO.geny.l10n.Driver, className : "strong", sortable: true, sortOptions: {sortFunction: YAHOO.geny.dt.sortDriver}, formatter : YAHOO.geny.dt.formatJockey});
+        	cd.splice(8, 1, dt.colMusiqueD);
+        }
+        if (node.dt.pari !== 'pmu') {
+        	// si onglet multi ou quinte rajoute colonne place apres victoires
+			cd.splice(dt.spe <= 2 ? 5 : 6, 1, dt.colVictoires, dt.colPlaces);
+		}
+        break;
+    case 'evol-v': // evolution des poids
+    	cd.splice(1, 1, {key: "nomCheval", label: YAHOO.geny.l10n.Cheval, className : "strong", sortable: true, sortOptions: {sortFunction: YAHOO.geny.dt.sortCheval}, formatter : YAHOO.geny.dt.formatCheval});
+        cd.splice(2, 1);
+        cd.push(
+            dt.colPoids,
+            dt.colDecharge,
+            {key: "jockey", label: YAHOO.geny.l10n.Jockey, sortable: true, sortOptions: {sortFunction: YAHOO.geny.dt.sortJockey}, formatter : YAHOO.geny.dt.formatJockey},
+            dt.colValeur,
+            dt.colDerHand,
+            dt.colEvolution);
+        break;
+    case 'recd-a': // record absolu
+    case 'recd-p': // record parcours
+    case 'recd-d': // record distance
+    case 'recd-s': // record specialite
+		cd.splice(1, 1, {key: "nomCheval", label: YAHOO.geny.l10n.Cheval, className : "strong", sortable: true, sortOptions: {sortFunction: YAHOO.geny.dt.sortCheval}, formatter : YAHOO.geny.dt.formatCheval});
+		cd.splice(2, 1);
+		cd.push(
+			dt.colDistance,
+			{key: "driver", label: YAHOO.geny.l10n.Driver, sortable: true, sortOptions: {sortFunction: YAHOO.geny.dt.sortDriver}, formatter : YAHOO.geny.dt.formatJockey},
+			dt.colRecord,
+			dt.colDateRecord);
+        if (dt.spe === 1) {
+            cd.splice(4, 1, {key: "jockey", label: YAHOO.geny.l10n.Jockey, sortable: true, sortOptions: {sortFunction: YAHOO.geny.dt.sortJockey}, formatter : YAHOO.geny.dt.formatJockey});
+		}
+    	break;
+    case 'fichecheval': // fiche cheval
+    	cd.splice(0, 4, dt.colDateParticipation);
+    	cd.push(
+    		dt.colHippodrome,
+			dt.colDistance,
+			dt.colPiste,
+			dt.colCordeFicheCheval,
+			dt.colAutostart,
+			dt.colSpecialite,
+			dt.colTerrain,
+			dt.colDimension,
+			dt.colQuinte,
+			dt.colAllocation,
+			dt.colRang,
+			dt.colRedKm,
+			dt.colDeferre,
+			dt.colVal,
+			dt.colOeilleres);
+		if (dt.discipline === 1) {	// trot
+			// Suppression des colonnes Terrain, Valeur et Oeilleres.
+			cd.splice(7, 1);
+			cd.splice(13, 2);
+		}
+		if (dt.discipline === 2) {	// galop
+			// Suppression des colonnes Autostart, Reduction kilometrique et Deferre.
+			cd.splice(5, 1);
+			cd.splice(11, 2);
+		}
+    	break;
+    case 'fj_perfsPmu':	// Fiche jockey -> performances PMU
+    case 'fj_perfs':	// Fiche jockey -> performances PMU/PMH
+    case 'fe_perfsPmu':	// Fiche entraineur -> performances PMU
+    case 'fe_perfs':	// Fiche entraineur -> performances PMU/PMH
+    	cd.splice(0, 1, dt.colDateParticipation, dt.colHippodrome);
+    	cd.splice(3, 2, dt.colPoids);
+    	cd.push(
+    		dt.colDistance,
+    		dt.colSpecialite,
+    		dt.colQuinte,
+			dt.colAllocation,
+			dt.colRang,
+			dt.colRapportGt,
+			dt.colRapportPl);
+		if (dt.isTrotOrIsEntraineur === true) {
+			// Suppression de la colonne Poids si la course est un trot ou si il s'agit de la fiche entraineur.
+			cd.splice(3, 1);
+		}
+    	break;
+	case 'fj-chevaux':		// Fiche jockey -> montes
+	case 'fe-chevaux':		// Fiche entraineur -> pensionnaires
+	case 'fj-entraineurs':	// Fiche jockey -> entraineurs
+	case 'fe-jockeys':		// Fiche jockey -> jockeys
+		if (node.dt.type === 'fj-chevaux' || node.dt.type === 'fe-chevaux') {
+    		cd.splice(0, 4, {key: "nomCheval", label: YAHOO.geny.l10n.Cheval, sortable: true, sortOptions: {sortFunction: YAHOO.geny.dt.sortCheval}, formatter : YAHOO.geny.dt.formatCheval});
+    	} else if (node.dt.type === 'fj-entraineurs') {
+    		cd.splice(0, 4, {key: "entraineur", label: YAHOO.geny.l10n.Entraineur, sortable: true, sortOptions: {sortFunction: YAHOO.geny.dt.sortEntraineur}, formatter : YAHOO.geny.dt.formatEntraineur});
+    	} else if (node.dt.type === 'fe-jockeys') {
+    		cd.splice(0, 4, {key: "jockey", label: YAHOO.geny.l10n.Jockey, sortable: true, sortOptions: {sortFunction: YAHOO.geny.dt.sortJockey}, formatter : YAHOO.geny.dt.formatJockey});
+    	}
+    	cd.push(
+    		dt.colNbCourses,
+    		dt.colNbVictoires,
+    		dt.colReussiteVictoires,
+    		dt.colNbPlaces,
+    		dt.colReussitePlaces);
+		break;
+    case 'fj-partants':		// Fiche jockey -> prochaines courses
+    case 'fe-partants':		// Fiche entraineur -> prochaines courses
+    	cd.splice(0, 4, {key: "nomCheval", label: YAHOO.geny.l10n.Cheval, sortable: true, sortOptions: {sortFunction: YAHOO.geny.dt.sortCheval}, formatter : YAHOO.geny.dt.formatCheval});
+    	if (node.dt.type === 'fj-partants') {
+    		cd.push({key: "nomPersonne", label: YAHOO.geny.l10n.Entraineur, sortable: true, sortOptions: {sortFunction: YAHOO.geny.dt.sortPersonne}, formatter : YAHOO.geny.dt.formatEntraineur});
+    	} else {
+    		cd.push({key: "nomPersonne", label: YAHOO.geny.l10n.Jockey, sortable: true, sortOptions: {sortFunction: YAHOO.geny.dt.sortPersonne}, formatter : YAHOO.geny.dt.formatJockey});
+    	}
+    	cd.push(
+    		{key: "dateParticipation", label: YAHOO.geny.l10n.Date, sortable: true, formatter : YAHOO.geny.dt.formatDateParticipation},
+    		dt.colNomReunion,
+    		dt.colNomCourse,
+    		dt.colAllocation);
+		break;
+    default:
+		break;
+    }
+    return cd;
+};
+
+YAHOO.geny.dt.setFields = function (node) {
+    var dt = YAHOO.geny.dt;
+    var fl = [
+		dt.fldNumero,
+		dt.fldCheval,
+		dt.fldCorde,
+		dt.fldSexeage
+    ];
+    switch (node.dt.type) {
+    case 'part':
+        fl.push(
+            dt.fldPoids,
+            dt.fldDecharge,
+            dt.fldJockey,
+            dt.fldEntraineur,
+            dt.fldMusique,
+            dt.fldValeur,
+            dt.fldRpPMU,
+            dt.fldRpGENY);
+        if (dt.spe !== 3) { // si different de plat
+            fl.splice(2, 1);
+        }
+        if (dt.spe === 1) { // trot monte
+            fl.splice(8, 1, dt.fldGains);
+            fl.splice(4, 1, dt.fldPoids);
+            fl.splice(3, 1, dt.fldDistance);
+        }
+        if (dt.spe === 2) { // trot attele
+            fl.splice(8, 1, dt.fldGains);
+            fl.splice(5, 1, dt.fldDriver);
+            fl.splice(4, 1);
+            fl.splice(3, 1, dt.fldDistance);
+        }
+        break;
+    case 'stat-j': // statistiques jockey
+    case 'stat-e': // statistiques driver
+    	fl.splice(2, 2);
+        fl.push(
+            dt.fldPoids,
+            dt.fldDecharge,
+            dt.fldJockey,
+            dt.fldCourses,
+            dt.fldVictoires,
+            dt.fldEcart,
+            dt.fldReussite,
+            dt.fldMusiqueS);
+        if (node.dt.type === 'stat-e') {
+			fl.splice(4, 1, dt.fldEntraineur);
+			fl.push(dt.fldIdEntraineur);
+        } else {
+        	fl.push(dt.fldIdJockey);
+        }
+        if (dt.spe <= 2) { // trot
+			fl.splice(3, 1); // supprime decharge
+			fl.splice(2, 1, dt.fldDistance);
+        }
+        if (node.dt.type === 'stat-j' && dt.spe === 2) {
+        	fl.splice(3, 1, dt.fldDriver);
+        }
+		if (node.dt.pari !== 'pmu') {
+        	// si onglet multi ou quinte rajoute colonne place apres victoires
+			fl.splice(dt.spe <= 2 ? 5 : 6, 1, dt.fldVictoires, dt.fldPlaces);
+		}
+        fl.push(dt.fldIdCheval);
+        fl.push(dt.fldDeferre);
+        fl.push(dt.fldEcurie);
+        fl.push(dt.fldOeilleres);
+        break;
+    case 'evol-v': // evolution des poids
+        fl.splice(2, 1);
+        fl.push(
+            dt.fldPoids,
+            dt.fldDecharge,
+            dt.fldJockey,
+            dt.fldValeurHand,
+            dt.fldDerHand,
+            dt.fldEvolution,
+            dt.fldIdJockey,
+            dt.fldIdCheval,
+            {key: "hStats.idLastCourse"},
+            {key: "hStats.dateLastCourse"},
+            {key: "hStats.distanceLastCourse"},
+            {key: "hStats.rangLastCourse"},
+            {key: "hStats.incident"});
+        break;
+    case 'recd-a': // record absolu
+    case 'recd-p': // record parcours
+    case 'recd-d': // record distance
+    case 'recd-s': // record specialite
+		fl.splice(2, 1);
+		fl.push(
+		    dt.fldDistance,
+		    dt.fldDriver,
+		    dt.fldRecord,
+		    dt.fldDateRecord,
+		    dt.fldIdCheval,
+   			"recordStats.idCheval",
+   			"recordStats.idCourse",
+			"recordStats.hippodrome",
+			"recordStats.corde",
+			"recordStats.piste",
+			"recordStats.distance",
+			"recordStats.specialite",
+			"recordStats.autostart",
+			"recordStats.rangArrivee");
+        if (dt.spe === 1) {
+            fl.splice(4, 1, dt.fldJockey);
+        }
+    	break;
+    case 'fichecheval': // fiche cheval
+    	fl.splice(0, 4, dt.fldDateParticipation);
+    	fl.push(
+    		dt.fldHippodrome,
+			dt.fldDistance,
+			dt.fldPiste,
+			dt.fldCordeFicheCheval,
+			dt.fldAutostart,
+			dt.fldSpecialite,
+			dt.fldTerrain,
+			dt.fldDimension,
+			dt.fldQuinte,
+			dt.fldAllocation,
+			dt.fldRang,
+			dt.fldRedkm,
+			dt.fldDeferre,
+			dt.fldValeur,
+			dt.fldOeilleres);
+		if (dt.discipline === 1) {	// trot
+			// Suppression des champs Terrain, Valeur et Oeilleres.
+			fl.splice(7, 1);
+			fl.splice(13, 2);
+		}
+		if (dt.discipline === 2) {	// galop
+			// Suppression des champs Autostart, Reduction kilometrique et Deferre.
+			fl.splice(5, 1);
+			fl.splice(11, 2);
+		}
+    	break;
+    case 'fj_perfsPmu':	// Fiche jockey -> performances PMU
+    case 'fj_perfs':	// Fiche jockey -> performances PMU/PMH
+    case 'fe_perfsPmu':	// Fiche entraineur -> performances PMU
+    case 'fe_perfs':	// Fiche entraineur -> performances PMU/PMH
+    	fl.splice(0, 1, dt.fldDateParticipation, dt.fldHippodrome);
+    	fl.splice(3, 2, dt.fldPoids);
+    	fl.push(
+    		dt.fldDistance,
+    		dt.fldSpecialite,
+    		dt.fldQuinte,
+			dt.fldAllocation,
+			dt.fldRang,
+			dt.fldRapportGt,
+			dt.fldRapportPl);
+		if (dt.isTrotOrIsEntraineur === true) {
+			// Suppression de la colonne Poids si la course est un trot ou si il s'agit de la fiche entraineur.
+			fl.splice(3, 1);
+		}
+    	break;
+	case 'fj-chevaux':		// Fiche jockey -> montes
+	case 'fe-chevaux':		// Fiche entraineur -> pensionnaires
+	case 'fj-entraineurs':	// Fiche jockey -> entraineurs
+	case 'fe-jockeys':		// Fiche jockey -> jockeys
+		if (node.dt.type === 'fj-chevaux' || node.dt.type === 'fe-chevaux') {
+			fl.splice(0, 4, dt.fldCheval, dt.fldIdCheval);
+		} else if (node.dt.type === 'fj-entraineurs') {
+			fl.splice(0, 4, dt.fldEntraineur, dt.fldIdEntraineur);
+		} else if (node.dt.type === 'fe-jockeys') {
+			fl.splice(0, 4, dt.fldJockey, dt.fldIdJockey);
+		}
+    	fl.push(
+    		dt.fldNbCourses,
+    		dt.fldNbVictoires,
+    		dt.fldReussiteVictoires,
+    		dt.fldNbPlaces,
+    		dt.fldReussitePlaces);
+		break;
+	case 'fj-partants':		// Fiche jockey -> prochaines courses
+	case 'fe-partants':		// Fiche entraineur -> prochaines courses
+		fl.splice(0, 4, dt.fldIdCheval, dt.fldCheval);
+		fl.push(
+			dt.fldIdCourse,
+			{key: "dateParticipation", parser: YAHOO.util.DataSource.parseDate},
+			dt.fldNomReunion,
+			dt.fldNomCourse,
+			dt.fldNomPersonne,
+			dt.fldIdPersonne,
+			dt.fldAllocation);
+		break;
+	default:
+		break;
+	}
+	return fl;
+};
+
+/**
+* Methode permettant de charger les structures contenant des tabviews et des datatables.
+*/
+YAHOO.geny.dt.dtGeny = function () {
+    var o = {}, cs = {}, ds = {}, rs = {};
+    // activation du tab suite a key event
+    var changeTab = function (type, args, obj) {
+        o[obj.parent].set('activeIndex', o[obj.parent].getTabIndex(o[obj.el]));
+    };
+    // affichage de la date de derniere mise a jour
+    var displayUpdate = function () {
+        // recuperation du datasource du datatable
+        var dst = this.getDataSource();
+        // test si JSON
+        if (dst.responseType !== YAHOO.util.DataSource.TYPE_JSON) {
+            return;
+        }
+        // creation de l'element contenant
+        if (!this.getTbodyEl().parentNode.nextSibling) {
+            var ft = document.createElement('div');
+            YAHOO.util.Dom.addClass(ft, 'texte_legende');
+            var tn = document.createTextNode('');
+            ft.appendChild(tn);
+            this.getTbodyEl().parentNode.parentNode.appendChild(ft);
+        }
+        // affichage du texte
+        this.getTbodyEl().parentNode.nextSibling.innerHTML += this.legende + '<br>' + dst.dateMAJ;
+    };
+    // chargement du datatable
+    var load_dt = function () {
+    	if (typeof o[this.el] === 'object') {
+            return;
+        }
+        ds[this.el].responseSchema = {resultsList: this.ds.resultsList, fields: YAHOO.geny.dt.setFields(this)};
+        o[this.el] = new YAHOO.widget.DataTable(this.el, cs[this.el], ds[this.el], this.dt.conf);
+		if (this.dt.legende !== undefined && this.dt.legende !== null) {
+			o[this.el].legende = this.dt.legende;
+		} else {
+			o[this.el].legende = YAHOO.geny.dt.legende;
+		}
+        o[this.el].subscribe("initEvent", displayUpdate);
+        o[this.el].subscribe("rowMouseoverEvent", o[this.el].onEventHighlightRow);
+        o[this.el].subscribe("rowMouseoutEvent", o[this.el].onEventUnhighlightRow);
+    };
+    // traking des clicks par XITI
+	var trackXITI = function () {
+		// recuperation du libelle xiti (config)
+		var label = this.label_xiti;
+		// tracking : click d'action
+		xt_med('C', '1', label, 'A');
+	};
+    var p = YAHOO.geny.dt.p;
+    // boucle sur l'array des objets
+    for (var i = 0; i < p.length; i++) {
+        var node = p[i];
+        switch (node.type) {
+        case 'tabview':
+            // creation du tabview
+            o[node.el] = new YAHOO.widget.TabView(node.el);
+            break;
+        case 'tab':
+            // creation du tab
+            o[node.el] = new YAHOO.widget.Tab(node.conf);
+            // ajout du tab au tabview parent
+            o[node.parent].addTab(o[node.el]);
+            // ajout au tab du libelel xiti
+            o[node.el].label_xiti = node.label_xiti;
+            // ajout du tracking XITI onclick
+            o[node.el].addListener('click', trackXITI);
+            // si raccourci clavier
+            if (node.key) {
+                // ajout du key listener
+                var kk = new YAHOO.util.KeyListener(document, {keys: node.key}, {fn: changeTab, scope: node});
+                // et activation
+                kk.enable();
+            }
+            break;
+        case 'table':
+            // test type de tableau: html ou AJAX
+            if (node.ds.type === YAHOO.util.DataSource.TYPE_HTMLTABLE) {
+                // creation des entetes
+                cs[node.el] = YAHOO.geny.dt.setColDef(node);
+                // creation datasource html
+                ds[node.el] = new YAHOO.util.DataSource(YAHOO.util.Dom.get(node.ds.el));
+                ds[node.el].responseType = YAHOO.util.DataSource.TYPE_HTMLTABLE;
+                ds[node.el].responseSchema = {fields: YAHOO.geny.dt.setFields(node)};
+            } else {
+                //creation des entetes
+                cs[node.el] = YAHOO.geny.dt.setColDef(node);
+                // initialisation du datatasource du datatable
+                ds[node.el] = new YAHOO.util.DataSource(node.ds.json);
+                // recuperation dans le datasource de la date de derniere MAJ
+                ds[node.el].doBeforeParseData = function (oRequest, oFullResponse) {
+                    this.dateMAJ = oFullResponse.ResultSet.dateHeureMAJDonnees;
+                    return oFullResponse;
+                };
+                // type du datasource
+                ds[node.el].responseType = YAHOO.util.DataSource.TYPE_JSON;
+                ds[node.el].responseSchema = {resultsList: node.ds.resultsList, fields: YAHOO.geny.dt.setFields(node)};
+            }
+            if (node.lazy === true) {
+                // creation differe du datatable
+                // selection de l'element tab qui declanche la construnction du datatable
+                // par defaut l'element parent
+                var nl = node.lazyel ? node.lazyel : node.parent;
+                // ajout du listener a l'element tab
+                o[nl].addListener('beforeActiveChange', load_dt, node, true);
+            } else {
+				// no renderLoopSize pour HTMLTABLE
+				if (node.ds.type !== YAHOO.util.DataSource.TYPE_HTMLTABLE) {
+					// renderLoopSize par defaut sur tous les datatable
+					node.dt.conf.renderLoopSize = 20;
+				}
+				// test existence du element datatable (peut ne pas exister!!!)
+				if (!YAHOO.util.Dom.get(node.el)) {
+                    break;
+                }
+                // creation du datatable
+                o[node.el] = new YAHOO.widget.DataTable(node.el, cs[node.el], ds[node.el], node.dt.conf);
+                if (node.dt.legende !== undefined && node.dt.legende !== null) {
+                	o[node.el].legende = node.dt.legende;
+                } else {
+                	o[node.el].legende = YAHOO.geny.dt.legende;
+                }
+                o[node.el].subscribe("initEvent", displayUpdate);
+                o[node.el].subscribe("rowMouseoverEvent", o[node.el].onEventHighlightRow);
+                o[node.el].subscribe("rowMouseoutEvent", o[node.el].onEventUnhighlightRow);
+            }
+            break;
+        }
+    }
+};
+
+YAHOO.util.Event.onDOMReady(function () {
+	YAHOO.widget.DataTable.MSG_EMPTY = YAHOO.geny.l10n.DtEmpty;
+	YAHOO.widget.DataTable.MSG_ERROR = YAHOO.geny.l10n.DtError;
+	YAHOO.widget.DataTable.MSG_LOADING = YAHOO.geny.l10n.DtLoading;
+});

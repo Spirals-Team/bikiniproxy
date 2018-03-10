@@ -1,0 +1,310 @@
+(function () {
+
+    // YOU MAY WANT TO DO THIS SOME OTHER WAY
+    // AND POSSIBLY GIVE IT A DIFFERENT NAMESPACE
+    bbc.fmtj.utils.createObject("bbc.fmtj.view.advert");
+
+    // view object to attach render methods too
+    var $view = {};
+
+    $view.namespace = "bbc.fmtj.view.advert";
+    $view.version = "0.0.0";
+
+    // Alias to glow instances
+    var $glowDom;
+
+    gloader.load(["glow", "1", "glow.dom"], {
+        onLoad: function (glow) {
+            $glowDom = glow.dom;
+        }
+    });
+
+    // Alias for bbccom adverts
+    var $bbcAdverts = BBC.adverts;
+
+    //
+    var adMap = {};
+    var ads = {};
+
+    var _lastAdSlotType;
+    var _lastAdCallArgs;
+    var _lastAdPlaceholder;
+
+    var earlyAds = {};
+
+
+    // Register adverts
+    adBuilder("advert-companion", "emptySlot");
+    adBuilder("advert-button", "emptySlot");
+    adBuilder("advert-leaderboard", "genericGPTAd", ["leaderboard"]);
+    adBuilder("advert-mpu-early", "emptySlot");
+    adBuilder("advert-mpu", "genericGPTAd", ["mpu"]);
+    adBuilder("advert-mpu-high", "emptySlot");
+    adBuilder("advert-mpu-low", "genericGPTAd", ["mpu"]);
+    adBuilder("advert-mpu-bottom", "emptySlot");
+    adBuilder("advert-native-side", "emptySlot");
+    adBuilder("advert-native", "genericGPTAd", ["native"]);
+    adBuilder("advert-sponsor-module", "emptySlot");
+    adBuilder("advert-sponsor-section", "genericGPTAd", ["sponsor"]);
+    adBuilder("advert-sponsor-subsection", "emptySlot");
+    adBuilder("advert-google-adsense", "adSense", ["mpu"]);
+    adBuilder("advert-partner-button", "emptySlot");
+
+    // Function to create ad renderers and register them with map
+    function adBuilder(slotType, renderFunction, args) {
+        var _slotType = slotType;
+        var _renderFunction = renderFunction;
+        var _args = args;
+
+        adMap[slotType] = {
+            slotType: _slotType,
+            renderAdvert: _renderAdvert,
+            postScriptLoad: _postScriptLoad
+        };
+
+        function _renderAdvert() {
+            var args = (_args !== undefined) ? _args : [];
+
+            // Add additional arguments passed through, such as keywords
+            for (var a = 0; a < arguments.length; a++) {
+                args.push(arguments[a]);
+            }
+
+            ads[_renderFunction].apply(this, args);
+        }
+
+        function _postScriptLoad() {
+            var postScriptLoadFunction = ads[_renderFunction + "-onload"];
+
+            if (postScriptLoadFunction !== undefined) {
+                var args = (_args !== undefined) ? _args : [];
+
+                for (var a = 0; a < arguments.length; a++) {
+                    args.push(arguments[a]);
+                }
+
+                // Ad last place holder to beginning
+                args.unshift(_lastAdPlaceholder);
+
+                postScriptLoadFunction.apply(this, args);
+            }
+        }
+    }
+
+    // Ads advert call to the view
+    $view["advert"] = function (slotType) {
+        if (adMap[slotType] !== undefined) {
+            var args = [];
+
+            if (arguments.length > 1) {
+                for (var a = 1; a < arguments.length; a++) {
+                    args.push(arguments[a]);
+                }
+            }
+
+            _lastAdSlotType = slotType;
+            _lastAdCallArgs = args;
+
+            _lastAdPlaceholder = $glowDom.get(".bbccom_advert_placeholder");
+
+            if (_lastAdPlaceholder.length < 1) {
+                return false;
+            }
+
+            if (_lastAdPlaceholder.length > 1) {
+                _lastAdPlaceholder = _lastAdPlaceholder[_lastAdPlaceholder.length - 1];
+            }
+
+            _lastAdPlaceholder.removeClass("bbccom_advert_placeholder");
+            _lastAdPlaceholder.addClass("bbccom_advert");
+            _lastAdPlaceholder.wrap("<div></div>");
+            _lastAdPlaceholder = _lastAdPlaceholder.parent();
+            _lastAdPlaceholder.addClass("bbccom_slot");
+
+            adMap[slotType].renderAdvert.apply(this, args);
+        }
+    };
+
+    // function to delete temporary ad bucket
+    $view["advert-post-script-load"] = function () {
+        var args = _lastAdCallArgs;
+        adMap[_lastAdSlotType].postScriptLoad.apply(this, args);
+        _lastAdSlotType = undefined;
+        _lastAdCallArgs = undefined;
+        _lastAdPlaceholder = undefined;
+    };
+
+    // Empty ad slot
+    ads["emptySlot"] = function (slot) {
+        _lastAdPlaceholder.attr("id", "bbccom_" + slot);
+        _lastAdPlaceholder.addClass("bbccom_display_none");
+    };
+
+    // Generic GPT ad slot
+    ads["genericGPTAd"] = function (slot) {
+        $bbcAdverts.write(slot);
+    };
+
+    // Generic ad slot
+    ads["genericAd"] = function (slot) {
+
+        var args = [],
+            showAdvertisementText;
+
+        if (arguments.length > 1) {
+            for (var a = 1; a < arguments.length; a++) {
+                args.push(arguments[a]);
+            }
+        }
+
+        showAdvertisementText = (typeof args[0] !== 'undefined' && args[0] === false) ? false : true;
+
+        _lastAdPlaceholder.attr("id", "bbccom_" + slot);
+        _lastAdPlaceholder.addClass("bbccom_display_none");
+        if (typeof(earlyAds[slot]) == 'undefined') {
+            $bbcAdverts.write(slot, showAdvertisementText);
+        } else {
+            $bbcAdverts.moveAd(slot + '_early', slot);
+        }
+    };
+
+    ads["genericAd-onload"] = function (placeholder, slot) {
+        //$bbcAdverts.show(slot);
+    };
+
+    // Early ad slot - for example: to preload MPU to reduce judder of image resize when XXL returned
+    ads["earlyAd"] = function (slot) {
+        _lastAdPlaceholder.attr("id", "bbccom_" + slot + "_early");
+        _lastAdPlaceholder.addClass("bbccom_display_none");
+
+        if (slot === 'mpu') {
+            elem = document.getElementById("bbccom_" + slot + "_early");
+            bbcdotcom.nativeStory.write(elem);
+        }
+
+        $bbcAdverts.write(slot);
+        earlyAds[slot] = true;
+    };
+    ads["earlyAd-onload"] = function (placeholder, slot) {
+        // Dont show advert in this "early" position.
+//		$bbcAdverts.show(slot);
+    };
+
+    // Leaderboard
+    ads["leaderboard"] = function (slot) {
+
+        /**
+         * SPORTWS2-2702 - Hotfix to address page not rendering correctly in sport.
+         */
+        var advertDiv;
+        if (window.location.href.indexOf('bbc.com/sport') !== -1 &&
+            window.location.href.search(/[0-9]{7,8}/) === -1) {
+            advertDiv = $glowDom.get('.advert');
+            if (typeof advertDiv[0] !== 'undefined') {
+                advertDiv[0].className = advertDiv[0].className.replace('advert', '');
+            }
+        }
+
+        _lastAdPlaceholder.attr("id", "bbccom_" + slot);
+        _lastAdPlaceholder.addClass("bbccom_display_none");
+
+        $bbcAdverts.write(slot);
+
+    };
+
+    ads["leaderboard-onload"] = function (placeholder, slot) {
+        $bbcAdverts.show(slot);
+    };
+
+    /**
+     * EMP Companion Banner 300x60. The google slot gets defined when the media player is written.
+     * Placeholder incase it is called - removed as part of BBCCOM-6050
+     */
+    ads["companion"] = function (assetId) {
+//		_lastAdPlaceholder.attr("id","bbccom_companion_"+assetId);
+//		_lastAdPlaceholder.addClass("bbccom_visibility_hidden").addClass("bbccom_companion");
+
+        // We don't need to write an ad slot as this is now written when the EMP gets written.
+    };
+
+    // Sponsor Module
+    ads["sponsorModule"] = function (module, topic) {
+        var obj = {};
+
+        if (module !== undefined && module !== null) {
+            obj.module = module;
+        }
+
+        if (topic !== undefined && topic !== null) {
+            obj.topic = topic;
+        }
+
+        _lastAdPlaceholder.attr("id", "bbccom_module_" + module);
+        _lastAdPlaceholder.addClass("bbccom_display_none").addClass("bbccom_sponsor");
+        _lastAdPlaceholder.prepend('<div class="bbccom_text">In association with</div>');
+
+        $bbcAdverts.write("module_" + module, false, obj);
+    };
+
+    ads["sponsorModule-onload"] = function (placeholder, module, sectionPath) {
+        $bbcAdverts.show("module_" + module);
+    };
+
+    // Sponsor Section/Subsection
+    ads["sponsor"] = function (type) {
+        var sponsorText = "In association with";
+
+        _lastAdPlaceholder.attr("id", "bbccom_sponsor_" + type);
+        _lastAdPlaceholder.addClass("bbccom_display_none").addClass("bbccom_sponsor");
+        _lastAdPlaceholder.prepend('<div class="bbccom_text">' + sponsorText + '</div>');
+
+        $bbcAdverts.write("sponsor_" + type, false);
+    };
+
+    ads["sponsor-onload"] = function (placeholder, type) {
+        $bbcAdverts.show("sponsor_" + type);
+    };
+
+    // Google AdSense
+    ads["adSense"] = function (slot) {
+        window.bbc_adsense_slot = "adsense_" + slot;
+        window.bbc_adsense_country = (bbc.fmtj.page.country == "us") ? bbc.fmtj.page.country : "rest";
+
+        _lastAdPlaceholder.attr("id", "bbccom_adsense_" + slot);
+        _lastAdPlaceholder.addClass("bbccom_display_none").addClass("bbccom_adsense");
+
+        $bbcAdverts.show("adsense_" + slot);
+
+        document.write('<script language="JavaScript" src="' + BBC.adverts.getScriptRoot() + 'adsense_write.js"><\/script>');
+    };
+
+    ads["adSense-onload"] = function (placeholder, slot) {
+        $bbcAdverts.show("adsense_" + slot);
+    };
+
+    // Partner Buttons
+    ads["partnerButtons"] = function (cols, rows) {
+
+        _lastAdPlaceholder.attr("id", "bbccom_partner_buttons");
+        _lastAdPlaceholder.addClass("bbccom_display_none");
+        _lastAdPlaceholder.prepend('<div class="bbccom_text">Advertising Partners</div>');
+
+        var c, r, n = 1;
+
+        for (c = 0; c < cols; c++) {
+            for (r = 0; r < rows; r++) {
+                document.write('<div id="bbccom_partner_button' + n + '" class="bbccom_partner_button">');
+                document.write('<script type="text/javascript">BBC.adverts.write("partner_button' + n + '",false);</script>');
+                document.write('</div>');
+                document.write('<script type="text/javascript">BBC.adverts.show("partner_button' + n++ + '");</script>');
+            }
+        }
+    };
+
+    ads["partnerButtons-onload"] = function (placeholder, cols, rows) {
+        $bbcAdverts.showPartnerButtons();
+    };
+
+    // register the view object with the $render functionality
+    bbc.fmtj.components.registerNamespace($view);
+})();

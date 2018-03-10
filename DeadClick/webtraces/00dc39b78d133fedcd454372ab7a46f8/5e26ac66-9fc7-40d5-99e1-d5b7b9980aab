@@ -1,0 +1,671 @@
+try{console.log("init console... done");}catch(e){console={log:function(){}};}
+
+/* onload handler */
+var chrysler = {};
+var window_onload = new Array;
+var onloadRef = window.onload;
+
+/*
+    window.ie - will be set to true if the current browser is internet explorer (any).
+	window.ie6 - will be set to true if the current browser is internet explorer 6.
+	window.ie7 - will be set to true if the current browser is internet explorer 7.
+	window.khtml - will be set to true if the current browser is Safari/Konqueror.
+	window.gecko - will be set to true if the current browser is Mozilla/Gecko.
+*/
+
+if (window.ActiveXObject){ window.ie = window[window.XMLHttpRequest ? 'ie7' : 'ie6'] = true;
+}else if (document.childNodes && !document.all && !navigator.taintEnabled){ window.khtml = true;
+}else if (document.getBoxObjectFor != null){ window.gecko = true;};
+	
+	
+window.onload = function() {
+	
+  if(onloadRef != null) {
+	 
+    onloadRef();
+  }
+	//for(var i =  window_onload.length; i >= 0; i--){ //Why is this running backwards?
+	for(var i = 0; i < window_onload.length; i++){
+    eval( window_onload[i]);
+
+  }
+  //setPageViewVariables();
+};
+
+function onload_register(func){
+ window_onload.push(func);
+ 
+}
+/* end onload handler */
+
+
+
+
+// browser detection
+function browserStats() {
+  var ua = " " + navigator.userAgent.toLowerCase();
+  this.nn = ua.indexOf( "mozilla" ) > 0;
+  this.safari = ua.indexOf( "safari" ) > 0;
+  ua.indexOf( "compatible" ) > 0 ? this.nn = false : "";
+  this.ie = ua.indexOf( "msie" ) > 0;
+  this.version = parseInt( navigator.appVersion );
+  this.mac = ua.indexOf( "mac" ) > 0;
+  this.ie ? ua.indexOf( "msie 5" ) > 0 ? this.version = 5 : "" : "";
+  this.ie ? ua.indexOf( "msie 6" ) > 0 ? this.version = 6 : "" : "";
+  return this;
+}
+
+var b = new browserStats();
+
+// get proper domain for global navigation images and links
+function getDomain( argLink ) {
+    var curUrl = document.location.href;
+    var newUrl = "";
+    if( curUrl.indexOf( "iw-mount" ) >= 0 ) {
+        // preserve virtualization
+        newUrl = "";
+    } else if( curUrl.indexOf( "://test" ) >= 0 ) {
+        newUrl = "http://test.chrysler.com";
+    } else if( curUrl.indexOf( "://uat" ) >= 0 ) {
+        newUrl = "http://uat.chrysler.com";
+    } else {
+        newUrl = "http://www.chrysler.com";
+    }
+    if( argLink ) {
+        if( argLink.indexOf( "javascript:" ) >= 0 ) {
+            return argLink;
+        } else {
+            return newUrl + argLink;
+        }
+    } else {
+        return newUrl;
+    }
+}
+
+// route PSAM function call thru getDomain()
+function invokeURL(url){window.location=getDomain(url);}
+
+//Tracking Functions
+function trackHit(){
+  _hbSend();
+}
+
+function trackNamedHit(argLid,argPos){
+  var whiteSpace = / /g;
+  var newId = argLid.replace(whiteSpace,"+"); 
+  var newPos = argPos.replace(whiteSpace,"+"); 
+  _hbSet('lid',newId);
+  _hbSet('lpos',newPos);
+  trackHit();
+}
+
+//DHTML FUNCTIONS
+var dt=document; var _a=(dt.all)?1:0; var l=(!dt.getElementById && b.nn)?1:0;
+function getE(e,f){if(l){f=(f)?f:self;V=f.document.layers;if(V[e])return V[e];for(W=0;W<V.length;)t=getE(e,V[W++]);return t;}if(_a)return dt.all[e];return dt.getElementById(e);}
+function showE(e){e=getE(e);if(l)e.visibility='show';else e.style.visibility='visible';}
+function hideE(e){e=getE(e);if(l)e.visibility='hide';else e.style.visibility='hidden';}
+function getX(e){e=getE(e);if(l)return e.left;else return e.style.left;}
+function setX(e,x){e=getE(e);if(l)e.left=x;else e.style.left=x;}
+function getY(e){e=getE(e);if(l)return e.top;else return e.style.top;}
+function setY(e,y){e=getE(e);if(l)e.top=y;else e.style.top=y;}
+function setZ(e,z){e=getE(e);if(l)e.zIndex=z;else e.style.zIndex=z;}
+function setW(e,w){e=getE(e);if(l)e.clip.width=w;else e.style.width=w;}
+function getW(e){e=getE(e);if(l)return e.document.width;if(_a)return e.scrollWidth;return e.offsetWidth;}
+function setH(e,h){e=getE(e);if(l)e.clip.height=h;else e.style.height=h;}
+function getH(e){e=getE(e);if(l)return e.document.height;if(_a)return e.scrollHeight;return e.offsetHeight;}
+function setC(e,t,r,b,x){e=getE(e);if(l){X=e.clip;X.top=t;X.right=r;X.bottom=b;X.left=x;}else e.style.clip='rect('+t+' '+r+' '+b+' '+x+')';}
+function writeH(e,h){e=getE(e);if(l){Y=e.document;Y.write(h);Y.close();}else e.innerHTML=h;trackHit();}
+function getMouseX(e){if(_a)return event.clientX;return e.pageX;}
+function getMouseY(e){if(_a)return event.clientY;return e.pageY;}
+function getScrollX(){if(_a)return dt.body.scrollLeft;return window.pageXOffset;}
+function getScrollY(){if(_a)return dt.body.scrollTop;return window.pageYOffset;}
+
+
+//
+// the variable to hold the flash name
+var flashName;
+var seedID = Math.floor(Math.random()*11111);
+/*Turn on rendering div*/
+function showFlash(argSwf, argElement, argFlashVars, overrideLowBand) {
+	if($(argElement)) {
+		var individualID = Math.floor(Math.random()*11111);
+		/*
+			Prepare to load in the Flash rendering engine.
+			Uses Unobtrusive Flash Objects by Bobby van der Sluis
+			http://www.bobbyvandersluis.com/ufo/
+		*/
+		if(hasFlashMin() != false){
+			userData.bandwidth = "high";
+			Cookie.set('userdata', Json.toString(userData), {duration: 365, path: "/"});
+		}else{
+			userData.bandwidth = "low";
+			Cookie.set('userdata', Json.toString(userData), {duration: 365, path: "/"});
+		}
+		var isSafari = "";
+		navigator.userAgent.indexOf("Safari")>= 0 ? isSafari = true : isSafari = false;
+	
+		var isLTOpera92 = "";
+		navigator.userAgent.indexOf("Opera") >= 0 && parseFloat(navigator.appVersion) < 9.2 ? isLTOpera92 = true : isLTOpera92 = false;
+	
+		//Should Flash even be shown? (does user want it / can their browser support Flash 8 functionality)
+	
+		if ((userData.bandwidth != "low" && isLTOpera92 == false) || overrideLowBand ) {
+
+			var site_config = {
+				'host':location.host,
+				'src':location.href,
+				'title':document.title,
+				'isSafari':isSafari,
+				'isLTOpera92':isLTOpera92,
+				'EOF':'EOF'
+			};
+			
+			var flash_vars = '';
+			for (k in site_config) {
+				if (k != "toJSONString") {
+					flash_vars += "&"+k+"="+encodeURIComponent(site_config[k]);
+				}
+			}
+			// deep link
+			if (location.href.indexOf("?") != -1) {
+				flash_vars += "&"+location.href.substr(location.href.indexOf("?")+1);
+			}
+			// add local connect sound vars 
+			flash_vars += "&localconnect_seed="+seedID;
+			flash_vars += "&localconnect_id="+individualID;
+			flash_vars += "&argdiv_id="+argElement;
+			
+			//flash_vars += "&argMLC=" + hbx.mlc;
+			if ($(argElement)) {
+				var render_foo = document.getElementById(argElement);
+				render_foo.style.display = 'block';
+			}
+			// set the name fo the flash based on the div 
+			flashName = argElement+'_flash';
+			if (argFlashVars != null) {
+				flash_vars += argFlashVars;
+			}
+			var debug_html = getParameter('flash');
+			var flash_version;
+			if (debug_html == "false" && debug_html != "") {
+				flash_version = 10;
+			} else {
+				flash_version = 8;
+			}
+			
+			var FO = {
+				movie:argSwf, 
+				width:"100%", 
+				height:"100%", 
+				name:flashName, 
+				id:flashName, 
+				allowscriptaccess:"always", 
+				bgcolor:"#FFFFFF", 
+				scale:"noscale", 
+				wmode:"transparent", 
+				play:"true", 
+				quality:"high", 
+				menu:"false", 
+				majorversion:flash_version, 
+				build:"0", xi:"false", 
+				flashvars:flash_vars
+				};
+				var altImage='<a href="http://www.adobe.com/go/getflashplayer" target="_blank" name="&lid=Download Flash Now"><img src="'+ assetId +'" width="100%" border="0" name="main" /></a>';
+				
+			UFO.create(FO, argElement);
+			//alert('has flash');
+		} else {
+			//$(argElement).style.visibility = 'visible';
+			var altImage="<a href='http://www.adobe.com/shockwave/download/download.cgi?P1_Prod_Version=ShockwaveFlash&promoid=BIOW' target='_blank' title='Get Flash'><img id='no_flash' src='"+assetId+"'/></a>";
+			//alert(altImage);
+			$(argElement).setHTML(altImage);
+						
+			$(argElement).setStyles({visibility :'visible', height:parseInt($(argElement).getStyle('height'))});
+			$('no_flash').setStyles({border:'none', padding:'0px', margin:'0px'});
+			
+			
+		}
+		
+	}
+}
+
+function showFlash2(argSwf,argElement,argFlashVars,overrideLowBand){
+	if($(argElement)) {
+		//console.log("flash is in the house");
+
+		// if we have main content lets temporarily clone it for the print stylesheet
+	
+		var individualID = Math.floor(Math.random()*11111);
+		/*
+		    Prepare to load in the Flash rendering engine.
+		    Uses Unobtrusive Flash Objects by Bobby van der Sluis
+		    http://www.bobbyvandersluis.com/ufo/
+		*/
+
+		var isSafari = "";
+	 	navigator.userAgent.indexOf("Safari")>= 0 ? isSafari = true : isSafari = false;
+
+		var isLTOpera92 = "";
+	 	navigator.userAgent.indexOf("Opera") >= 0 && parseFloat(navigator.appVersion) < 9.2 ? isLTOpera92 = true : isLTOpera92 = false;
+
+		//Should Flash even be shown? (does user want it / can their browser support Flash 8 functionality)
+
+
+		if ((userData.bandwidth != "low" && isLTOpera92 == false) || overrideLowBand ) {
+		//CHECK WITH JASON LAW FOR WHAT NEEDS TO GO HERE
+		var site_config = {
+	    		'host':location.host,
+		    'src':location.href,
+		    'title':document.title,
+	    	'isSafari':isSafari,
+			'isLTOpera92':isLTOpera92,
+			'asset_path':'en',
+	    	'EOF':'EOF'
+		};
+
+		var flash_vars = '';
+		for(k in site_config) {
+			if (k != "toJSONString") {
+	    		flash_vars += "&" + k + "=" + encodeURIComponent(site_config[k]);
+			}
+		}
+
+		// deep link & query strings
+		if(location.href.indexOf("?") != -1) {
+			// if we have a src in the query we need to strip it out to avoid overwrite
+			if(location.href.indexOf("src=") != -1) {
+				// split on the src
+				var queryCleanedArray = location.href.split("src=");
+				// if we have additional values past the src value
+				if(queryCleanedArray[1].indexOf("&") != -1) {
+					// remove the src altogether
+					queryCleanedArray[1] = queryCleanedArray[1].substring(queryCleanedArray[1].indexOf("&")+1, queryCleanedArray[1].length);
+				} else {
+					// set the val to empty
+					queryCleanedArray[1] = "";
+				}
+				// join on empty
+				var cleanedVersion = queryCleanedArray.join("");
+				flash_vars += "&" + cleanedVersion.substr(location.href.indexOf("?")+1);
+			} else {
+				flash_vars += "&" + location.href.substr(location.href.indexOf("?")+1);
+			}
+		}
+
+		// add local connect sound vars
+		flash_vars += "&localconnect_seed=" + seedID;
+		flash_vars += "&localconnect_id=" + individualID;
+		if(userData.audiopref == "on"){
+			flash_vars += "&audio_pref=on";
+		}else if(userData.audiopref == "off"){
+			flash_vars += "&audio_pref=off";
+		}else{
+			flash_vars += "&audio_pref=off";
+		}
+		// add text size preference
+		if(typeof(userData.featureTextSize) == "number"){
+			flash_vars += "&text_size="+userData.featureTextSize;
+		}
+		
+		//flash_vars += "&argMLC=" + hbx.mlc;
+		if ( $(argElement) ) {
+			var render_foo = document.getElementById(argElement);
+			render_foo.style.display = 'block';
+		}
+
+		// set the name fo the flash based on the div
+		flashName = argElement +  '_flash';
+	
+		// pass the containing div height and width
+		flash_vars += "&stageWidth="+parseInt($(argElement).getStyle('width'))+"&stageHeight=" + parseInt($(argElement).getStyle('height')); 
+		
+		if(argFlashVars != null) {
+			
+			// check if we need to pass the entire combined user data object
+			
+			if(argFlashVars.indexOf("passUserData=true") != -1) {
+				flash_vars += "&cookieUserData=" + getCombinedUserData();
+			}
+			
+			flash_vars += argFlashVars;
+		}
+
+		var debug_html = getParameter('flash');
+		var flash_version;
+		if(debug_html == "false" && debug_html !=  ""){
+			flash_version = 10;
+		}else{
+			flash_version = 8;
+		}
+
+		var FO = {
+		    movie:        argSwf,
+		    width:        "100%",
+		    height:       "100%",
+		    name:	  	   flashName,
+		    id:		  flashName,
+		    allowscriptaccess:"always",
+		    bgcolor:      "#FFFFFF",
+		    scale:        "noscale",
+		    wmode:        "transparent",
+		    play:         "true",
+		    quality:      "high",
+		    menu:         "false",
+		    majorversion: flash_version,
+		    build:        "0",
+		    xi:           "false",
+		    flashvars:    flash_vars
+		};
+		UFO.create(FO, argElement);
+
+		//these 2 lines are handled in the UFO.create function.
+		//var renderElement = document.getElementById(argElement);
+		//renderElement.style.visibility = 'visible';
+		} else {
+			$(argElement).style.visibility = 'visible';
+			// the promo div had this class initially, but older browsers would improperly place the div when it conatined Flash.
+		}
+	}
+}
+
+// the variable to hold the flash name
+var flashName;
+var seedID = Math.floor(Math.random()*11111);
+/*Turn on rendering div*/
+
+
+var userData = new Object;
+function getUserData(){
+
+	cookieUserData = Cookie.get('userdata');
+
+	if(cookieUserData) {
+		//Decompress JSON values of userData
+		userData = eval('(' + cookieUserData + ')');
+	}
+
+	if(Cookie.get('zipcode')) {
+		userData.zipcode = Cookie.get('zipcode');
+	}
+
+	//Bake the userData cookie
+	Cookie.set('userdata', Json.toString(userData), {duration: 365, path: "/"});
+
+}
+
+function showFlash10(argSwf,argElement,argFlashVars,overrideLowBand,overrideFlashVersion){
+	if($(argElement)) {
+		// if we have main content lets temporarily clone it for the print stylesheet
+		if(argElement == "main_content") {
+			if ($(argElement).getFirst() && $('promo_background')){
+				if ($(argElement).getFirst().getTag() == 'map') {
+					var clone = $(argElement).getElement('img').clone().injectAfter('promo_background');
+				}
+				else {
+					var clone = $(argElement).getFirst().clone().injectAfter('promo_background');
+				}
+
+				clone.addClass('print');
+				clone.setProperty('id', 'clone');
+				var myArray = $$('#clone li');
+				for(var i=0; i<myArray.length; i++) {
+					myArray[i].setProperty('id', '');
+				}
+				myArray = $$('#clone a');
+				for(var i=0; i<myArray.length; i++) {
+					myArray[i].setProperty('id', '');
+				}
+				myArray = $$('#clone div');
+				for(var i=0; i<myArray.length; i++) {
+					myArray[i].setProperty('id', '');
+				}
+				myArray = $$('#clone ul');
+				for(var i=0; i<myArray.length; i++) {
+					myArray[i].setProperty('id', '');
+				}
+				myArray = $$('#clone p');
+				for(var i=0; i<myArray.length; i++) {
+					myArray[i].setProperty('id', '');
+				}
+				myArray = $$('#clone span');
+				for(var i=0; i<myArray.length; i++) {
+					myArray[i].setProperty('id', '');
+				}
+			}
+		}
+
+		if(argElement == "model_image") {
+			var clone = $(argElement).getFirst().clone().injectAfter('colors');
+			clone.addClass('print');
+		}
+
+		// cache buster for IE7 redraw issues
+		if(argElement == "promos") {
+			argSwf+= "?r=" + new Date().getTime();
+		}
+
+		var individualID = Math.floor(Math.random()*11111);
+		/*
+		    Prepare to load in the Flash rendering engine.
+		    Uses Unobtrusive Flash Objects by Bobby van der Sluis
+		    http://www.bobbyvandersluis.com/ufo/
+		*/
+
+		var isSafari = "";
+		navigator.userAgent.indexOf("Safari")>= 0 ? isSafari = true : isSafari = false;
+
+		var isLTOpera92 = "";
+		navigator.userAgent.indexOf("Opera") >= 0 && parseFloat(navigator.appVersion) < 9.2 ? isLTOpera92 = true : isLTOpera92 = false;
+
+		//Should Flash even be shown? (does user want it / can their browser support Flash 8 functionality)
+
+		if ((userData.bandwidth != "low" && isLTOpera92 == false) || overrideLowBand ) {
+
+			var site_config = {
+				'host':location.host,
+				'src':location.href,
+				'title':document.title,
+				'isSafari':isSafari,
+				'isLTOpera92':isLTOpera92,
+				'asset_path':'en',
+				'EOF':'EOF'
+			};
+
+			if(typeof(userData.zipcode) != "undefined") {
+				site_config['zip'] = userData.zipcode;
+			}
+			if( (typeof(cur_year) !="undefined" && cur_year != '') && (typeof(cur_vehicle) !="undefined" && cur_vehicle != '') ) {
+				site_config['cur_vehicle'] = vehicle_data[cur_year][cur_vehicle].apps.trilogy;
+			}
+			if(typeof(brand) != "undefined") {
+				site_config['brand'] = brand;
+			}
+			if(typeof(embedded_disclaimers) != "undefined") {
+				site_config['embedded_disclaimers'] = Json.toString(embedded_disclaimers);
+			}
+
+			var flash_vars = '';
+			for(k in site_config) {
+				if (k != "toJSONString") {
+					flash_vars += "&" + k + "=" + encodeURIComponent(site_config[k]);
+				}
+			}
+			// deep link & query strings
+			if(location.href.indexOf("?") != -1) {
+				// if we have a src in the query we need to strip it out to avoid overwrite
+				if(location.href.indexOf("src=") != -1) {
+					// split on the src
+					var queryCleanedArray = location.href.split("src=");
+					// if we have additional values past the src value
+					if(queryCleanedArray[1].indexOf("&") != -1) {
+						// remove the src altogether
+						queryCleanedArray[1] = queryCleanedArray[1].substring(queryCleanedArray[1].indexOf("&")+1, queryCleanedArray[1].length);
+					}
+					else {
+						// set the val to empty
+						queryCleanedArray[1] = "";
+					}
+					// join on empty
+					var cleanedVersion = queryCleanedArray.join("");
+					flash_vars += "&" + cleanedVersion.substr(location.href.indexOf("?")+1);
+				}
+				else {
+					flash_vars += "&" + location.href.substr(location.href.indexOf("?")+1);
+				}
+			}
+
+			// add local connect sound vars
+			flash_vars += "&localconnect_seed=" + seedID;
+			flash_vars += "&localconnect_id=" + individualID;
+			if (userData.audiopref == "on"){
+				flash_vars += "&audio_pref=on";
+			}
+			else if (userData.audiopref == "off"){
+				flash_vars += "&audio_pref=off";
+			}
+			else {
+				flash_vars += "&audio_pref=off";
+			}
+			// add text size preference
+			if (typeof(userData.featureTextSize) == "number"){
+				flash_vars += "&text_size="+userData.featureTextSize;
+			}
+
+			if ($(argElement)) {
+				var render_foo = document.getElementById(argElement);
+				render_foo.style.display = 'block';
+			}
+
+			// set the name fo the flash based on the div
+			flashName = argElement +  '_flash';
+
+			// pass the containing div height and width
+			flash_vars += "&stageWidth="+parseInt($(argElement).getStyle('width'), 10)+"&stageHeight=" + parseInt($(argElement).getStyle('height'), 10); 
+
+			if(argFlashVars != null) {
+				// check if we need to pass the entire combined user data object
+				if(argFlashVars.indexOf("passUserData=true") != -1) {
+					flash_vars += "&cookieUserData=" + getCombinedUserData();
+				}
+
+				flash_vars += argFlashVars;
+			}
+
+			var debug_html = getParameter('flash');
+			var flash_version;
+			if(debug_html == "false" && debug_html !=  ""){
+				flash_version = 11;
+			}
+			else if (overrideFlashVersion != null){
+				flash_version = overrideFlashVersion;
+			}
+			else {
+				flash_version = 8;
+			}
+
+			var flashvars = false;
+			var params = {
+				bgcolor:      "#FFFFFF",
+				scale:        "noscale",
+				wmode:        "transparent",
+				play:         "true",
+				quality:      "high",
+				menu:         "false",
+				flashvars: flash_vars
+			};
+			var attributes = {
+				id:   flashName,
+				name: flashName
+			};
+
+			//SWFObject replaces the entire DIV, so lets create an injection DIV inside our target
+			var flash_injetcion_id = argElement + "__flash_injection";
+			var flash_injection_element = new Element('div', { 'id': flash_injetcion_id } );
+
+			$(argElement).empty();
+			$(argElement).adopt(flash_injection_element);
+
+			flash_version_string = flash_version.toString() + ".0.0";
+			swfobject.embedSWF(argSwf,
+								flash_injetcion_id,
+								"100%",
+								"100%",
+								flash_version_string,
+								"expressInstall.swf",
+								flashvars,
+								params,
+								attributes);
+			$(argElement).style.visibility = 'visible';
+		}
+		else {
+			$(argElement).style.visibility = 'visible';
+			// the promo div had this class initially, but older browsers would improperly place the div when it conatined Flash.
+			if ($('promos')){
+				$('promos').style.overflow = 'auto';
+				setlowbanddaalink();
+			}
+		}
+	}
+}
+
+// External Interface hack for IE out of memory error
+function nullFlashLoopFunction() { __flash_savedUnloadHandler = null; }
+window.onbeforeunload = nullFlashLoopFunction;
+
+function hasFlashMin(){
+	var debug_html = getParameter('flash');
+	var flash_version = 8;
+	if(debug_html == "false" && debug_html !=  ""){
+		flash_version = 10;
+	}
+	flash_version_string = flash_version.toString() + ".0.0";
+	return(swfobject.hasFlashPlayerVersion(flash_version_string));
+}
+
+/*Universal function to get parameter from url srting */
+function getParameter(aP){var qS = new String(location.search.substring(1,location.search.length));var p = qS.split("&");var val = "";if(aP){for(i=0;i<p.length;i++){if(p[i].split( "=" )[0] == aP){val = p[i].split( "=" )[1];}}return val;}}
+
+
+function iePngFix() {
+	for (var i=0; i<document.images.length; i++) {
+		var img = document.images[i];
+		var imgName = img.src.toUpperCase();
+		if (imgName.substring(imgName.length-3, imgName.length) == "PNG") {
+			var imgID = (img.id) ? "id='" + img.id + "' " : "";
+			var imgClass = (img.className) ? "class='" + img.className + "' " : "";
+			var imgTitle = (img.title) ? "title='" + img.title + "' " : "title='" + img.alt + "' ";
+			var imgStyle = "display:inline-block;" + img.style.cssText + ";";
+			var imgWidth = "width: " + ((img.width) ? img.width + "px;" : "100%;");
+			var imgHeight = "height: " + ((img.height) ? img.height + "px;" : "100%;");
+
+			if (img.align == "left")	imgStyle = "float:left;" + imgStyle;
+			if (img.align == "right")	imgStyle = "float:right;" + imgStyle;
+			if (img.parentElement.href)	imgStyle = "cursor:hand;" + imgStyle;
+
+			var strNewHTML = "<span " + imgID + imgClass + imgTitle
+				+ " style=\"" + imgWidth + imgHeight + imgStyle
+				+ " filter:progid:DXImageTransform.Microsoft.AlphaImageLoader"
+				+ "(src='" + img.src + "', sizingMethod='image');\"></span>";
+			img.outerHTML = strNewHTML;
+			i = i-1;
+		}
+	}
+}
+
+if (window.ie6){onload_register('iePngFix();');}
+
+// ==========================================================
+// data send to flash() -
+// ==========================================================
+function getFlashDataFromDiv(divID, flashDivID)
+{
+	// set the sizes
+	jQuery('#'+flashDivID).height(jQuery('#'+divID).height());
+	
+	// feed the data
+	var page_XHTML = "<?xml version='1.0' encoding='UTF-8'?>";
+	page_XHTML += cllc.dom2xml.convert('#' + divID);
+	//console.log(page_XHTML);
+	window.document[flashDivID+"_flash"].setData(page_XHTML);
+	
+}

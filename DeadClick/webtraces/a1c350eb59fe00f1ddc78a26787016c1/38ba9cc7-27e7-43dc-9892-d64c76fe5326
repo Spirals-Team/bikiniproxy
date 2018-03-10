@@ -1,0 +1,33 @@
+// JavaScript Document
+//改變新聞圖片
+var pic = new Array();
+var con = new Array();
+var attr = new Array();
+function preloadImg() {
+	var d=document;
+	var imgNum=0;
+	if(d.images){
+		if(!d.p) d.p=new Array();
+		var i;
+		var j=d.p.length;
+		var a=preloadImg.arguments;
+		for(i=0; i<a.length; i++){
+			d.p[j]=new Image;
+			d.p[j++].src=a[i];
+			d.p[j-1].onload=function(){imgNum++};
+		}
+	}
+}
+function chpic(o){
+	var reg = /\/\d+$/
+    $("#npic").attr("src",pic[o]);
+	$("#con").html(con[o]);
+	$("#attr").html(attr[o]);
+	var href = $(".main_ipic a:first").attr("href");
+	var no = pno[o];
+	href = href.replace(reg, "/"+no);
+	$(".main_ipic a:first").attr("href",href);
+	$(".enlarge a:first").attr("href",href);
+	$('#page_cnt a').removeClass('select');
+	$($('#page_cnt a')[o]).addClass('select');
+}

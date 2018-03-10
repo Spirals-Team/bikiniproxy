@@ -1,0 +1,475 @@
+
+/* ManyThings 2010-2012, 2016*/
+if(top.location!=self.location){top.location=self.location;} 
+function betterbrowsers(){
+if(navigator.appName.indexOf('Microsoft')!=-1){
+document.write('<br />Many websites work better using a browser other than Internet Explorer.&nbsp; &nbsp; &nbsp;<br />The popular free browsers are <a href="http://www.mozilla.com/firefox/">Firefox</a>, <a href="http://www.google.com/chrome">Chrome</a>, <a href="http://www.opera.com/">Opera</a> and <a href="http://www.apple.com/safari/">Safari</a>&nbsp; &nbsp; &nbsp;');
+}
+}
+function notexplorer(){
+if(navigator.appName.indexOf('Microsoft')!=-1){
+document.write('<hr noshade size=10 />This part of the web site may not work with Internet Explorer.');
+betterbrowsers();
+document.write('<hr noshade size=10 />');
+}
+}
+function foot(){
+document.write('<div id="ckannouncement"><br />If something  on our web site doesn\'t load properly, try clicking your "reload" button.&nbsp; &nbsp; &nbsp;<br />If it still doesn\'t work, please send a <a href="http://www.manythings.org/z/bug2014.html">bug report</a>. &nbsp; &nbsp; &nbsp;');
+var end = new Date('2014-08-31');
+var now = new Date();
+if (end - now > 0) {
+document.write('<center><hr /><font size="5">We will be offline.</font><br />Our web server will be offline August 17, 27 &amp; 31, 2014 during daytime working hours in Japan.<br />We\'re sorry for the inconvenience.</center><hr />');
+}
+/*
+if(navigator.userAgent.toLowerCase().indexOf('chrome') > -1){
+document.write('<br />Chrome is known to have problems with Flash.&nbsp; &nbsp; &nbsp;');
+}
+*/
+betterbrowsers();
+document.write('</div>');
+}
+document.write('<link rel="stylesheet" type="text/css" href="http://yui.yahooapis.com/combo?2.8.0r4/build/reset-fonts/reset-fonts.css&2.8.0r4/build/base/base-min.css&2.8.0r4/build/menu/assets/skins/sam/menu.css"><script type="text/javascript" src="http://yui.yahooapis.com/combo?2.8.0r4/build/yahoo-dom-event/yahoo-dom-event.js&2.8.0r4/build/container/container_core-min.js&2.8.0r4/build/menu/menu-min.js"></script><link rel=stylesheet type="text/css" href="http://www.manythings.org/z/d.css">');
+function flashcheck(){
+/* Added 2017-01-17 */
+var hasFlash = false;
+try {
+var fo = new ActiveXObject('ShockwaveFlash.ShockwaveFlash');
+if (fo) {
+hasFlash = true;
+}
+} catch (e) {
+if (navigator.mimeTypes
+&& navigator.mimeTypes['application/x-shockwave-flash'] != undefined
+&& navigator.mimeTypes['application/x-shockwave-flash'].enabledPlugin) {
+hasFlash = true;
+}
+}
+//OLDER  Updated from this
+//if (navigator.mimeTypes && navigator.mimeTypes["application/x-shockwave-flash"]){
+if (hasFlash){
+}else{
+document.write('<div class="fullbox yel"><center><font size="2"><b>This page requires Flash.</b><br />If your device doesn\'t support Flash, please see our list of<br /><a href="http://www.manythings.org/e/requirements.html">Things That Don\'t Require Flash</a>.</font></center></div>');
+}
+}
+function mobile(){
+/* if (
+(navigator.userAgent.indexOf('iPhone') != -1) || (navigator.userAgent.indexOf('iPod') != -1) || (navigator.userAgent.indexOf('iPad') != -1) || (navigator.userAgent.indexOf('Blackberry') != -1) || (navigator.userAgent.indexOf('Android') != -1) 
+) {
+document.write('<div class="fullbox yel"><h1><font size="6">** Mobile Device Alert **<br /><br />This might not work on<br />iPhones, iPads<br />and other devices</a><br />that don\'t support Flash.</font></h1></div>');
+}
+*/
+flashcheck();
+}
+function menu(){
+/* Set to true for non-click drop down autosubmenudisplay:false,*/
+YAHOO.util.Event.onContentReady("manythings",function(){
+var oMenuBar = new YAHOO.widget.MenuBar("manythings",{autosubmenudisplay:false,hidedelay:750,lazyload:true });oMenuBar.render();});
+}
+//CK embed swf 2010 h and w are optonal
+function swf(swf,w,h){
+flashcheck();
+var defaultWidth = "100%";
+var defaultHeight = "82%";
+/* Explorer and Opera Can't take Percent Heights */
+if(navigator.appName.indexOf('Microsoft')!=-1){
+var defaultHeight = "480";
+}
+if(navigator.userAgent.indexOf("Opera")!=-1){
+var defaultHeight = "480";
+}
+var w = w || defaultWidth;
+var h = h || defaultHeight;
+document.write('<center>');
+/*
+if(navigator.userAgent.toLowerCase().indexOf('chrome') > -1){
+document.write('<font size="2" color="red">Chrome sometimes has problems with Flash. If this doesn\'t work well, try another browser such as <a href="http://www.mozilla.com/firefox/">Firefox</a> or <a href="http://www.apple.com/safari/">Safari</a>.</font><br />');
+}
+*/
+document.write('<object width="'+w+'" height="'+h+'"><param name="movie" value="'+swf+'" /><param name="allowFullScreen" value="true" /><embed wmode="transparent" src="'+swf+'"type="application/x-shockwave-flash" allowfullscreen="true" width="'+w+'" height="'+h+'"></embed><param name="wmode" value="transparent" /></object></center>');
+}
+//CK 2008-10-20
+// 2010-07-27 Quick VOA Fix
+//2011-01-08 Fix for iPad (OK), iPhone (not so good)
+function MP3Player(b) {
+re = new RegExp("voanews.com/mediaassets/specialenglish/");
+if (b.match(re)) {
+a = "<table><tr><td bgcolor='#ffffcc'><b>Maybe the MP3 file won't play.</b><br />In July of 2010, VOA moved many of their MP3 files.";
+c = b.toLowerCase();
+d = c.replace(/mediaassets\/specialenglish\//,'MediaAssets2/learningenglish/');
+//d = c.replace(/Audio\//g,'audio/');
+//e = d.replace(/Mp3/g,'mp3');
+//a+= "<br />It might possibly be <a href='"+d+"'>this link</a><br />";
+a+='<br />This player will try to find the MP3 file..<br /><object align="middle" type="application/x-shockwave-flash" data="http://www.manythings.org/mp3/player.swf" id="audioplayer1" height="24" width="290"><param name="movie" value="http://www.manythings.org/mp3/player.swf"><param name="FlashVars" value="playerID=1&amp;soundFile=';
+a+=d;
+a+='"><param name="quality" value="high"><param name="menu" value="false"><param name="wmode" value="transparent"></object>';
+a+= "<br />You can <a href='"+d+"'>download this MP3 file</a> by right-clicking or option-clicking.<br />";
+a+="</td></tr></table>";
+a+="This link is their pre-July 2010 link, so it probably does not work.";      
+} else {
+if ((navigator.userAgent.indexOf('iPhone') != -1) || (navigator.userAgent.indexOf('iPod') != -1) || (navigator.userAgent.indexOf('iPad') != -1)) {
+document.write('<script type="text/javascript" src="http://www.manythings.org/z/audiojs/audio.min.js">');
+document.write('<script>audiojs.events.ready(function(){ audiojs.createAll();});</script>');
+a='<center><audio src="';
+a+=b;
+a+='"></audio></center>';
+}else{
+a='<object align="middle" type="application/x-shockwave-flash" data="http://www.manythings.org/mp3/player.swf" id="audioplayer1" height="24" width="290"><param name="movie" value="http://www.manythings.org/mp3/player.swf"><param name="FlashVars" value="playerID=1&amp;soundFile=';
+a+=b;
+a+='"><param name="quality" value="high"><param name="menu" value="false"><param name="wmode" value="transparent"></object>';
+}
+}
+document.write(a);
+}
+//CK 2008-10-20  // PRE-2010-07
+function MP3Player_OLDER(b) {
+a='<object align="middle" type="application/x-shockwave-flash" data="http://www.manythings.org/mp3/player.swf" id="audioplayer1" height="24" width="290"><param name="movie" value="http://www.manythings.org/mp3/player.swf"><param name="FlashVars" value="playerID=1&amp;soundFile=';
+a+=b;
+a+='"><param name="quality" value="high"><param name="menu" value="false"><param name="wmode" value="transparent"></object>';
+document.write(a);
+}
+//document.write('Interesting Things for ESL Students');
+b = '<li class="yuimenuitem"><a class="yuimenuitemlabel" href="http://';
+c = '<li class="yuimenubaritem"><a class="yuimenubaritemlabel" href="#">';
+d='</ul></div></div></li>';
+e= ' class="yuimenu"><div class="bd"><ul>';
+f='<li class="yuimenuitem"><a class="yuimenuitemlabel" href="#">';
+g='www.manythings.org/';
+h=g+'vocabulary/games/';
+i='</a></li>'
+j=' class="yuimenu"><div class="bd"><ul class="first-of-type">'
+//a='<div id="bd"><div id="yui-main"><div class="yui-b"><div id="manythings" class="yuimenubar yuimenubarnav"><div class="bd"><ul class="first-of-type">';
+a='<div id="bd"><div id="yui-main"><div class="yui-b"><div id="manythings" class="yuimenubar yuimenubarnav"><div class="bd mainmenu noprinter"><ul class="first-of-type">';
+a+='<li class="yuimenubaritem first-of-type"><a class="yuimenubaritemlabel" href="#">www.ManyThings.org</a><div id="kelly1"'+e;
+a+=b+g+'">Home'+i;
+//a+=b+g+'rss/">What\'s New / RSS Feed'+i;
+//a+=b+g+'tesl/">Things for Teachers'+i;
+a+=b+g+'e/sections.html">List of All Sections'+i;
+a+=b+g+'e/about.html">About / Contact'+i;
+//a+=b+g+'j/">日本語のナビゲーション・メニュー'+i;
+a+=d;
+a+=c+'Vocabulary</a><div id="kelly2"'+e;
+a+=f+'Word Lists</a><div id="lists" '+j;
+a+=b+g+'vocabulary/lists/a/">ESL Basic'+i;
+a+=b+g+'vocabulary/lists/b/">Beginners\' Short Lists'+i;
+a+=b+g+'vocabulary/lists/c/">Comprehensive Lists'+i;
+a+=b+g+'vocabulary/lists/e/">ESP'+i;
+a+=b+g+'vocabulary/lists/l/">Large Lists'+i;
+a+=b+g+'vocabulary/lists/z/">Business English'+i;
+a+=b+g+'vocabulary/lists/2/">Word Pairs'+i;
+a+=d;
+/*
+a+=f+'Games 1</a><div id="gm1" '+j;
+a+=f+'Click the Letters</a><div id="click" '+j;
+a+=b+h+'a/">ESL Basic'+i;
+a+=b+h+'a/?f=b">Beginners\' Short Lists'+i;
+a+=b+h+'a/?f=c">Comprehensive Lists'+i;
+a+=b+h+'a/?f=e">ESP'+i;
+a+=b+h+'a/?f=l">Large Lists'+i;
+a+=b+h+'a/?f=z">Business English'+i;
+a+=d;
+a+=f+'Flash Hangman</a><div id="fhm" '+j;
+a+=b+h+'k/">ESL Basic'+i;
+a+=b+h+'k/?f=b">Beginners\' Short Lists'+i;
+a+=b+h+'k/?f=c">Comprehensive Lists'+i;
+a+=b+h+'k/?f=e">ESP'+i;
+a+=b+h+'k/?f=l">Large Lists'+i;
+a+=b+h+'k/?f=z">Business English'+i;
+a+=d;
+a+=f+'Spelling and Typing</a><div id="sat" '+j;
+a+=b+h+'l/">ESL Basic'+i;
+a+=b+h+'l/?f=b">Beginners\' Short Lists'+i;
+a+=b+h+'l/?f=c">Comprehensive Lists'+i;
+a+=b+h+'l/?f=e">ESP'+i;
+a+=b+h+'l/?f=l">Large Lists'+i;
+a+=b+h+'l/?f=z">Business English'+i;
+a+=d;
+a+=f+'Word Drop</a><div id="wdg" '+j;
+a+=b+h+'b/">ESL Basic'+i;
+a+=b+h+'b/?f=b">Beginners\' Short Lists'+i;
+a+=b+h+'b/?f=c">Comprehensive Lists'+i;
+a+=b+h+'b/?f=e">ESP'+i;
+a+=b+h+'b/?f=l">Large Lists'+i;
+a+=b+h+'b/?f=z">Business English'+i;
+a+=d;
+a+=f+'Every Other Letter</a><div id="eol" '+j;
+a+=b+h+'c/">ESL Basic'+i;
+a+=b+h+'c/?f=b">Beginners\' Short Lists'+i;
+a+=b+h+'c/?f=c">Comprehensive Lists'+i;
+a+=b+h+'c/?f=e">ESP'+i;
+a+=b+h+'c/?f=l">Large Lists'+i;
+a+=b+h+'c/?f=z">Business English'+i;
+a+=d;
+a+=f+'First and Last</a><div id="fal" '+j;
+a+=b+h+'d/">ESL Basic'+i;
+a+=b+h+'d/?f=b">Beginners\' Short Lists'+i;
+a+=b+h+'d/?f=c">Comprehensive Lists'+i;
+a+=b+h+'d/?f=e">ESP'+i;
+a+=b+h+'d/?f=l">Large Lists'+i;
+a+=b+h+'d/?f=z">Business English'+i;
+a+=d;
+a+=f+'Guess the Word</a><div id="gtw" '+j;
+a+=b+h+'e/">ESL Basic'+i;
+a+=b+h+'e/?f=b">Beginners\' Short Lists'+i;
+a+=b+h+'e/?f=c">Comprehensive Lists'+i;
+a+=b+h+'e/?f=e">ESP'+i;
+a+=b+h+'e/?f=l">Large Lists'+i;
+a+=b+h+'e/?f=z">Business English'+i;
+a+=d;
+a+=f+'Dictionary Flashcards</a><div id="dfc" '+j;
+a+=b+h+'f/">ESL Basic'+i;
+a+=b+h+'f/?f=b">Beginners\' Short Lists'+i;
+a+=b+h+'f/?f=c">Comprehensive Lists'+i;
+a+=b+h+'f/?f=e">ESP'+i;
+a+=b+h+'f/?f=l">Large Lists'+i;
+a+=b+h+'f/?f=z">Business English'+i;
+a+=d;
+// End of sub
+a+=d;
+a+=f+'Games 2</a><div id="gm2" '+j;
+a+=f+'Catch the Spelling</a><div id="cts" '+j;
+a+=b+h+'g/">ESL Basic'+i;
+a+=b+h+'g/?f=b">Beginners\' Short Lists'+i;
+a+=b+h+'g/?f=c">Comprehensive Lists'+i;
+a+=b+h+'g/?f=e">ESP'+i;
+a+=b+h+'g/?f=l">Large Lists'+i;
+a+=b+h+'g/?f=z">Business English'+i;
+a+=d;
+a+=f+'WordWeb Games</a><div id="wwg" '+j;
+a+=b+h+'h/">ESL Basic'+i;
+a+=b+h+'h/?f=b">Beginners\' Short Lists'+i;
+a+=b+h+'h/?f=c">Comprehensive Lists'+i;
+a+=b+h+'h/?f=e">ESP'+i;
+a+=b+h+'h/?f=l">Large Lists'+i;
+a+=b+h+'h/?f=z">Business English'+i;
+a+=d;
+a+=f+'Word Drop</a><div id="wdg" '+j;
+a+=b+h+'b/">ESL Basic'+i;
+a+=b+h+'b/?f=b">Beginners\' Short Lists'+i;
+a+=b+h+'b/?f=c">Comprehensive Lists'+i;
+a+=b+h+'b/?f=e">ESP'+i;
+a+=b+h+'b/?f=l">Large Lists'+i;
+a+=b+h+'b/?f=z">Business English'+i;
+a+=d;
+a+=f+'SpeedWord</a><div id="swg" '+j;
+a+=b+h+'i/">ESL Basic'+i;
+a+=b+h+'i/?f=b">Beginners\' Short Lists'+i;
+a+=b+h+'i/?f=c">Comprehensive Lists'+i;
+a+=b+h+'i/?f=e">ESP'+i;
+a+=b+h+'i/?f=l">Large Lists'+i;
+a+=b+h+'i/?f=z">Business English'+i;
+a+=d;
+a+=f+'MatchWords</a><div id="mwg" '+j;
+a+=b+h+'j/">ESL Basic'+i;
+a+=b+h+'j/?f=b">Beginners\' Short Lists'+i;
+a+=b+h+'j/?f=c">Comprehensive Lists'+i;
+a+=b+h+'j/?f=e">ESP'+i;
+a+=b+h+'j/?f=l">Large Lists'+i;
+a+=b+h+'j/?f=z">Business English'+i;
+a+=d;
+a+=f+'Flash WordSearch</a><div id="fws" '+j;
+a+=b+h+'r/">ESL Basic'+i;
+a+=b+h+'r/?f=b">Beginners\' Short Lists'+i;
+a+=b+h+'r/?f=c">Comprehensive Lists'+i;
+a+=b+h+'r/?f=e">ESP'+i;
+a+=b+h+'r/?f=l">Large Lists'+i;
+a+=b+h+'r/?f=z">Business English'+i;
+a+=d;
+a+=f+'Missing Vowels Games</a><div id="nvg" '+j;
+a+=b+h+'w/">ESL Basic'+i;
+a+=b+h+'w/?f=b">Beginners\' Short Lists'+i;
+a+=b+h+'w/?f=c">Comprehensive Lists'+i;
+a+=b+h+'w/?f=e">ESP'+i;
+a+=b+h+'w/?f=l">Large Lists'+i;
+a+=b+h+'w/?f=z">Business English'+i;
+a+=d;
+// End of sub
+a+=d;
+a+=f+'Games 3</a><div id="gm3" '+j;
+a+=f+'No Consonants Games</a><div id="ncg" '+j;
+a+=b+h+'x/">ESL Basic'+i;
+a+=b+h+'x/?f=b">Beginners\' Short Lists'+i;
+a+=b+h+'x/?f=c">Comprehensive Lists'+i;
+a+=b+h+'x/?f=e">ESP'+i;
+a+=b+h+'x/?f=l">Large Lists'+i;
+a+=b+h+'x/?f=z">Business English'+i;
+a+=d;
+a+=f+'Shoot Down the Spelling</a><div id="sds" '+j;
+a+=b+h+'s/">ESL Basic'+i;
+a+=b+h+'s/?f=b">Beginners\' Short Lists'+i;
+a+=b+h+'s/?f=c">Comprehensive Lists'+i;
+a+=b+h+'s/?f=e">ESP'+i;
+a+=b+h+'s/?f=l">Large Lists'+i;
+a+=b+h+'s/?f=z">Business English'+i;
+a+=d;
+a+=f+'Bones Hangman</a><div id="jbh" '+j;
+a+=b+h+'n/">ESL Basic'+i;
+a+=b+h+'n/?f=b">Beginners\' Short Lists'+i;
+a+=b+h+'n/?f=c">Comprehensive Lists'+i;
+a+=b+h+'n/?f=e">ESP'+i;
+a+=b+h+'n/?f=l">Large Lists'+i;
+a+=b+h+'n/?f=z">Business English'+i;
+a+=d;
+a+=f+'AF\'s Scrambled Word</a><div id="asw" '+j;
+a+=b+h+'o/">ESL Basic'+i;
+a+=b+h+'o/?f=b">Beginners\' Short Lists'+i;
+a+=b+h+'o/?f=c">Comprehensive Lists'+i;
+a+=b+h+'o/?f=e">ESP'+i;
+a+=b+h+'o/?f=l">Large Lists'+i;
+a+=b+h+'o/?f=z">Business English'+i;
+a+=d;
+a+=f+'EH\'s Scrambled Word</a><div id="esw" '+j;
+a+=b+h+'p/">ESL Basic'+i;
+a+=b+h+'p/?f=b">Beginners\' Short Lists'+i;
+a+=b+h+'p/?f=c">Comprehensive Lists'+i;
+a+=b+h+'p/?f=e">ESP'+i;
+a+=b+h+'p/?f=l">Large Lists'+i;
+a+=b+h+'p/?f=z">Business English'+i;
+a+=d;
+a+=f+'Java WordSearch</a><div id="saw" '+j;
+a+=b+h+'q/">ESL Basic'+i;
+a+=b+h+'q/?f=b">Beginners\' Short Lists'+i;
+a+=b+h+'q/?f=c">Comprehensive Lists'+i;
+a+=b+h+'q/?f=e">ESP'+i;
+a+=b+h+'q/?f=l">Large Lists'+i;
+a+=b+h+'q/?f=z">Business English'+i;
+a+=d;
+a+=f+'McGrath\'s Hangman</a><div id="mhm" '+j;
+a+=b+h+'m/">ESL Basic'+i;
+a+=b+h+'m/?f=b">Beginners\' Short Lists'+i;
+a+=b+h+'m/?f=c">Comprehensive Lists'+i;
+a+=b+h+'m/?f=e">ESP'+i;
+a+=b+h+'m/?f=l">Large Lists'+i;
+a+=b+h+'m/?f=z">Business English'+i;
+a+=d;
+// End of sub
+a+=d;
+a+=b+g+'cs/">Crossword Puzzles'+i;
+*/
+a+=b+g+'mq/">Matching Quizzes'+i;
+a+=b+g+'lulu/">Games with Pictures (lulu)'+i;
+// BUGGY: a+=b+g+'vq/">Games with Pictures (vq)'+i;
+// OLD: a+=b+g+'fc/">Flash Flashcards'+i;
+//a+=b+g+'wm/">WordMeister'+i;
+a+=b+g+'wbg/">Word Based Games'+i;
+a+=b+g+'ww/">WordWeb Games with VOA Special English Words'+i;
+a+=b+g+'voa/words.htm">VOA Special English Word Book'+i;
+a+=b+g+'voa/words-frequency.htm">VOA Special English Words Color-coded'+i;
+a+=d;
+a+=c+'Reading (with Audio)</a><div id="kelly6"'+e;
+a+=b+g+'listen/">Listen and Read Along'+i;
+a+=b+g+'jokes/">Jokes'+i;
+a+=b+g+'">-'+i;
+a+=b+g+'voa/animals/">About Animals'+i;
+a+=b+g+'voa/health/">About Health'+i;
+a+=b+g+'voa/medical/">- For Medical Workers'+i;
+a+=b+g+'voa/music/">About Music'+i;
+a+=b+g+'voa/people/">About People (Biographies)'+i;
+a+=b+g+'voa/places/">About Places'+i;
+a+=b+g+'voa/sports/">About Sports'+i;
+a+=b+g+'voa/things/">About Things'+i;
+a+=b+g+'voa/history/">American History'+i;
+a+=b+g+'voa/america/">American Mosaic'+i;
+a+=b+g+'voa/stories/">American Stories'+i;
+a+=b+g+'voa/how/">How To Do Things'+i;
+a+=b+g+'voa/space/">Space Exploration'+i;
+a+=b+g+'voa/study/">Studying in America'+i;
+a+=b+g+'voa/usa/">This is America'+i;
+a+=b+g+'voa/words/">Words and Their Stories'+i;
+//a+=b+g+'voa/2011/">More Reports from 2011'+i;
+//a+=b+g+'voa/2010/">More Reports from 2010'+i;
+//a+=b+g+'voa/news/">VOA News in Standard English'+i;
+a+=b+g+'voa/news/">10-minute Daily News'+i;
+a+=b+g+'voa/scripts/">More VOA Transcripts'+i;
+a+=b+g+'voa/rss/">VOA RSS Feed'+i;
+a+=b+g+'voa/v/">VOA Special English Videos (with Text)'+i;
+a+=b+g+'voa/v/ja/">Listen and Read Along Videos in VOA Special English'+i;
+a+=b+g+'voa/youtube/">VOA\'s YouTube Video Playlists'+i;
+//a+=b+g+'wikipedia/">Selected Excerpts from Spoken Wikipedia'+i;
+//a+=b+g+'voa/search/">Search VOA Pages Hosted Here'+i;
+a+=d;
+a+=c+'Grammar</a><div id="kelly3"'+e;
+a+=b+g+'voa/">VOA Quizzes'+i;
+a+=b+g+'fq/">Flash Quizzes'+i;
+a+=b+g+'c/r.cgi/quiz">Super Quiz'+i;
+//a+=b+g+'qs>Quiz Show'+i;
+a+=b+g+'rs/">Random Sentences'+i;
+a+=b+g+'sm/">Sentence Machine'+i;
+a+=b+g+'ss/">Scrambled Sentences'+i;
+a+=b+g+'voa/sentences.htm">Search VOA Sentences'+i;
+//a+=b+g+'sentences/search/">Search Sentences from the Tatoeba Project'+i;
+//a+=b+g+'wn/">Search Wordnik Sentences'+i;
+a+=b+g+'bilingual/">Bilingual Sentence Pairs'+i;
+a+=b+g+'audio/sentences/">English Sentences with Audio'+i;
+a+=b+g+'sentences/words/">English Sentences Focusing on Words and Their Word Families'+i;
+a+=b+g+'sentences/audio/">English Sentences with Audio from the Tatoeba Project with Translations'+i;
+a+=d;
+a+=c+'Listening &amp; Speaking</a><div id="kelly4"'+e;
+a+=b+g+'ac/">Audio Concentration Games'+i;
+a+=b+g+'b/e/">ESL Videos'+i;
+a+=b+g+'pp/">Pronunciation'+i;
+a+=b+g+'repeat/">Listen and Repeat'+i;
+a+=b+g+'lar/">Daily Listen and Repeat'+i;
+a+=b+g+'elllo/">Listening to Naturally-spoken English'+i;
+a+=b+g+'wikipedia/">Selected Excerpts from Spoken Wikipedia'+i;
+a+=d;
+/*
+a+=c+'Speaking</a><div id="kelly5"'+e;
+a+=d;
+*/
+/*
+a+=c+'Writing</a><div id="kelly7"'+e;
+a+=d;
+*/
+a+=c+'Other</a><div id="kelly8"'+e;
+a+=b+g+'anagrams/">Anagrams'+i;
+a+=b+g+'proverbs/">Proverbs'+i;
+a+=b+g+'slang/">Slang'+i;
+a+=b+g+'songs/">Learn Songs'+i;
+a+=b+g+'signs/">Reading Signs'+i;
+a+=b+g+'fq/1/spelling.php?u=1">Spelling and Vocabulary Quizzes'+i;
+//a+=b+g+'casp/">Computer Assisted Writing'+i;
+//a+=b+g+'daily/">Daily Page'+i;
+//a+=b+g+'ts/">Travel Survival'+i;
+//a+=b+g+'mt/">Textbook Support'+i;
+a+=b+g+'voa/classroom/">Activities from VOA\'s "The Classroom"'+i;
+//a+=b+g+'voa/music-mp3.html">VOA\'s MP3 Files of Music Programs'+i;
+a+=b+g+'podcast/">Selected MP3 Files for ESL Students'+i;
+// a+=b+g+'japanese/">CK\'s Japanese Study'+i;
+//a+=b+g+'podcasts/">Some of Our Favorite Podcasts'+i;
+a+=d;
+/*
+a+=c+'AIT</a><div id="kelly9"'+e;
+a+=b+'study.aitech.ac.jp/">study.aitech.ac.jp'+i;
+a+=b+'cms.aitech.ac.jp/">cms.aitech.ac.jp'+i;
+a+=b+g+'ait/">www.manythings.org/ait'+i;
+a+=d;
+*/
+a+=c+'iPad</a><div id="kelly9"'+e;
+a+=b+g+'ipad/">Things for ESL on the iPad'+i;
+a+=b+g+'ipad/listen/">Listen and Read Along (iPad Version)'+i;
+a+=b+g+'e/requirements.html">Non-Flash Things'+i;
+a+=b+g+'voa/v/ipad.html">Selected VOA Special English TV Videos'+i;
+a+=d;
+a+='</ul></div></div>';
+document.write(a);
+/* piwiki code 
+var pkBaseURL = (("https:" == document.location.protocol) ? "https://www.manythings.org/piwikstats/" : "http://www.manythings.org/piwikstats/");
+document.write(unescape("%3Cscript src='" + pkBaseURL + "piwik.js' type='text/javascript'%3E%3C/script%3E"));
+try {
+var piwikTracker = Piwik.getTracker(pkBaseURL + "piwik.php", 1);
+piwikTracker.trackPageView();
+piwikTracker.enableLinkTracking();
+} catch( err ) {}
+*/
+/* Replace part of all URLs on page
+by CK 2011-07-23 */
+find= "http://trans.hiragana.jp/ruby/";
+if(self.location.href.match(find)){replace="";onload=function(){for(var i=0;i<document.links.length; i++){link=document.links[i].href;temp=link.split(find);temp=temp.join(replace);if(link.match(find)){document.links[i].href=temp;}}}}
+var _gaq = _gaq || [];
+_gaq.push(['_setAccount', 'UA-38296564-1']);
+_gaq.push(['_trackPageview']);
+(function() {
+var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+})();

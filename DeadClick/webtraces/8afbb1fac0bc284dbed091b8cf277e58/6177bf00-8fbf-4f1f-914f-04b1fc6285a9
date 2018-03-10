@@ -1,0 +1,42 @@
+/* PRINT works with page view at scale-to-fit in FF */
+
+body { background:none; }
+#bodyWrapper { width:auto; clear:both; margin:0; } /*  width:850px; */
+
+/* containerHeader, */
+#supplementaryMenu, #searchGlobal, #navMainWrapper,
+#crumbs, #colLeft, #colRight, 
+#typeResize, #linkToTop, .pagination, .horizontalBar
+{ display: none; }
+
+#logo, #strapline { display:block; margin-bottom:15px;}
+
+/* FF print bug
+i) need to unfloat all floated elements;
+ii) Overflow must be set to visible for elements with fancy overflow settings - or the wrapper contents will be truncated and only print on one page.
+Also, try also position: relative; width:auto; */
+.containerGrid1, .containerGrid2,
+.container780, .container940 { position:relative; float:none !important; overflow:visible !important; } 
+#containerBody { clear:none; overflow:visible; float:none; } /* containerBody will be pushed on to a new page if overflow is set to hidden */
+
+#heading, #colMain { width:auto; } /* width:750px; */ 
+.container780, .container570, .container575, .container540, .container735 { overflow:visible; }
+
+/* NOTE: FF will start a print on a div-block on a new page if the current page cannot contain the whole of that block.
+see above - .containerGrid2 .odd, .containerGrid2 .even */
+.containerGrid2 .odd, .containerGrid2 .even { overflow:visible; }
+/* For FF only - removing the float to overflow the div on to the next page, esp. for long blocks of content
+.containerGrid2 .odd, .containerGrid2 .even { overflow:visible; float:none; width:auto; position:relative; margin:0; } 
+*/
+
+#containerFooter { margin:10px 0 0; float:left; border-top:1px solid #888; }
+
+/* ELEMENTS */
+.featureMultiple, .boxContent { float:none; overflow:visible; } /* */
+.clearfix.last { margin:0; }
+
+/* the regions banner */
+#regions span, #regions div:first-child { padding-left:0; }
+#regions .horizontalBar.content { width:560px; margin-left:0; background:none; }
+
+

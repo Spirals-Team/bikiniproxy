@@ -1,0 +1,87 @@
+// See: http://www.actionscript.org/forums/showthread.php3?s=&threadid=5312
+
+// simple linear tweening - no acceleration
+// t: current time, b: beginning value, c: change in value, d: duration
+Math.linearTween = function (t, b, c, d) {
+	return c*t/d + b;
+}
+
+ ///////////// QUADRATIC EASING ////////////////////////
+//// Robert Penner - Sept. 2001 - robertpenner.com ////
+
+// quadratic easing in - accelerating from zero velocity
+// t: current time, b: beginning value, c: change in value, d: duration
+// t and d can be frames or seconds/milliseconds
+Math.easeInQuad = function (t, b, c, d) {
+	return c*t*t/(d*d) + b;
+}
+
+// quadratic easing out - decelerating to zero velocity
+Math.easeOutQuad = function (t, b, c, d) {
+	return -c*t*t/(d*d) + 2*c*t/d + b;
+}
+
+// quadratic easing in/out - acceleration until halfway, then deceleration
+Math.easeInOutQuad = function (t, b, c, d) {
+	if (t < d/2) return 2*c*t*t/(d*d) + b;
+	var ts = t - d/2;
+	return -2*c*ts*ts/(d*d) + 2*c*ts/d + c/2 + b;
+}
+
+ ///////////// SINUSOIDAL EASING ///////////////////////
+//// Robert Penner - Sept. 2001 - robertpenner.com ////
+
+// sinusoidal easing in - accelerating from zero velocity
+// t: current time, b: beginning value, c: change in position, d: duration
+Math.easeInSine = function (t, b, c, d) {
+	return -c * Math.cos(t/d * Math.PI/2) + c + b;
+}
+
+// sinusoidal easing out - decelerating to zero velocity
+// t: current time, b: beginning value, c: change in position, d: duration
+Math.easeOutSine = function (t, b, c, d) {
+	return c * Math.sin(t/d * Math.PI/2) + b;
+}
+
+// sinusoidal easing in/out - accelerating until halfway, then decelerating
+// t: current time, b: beginning value, c: change in position, d: duration
+Math.easeInOutSine = function (t, b, c, d) {
+	return -c/2 * (Math.cos(Math.PI*t/d) - 1) + b;
+}
+
+///////////// EXPONENTIAL EASING ////////////////////// 
+//// Robert Penner - Sept. 2001 - robertpenner.com //// 
+
+// exponential easing in - accelerating from zero velocity
+// t: current time, b: beginning value, c: change in position, d: duration
+Math.easeInExpo = function (t, b, c, d) {
+	var flip = 1;
+	if (c < 0) {
+		flip *= -1;
+		c *= -1;
+	}
+	return flip * (Math.exp(Math.log(c)/d * t)) + b;
+}
+
+// exponential easing out - decelerating to zero velocity
+// t: current time, b: beginning value, c: change in position, d: duration
+Math.easeOutExpo = function (t, b, c, d) {
+	var flip = 1;
+	if (c < 0) {
+		flip *= -1;
+		c *= -1;
+	}
+	return flip * (-Math.exp(-Math.log(c)/d * (t-d)) + c + 1) + b;
+}
+
+// exponential easing in/out - accelerating until halfway, then decelerating
+// t: current time, b: beginning value, c: change in position, d: duration
+Math.easeInOutExpo = function (t, b, c, d) {
+	var flip = 1;
+	if (c < 0) {
+		flip *= -1;
+		c *= -1;
+	}
+	if (t < d/2) return flip * (Math.exp(Math.log(c/2)/(d/2) * t)) + b;
+	return flip * (-Math.exp(-2*Math.log(c/2)/d * (t-d)) + c + 1) + b;
+}

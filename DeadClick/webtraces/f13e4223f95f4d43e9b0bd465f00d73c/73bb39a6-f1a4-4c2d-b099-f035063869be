@@ -1,0 +1,21 @@
+var app = angular.module('sthm15Personnel', [
+	'ngRoute', 'ngSanitize', 'ngAnimate', 'controllers', 'filters'
+]);
+
+app.config(['$routeProvider', '$provide', function($routeProvider, $provide){
+	var templateRootElem = angular.element(document.querySelector('#sthm15TemplateRoot'));
+	var ajaxurl = sthm15PublicAjaxObject.url;
+	$provide.constant('pluginurls', {root: templateRootElem.attr('href'), ajaxurl: ajaxurl});
+	
+	$routeProvider.when('/type/:typeId', {
+		templateUrl: templateRootElem.attr('href') + '/sthm-personnel/js/type.html',
+		controller:	'typeCtrl'
+	}).when('/view/:pId', {
+		templateUrl: templateRootElem.attr('href') + '/sthm-personnel/js/view.html',
+		controller: 'viewCtrl'
+	}).otherwise({
+		redirectTo: '/',
+		templateUrl: templateRootElem.attr('href') + '/sthm-personnel/js/app.html',
+		controller: 'indexCtrl'
+	});
+}]);

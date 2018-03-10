@@ -1,0 +1,12 @@
+_satellite.pushAsyncScript(function(event, target, $variables){
+  /* Criteo - International - Without COL UK & COL FR - Dedup Cookie */
+if(_satellite.getQueryParam('eid')) {
+  var date = new Date(); //current date to create the cookie
+  var expires; //expire date of the cookie
+  var value; //cookie's value
+  date.setTime(date.getTime()+(30*24*60*60*1000));
+  expires = date.toUTCString();
+  value = document.URL.search(/[?|&]eid=([^&;]+?)?criteo(&|#|;|$)/i)!=-1?"criteo":"other";
+  document.cookie = "__utmz=" + value + "; expires=" + expires + "; path=/";
+}
+});

@@ -1,0 +1,83 @@
+if(typeof ga==="undefined"){ga=null;}
+(function(window,$,ga){"use strict";var BunnyEars=function(opts){this.defaultOptions={'viewTemplate':"%stream%%name%%status%%viewers%",'showViewMore':true,'streamCount':4,'host':window.location.host,'streamMode':'modal','debug':false,'forceTagPrefix':true,'disableDefaultTracking':false,'disableGlobalTracking':false,'defaultPlayerOptions':{},'playerPlayOnInit':true};this.version="1.3";this.validTagPrefixs=['game','lang','mature','partner'];this.stationsUrl="https://stations.cursetech.com";this.options=this.defaultOptions;this.apiVersion=1;this.setOptions(opts);if(!this.getOption('id',false)){this.setOption('id',this.lazyFakeHopefullyRandomID());}
+this.streams={};this.watch_more_link="https://www.twitch.tv/directory";this.clickCallback=function(element){}
+this.globalGATracker='UA-37896755-42';this.Twitch=null;this.twitchPlayerEvents={};this.player=null;this.logInitHeader();if(typeof ga!=='undefined'&&ga!==null){this.ga=ga;}else{this.ga=false;this.warn('Couldn\'t find Google Analytics. No tracking features will work!');}
+if(this.ga){if(this.getOption('gaTrackingId',false)&&!this.getOption('disableDefaultTracking',false)){this.ga('create',this.getOption('gaTrackingId'),{'name':'bunnyears'});this.log('GA Tracking Initialized for bunnyears on '+this.getOption('gaTrackingId'));}
+if(!this.getOption('disableGlobalTracking',false)){this.ga('create',this.globalGATracker,{'name':'bunnyearsglobal'});this.log('GA Tracking Initialized for bunnyearsglobal on '+this.globalGATracker);}}
+if(this.getOption('streamMode')=="modal"){var Modal='<div data-id="'+this.getOption('id')+'" class="beModal">'
++'<div class="beModalContent">'
++'<div class="beModalLeft"> <div class="beModalPrevStream">&#x25c0;</div> </div>'
++'<div class="beStreamerStream" data-id="'+this.getOption('id')+'" id="twitchPlayer-'+this.getOption('id')+'"></div>'
++'<div class="beModalRight"><div class="beModalClose">×</div><div class="beModalNextStream">&#x25ba;</div></div>'
++'</div>'
++'</div>';$("body").append(Modal);this.log('Dumping modal container at end of body');}else if(this.getOption('streamMode')=="inline"){var Placeholder='<div class="beStreamerStream" style="display: none;" data-id="'+this.getOption('id')+'" id="twitchPlayer-'+this.getOption('id')+'"></div>';$("body").append(Placeholder);this.log('Dumping placeholder container at end of body');}
+var be=this;$('body').on('click','.beStreamerView[data-id="'+this.getOption('id')+'"]',function(){be.log('Click event for beStreamerView');be.handleClick(this);});$("body").on('click',".beModal[data-id=\""+be.getOption('id')+"\"] .beModalPrevStream, .beModal[data-id=\""+be.getOption('id')+"\"] .beModalNextStream",function(e){var streamer=$(this).attr('data-streamer');var curPos=parseInt($('.beStreamerView[data-id="'+be.getOption('id')+'"][data-streamer="'+streamer+'"]').attr('data-slot'));var totalStreams=Object.keys(be.streams).length;if($(this).hasClass('beModalPrevStream')){var newPos=curPos-1;if(newPos<1){newPos=totalStreams;}}
+else if($(this).hasClass('beModalNextStream')){var newPos=curPos+1;if(newPos>totalStreams){newPos=1;}}else{var newPos=curPos;}
+var newStreamer=$('.beStreamerView[data-id="'+be.getOption('id')+'"][data-slot="'+newPos+'"]').attr('data-streamer');be.showStreamerModal(newStreamer,false);});$("body").on('click',".beModal[data-id=\""+be.getOption('id')+"\"]",function(e){if(e.target.className=="beModalClose"||e.target.className=="beModal"){if(be.player&&!be.player.isPaused()){be.player.pause();}
+$('.beModal').hide();$('.beModalStream').html("");}});this.log("BunnyEars Initialized");};BunnyEars.prototype.initPlayer=function(callback){this.player=null;this.log('Player Initialization Started.');$.ajax({dataType:"script",cache:true,url:'https://player.twitch.tv/js/embed/v1.js'}).done(function(){this.Twitch=Twitch;var options=this.getOption('defaultPlayerOptions',{});$("#twitchPlayer-"+this.getOption('id')+"").html("");this.player=new Twitch.Player("twitchPlayer-"+this.getOption('id')+"",options);this.log('Player Initialized as id: '+"twitchPlayer-"+this.getOption('id')+"");for(var x in this.twitchPlayerEvents){this.player.addEventListener(x,this.twitchPlayerEvents[x]);}
+callback();}.bind(this));return this;}
+BunnyEars.prototype.setTwitchPlayerEvent=function(eventname,callback){var be=this;if(this.Twitch==null){setTimeout(function(){be.setTwitchPlayerEvent(eventname,callback);},100);return;}
+if(typeof callback=='function'){switch(eventname){case"READY":var en=this.Twitch.Player.READY;break;case"PLAY":var en=this.Twitch.Player.PLAY;break;case"PAUSE":var en=this.Twitch.Player.PAUSE;break;case"ENDED":var en=this.Twitch.Player.ENDED;break;case"ONLINE":var en=this.Twitch.Player.ONLINE;break;case"OFFLINE":var en=this.Twitch.Player.OFFLINE;break;}
+this.twitchPlayerEvents[en]=callback;this.log("Set an event for "+eventname);}
+return this;}
+BunnyEars.prototype.trackEvent=function(action,label,value){if(this.getOption('gaTrackingId',false)){this.trackEventHandler(false,action,label,value);}}
+BunnyEars.prototype.trackGlobalEvent=function(action,label,value){if(!this.getOption('disableGlobalTracking',false)){this.trackEventHandler(true,action,label,value);}}
+BunnyEars.prototype.trackEventHandler=function(isGlobal,action,label,value){if(!this.ga){return;}
+action=(typeof action=="string")?action:"Undefined";label=(typeof label=="string")?label:null;value=(typeof value=="number")?value:null;var to=isGlobal?'bunnyearsglobal.send':'bunnyears.send';var data={hitType:'event',eventCategory:'BunnyEars',eventAction:action,};if(label)data['eventLabel']=label;if(value)data['eventValue']=value;if(isGlobal){this.ga('bunnyearsglobal.send',data);}else{this.ga('bunnyears.send',data);}
+this.log('Sending GA Event: '+JSON.stringify(data));}
+BunnyEars.prototype.handleClick=function(element){this.initPlayer(function(){var be=this;switch(be.getOption('streamMode','modal')){case'modal':default:var streamer=$(element).attr('data-streamer');be.showStreamerModal(streamer);break;case'inline':if($(element).children('img').length&&$(element).children('img').first().is(":visible")){be.getStreamsData($(element).attr('data-streamer'),function(data){if(be.player&&!be.player.isPaused())be.player.pause();$('.beStreamerView[data-id="'+be.getOption('id')+'"] .beStreamerImage').show();$(element).children('img').first().hide();$(element).children('img').first().after($('#twitchPlayer-'+be.getOption('id')+''));$('#twitchPlayer-'+be.getOption('id')+'').show();be.initPlayer(function(){be.player.setChannel(data.id);if(be.getOption('playerPlayOnInit',true)){be.player.play();}});});}
+break;}
+if(typeof be.clickCallback=="function"){be.clickCallback(element);}
+be.trackClick(element);}.bind(this));}
+BunnyEars.prototype.triggerClick=function(slot){var element=$('.beStreamerView[data-id="'+this.getOption('id')+'"][data-slot="'+slot+'"]');if(element.length){this.handleClick(element);this.log("Firing click event for slot: "+slot);}else{this.log("Could not match an element for slot: "+slot);}}
+BunnyEars.prototype.trackClick=function(element){var placement=$(element).attr('data-id');if(!this.getOption('disableDefaultTracking',false)){this.trackEvent('StreamClick',placement);}
+this.trackGlobalEvent('StreamClick',placement);}
+BunnyEars.prototype.showStreamerModal=function(streamer,hide_first){var be=this;if(typeof hide_first=='undefined'){var hide_first=true;}
+be.getStreamsData(streamer,function(data){if(hide_first){$('.beModal').css('display','none');}
+be.player.pause();be.player.setChannel(data.id);be.player.play();$(".beModal[data-id=\""+be.getOption('id')+"\"]").css('display','inline-flex').attr('data-streamer',streamer);$(".beModal[data-id=\""+be.getOption('id')+"\"] .beModalPrevStream").attr('data-streamer',streamer);$(".beModal[data-id=\""+be.getOption('id')+"\"] .beModalNextStream").attr('data-streamer',streamer);});}
+BunnyEars.prototype.setClickCallback=function(callback){if(typeof callback=='function'){this.clickCallback=callback;this.log("Set a click callback");}
+return this;}
+BunnyEars.prototype.buildView=function(data,slot){if(typeof slot!=='undefined'){var classes="beSlot"+slot;var extra="data-slot=\""+slot+"\"";}else{var classes="";var extra="";}
+var views={'stream':"<img class=\"beStreamerImage\" src=\""+data.preview+"\">",'name':"<div class=\"beStreamerName\">"+data.name+"</div>",'status':"<div class=\"beStreamerStatus\">"+data.status+"</div>",'viewers':"<div class=\"beStreamerViewers\">"+data.viewers.toString().replace(/\B(?=(\d{3})+(?!\d))/g,",")+"</div>"};var template=this.getOption('viewTemplate').replace(/%(\w*)%/g,function(m,key){return views.hasOwnProperty(key)?views[key]:"%"+key+"%";});var view="<div class=\"beFlexItem\"><div class=\"twitch-embed-trigger beStreamerView "+classes+"\" "+extra+" data-id=\""+this.getOption('id')+"\" data-streamer=\""+data.id+"\" data-twitch-embed-type=\"channel\" data-twitch-id=\""+data.id+"\">"+
+template+"</div></div>";if(this.getOption('beforeView')){view=this.getOption('beforeView')+view;}
+if(this.getOption('afterView')){view=view+this.getOption('afterView');}
+return view;}
+BunnyEars.prototype.buildMoreView=function(link){var view="<div class=\"beFlexItem\">"+"<a href=\""+link+"\" target=\"_blank\">"+"<div class=\"beStreamerMoreView\">"+"<div class=\"beGetMoreOnTwitch\">See More on "+"<img src=\"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEoAAAAZCAYAAACWyrgoAAADXUlEQVR42u1ZTWgUMRRea7Uq/hyKXqToRRQEvVWP6kVRwYNKKWp7EESkKKgFi4pVqAhFLyJFkYI/ICiClepFxYNIS1FpPfhvrT/rPxUX292uuxO/Z9/UIZtsJp1ZdWE++MiSycvLfJO8JG9jQggnD3vBGrAkFhLQ11aDTx1vgGWWvpY5jvMQZVbVJ5BA2eC3MzJ4D15xibp2lK/EMOLg8hCFmsEDjUs+r4vhwTz21jOf8limWfiZAjaBA2zbIffL/m7bCNUmO0HdKfEHn8ANIQqVRf+XpPrp7KtRYdM0CqGaPSIRVinahC4U4R14CNwYkNt4KXQq6k1CbfG0X+iGBNkHxn4WZVIav1Io4JFkXwVWBBGKlksaHAzIJPeVUdSbhEp62h+kmAX2KHxkRC50QmUU9rfAmX6EGgcuBes8JHRJdbvAm+BHHrj3WQfb1Els4KX3QFGvE2qxp91+DsItKO+g/AbuU/j5TVri/PIqoVQ29bD5gvIyODuvUJolSjgn1U2G7VGUT8A50rNWMggjRkntZsH2M8eXNyg2G9pvR7vvKqE07ceC62DzArwwIlaxCkUvgt+1pqOLrVBsU8axqhe2V4t9Rh0Hp/oYt7VQHrHaR96hiIU6DE4olFAE96xlu+v9M6E8u54XOULxLNNBt+u5OC3P0EioSKhIqP9TKL/B/G/d9QoVzG2FGgKvmVIYIQo13yDUsXwChHk8sBKKDlScd6oyDDCwULCfC140CPUM3ASW+jhw1gQ5cNrOqAV0VGfH6+kIXwihYDuP710pg1CCc2G1pisM8DrIFcZWqDF0n6FLIF8G6zWXRdWl2C938CVziPuhNMt9qc0eaeD9bCf35V6KXfi9FLdo3snFXXC39LwnZ0OitAKnF9IigosMhP6hmqYV9MXAvkgj0c8JwMp863oleJLTGIVAl6bem/zXgZJ3z336SXJMzHXkOF91swi8B+4Ey30l5xOJ1JpsxmnD759hfilwkU4o2lgGB9InUKY0bSiAr3XjRx7QqmhGPx+kevqzZC94RmPXymnmiTY7VQntBOASSsIrOj0PVuNZt0+RKKhWcp+6GXUgHheTOASoQLOpFFzBxxod6Ly2GmN761akkumX3Z19lLkdDx6RvhD9rVVNt41YhNHjF/gZokAJmNAXAAAAAElFTkSuQmCC\" />"+"</div>"+"</div>"+"</a>"+"</div>";return view;}
+BunnyEars.prototype.tuneIn=function(target,opts,callback){var be=this;this.setOptions(opts);this.getStreamsData(null,function(data){if(data==false){be.error("BunnyEarsJS failed to tune in to Stations.");if(typeof callback==='function'){return callback(false);}else{return false;}}
+var streamCount=0;var gameWeight={};for(var x in data){streamCount++;var game=data[x].channel.game;if(typeof gameWeight[game]!=='undefined'){gameWeight[game]++;}else{gameWeight[game]=1;}
+$(target).append(be.buildView(data[x],streamCount));if(streamCount>=be.getOption('streamCount')){break;}}
+if(be.getOption('showViewMore')){$(target).append(be.buildMoreView(be.watch_more_link));}
+$(target).wrapInner('<div class="beFlexContainer"></div>');if(typeof callback==='function'){be.log('TuneIn finished. Firing callback.')
+callback(true);}else{be.log('TuneIn finished. No Callback to process.');}});}
+BunnyEars.prototype.overrideStationsURL=function(url){this.stationsUrl=url;this.log("Stations URL Override: "+url);return this;}
+BunnyEars.prototype.setOptions=function(opts){opts=(typeof opts!=='object')?{}:opts;for(var attr in opts){this.options[attr]=opts[attr];}}
+BunnyEars.prototype.getOption=function(name,onfalse){return(typeof this.options[name]!=='undefined')?this.options[name]:(typeof onfalse!=='undefined'?onfalse:false);}
+BunnyEars.prototype.getOptions=function(){return this.options;}
+BunnyEars.prototype.setOption=function(name,value){var object={};object[name]=value;this.setOptions(object);}
+BunnyEars.prototype.loadStreams=function(callback,force){if(typeof callback!=='function'){callback=function(){};}
+force=(force===true)?true:false;if(!Object.keys(this.streams).length||force==true){var be=this;if(be.getOption('forceTagPrefix',false)){var tags=be.getOption('tags','');if(typeof tags!=='string'){tags='';}
+tags=tags.split(',');var approvedTags=[];for(var x=0;x<tags.length;x++){var tag=tags[x];for(var i=0;i<this.validTagPrefixs.length;i++){var tagPrefix=this.validTagPrefixs[i]+':';if(tag.indexOf(tagPrefix)==0){approvedTags.push(tag);}}}
+approvedTags=approvedTags.join(',');}else{var approvedTags=be.getOption('tags','');}
+this.log("Loading Streams with Tags: "+approvedTags+"");var request_uri=this.stationsUrl+"/v"+this.apiVersion+"/streams"
++"?host="+this.getOption('host',window.location.host)
++"&tags="+approvedTags;$.getJSON(request_uri).done(function(data){var r=be.buildData(data);be.streams=r.streams;be.watch_more_link=r.watch_more_link;}).fail(function(){be.warn('The Stations API appears to be down.');be.streams=false;}).always(function(){return callback();});}else{return callback();}}
+BunnyEars.prototype.buildData=function(stream_data){var build={};var streams=stream_data['streams'];for(var x in streams){var mod=streams[x];mod.id=mod.name;mod.meta=mod.channel;build[mod.name]=mod;}
+return{'streams':build,'watch_more_link':stream_data['watch_more_link']}}
+BunnyEars.prototype.getStreamsData=function(streamer,callback){if(typeof callback!=="function"){callback=function(data){return data;};}
+var be=this;return this.loadStreams(function(){if(typeof streamer!=='undefined'&&streamer!==null){if(typeof be.streams[streamer]!=='undefined'){return callback(be.streams[streamer]);}else{return callback(false);}}
+return callback(be.streams);});}
+BunnyEars.prototype.lazyFakeHopefullyRandomID=function(){function lFHRID(){return Math.floor((1+Math.random())*0x10000).toString(16).substring(1);}
+return lFHRID()+lFHRID()+'-'+lFHRID()+'-'+lFHRID()+'-'+lFHRID();}
+BunnyEars.prototype.error=function(msg){if(this.getOption('debug')==true){console.error("%c BunnyEarsJS %c "+msg,"font-weight: bold; background-color: #ff5454; color: #fff;","font-weight: normal;");}}
+BunnyEars.prototype.warn=function(msg){if(this.getOption('debug')==true){console.warn("%c BunnyEarsJS %c "+msg,"font-weight: bold; background-color: #ffa654; color: #fff;","font-weight: normal;");}}
+BunnyEars.prototype.log=function(msg,color){if(this.getOption('debug')==true){console.log("%c BunnyEarsJS %c "+msg,"font-weight: bold; background-color: #5495ff; color: #fff;","font-weight: normal;");}}
+BunnyEars.prototype.logInitHeader=function(msg){var header="  ____                               ______                        _   _____  "+"\n"
++" |  _ \\                             |  ____|                      | | / ____| "+"\n"
++" | |_) | _   _  _ __   _ __   _   _ | |__    __ _  _ __  ___      | || (___   "+"\n"
++" |  _ < | | | || '_ \\ | '_ \\ | | | ||  __|  / _` || '__|/ __| _   | | \\___ \\  "+"\n"
++" | |_) || |_| || | | || | | || |_| || |____| (_| || |   \\__ \\| |__| | ____) | "+"\n"
++" |____/  \\__,_||_| |_||_| |_| \\__, ||______|\\__,_||_|   |___/ \\____/ |_____/  "+"\n"
++"                               __/ |                                          "+"\n"
++"                              |___/                                           "+"\n"
++"                                                                              ";if(this.getOption('debug')==true){console.log("%c"+header,"background: #eee; color: #000;");this.log("Loaded BunnyEars "+this.version);}}
+window.BunnyEars=BunnyEars;})(window,jQuery,ga);

@@ -1,0 +1,225 @@
+jQuery(document).ready(function() {
+jQuery('#right-sidebar #wp-calendar').wrap('<div class="extra-block">');
+jQuery('#right-sidebar .widget_categories select').wrap('<div class="extra-block">');
+jQuery('#right-sidebar .widget_archive select').wrap('<div class="extra-block">');
+jQuery('#featuredbox').delay(2000).fadeIn(400);
+
+jQuery("ul.sf-menu").supersubs({
+            minWidth:    18,   // minimum width of sub-menus in em units
+            maxWidth:    18,   // maximum width of sub-menus in em units
+            extraWidth:  1     // extra width can ensure lines don't sometimes turn over
+                               // due to slight rounding differences and font-family
+        }).superfish();  // call supersubs first, then superfish, so that subs are
+                         // not display:none when measuring. Call before initialising
+                         // containing tabs for same reason.
+
+});
+document.write('<style type="text/css">.tabber{display:none;}<\/style>');
+
+/*function startGallery() {
+var myGallery = new gallery($('myGallery'), {
+timed: true,
+showArrows: true,
+showCarousel: false,
+embedLinks: true
+});
+document.gallery = myGallery;
+}
+if (typeof onDomReady == 'function') {
+window.onDomReady(startGallery);
+}*/
+
+      
+;( function( $, window ){
+  var get_win_size = function (){
+    if( window.innerWidth != undefined ){
+      return [ window.innerWidth, window.innerHeight ];
+    }else{
+      var B = document.body;
+      var D = document.documentElement;
+
+      return [ Math.max( D.clientWidth, B.clientWidth ), Math.max( D.clientHeight, B.clientHeight )];
+    }
+  }
+
+  $.fn.center = function( opt ){
+    var $w        = $( window ); // cache gobal
+    var scrollTop = $w.scrollTop();
+
+    return this.each( function(){
+      var $this = $( this ); // cache $( this )
+
+      // merge user options with default configs
+      var configs = $.extend({
+        against       : 'window',
+        top           : false,
+        topPercentage : 0.5,
+        resize        : true
+      }, opt );
+
+      var centerize = function(){
+        var against = configs.against;
+        var against_w_n_h;
+        var $against;
+
+        if( against === 'window' ){
+          against_w_n_h = get_win_size();
+        }else if( against === 'parent' ){
+          $against      = $this.parent();
+          against_w_n_h = [ $against.width(), $against.height()];
+          scrollTop     = 0;
+        }else{
+          $against      = $this.parents( against );
+          against_w_n_h = [ $against.width(), $against.height()];
+          scrollTop     = 0;
+        }
+
+        var x = (( against_w_n_h[ 0 ]) - ( $this.outerWidth())) * 0.5;
+        var y = (( against_w_n_h[ 1 ]) - ( $this.outerHeight())) * configs.topPercentage + scrollTop;
+
+        if( configs.top ) y = configs.top + scrollTop;
+
+        $this.css({
+          'left' : x,
+          /*'top'  : y*/
+        });
+      };
+
+      // apply centerization
+      centerize();
+      if( configs.resize === true ) $w.resize( centerize );
+    });
+  };
+})( jQuery, window );
+
+  jQuery(document).ready(function () {
+    jQuery('.ener').center({ against: 'parent' });
+  });
+
+    jQuery(document).ready(function ($) {
+         var _SlideshowTransitions = [
+            //Swing Outside in Stairs
+            {$Duration: 1200, x: 0.2, y: -0.1, $Delay: 20, $Cols: 8, $Rows: 4, $Clip: 15, $During: { $Left: [0.3, 0.7], $Top: [0.3, 0.7] }, $Formation: $JssorSlideshowFormations$.$FormationStraightStairs, $Assembly: 260, $Easing: { $Left: $JssorEasing$.$EaseInWave, $Top: $JssorEasing$.$EaseInWave, $Clip: $JssorEasing$.$EaseOutQuad }, $Outside: true, $Round: { $Left: 1.3, $Top: 2.5} }
+
+            //Dodge Dance Outside out Stairs
+            , { $Duration: 1500, x: 0.3, y: -0.3, $Delay: 20, $Cols: 8, $Rows: 4, $Clip: 15, $During: { $Left: [0.1, 0.9], $Top: [0.1, 0.9] }, $SlideOut: true, $Formation: $JssorSlideshowFormations$.$FormationStraightStairs, $Assembly: 260, $Easing: { $Left: $JssorEasing$.$EaseInJump, $Top: $JssorEasing$.$EaseInJump, $Clip: $JssorEasing$.$EaseOutQuad }, $Outside: true, $Round: { $Left: 0.8, $Top: 2.5} }
+
+            //Dodge Pet Outside in Stairs
+            , { $Duration: 1500, x: 0.2, y: -0.1, $Delay: 20, $Cols: 8, $Rows: 4, $Clip: 15, $During: { $Left: [0.3, 0.7], $Top: [0.3, 0.7] }, $Formation: $JssorSlideshowFormations$.$FormationStraightStairs, $Assembly: 260, $Easing: { $Left: $JssorEasing$.$EaseInWave, $Top: $JssorEasing$.$EaseInWave, $Clip: $JssorEasing$.$EaseOutQuad }, $Outside: true, $Round: { $Left: 0.8, $Top: 2.5} }
+
+            //Dodge Dance Outside in Random
+            , { $Duration: 1500, x: 0.3, y: -0.3, $Delay: 80, $Cols: 8, $Rows: 4, $Clip: 15, $During: { $Left: [0.3, 0.7], $Top: [0.3, 0.7] }, $Easing: { $Left: $JssorEasing$.$EaseInJump, $Top: $JssorEasing$.$EaseInJump, $Clip: $JssorEasing$.$EaseOutQuad }, $Outside: true, $Round: { $Left: 0.8, $Top: 2.5} }
+
+            //Flutter out Wind
+            , { $Duration: 1800, x: 1, y: 0.2, $Delay: 30, $Cols: 10, $Rows: 5, $Clip: 15, $During: { $Left: [0.3, 0.7], $Top: [0.3, 0.7] }, $SlideOut: true, $Reverse: true, $Formation: $JssorSlideshowFormations$.$FormationStraightStairs, $Assembly: 2050, $Easing: { $Left: $JssorEasing$.$EaseInOutSine, $Top: $JssorEasing$.$EaseOutWave, $Clip: $JssorEasing$.$EaseInOutQuad }, $Outside: true, $Round: { $Top: 1.3} }
+
+            //Collapse Stairs
+            , { $Duration: 1200, $Delay: 30, $Cols: 8, $Rows: 4, $Clip: 15, $SlideOut: true, $Formation: $JssorSlideshowFormations$.$FormationStraightStairs, $Assembly: 2049, $Easing: $JssorEasing$.$EaseOutQuad }
+
+            //Collapse Random
+            , { $Duration: 1000, $Delay: 80, $Cols: 8, $Rows: 4, $Clip: 15, $SlideOut: true, $Easing: $JssorEasing$.$EaseOutQuad }
+
+            //Vertical Chess Stripe
+            , { $Duration: 1000, y: -1, $Cols: 12, $Formation: $JssorSlideshowFormations$.$FormationStraight, $ChessMode: { $Column: 12} }
+
+            //Extrude out Stripe
+            , { $Duration: 1000, x: -0.2, $Delay: 40, $Cols: 12, $SlideOut: true, $Formation: $JssorSlideshowFormations$.$FormationStraight, $Assembly: 260, $Easing: { $Left: $JssorEasing$.$EaseInOutExpo, $Opacity: $JssorEasing$.$EaseInOutQuad }, $Opacity: 2, $Outside: true, $Round: { $Top: 0.5} }
+
+            //Dominoes Stripe
+            , { $Duration: 2000, y: -1, $Delay: 60, $Cols: 15, $SlideOut: true, $Formation: $JssorSlideshowFormations$.$FormationStraight, $Easing: $JssorEasing$.$EaseOutJump, $Round: { $Top: 1.5} }
+            ];
+
+             var _CaptionTransitions = [];
+            _CaptionTransitions["L"] = { $Duration: 800, x: 0.6, $Easing: { $Left: $JssorEasing$.$EaseInOutSine }, $Opacity: 2 };
+            _CaptionTransitions["R"] = { $Duration: 800, x: -0.6, $Easing: { $Left: $JssorEasing$.$EaseInOutSine }, $Opacity: 2 };
+            _CaptionTransitions["T"] = { $Duration: 800, y: 0.6, $Easing: { $Top: $JssorEasing$.$EaseInOutSine }, $Opacity: 2 };
+            _CaptionTransitions["B"] = { $Duration: 800, y: -0.6, $Easing: { $Top: $JssorEasing$.$EaseInOutSine }, $Opacity: 2 };
+            _CaptionTransitions["TL"] = { $Duration: 800, x: 0.6, y: 0.6, $Easing: { $Left: $JssorEasing$.$EaseInOutSine, $Top: $JssorEasing$.$EaseInOutSine }, $Opacity: 2 };
+            _CaptionTransitions["TR"] = { $Duration: 800, x: -0.6, y: 0.6, $Easing: { $Left: $JssorEasing$.$EaseInOutSine, $Top: $JssorEasing$.$EaseInOutSine }, $Opacity: 2 };
+            _CaptionTransitions["BL"] = { $Duration: 800, x: 0.6, y: -0.6, $Easing: { $Left: $JssorEasing$.$EaseInOutSine, $Top: $JssorEasing$.$EaseInOutSine }, $Opacity: 2 };
+            _CaptionTransitions["BR"] = { $Duration: 800, x: -0.6, y: -0.6, $Easing: { $Left: $JssorEasing$.$EaseInOutSine, $Top: $JssorEasing$.$EaseInOutSine }, $Opacity: 2 };
+
+            _CaptionTransitions["WAVE|L"] = { $Duration: 1500, x: 0.6, y: 0.3, $Easing: { $Left: $JssorEasing$.$EaseLinear, $Top: $JssorEasing$.$EaseInWave }, $Opacity: 2, $Round: { $Top: 2.5} };
+            _CaptionTransitions["MCLIP|B"] = { $Duration: 600, $Clip: 8, $Move: true, $Easing: $JssorEasing$.$EaseOutExpo };
+
+
+        if ( $( "#slider2_container" ).length ) {
+            var options = {
+                $AutoPlay: true,                                    //[Optional] Whether to auto play, to enable slideshow, this option must be set to true, default value is false
+                $AutoPlaySteps: 1,                                  //[Optional] Steps to go for each navigation request (this options applys only when slideshow disabled), the default value is 1
+                $AutoPlayInterval: 5000,                            //[Optional] Interval (in milliseconds) to go for next slide since the previous stopped if the slider is auto playing, default value is 3000
+                $PauseOnHover: 1,                               //[Optional] Whether to pause when mouse over if a slider is auto playing, 0 no pause, 1 pause for desktop, 2 pause for touch device, 3 pause for desktop and touch device, 4 freeze for desktop, 8 freeze for touch device, 12 freeze for desktop and touch device, default value is 1
+
+                $ArrowKeyNavigation: true,                          //[Optional] Allows keyboard (arrow key) navigation or not, default value is false
+                $SlideDuration: 500,                                //[Optional] Specifies default duration (swipe) for slide in milliseconds, default value is 500
+                $MinDragOffsetToSlide: 20,                          //[Optional] Minimum drag offset to trigger slide , default value is 20
+                //$SlideWidth: 600,                                 //[Optional] Width of every slide in pixels, default value is width of 'slides' container
+                //$SlideHeight: 300,                                //[Optional] Height of every slide in pixels, default value is height of 'slides' container
+                $SlideSpacing: 5,                                   //[Optional] Space between each slide in pixels, default value is 0
+                $DisplayPieces: 1,                                  //[Optional] Number of pieces to display (the slideshow would be disabled if the value is set to greater than 1), the default value is 1
+                $ParkingPosition: 0,                                //[Optional] The offset position to park slide (this options applys only when slideshow disabled), default value is 0.
+                $UISearchMode: 1,                                   //[Optional] The way (0 parellel, 1 recursive, default value is 1) to search UI components (slides container, loading screen, navigator container, arrow navigator container, thumbnail navigator container etc).
+                $PlayOrientation: 1,                                //[Optional] Orientation to play slide (for auto play, navigation), 1 horizental, 2 vertical, 5 horizental reverse, 6 vertical reverse, default value is 1
+                $DragOrientation: 3,                                //[Optional] Orientation to drag slide, 0 no drag, 1 horizental, 2 vertical, 3 either, default value is 1 (Note that the $DragOrientation should be the same as $PlayOrientation when $DisplayPieces is greater than 1, or parking position is not 0)
+
+                $ThumbnailNavigatorOptions: {
+                    $Class: $JssorThumbnailNavigator$,              //[Required] Class to create thumbnail navigator instance
+                    $ChanceToShow: 2,                               //[Required] 0 Never, 1 Mouse Over, 2 Always
+
+                    $ActionMode: 1,                                 //[Optional] 0 None, 1 act by click, 2 act by mouse hover, 3 both, default value is 1
+                    $AutoCenter: 3,                             //[Optional] Auto center thumbnail items in the thumbnail navigator container, 0 None, 1 Horizontal, 2 Vertical, 3 Both, default value is 3
+                    $Lanes: 1,                                      //[Optional] Specify lanes to arrange thumbnails, default value is 1
+                    $SpacingX: 1,                                   //[Optional] Horizontal space between each thumbnail in pixel, default value is 0
+                    $SpacingY: 0,                                   //[Optional] Vertical space between each thumbnail in pixel, default value is 0
+                    $DisplayPieces: 5,                              //[Optional] Number of pieces to display, default value is 1
+                    $ParkingPosition: 0,                            //[Optional] The offset position to park thumbnail
+                    $Orientation: 2,                                //[Optional] Orientation to arrange thumbnails, 1 horizental, 2 vertical, default value is 1
+                    $DisableDrag: true                              //[Optional] Disable drag or not, default value is false
+                },
+
+                $CaptionSliderOptions: {                            //[Optional] Options which specifies how to animate caption
+                    $Class: $JssorCaptionSlider$,                   //[Required] Class to create instance to animate caption
+                    $CaptionTransitions: _CaptionTransitions,       //[Required] An array of caption transitions to play caption, see caption transition section at jssor slideshow transition builder
+                    $PlayInMode: 1,                                 //[Optional] 0 None (no play), 1 Chain (goes after main slide), 3 Chain Flatten (goes after main slide and flatten all caption animations), default value is 1
+                    $PlayOutMode: 3                                 //[Optional] 0 None (no play), 1 Chain (goes before main slide), 3 Chain Flatten (goes before main slide and flatten all caption animations), default value is 1
+                },
+                $SlideshowOptions: {                                //[Optional] Options to specify and enable slideshow or not
+                    $Class: $JssorSlideshowRunner$,                 //[Required] Class to create instance of slideshow
+                    $Transitions: _SlideshowTransitions,            //[Required] An array of slideshow transitions to play slideshow
+                    $TransitionsOrder: 1,                           //[Optional] The way to choose transition to play slide, 1 Sequence, 0 Random
+                    $ShowLink: true                                    //[Optional] Whether to bring slide link on top of the slider when slideshow is running, default value is false
+                }
+            };
+
+            var jssor_slider1 = new $JssorSlider$("slider2_container", options);
+
+            //responsive code begin
+            //you can remove responsive code if you don't want the slider scales while window resizes
+            function ScaleSlider() {
+                var parentWidth = jssor_slider1.$Elmt.parentNode.clientWidth;
+                if (parentWidth) {
+                    var sliderWidth = parentWidth;
+
+                    //keep the slider width no more than 600
+                    sliderWidth = Math.min(sliderWidth, 670);
+
+                    jssor_slider1.$ScaleWidth(sliderWidth);
+                }
+                else
+                    window.setTimeout(ScaleSlider, 30);
+            }
+            ScaleSlider();
+
+            $(window).bind("load", ScaleSlider);
+            $(window).bind("resize", ScaleSlider);
+            $(window).bind("orientationchange", ScaleSlider);
+            //responsive code end
+        }
+        });
+
+jQuery('.cat-post-widget,#slider2_container').html(function(i,h){
+    return h.replace(/&nbsp;/g,'');
+});
+jQuery(".post-content p").filter(function(){
+    return jQuery.trim(this.innerHTML) === "&nbsp;"
+}).remove();

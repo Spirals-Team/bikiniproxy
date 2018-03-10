@@ -1,0 +1,280 @@
+if (location.protocol == "https:") { var tb_pathToImage = "https://img.webmd.com/dtmcms/live/webmd/consumer_assets/site_images/miscellaneous/hover-reg_loading_win.gif"; }
+else {	tb_pathToImage = "https://img.webmd.com/dtmcms/live/webmd/consumer_assets/site_images/miscellaneous/hover-reg_loading_win.gif"; }
+
+$(document).ready(function() {
+	tb_init('a.thickbox, area.thickbox, input.thickbox');
+	imgLoader = new Image();
+	imgLoader.src = tb_pathToImage;
+});
+
+function tb_init(domChunk) { $(domChunk).click(function() {
+	var t = this.title || this.name || null;
+	var a = this.href || this.alt;
+	var g = this.rel || false;
+	tb_show(t,a,g);
+	this.blur();
+	return false;
+	});
+}
+
+function tb_show(caption, url, imageGroup) {
+	try {
+		if (typeof document.body.style.maxHeight === "undefined") { //if IE 6
+			$("body","html").css({ height: "100%", width: "100%" });
+			$("html").css("overflow-x","hidden");
+			if (document.getElementById("TB_HideSelect") === null) {
+				$("body").append("<iframe id='TB_HideSelect'></iframe><div id='TB_overlay'></div><div id='TB_window'></div>");
+				$("#TB_overlay").click();
+			}
+		} else {
+			if(document.getElementById("TB_overlay") === null) {
+				$("body").append("<div id='TB_overlay'></div><div id='TB_window'></div>");
+				$("#TB_overlay").click();
+			}
+		}
+
+		if (tb_detectMacXFF()) { $("#TB_overlay").addClass("TB_overlayMacFFBGHack"); }
+		else{ $("#TB_overlay").addClass("TB_overlayBG"); }
+
+		if(caption===null) { caption=""; }
+		$("body").append("<div id='TB_load'><img src='"+imgLoader.src+"' /></div>"); $('#TB_load').show();
+
+		var baseURL;
+		if(url.indexOf("?")!==-1) { baseURL = url.substr(0, url.indexOf("?")); } //ff there is a query string involved
+		else { baseURL = url; }
+
+		var urlString = /\.jpg$|\.jpeg$|\.png$|\.gif$|\.bmp$/;
+		var urlType = baseURL.toLowerCase().match(urlString);
+		if (urlType == '.jpg' || urlType == '.jpeg' || urlType == '.png' || urlType == '.gif' || urlType == '.bmp') { /* code to show images */ }
+		else { //code to show html
+			var queryString = url.replace(/^[^\?]+\??/,'');
+			var params = tb_parseQuery( queryString );
+
+			TB_WIDTH = (params['width']*1) + 30 || 630;
+			TB_HEIGHT = (params['height']*1) + 40 || 440;
+			ajaxContentW = TB_WIDTH - 30;
+			ajaxContentH = TB_HEIGHT - 45;
+
+			if(url.indexOf('TB_iframe') != -1) {
+				urlNoQuery = url.split('TB_');
+			  	$("#TB_iframeContent").remove();
+			  	if(params['modal'] != "true") {
+					$("#TB_window").append("<div id='TB_title'>" +
+							       "<div id='TB_closeAjaxWindow'><a href='#' id='TB_closeWindowButton'>close X</a></div></div>" +
+							       "<iframe frameborder='0' hspace='0' src='" + urlNoQuery[0] + "' id='TB_iframeContent' name='TB_iframeContent" + Math.round(Math.random()*1000) +
+							       "' onload='tb_showIframe()' style='width:" + (ajaxContentW + 29) + "px; height:" + (ajaxContentH + 17) + "px;'> </iframe>" +
+						"<div id='TB_startBreak'><a href='#' id='TB_startBreakButton'\">No, Thank You</a></div>");
+			  	} else {
+			  		$("#TB_overlay").unbind();
+					$("#TB_window").append("<iframe frameborder='0' hspace='0' src='" +
+									urlNoQuery[0] + "' id='TB_iframeContent' name='TB_iframeContent" + Math.round(Math.random()*1000) +
+									"' onload='tb_showIframe()' style='width:" + (ajaxContentW + 29) + "px;height:" + (ajaxContentH + 17) + "px;'> </iframe>");
+			  	}
+			}
+
+		    $("#TB_closeWindowButton").click(function(){
+			closeReg();
+			tb_remove();
+			return false;
+		    });
+		    $("#TB_startBreakButton").click(function(){
+			closeReg();
+			tb_remove();
+			return false;
+		    });
+
+			if(url.indexOf('TB_inline') != -1) {
+				$("#TB_ajaxContent").append($('#' + params['inlineId']).children());
+				$("#TB_window").unload(function () { $('#' + params['inlineId']).append( $("#TB_ajaxContent").children() ); }); tb_position();
+				$("#TB_load").remove();
+				$("#TB_window").css({display:"block"});
+			} else if(url.indexOf('TB_iframe') != -1) {
+				tb_position();
+				if($.browser.safari) { $("#TB_load").remove(); $("#TB_window").css({display:"block"}); }
+			} else {
+				$("#TB_ajaxContent").load(url += "&random=" + (new Date().getTime()),function() {
+					tb_position(); $("#TB_load").remove();
+					tb_init("#TB_ajaxContent a.thickbox");
+					$("#TB_window").css({display:"block"});
+				});
+			}
+		}
+		if(!params['modal']) { document.onkeyup = function(e) {
+				if (e == null) { keycode = event.keyCode; } // ie
+				else { keycode = e.which; } // mozilla
+			};
+		}
+	} catch(e) { }
+}
+
+function tb_showIframe() { $("#TB_load").remove(); $("#TB_window").css({display:"block"}); }
+
+function tb_remove() {
+ 	$("#TB_imageOff").unbind("click");
+	$("#TB_closeWindowButton").unbind("click");
+	$("#TB_startBreakButton").unbind("click");
+	$("#TB_window").fadeOut("fast",function() { $('#TB_window,#TB_overlay,#TB_HideSelect').trigger("unload").unbind().remove(); });
+	$("#TB_load").remove();
+	if (typeof document.body.style.maxHeight == "undefined") { //if IE 6
+		$("body","html").css({height: "auto", width: "auto"}); $("html").css("overflow","");
+	} document.onkeydown = ""; document.onkeyup = ""; return false;
+}
+
+function tb_position() {
+	$("#TB_window").css({marginLeft: ('-' + TB_WIDTH/2 + 'px'), width: TB_WIDTH + 'px'});
+	if (window.scrollY) { $("#TB_window").css({top: (window.scrollY + 100) + 'px'}); }
+	else { $("#TB_window").css({top: (document.documentElement.scrollTop + 100) + 'px'}); }
+}
+
+function tb_parseQuery(query) { var Params = {};
+	if (!query) { return Params; }
+	var Pairs = query.split(/[;&]/);
+	for (var i = 0; i < Pairs.length; i++ ) { var KeyVal = Pairs[i].split('=');
+		if (!KeyVal || KeyVal.length != 2) { continue; }
+		var key = unescape(KeyVal[0]); var val = unescape(KeyVal[1]); val = val.replace(/\+/g, ' '); Params[key] = val;
+	} return Params;
+}
+
+function tb_getPageSize(){
+	var de = document.documentElement;
+	var w = window.innerWidth || self.innerWidth || (de&&de.clientWidth) || document.body.clientWidth;
+	var h = window.innerHeight || self.innerHeight || (de&&de.clientHeight) || document.body.clientHeight;
+	arrayPageSize = [w,h];
+	return arrayPageSize;
+}
+
+function tb_detectMacXFF() {
+	var userAgent = navigator.userAgent.toLowerCase();
+	if (userAgent.indexOf('mac') != -1 && userAgent.indexOf('firefox')!=-1) { return true; }
+}
+
+
+
+/* HOVER REG */
+
+function nlWriteSessionCookie(name,center,count) {
+	document.cookie = name + '=' + escape(center) + ',' + escape(count) + '; domain=webmd.com; path=/';
+}
+
+function nlWritePersistentCookie(name,dateCache,expireDate) {
+ 	document.cookie = escape(name) + '=' + escape(dateCache) + '; expires=' + (expireDate) + '; domain=webmd.com; path=/';
+}
+
+function nlGetCookie(name) {
+	var strResults = new String();
+	var offset = 0;
+	var end = 0;
+	var strSearch = new String(name) + '=';
+	if (document.cookie.length > 0) {
+		offset = document.cookie.indexOf(strSearch);
+		if (offset != -1) {
+			offset += strSearch.length;
+			end = document.cookie.indexOf(';', offset);
+			if (end == -1) { end = document.cookie.length; }
+			strResults = unescape(document.cookie.substring(offset, end));
+		}
+	} return strResults;
+}
+
+function nlGetParam(param) {
+	var regexS = '[\\?&]' + param + '=([^&#]*)';
+	var regex = new RegExp(regexS);
+	var tmpURL = window.location.href;
+	var results = regex.exec(tmpURL);
+	if (results == null) { return ''; }
+	else { return results[1]; }
+}
+
+function popReg() {
+	$(document).ready(function(){
+		var wmdhost = location.hostname;
+		if (wmdhost.indexOf('.preview.') != -1) { var qa = '.preview.'; } else { qa = '.'; }
+		var pgval = 'https://www' + qa + 'webmd.com/hw-popup/registration?cid=' + center_id;
+		tb_show('WebMD Newsletter Registration',pgval+'&KeepThis=true&TB_iframe=true&height=412&width=380','');
+		if($.browser.mozilla) {
+			window.onbeforeunload = function(){ return null; };
+		}
+	});
+}
+
+function closeReg() {
+	var firstDate = new Date();
+	var nextDate = new Date();
+	var closeWindow = 3;
+	var setDays = 30;
+	var setMonths = 6;
+	var noCache = 'N/A';
+	var regLife = 'hovReg_X';
+	wmdPageLink('nl-pv4-hov-' + center_id + '-x');
+	if (nlGetCookie(regLife) == '') {
+		var newExpiry = new Date(firstDate.setUTCDate(firstDate.getUTCDate() + setDays));
+		var newCache = newExpiry.toUTCString();
+		nlWritePersistentCookie(regLife,newCache,newExpiry.toUTCString());
+	}
+	else {
+		var currentDate = new Date();
+		var nextDate = new Date();
+		var inCache = nlGetCookie(regLife);
+		var maxExpiryCheck = new Date(currentDate.setUTCDate(currentDate.getUTCDate() - (setDays * (closeWindow - 1))));
+		if (Date.parse(inCache) < Date.parse(maxExpiryCheck)) {
+			var finalExpiry = new Date(nextDate.setUTCMonth(nextDate.getUTCMonth() + setMonths));
+			nlWritePersistentCookie(regLife,noCache,finalExpiry.toUTCString());
+		}
+		else {
+			var updateExpiry = new Date(nextDate.setUTCDate(nextDate.getUTCDate() + setDays));
+			var updateCache = updateExpiry.toUTCString();
+			nlWritePersistentCookie(regLife,updateCache,updateExpiry.toUTCString());
+		}
+	}
+}
+
+function validatePage() {
+	var findId = ',' + nlGetCookie('hovReg_L') + ',';
+	if (nlGetCookie('hovReg_L') == '' || (findId.indexOf(',' + center_id + ',') == -1)) {
+		if (nlGetCookie('hovReg_X') == '') {
+			if (s_sponsor_program == '' && nlGetParam('ecd') == '')  {
+				var pgType = nlGetCookie('hovReg_P');
+				var cSplit = pgType.split(',');
+				if (pgType != '') {
+					var validCID = cSplit[0];
+					var previousPV = cSplit[1];
+					if (validCID == center_id) {
+						var maxPV = 4;
+						var newPV = parseInt(previousPV) + 1;
+						if(newPV != maxPV && previousPV != maxPV) {
+							nlWriteSessionCookie('hovReg_P',center_id,newPV);
+						}
+						else if(newPV == maxPV) {
+							nlWriteSessionCookie('hovReg_P',center_id,maxPV);
+							var rand=Math.random();
+							if (rand > 0 || nlGetParam('debug') == 'on') {
+								wmdPageLink('nl-pv4-hov-' + center_id + '-y');
+								var st = document.createElement('link');
+									st.type = 'text/css';
+									st.rel = 'stylesheet';
+									st.href = 'https://img.webmd.com/dtmcms/live/webmd/consumer_assets/site_images/css/hover-reg_thickbox.css';
+									document.getElementsByTagName('head')[0].appendChild(st);
+								popReg();
+
+							}
+							else {
+								wmdPageLink('nl-pv4-hov-' + center_id + '-n');
+							}
+						}
+					}
+				}
+				else {
+					nlWriteSessionCookie('hovReg_P',center_id,1);
+				}
+			}
+		}
+	}
+}
+
+var nlCenterIDs = {};
+if (typeof center_id !== "undefined") {
+	if (nlCenterIDs[center_id]) {
+		// run on document ready
+		$(document).ready(function(){ validatePage(); });
+	}
+}

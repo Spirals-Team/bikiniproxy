@@ -1,0 +1,134 @@
+(function(window, $, bam, undef) { /* Private function to get native object type */
+
+	function type(obj) {
+		var ots = Object.prototype.toString,
+			t = ots.call(obj);
+		return t.slice(8, t.length - 1).toLowerCase();
+	}
+
+	var OBJECT = 'object',
+		STRING = 'string',
+		module = {
+			/**
+			 * @deprecated - use $.type when you don't need this level of detail
+			 * Returns object type
+			 * @obj <object> - any object
+			 * Provides a finer level of detail than $.type
+			 * Possible values:
+			 *	- object
+			 *	- function
+			 *	- string
+			 *	- array
+			 *	- date
+			 *	- number
+			 *	- boolean
+			 *	- error
+			 *	- null
+			 *	- undefined
+			 *	- xml : XML Document. Applies to XML Document container
+			 *	- NaN : Applies to number and date that contain invalid value
+			 *	- [tagName] : this is dynamic property that returns tag name if object is a DOM node
+			 */
+			typeOf: function(obj) {
+				//Track deprecated
+				bam.trackDeprecated({
+					method: 'typeOf',
+					module: 'bam.object'
+				});
+
+				var baseType = $.type(obj),
+					out = baseType,
+					nativeType;
+				if (/number|date/.test(baseType)) {
+					out = isNaN(obj) ? 'NaN' : out;
+				} else if (baseType === OBJECT) {
+					nativeType = type(obj);
+					if (nativeType === 'error') {
+						out = nativeType;
+					} else if ('nodeType' in obj) {
+						out = obj.nodeType === 9 ? 'xml' : obj.tagName.toLowerCase();
+					}
+				}
+				return out;
+			},
+			/**
+			 * Casts an object into a specified type
+			 * @obj <object> - object to be cast
+			 * @type <String> - object type name (i.e. string, number, date, boolean)
+			 * @return <object> - converted object value or NaN or same value as @obj
+			 */
+			/*cast: function(obj, type) {
+				var lType = typeof(type)===STRING?type.toLowerCase():null, nType, cValue=obj;
+				switch(lType) {
+					case 'string': cValue = ''+obj; break;
+					case 'number': cValue = +obj; break;
+					case 'boolean': cValue = !!obj; break;
+					case 'array': cValue = $.isArray(obj)?obj:[obj]; break;
+					case 'date': cValue = new Date(Date.parse(obj)); break;
+				}
+				return cValue;
+			},*/
+			/* Deprecated methods */
+			/**
+			 * Replaced by $.deep in jquery.etc.js
+			 */
+			/*getDeepValue: function() {
+				bam.trackDeprecated({method:"getDeepValue", module:"bam.object"});
+				return $.deep.apply($, arguments);
+			},
+			setDeepValue: function() {
+				bam.trackDeprecated({method:"setDeepValue", module:"bam.object"});
+				return $.deep.apply($, arguments);
+			},
+			eventProxy: function() {
+				bam.trackDeprecated({method:"eventProxy", module:"bam.object"});
+				return $.eventProxy.apply($, arguments);
+			},*/
+			/**
+			 * Replaced by jQuery.proxy
+			 */
+			/*proxy: function() {
+				bam.trackDeprecated({method:"proxy", module:"bam.object"});
+				return $.proxy.apply($, arguments);
+			},*/
+			/*
+			 * White-list returns only approved members of the object
+			 * @o - Object that contains members
+			 * @arrList - String array of white-listed members (only members you want in your output)
+			 * @returs - Object
+			 */
+			whiteList: function(o, arrList) {
+				var out = {};
+				if (typeof(o) === OBJECT && $.isArray(arrList)) {
+					for (var i = 0, l = arrList.length, name; l > i; i++) {
+						name = arrList[i];
+						if (name in o) {
+							out[name] = o[name];
+						}
+					}
+				}
+				return out;
+			},
+			/*
+			 * Black-list returns allmembers except those listed in the list
+			 * @o - Object that contains members
+			 * @arrList - String array of black-listed members (members you don't want in your output)
+			 * @returs - Object
+			 */
+			blackList: function(o, arrList) {
+				var out = {};
+				if (typeof(o) === OBJECT && $.isArray(arrList)) {
+					$.extend(out, o);
+					for (var i = 0, l = arrList.length, name; l > i; i++) {
+						name = arrList[i];
+						if (name in out) {
+							delete out[name];
+						}
+					}
+				}
+				return out;
+			}
+		};
+
+	bam.register("object", 1.0, module);
+})(window, jQuery, bam);

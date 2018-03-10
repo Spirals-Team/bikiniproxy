@@ -1,0 +1,231 @@
+// This function makes IE & FF see the same number of child nodes.
+function cleanWhitespace(node) {
+	var notWhitespace = /\S/;
+	for (var x = 0; x < node.childNodes.length; x++) {
+		var childNode = node.childNodes[x];
+		if ((childNode.nodeType === 3) && (!notWhitespace.test(childNode.nodeValue))) {
+       		node.removeChild(node.childNodes[x]);
+       		x--;
+     	}
+     	if (childNode.nodeType === 1) {
+       		this.cleanWhitespace(childNode);
+		}
+	}
+} 
+
+function load_nextlist_data() {
+    var xml_file= '/files/indiebound/next.xml';
+
+    jQuery.get(xml_file, function(xml) {
+     		cleanWhitespace(xml);
+
+        var items = jQuery('item', xml);
+        //randomly select a title to showcase
+        //var book = getBookData(items[Math.floor(Math.random()*items.length)]);
+        //We select book 1 cause of publisher marketing
+        var book = ibGetBookData(items[0]);
+        jQuery('.nextlist-creator').html('By ' + book.author);
+        jQuery('.nextlist-description').html('&quot;' + book.blurb.substring(0, 100) + '...&quot;<br /> ');
+        jQuery('.nextlist-contributor').html(book.contributor);
+        jQuery('.nextlist-image').html('<a href="/book/' + book.isbn + '" title = "' + book.title + ' - by ' + book.author + '"><img src="https://images.booksense.com/images/books/' + book.isbn.substring(10) + '/' + book.isbn.substring(7, 10) + '/FC' + book.isbn + '.JPG" width="92" alt="' + book.title + '"/></a>');
+        jQuery('.nextlist-title').html('<a href="/book/' + book.isbn + '" title = "' + book.title + ' - by ' + book.author + '">' + book.title + '</a>');
+    });
+
+
+};
+
+
+function load_bestseller_data() {
+    //randomly select an xml file
+    var xml_file;
+    var ranNum = Math.floor(Math.random()*7)+1;
+    switch (ranNum) {
+      case 1:
+      case 2:
+      case 3:
+      case 4:
+      case 5:
+      case 7:
+        xml_file= '/files/indiebound/bsbl-0-' + ranNum + '.xml';
+        break;
+      default:
+        xml_file= '/files/indiebound/bsbl-0-8.xml';
+    }
+
+    jQuery.get(xml_file, function(xml) {
+     		cleanWhitespace(xml);
+
+        var items = jQuery('item', xml);
+ 
+        
+        //randomly select a title to showcase
+        var book = getBookData(items[Math.floor(Math.random()*items.length)]);
+        jQuery('.bestseller-creator').html('By ' + book.creator);
+        jQuery('.bestseller-description').html(book.description);
+        jQuery('.bestseller-image').html('<a href="/book/' + book.isbn + '" title = "' + book.title + ' - by ' + book.creator + '"><img src="https://images.booksense.com/images/books/' + book.isbn.substring(10) + '/' + book.isbn.substring(7, 10) + '/FC' + book.isbn + '.JPG" width="92" alt="' + book.title + '"/></a>');
+        jQuery('.bestseller-title').html('<a href="/book/' + book.isbn + '" title = "' + book.title + ' - by ' + book.creator + '">' + book.title + '</a>');
+    });
+
+
+};
+
+function load_kidsnextlist_data() {
+
+    //randomly select an xml file
+	    var xml_file;
+
+	var ranNum = Math.floor(Math.random()*4)+1;
+	    switch (ranNum) {
+	      case 1:
+	      case 2:
+	      case 3:
+	      case 4:
+	        xml_file= '/files/indiebound/kidsnext-' + ranNum + '.xml';
+	        break;
+	      default:
+	        xml_file= '/files/indiebound/kidsnext-1.xml';
+	    }
+
+	    jQuery.get(xml_file, function(xml) {
+	     	cleanWhitespace(xml);
+
+	        var items = jQuery('item', xml);
+	        
+	        var anum = Math.floor(Math.random()*items.length);
+
+	        //randomly select a title to showcase
+	        var book = getkidsnextBookData(items[Math.floor(Math.random()*items.length)]); 
+	        jQuery('.kidsnextlist-creator').html('By ' + book.creator);
+	        jQuery('.kidsnextlist-contributor').html(book.contributor);
+	        jQuery('.kidsnextlist-image').html('<a href="/book/' + book.isbn + '" title = "' + book.title + ' - by ' + book.creator + '"><img src="https://images.booksense.com/images/books/' + book.isbn.substring(10) + '/' + book.isbn.substring(7, 10) + '/FC' + book.isbn + '.JPG" width="92" alt="' + book.title + '"/></a>');
+	        jQuery('.kidsnextlist-title').html('<a href="/book/' + book.isbn + '" title = "' + book.title + ' - by ' + book.creator + '">' + book.title + '</a>');
+	    });
+	    
+};
+
+function load_readingnextlist_data() {
+
+    //randomly select an xml file
+	    var xml_file = '/files/indiebound/rgroup-1.xml';
+	    jQuery.get(xml_file, function(xml) {
+	     	cleanWhitespace(xml);
+
+	        var items = jQuery('item', xml);
+
+	        //randomly select a title to showcase
+	        var book = getreadingnextBookData(items[Math.floor(Math.random()*items.length)]);
+	        jQuery('.readingnextlist-creator').html('By ' + book.creator);
+	        jQuery('.readingnextlist-contributor').html(book.contributor);
+	        jQuery('.readingnextlist-image').html('<a href="/book/' + book.isbn + '" title = "' + book.title + ' - by ' + book.creator + '"><img src="https://images.booksense.com/images/books/' + book.isbn.substring(10) + '/' + book.isbn.substring(7, 10) + '/FC' + book.isbn + '.JPG" width="92" alt="' + book.title + '"/></a>');
+	        jQuery('.readingnextlist-title').html('<a href="/book/' + book.isbn + '" title = "' + book.title + ' - by ' + book.creator + '">' + book.title + '</a>');
+	    });
+	    
+};
+
+function ibGetBookData(x) {
+  var book = new Object;
+  var isIE=navigator.userAgent.toLowerCase().indexOf("msie")>-1;
+  if (!isIE) { // if we're not using IE, parse using getElementsByTagNameNS
+     xx=x.getElementsByTagNameNS('http://purl.org/dc/elements/1.1/', "identifier"); {
+     try {
+      book.isbn = xx[0].firstChild.nodeValue;
+     } catch (er) {}
+    }
+    xx=x.getElementsByTagNameNS('http://purl.org/dc/elements/1.1/', "creator"); {
+    try {
+      book.author = xx[0].firstChild.nodeValue;
+      } catch (er) {}
+    }
+    xx=x.getElementsByTagNameNS('http://purl.org/dc/elements/1.1/', "publisher"); {
+    try {
+      book.publisher = xx[0].firstChild.nodeValue;
+      } catch (er) {}
+    }
+    xx=x.getElementsByTagNameNS('http://purl.org/dc/elements/1.1/', "description"); {
+    try {
+      book.blurb = xx[0].firstChild.nodeValue;
+      } catch (er) {}
+    }
+    xx=x.getElementsByTagNameNS('http://purl.org/dc/elements/1.1/', "contributor"); {
+    try {
+      book.contributor = xx[0].firstChild.nodeValue;
+      } catch (er) {}
+    }
+  }
+  else { // if we ARE in IE, ignore namespaces
+     xx=x.getElementsByTagName("dc:identifier"); {
+     try {
+      book.isbn = xx[0].firstChild.nodeValue;
+     } catch (er) {}
+    }
+  xx=x.getElementsByTagName("dc:creator");  {
+    try {
+        book.author = xx[0].firstChild.nodeValue;
+      } catch (er) {}
+    }
+  xx=x.getElementsByTagName("dc:publisher");  {
+    try {
+        book.publisher = xx[0].firstChild.nodeValue;
+      } catch (er) {}
+    }
+  xx=x.getElementsByTagName("dc:description");  {
+    try {
+        book.blurb = xx[0].firstChild.nodeValue;
+      } catch (er) {}
+    }
+  xx=x.getElementsByTagName("dc:contributor");  {
+    try {
+        book.contributor = xx[0].firstChild.nodeValue;
+      } catch (er) {}
+    }
+  }
+  
+   // title don't have a NS, so it doesn't matter.
+   xx=x.getElementsByTagName("title"); {
+     try {
+       book.title = xx[0].firstChild.nodeValue,0;
+     } catch (er) {}
+    }
+  return book;
+}
+
+function getBookData(item) {
+  var book = new Object;
+
+  book.title = jQuery('dctitle', item).text();
+  book.creator = jQuery('dccreator', item).text();
+  book.publisher = jQuery('dcpublisher', item).text();
+  book.description = jQuery('dcdescription', item).text();
+  book.contributor = jQuery('dccontributor', item).text();
+  book.isbn = jQuery('dcidentifier', item).text();
+  book.genre = jQuery('bsblrank', item).text();
+  return book;
+}
+
+function getkidsnextBookData(item) {
+	  var book = new Object;
+
+	  book.title = item.childNodes[3].firstChild.nodeValue;;
+	  book.creator = item.childNodes[4].firstChild.nodeValue;
+	  book.publisher = item.childNodes[5].firstChild.nodeValue;
+	  book.description = jQuery('description', item).text();
+	  book.contributor = jQuery('contributor', item).text();
+	  book.isbn = item.childNodes[6].firstChild.nodeValue;
+	  book.genre = item.childNodes[8].firstChild.nodeValue;
+	  
+	  return book;
+}
+
+function getreadingnextBookData(item) {
+	  var book = new Object;
+	  book.title = item.childNodes[3].firstChild.nodeValue;;
+	  book.creator = item.childNodes[4].firstChild.nodeValue;
+	  book.publisher = item.childNodes[5].firstChild.nodeValue;
+	  book.description = jQuery('description', item).text();
+	  book.contributor = jQuery('contributor', item).text();
+	  book.isbn = item.childNodes[6].firstChild.nodeValue;
+	  book.genre = item.childNodes[8].firstChild.nodeValue;
+	  return book;
+	}
+
+

@@ -1,0 +1,44 @@
+(function() {
+try {
+          var bs = document.createElement("img");
+      bs.src = "http://u3s.mathtag.com/sync/img?adv=144404&uuid=24de5a85-bced-4600-9f64-5313c0a3c958&mt_id=791909";
+      bs.style.display = 'none';
+      if (document.body)
+         document.body.appendChild(bs);
+(function(){
+/**/
+
+})();
+//used to sync advertiser without leaking referer to final destination
+(function() {
+    try {
+	var frm = document.createElement('iframe');
+	frm.style.visibility = 'hidden';
+	frm.style.display = 'none';
+	frm.src = "http://pixel.mathtag.com/sync/iframe?mt_uuid=24de5a85-bced-4600-9f64-5313c0a3c958&no_iframe=1&mt_adid=144404";
+	frm.setAttribute("id", "mm_sync_back_ground");
+	var trys = 0;
+        var interval = setInterval(function(){
+            if (trys++ < 20 && interval && !document.getElementById("mm_sync_back_ground")) {
+                if (document.body) {
+                    if (interval) {
+                        clearInterval(interval);
+                        interval = 0;
+                    }
+                    document.body.appendChild(frm);
+                }
+            }
+        }, 100);
+    }
+    catch(ex)
+    {
+	document.createElement("img").src="//pixel.mathtag.com/error/img?error_domain=synciframe&what="+encodeURIComponent(ex.message);
+    }
+})();
+
+}
+catch(ex)
+{
+   document.createElement("img").src="//pixel.mathtag.com/error/img?error_domain=wrap&what="+encodeURIComponent(ex.message);
+}
+})();

@@ -1,0 +1,18 @@
+jQuery.easing.jswing=jQuery.easing.swing,jQuery.extend(jQuery.easing,{def:"easeOutQuad",swing:function(g,f,d,c,b){return jQuery.easing[jQuery.easing.def](g,f,d,c,b);
+},easeInQuad:function(g,f,d,c,b){return c*(f/=b)*f+d;},easeOutQuad:function(g,f,d,c,b){return -c*(f/=b)*(f-2)+d;},easeInOutQuad:function(g,f,d,c,b){return(f/=b/2)<1?c/2*f*f+d:-c/2*(--f*(f-2)-1)+d;
+},easeInCubic:function(g,f,d,c,b){return c*(f/=b)*f*f+d;},easeOutCubic:function(g,f,d,c,b){return c*((f=f/b-1)*f*f+1)+d;},easeInOutCubic:function(g,f,d,c,b){return(f/=b/2)<1?c/2*f*f*f+d:c/2*((f-=2)*f*f+2)+d;
+},easeInQuart:function(g,f,d,c,b){return c*(f/=b)*f*f*f+d;},easeOutQuart:function(g,f,d,c,b){return -c*((f=f/b-1)*f*f*f-1)+d;},easeInOutQuart:function(g,f,d,c,b){return(f/=b/2)<1?c/2*f*f*f*f+d:-c/2*((f-=2)*f*f*f-2)+d;
+},easeInQuint:function(g,f,d,c,b){return c*(f/=b)*f*f*f*f+d;},easeOutQuint:function(g,f,d,c,b){return c*((f=f/b-1)*f*f*f*f+1)+d;},easeInOutQuint:function(g,f,d,c,b){return(f/=b/2)<1?c/2*f*f*f*f*f+d:c/2*((f-=2)*f*f*f*f+2)+d;
+},easeInSine:function(g,f,d,c,b){return -c*Math.cos(f/b*(Math.PI/2))+c+d;},easeOutSine:function(g,f,d,c,b){return c*Math.sin(f/b*(Math.PI/2))+d;},easeInOutSine:function(g,f,d,c,b){return -c/2*(Math.cos(Math.PI*f/b)-1)+d;
+},easeInExpo:function(g,f,d,c,b){return 0==f?d:c*Math.pow(2,10*(f/b-1))+d;},easeOutExpo:function(g,f,d,c,b){return f==b?d+c:c*(-Math.pow(2,-10*f/b)+1)+d;
+},easeInOutExpo:function(g,f,d,c,b){return 0==f?d:f==b?d+c:(f/=b/2)<1?c/2*Math.pow(2,10*(f-1))+d:c/2*(-Math.pow(2,-10*--f)+2)+d;},easeInCirc:function(g,f,d,c,b){return -c*(Math.sqrt(1-(f/=b)*f)-1)+d;
+},easeOutCirc:function(g,f,d,c,b){return c*Math.sqrt(1-(f=f/b-1)*f)+d;},easeInOutCirc:function(g,f,d,c,b){return(f/=b/2)<1?-c/2*(Math.sqrt(1-f*f)-1)+d:c/2*(Math.sqrt(1-(f-=2)*f)+1)+d;
+},easeInElastic:function(k,j,f,c,b){var h=1.70158,d=0,g=c;if(0==j){return f;}if(1==(j/=b)){return f+c;}if(d||(d=0.3*b),g<Math.abs(c)){g=c;var h=d/4;}else{var h=d/(2*Math.PI)*Math.asin(c/g);
+}return -(g*Math.pow(2,10*(j-=1))*Math.sin(2*(j*b-h)*Math.PI/d))+f;},easeOutElastic:function(k,j,f,c,b){var h=1.70158,d=0,g=c;if(0==j){return f;}if(1==(j/=b)){return f+c;
+}if(d||(d=0.3*b),g<Math.abs(c)){g=c;var h=d/4;}else{var h=d/(2*Math.PI)*Math.asin(c/g);}return g*Math.pow(2,-10*j)*Math.sin(2*(j*b-h)*Math.PI/d)+c+f;},easeInOutElastic:function(k,j,f,c,b){var h=1.70158,d=0,g=c;
+if(0==j){return f;}if(2==(j/=b/2)){return f+c;}if(d||(d=0.3*b*1.5),g<Math.abs(c)){g=c;var h=d/4;}else{var h=d/(2*Math.PI)*Math.asin(c/g);}return 1>j?-0.5*g*Math.pow(2,10*(j-=1))*Math.sin(2*(j*b-h)*Math.PI/d)+f:g*Math.pow(2,-10*(j-=1))*Math.sin(2*(j*b-h)*Math.PI/d)*0.5+c+f;
+},easeInBack:function(h,g,d,c,b,f){return void 0==f&&(f=1.70158),c*(g/=b)*g*((f+1)*g-f)+d;},easeOutBack:function(h,g,d,c,b,f){return void 0==f&&(f=1.70158),c*((g=g/b-1)*g*((f+1)*g+f)+1)+d;
+},easeInOutBack:function(h,g,d,c,b,f){return void 0==f&&(f=1.70158),(g/=b/2)<1?c/2*g*g*(((f*=1.525)+1)*g-f)+d:c/2*((g-=2)*g*(((f*=1.525)+1)*g+f)+2)+d;},easeInBounce:function(g,f,d,c,b){return c-jQuery.easing.easeOutBounce(g,b-f,0,c,b)+d;
+},easeOutBounce:function(g,f,d,c,b){return(f/=b)<1/2.75?7.5625*c*f*f+d:2/2.75>f?c*(7.5625*(f-=1.5/2.75)*f+0.75)+d:2.5/2.75>f?c*(7.5625*(f-=2.25/2.75)*f+0.9375)+d:c*(7.5625*(f-=2.625/2.75)*f+0.984375)+d;
+},easeInOutBounce:function(g,f,d,c,b){return b/2>f?0.5*jQuery.easing.easeInBounce(g,2*f,0,c,b)+d:0.5*jQuery.easing.easeOutBounce(g,2*f-b,0,c,b)+0.5*c+d;
+}});

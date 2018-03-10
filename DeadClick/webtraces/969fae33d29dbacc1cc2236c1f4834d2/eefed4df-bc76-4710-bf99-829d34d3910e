@@ -1,0 +1,245 @@
+/* Author:
+Last Exit London
+*/
+
+var sliders = {
+	settings:{
+		basicSlider: $('.home-slider')
+	},
+	init: function () {
+		this.settings.basicSlider.flexslider({
+	    	animation: "slide",
+			controlNav: true,
+			directionNav: false,
+			slideshow: true
+		});
+	}
+};
+
+var tabs = {
+	settings: {
+		tabs: $('.tabs'),
+		tabNav: '.tab-nav li a',
+		tabContent: '.tab-content'
+	},
+	init: function () {
+
+		var s =  this.settings;
+
+		s.tabs.each( function() {
+
+			this.tabNav = $(this).find(s.tabNav);
+			this.tabContent = $(this).find(s.tabContent);
+			that = this;
+
+			this.show = function(i) {
+				this.tabContent.eq(i).show().siblings(s.tabContent).hide();
+				this.tabNav.removeClass("selected").eq(i).addClass("selected");
+			};
+
+			this.tabNav.click( function() {
+				var i = that.tabNav.index(this);
+				that.show(i);
+				return false;
+			});
+
+			this.show(0);
+
+		});
+
+	}
+
+};
+
+var nav = {
+	settings: {
+
+	},
+	init: function () {
+
+		var that = this,
+		delay = 1000,
+		timeoutVar;
+
+		$(".site-nav").on( "mouseenter", "> ul > li > a", function() {
+
+			clearTimeout(timeoutVar);
+
+			var l2 = $(this).siblings(".nav-level-2");
+
+			if(l2.length > 0){
+				$(".sub-nav .level-2").find(".nav-content").html(l2.clone()).end().addClass("on");
+			} else {
+				$(".sub-nav .level-2").removeClass("on");
+				$(".sub-nav .level-3").removeClass("on");
+			}
+
+
+		}).on("mouseleave", function(){
+				timeoutVar = setTimeout(function(){ that.clearNav(); }, delay);
+		});
+
+		$(".sub-nav .level-2 .nav-content").on( "mouseenter", "> ul > li > a", function() {
+
+
+			var l3 = $(this).siblings(".nav-level-3");
+
+			if(l3.length > 0) {
+				$(".sub-nav .level-3").find(".nav-content").html(l3.clone()).end().addClass("on");
+			} else {
+				$(".sub-nav .level-3").removeClass("on");
+			}
+
+		});
+
+
+		$(".sub-nav").on( "mouseenter", function () {
+
+			clearTimeout(timeoutVar);
+
+		}).on("mouseleave", function(){
+			timeoutVar = setTimeout(function(){ that.clearNav(); }, delay);
+		});
+
+	},
+	clearNav: function () {
+
+		$(".sub-nav .level-2").removeClass("on");
+		$(".sub-nav .level-3").removeClass("on");
+
+	}
+};
+
+var stickyNav = {
+
+	init: function () {
+
+		$('.site-header').waypoint( function(direction) {
+
+			if(direction === "down") {
+				$("body").addClass("sticky-nav");
+			} else {
+				$("body").removeClass("sticky-nav");
+			}
+
+
+
+		}, {
+			offset: -65
+		});
+
+	}
+};
+
+var pages = {
+	settings: {
+		selector: $(".paginate"),
+		item: "li",
+		perpage: 10,
+	},
+	init: function () {
+
+		var that = this;
+
+		this.settings.selector.each(function() {
+
+			var $items = $(this).find(that.settings.item);
+
+			$items.hide();
+
+			$($items.slice(0,that.settings.perpage)).show();
+
+			$(this).data("page", 1);
+
+
+			//console.log(pages);
+			//$(selector).siblings(".pages-control")append($(that.controls(pages)));
+
+			console.log($(this).siblings(".pages-control"));
+
+			$(this).siblings(".pages-control").html(that.controls($items, $(this)));
+
+
+
+		});
+	},
+	controls: function ($items, $parent) {
+
+		var that = this,
+			pages = Math.ceil( $items.length / that.settings.perpage ),
+			html = "<ul><li><a href=\"#\" class=\"back\">&laquo;</a></li>",
+			$controls;
+
+		for (var i = 0; i < pages; i++) {
+			html += "<li><a href=\"#\" data-n=\""+(i+1)+"\">"+(i+1)+"</a></li>";
+		}
+
+		html += "<li><a href=\"#\" class=\"forward\">&raquo;</a></li></ul>";
+
+		//console.log(html);
+
+		$controls = $(html);
+
+		$controls.on("click", "a", function(e) {
+
+			var $link = $(this),
+				n;
+
+			if ($link.hasClass("back")) {
+
+				n = $parent.data("page") - 1;
+
+				if( n > 0 ) {
+					that.toPage(n,$items, $parent);
+				}
+
+			} else if ($link.hasClass("forward")) {
+
+				n = $parent.data("page") + 1;
+
+				if( n <= pages ) {
+					that.toPage(n, $items, $parent);
+				}
+
+			} else {
+
+				n = parseInt( $link.text() , 10);
+
+				that.toPage(n, $items, $parent);
+
+			}
+
+
+
+			e.preventDefault();
+		});
+
+		return $controls;
+
+	},
+	toPage: function (n, $items, $parent) {
+
+		console.log(n);
+
+		$items.hide().slice( this.settings.perpage * (n-1), this.settings.perpage * n).show();
+
+		$parent.siblings(".pages-control").find("a[data-n="+n+"]").addClass("selected");
+
+		$parent.data("page", n);
+
+	}
+};
+
+
+$(document).ready( function (){
+	sliders.init();
+	pages.init();
+	nav.init();
+	stickyNav.init();
+	//tabs.init();
+
+	$(".print-friendly").click(function () {
+        window.print();
+    });
+
+});

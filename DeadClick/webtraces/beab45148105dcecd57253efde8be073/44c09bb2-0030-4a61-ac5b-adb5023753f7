@@ -1,0 +1,127 @@
+function applyCoupon(promoCode,dialogBox) {
+	console.log('coupon being applied to: ' + '#'+dialogBox);
+	if (dialogBox && promoCode) {
+		$.ajax({
+			type: "POST",
+			url: "/on/demandware.store/Sites-MichaelsUS-Site/default/Cart-AddCoupon",
+			data: { couponCode: promoCode, format: "ajax" }
+		})
+		.done(function( msg ) {
+			console.log( msg );
+			if (msg.status == "OK") {
+				$('#'+dialogBox+' .status, #'+dialogBox+' .message').removeClass('ajax-error').addClass('ajax-succes');
+			} else {
+				$('#'+dialogBox+' .status, #'+dialogBox+' .message').removeClass('ajax-succes').addClass('ajax-error');
+			}
+			$('#'+dialogBox+' .message').html(msg.message);
+			$('#'+dialogBox+' .status-message').show();
+		});
+	}
+}
+
+function applyCouponSwitch(promoCode,dialogBox) {
+	console.log('coupon being applied to: ' + '#'+dialogBox);
+	if (dialogBox && promoCode) {
+		$.ajax({
+			type: "POST",
+			url: "/on/demandware.store/Sites-MichaelsUS-Site/default/Cart-AddCoupon",
+			data: { couponCode: promoCode, format: "ajax" }
+		})
+		.done(function( msg ) {
+			console.log( msg );
+			if (msg.status == "OK") {
+				$('#'+dialogBox+' .status, #'+dialogBox+' .message').removeClass('ajax-error').addClass('ajax-succes');
+			} else {
+				$('#'+dialogBox+' .status, #'+dialogBox+' .message').removeClass('ajax-succes').addClass('ajax-error');
+			}
+			$('#'+dialogBox+' .message').html(msg.message);
+			$('#'+dialogBox+' .apply-coupon-switch').css({
+				'display':'none'
+			});
+			$('#'+dialogBox+' .status-message').show();
+		});
+	}
+}
+
+$(document).ready(function(){
+	// Open Dialog Box
+	$('body').on('click', '.open-dialog', function(e){
+		e.preventDefault();
+		console.log('click to open-dialog');
+		
+		var promo = $(this).attr('data-promo-code'),
+			dialogBox = "cart-add-coupon-dialog",
+			boxSize = {
+				boxW: 450,
+				boxH: 80
+			};
+
+		if ($(this).attr('data-dailog-box')) {
+			dialogBox = $(this).attr('data-dailog-box');
+		}
+
+		if ($(this).data('dailog-size').boxW) {
+			boxSize.boxW = $(this).data('dailog-size').boxW;
+		}
+		if ($(this).data('dailog-size').boxH) {
+			boxSize.boxH = $(this).data('dailog-size').boxH;
+		}
+
+		if (promo) {
+			console.log("true");
+			
+			applyCoupon(promo,dialogBox);
+
+			app.dialog.create({
+				target: $("#"+dialogBox),
+				options: {
+					width: boxSize.boxW,
+					dialogClass: dialogBox
+				}
+			});
+
+			$("#"+dialogBox).dialog('open');
+
+		} else {
+			console.log("false");
+
+			app.dialog.create({
+				target: $("#"+dialogBox),
+				options: {
+					width: boxSize.boxW,
+					dialogClass: dialogBox
+				}
+			});
+
+			$("#"+dialogBox).dialog('open');
+		}
+	});
+
+	$('body').on('click','a.apply-coupon', function(e){
+		e.preventDefault();
+		console.log('click to apply coupon');
+		var promo = $(this).attr('data-promo-code'),
+			dialogBox = "cart-add-coupon-dialog";
+
+		if ($(this).attr('data-dailog-box')) {
+			dialogBox = $(this).attr('data-dailog-box');
+		}
+		if (promo) {
+			applyCoupon(promo,dialogBox);
+		}
+	});
+
+	$('body').on('click','a.apply-coupon-switch', function(e){
+		e.preventDefault();
+		console.log('click to apply coupon');
+		var promo = $(this).attr('data-promo-code'),
+			dialogBox = "cart-add-coupon-dialog";
+
+		if ($(this).attr('data-dailog-box')) {
+			dialogBox = $(this).attr('data-dailog-box');
+		}
+		if (promo) {
+			applyCoupon(promo,dialogBox);
+		}
+	});
+});

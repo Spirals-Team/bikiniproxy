@@ -1,0 +1,1 @@
+/**/pfMod.saveAdSettings({"domain_settings":{"ad_free":false,"brand_free":false,"ad_type":"adsense_new","classification":"white","redirect":true,"bk_redirect":false}})

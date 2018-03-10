@@ -1,0 +1,528 @@
+$jQuery(document).ready(function () {
+    initBlock();
+    initPopup();
+    initPopup2();
+    CookiePolicyInit();
+    PT.Oticon.DomReady();
+    $jQuery(".open_popup").click(function () {
+        $jQuery('.pika_main').remove();
+        $jQuery('#popup_content').jpopup({
+            close: true,
+            closeText: 'close',
+            onShow: initGallery
+        });
+        return false;
+    });
+
+    $jQuery('td:odd, th:odd').addClass("alt-row");
+    $jQuery('th:first').addClass("product");
+    $jQuery('th:first').css('text-align', 'left');
+    $jQuery('tr.last td').css('padding-bottom', '10px');
+    $jQuery('tr.last td, tr.bottom td').css('border-bottom', '1px solid #e0e0e0');
+    $jQuery('tr.bottom td').css('padding-bottom', '15px');
+
+    $jQuery.fn.alignCenter = function () {
+        //get margin left
+        //var marginLeft = Math.max(40, parseInt($jQuery(window).width()/2 - $jQuery(this).width()/2)) + 'px';
+        //get margin top
+        var marginTop = Math.max(40, parseInt($jQuery(window).height() / 2 - $jQuery(this).height() / 2)) + 'px';
+        //return updated element
+        return $jQuery(this).css({ 'margin-top': marginTop });
+    };
+
+    $jQuery("map > area").tooltip({ positionLeft: true });
+});
+
+$jQuery(document).click(function () {
+    $jQuery('.content_popup_block').hide();
+    $jQuery('.popup_block2').hide();
+});
+
+/*
+===================================
+PT.LB.Foundry
+===================================
+*/
+PT = {
+    Oticon: {
+        /*
+        ===================================
+        DomReady
+        ===================================
+        */
+        DomReady: function () {
+            this.SetupCarousel();
+            this.SetupCarouselRightSpot();
+            this.SetupCarouselVideoPlayer();
+            this.SetupSubnavigationDropdown();
+            //this.InsertOverlayBoxArrow();
+            this.InsertOverlayPlayButton();
+        },
+
+        /*
+        ===================================
+        Globals
+        ===================================
+        */
+        Globals: {
+            CarouselPause: false
+        },
+
+        GlobalsRightSpot: {
+            CarouselRightSpotPause: false
+        },
+        /*
+        ===================================
+        SetupCarousel
+        ===================================
+        */
+        SetupCarousel: function () {
+            jQuery(".CarouselSpot").slides({
+                container: "CarouselElements",
+                hoverPause: true,
+                effect: "fade",
+                generateNextPrev: true,
+                fadeEasing: "easeOutQuad",
+                fadeSpeed: 500,
+                crossfade: false,
+                paginationClass: "CarouselNavigation",
+                currentClass: "Current",
+                start: jQuery(".CarouselSpot").attr("startposition"),
+                animationStart: function () {
+                    jQuery(".CarouselSpot .Overlay").animate({ left: -230, opacity: 0.25 }, 350, "easeOutExpo");
+                },
+                animationComplete: function () {
+                    jQuery(".CarouselSpot .Overlay").animate({ left: 20, opacity: 1.0 }, 500, "easeOutExpo");
+                    PT.Oticon.SetupCarouselTiming();
+                },
+                slidesLoaded: function () {
+                    jQuery(".CarouselSpot .Overlay").animate({ left: 20, opacity: 1.0 }, 500, "easeOutExpo");
+                    PT.Oticon.SetupCarouselTiming();
+                }
+            }).bind("mouseover", function () {
+                PT.Oticon.Globals.CarouselPause = true;
+                clearTimeout(CarouselTimeout);
+            }).bind("mouseout", function () {
+                PT.Oticon.Globals.CarouselPause = false;
+                PT.Oticon.SetupCarouselTiming();
+            });
+        },
+
+        /*
+        ===================================
+        SetupCarouselRightSpot
+        ===================================
+        */
+        SetupCarouselRightSpot: function () {
+            jQuery(".RightColumnCarousel").slides({
+                container: "CarouselElements",
+                hoverPause: true,
+                effect: "fade",
+                generateNextPrev: true,
+                fadeEasing: "easeOutQuad",
+                fadeSpeed: 500,
+                crossfade: false,
+                paginationClass: "CarouselNavigationRightSpot",
+                currentClass: "Current",
+                start: jQuery(".CarouselSpot").attr("startposition"),
+                animationStart: function () {
+                    jQuery(".RightColumnCarousel .Overlay").animate({ left: -210, opacity: 0.25 }, 350, "easeOutExpo");
+                    jQuery(".RightColumnCarousel .OverlayBottom").animate({ left: -210, opacity: 0.25 }, 350, "easeOutExpo");
+                },
+                animationComplete: function () {
+                    jQuery(".RightColumnCarousel .Overlay").animate({ left: 0, opacity: 1.0 }, 500, "easeOutExpo");
+                    jQuery(".RightColumnCarousel .OverlayBottom").animate({ left: 0, opacity: 1.0 }, 500, "easeOutExpo");
+                    PT.Oticon.SetupCarouselTimingRightSpots();
+                },
+                slidesLoaded: function () {
+                    jQuery(".RightColumnCarousel .Overlay").animate({ left: 0, opacity: 1.0 }, 500, "easeOutExpo");
+                    jQuery(".RightColumnCarousel .OverlayBottom").animate({ left: 0, opacity: 1.0 }, 500, "easeOutExpo");
+                    PT.Oticon.SetupCarouselTimingRightSpots();
+                }
+            }).bind("mouseover", function () { PT.Oticon.GlobalsRightSpot.CarouselRightSpotPause = true; clearTimeout(CarouselTimeoutRightSpot); });
+        },
+
+        /*
+        ===================================
+        SetupCarouselTiming
+        ===================================
+        */
+        SetupCarouselTiming: function () {
+            if (!PT.Oticon.Globals.CarouselPause) {
+                CarouselTimeout = setTimeout(function () {
+                    jQuery(".next", ".CarouselSpot").trigger("click");
+                }, (function () { return (jQuery(".CarouselSpot .CarouselElement:visible").data("delay") * 1000) })());
+            }
+
+        },
+
+        SetupCarouselTimingRightSpots: function () {
+            if (!PT.Oticon.GlobalsRightSpot.CarouselRightSpotPause) {
+                CarouselTimeoutRightSpot = setTimeout(function () {
+                    jQuery(".next", ".RightColumnCarousel").trigger("click");
+                }, (function () { return (jQuery(".RightColumnCarousel .CarouselElements .slides_control .CarouselElement:visible").data("delay") * 1000) })());
+            }
+
+        },
+
+
+        /*
+        ===================================
+        SetupCarouselVideoPlayer
+        ===================================
+        */
+        SetupCarouselVideoPlayer: function () {
+            // Configuration
+            var PlayerWidth = 568;
+            var PlayerHeight = 320;
+            var PlayerLink = jQuery(".VideoLink");
+            // Set locale class to enable specific styling
+            //jQuery("#colorbox").addClass("CarouselColorbox");
+            // Initialize colorbox and flashembed
+            PlayerLink.each(function () {
+                var CurrentPlayer = jQuery(this).siblings(".CarouselVideoPlayer");
+                var CurrentFilePath = CurrentPlayer.find("a").attr("href");
+                jQuery(this).colorbox({
+                    opacity: 0.9,
+                    inline: true,
+                    href: CurrentPlayer,
+                    innerWidth: PlayerWidth,
+                    innerHeight: PlayerHeight,
+                    onComplete: function () {
+                        CurrentPlayer.not(".flash-replaced").flash({
+                            src: "/Components/Video/Flash/main.swf",
+                            allowscriptaccess: 'always',
+                            width: PlayerWidth,
+                            height: PlayerHeight,
+                            expressInstall: true,
+                            wmode: "transparent",
+                            allowFullScreen: true,
+                            flashvars: {
+                                fileName: CurrentFilePath,
+                                embedMode: 1
+                            }
+                        }).end().show();
+                    },
+                    onOpen: function () {
+                        jQuery("#colorbox").show();
+
+                    },
+                    onCleanup: function () {
+                        CurrentPlayer.hide();
+                    }
+                });
+
+            });
+        },
+
+        /*
+        ===================================
+        SetupColorBoxVideoLink
+        ===================================
+        */
+        SetupColorBoxVideoLink: function () {
+            // Configuration
+            var PlayerWidth = 568;
+            var PlayerHeight = 320;
+            var PlayerLink = jQuery(".colorboxvideolink");
+            // Initialize colorbox and flashembed
+            PlayerLink.each(function () {
+                var CurrentPlayer = jQuery(this).find(".ColorBoxVideoPlayer");
+                var CurrentFilePath = PlayerLink.attr("href");
+                jQuery(this).colorbox({
+                    opacity: 0.9,
+                    inline: true,
+                    href: CurrentPlayer,
+                    innerWidth: PlayerWidth,
+                    innerHeight: PlayerHeight,
+                    onComplete: function () {
+                        CurrentPlayer.not(".flash-replaced").flash({
+                            src: "/Components/Video/Flash/main.swf",
+                            allowscriptaccess: 'always',
+                            width: PlayerWidth,
+                            height: PlayerHeight,
+                            expressInstall: true,
+                            wmode: "transparent",
+                            allowFullScreen: true,
+                            flashvars: {
+                                fileName: CurrentFilePath,
+                                embedMode: 1,
+                                autoStart: 1
+                            }
+                        }).end().show();
+                    },
+                    onOpen: function () {
+                        jQuery("#colorbox").show();
+
+                    },
+                    onCleanup: function () {
+                        CurrentPlayer.hide();
+                    }
+                });
+            });
+        },
+
+        /*
+        ===================================
+        SetupSubnavigationDropdown
+        ===================================
+        */
+        SetupSubnavigationDropdown: function () {
+
+            if ($jQuery('#global-nav').length) {
+
+                function showDropdown() {
+                    var parentListItem = jQuery(this);
+                    var Position = parentListItem.position();
+                    var Width = parentListItem.width();
+                    jQuery('.header', this).css('left', Position.left + (Width / 2));
+                    $jQuery('.dropdown', this).slideDown(300);
+                };
+                function hideDropdown() {
+                    $jQuery('.dropdown', this).slideUp(100);
+                };
+
+                var hoverConfig = {
+                    over: showDropdown,
+                    out: hideDropdown,
+                    timeout: 100,
+                    sensitivity: 5,
+                    interval: 50
+                };
+
+                $jQuery('#global-nav li').hoverIntent(hoverConfig);
+            }
+
+
+
+            /*
+            var IsDropdownActive = false;
+            var HoverDelay = 200;
+
+            jQuery("li > a", "#global-nav").hover(
+            function (event) {
+            var $This = jQuery(this);
+            var Position = $This.position();
+            var Width = $This.width();
+            jQuery(this).siblings(".dropdown").slideDown().find(".header").css("left", Position.left + (Width / 2));
+            },
+            function (event) {
+            var Element = event.target;
+            setTimeout(function () {
+            if (!IsDropdownActive) {
+            jQuery(Element).siblings(".dropdown").slideUp();
+            }
+            }, HoverDelay)
+            });
+
+            jQuery(".dropdown", "#global-nav").hover(
+            function () {
+            IsDropdownActive = true;
+            },
+            function () {
+            IsDropdownActive = false;
+            jQuery(this).slideUp();
+            });
+            */
+        },
+
+
+        /*
+        ===================================
+        InsertOverlayBoxArrow
+        ===================================
+        */
+        InsertOverlayBoxArrow: function () {
+            jQuery(".CarouselElement .Overlay").not(".OverlayBottom").prepend("<div class=\"OverlayBoxArrow\"></div>");
+        },
+
+        /*
+        ===================================
+        InsertOverlayPlayButton
+        ===================================
+        */
+        InsertOverlayPlayButton: function () {
+            jQuery(".CarouselElement .Overlay .VideoLink").prepend("<span/>");
+        }
+
+
+
+    }
+}
+
+function initGallery(){
+	
+	$jQuery(".pikame").PikaChoose({
+		show_captions: false,
+		slide_enabled: true,
+		auto_play: false,
+     	show_prev_next: false,
+     	slide_speed: 5000,
+		thumb_width: 50,
+		thumb_height: 50,
+		buttons_text: { play: "Play", stop: "Stop", previous: "Previous", next: "Next" },
+		delay_caption: true,
+		user_thumbs: false
+	});
+}
+	
+function initBlock(){
+	$jQuery('.home-top-block ul li div.hover-bg, .home-top-block2 ul li div.hover-bg').hide();
+	$jQuery('.home-top-block ul li, .home-top-block2 ul li').hover(function(){
+		$jQuery(this).find('div.hover-bg').fadeIn();
+	},
+	function(){
+		$jQuery(this).find('div.hover-bg').fadeOut();
+	})
+};
+
+var var1 = "<img src=img/map1.png>";
+var var2 = "<img src=img/map2.png>";
+function download(e){
+	document.getElementById("map").innerHTML = e;
+}
+
+
+function highlightLinks(obj) {
+   var linkList = document.getElementById("map-link").getElementsByTagName("a");
+   for (i = 0; i < linkList.length; i++) {
+      linkList[i].className = "";
+   }
+   obj.className = "active";
+}
+
+/* popup*/
+function initPopup(){
+	$jQuery('div.popup_block a.close').click(function(){
+		$jQuery('div.popup_block').css('display','none');
+		return false;
+	});
+	$jQuery('#content a.popup').click(function(e){
+		var pos = $jQuery(this).offset();
+		$jQuery('#popup_box').show();
+		$jQuery('#popup_box').css({
+			'visibility':'hidden',
+			'top': pos.top - 1435,
+			'left': pos.left - 140
+		});
+		$jQuery('#popup_box').alignCenter().css({
+			'visibility':'visible'
+		});
+		return false;
+	});
+}
+
+function initPopup2(){
+	$jQuery('div.popup_block2 a.close').click(function(){
+		$jQuery('div.popup_block2').css('display','none');
+		return false;
+	});
+}
+
+/*
+===================================
+CookiePolicyInit
+===================================
+*/
+function CookiePolicyInit() {
+    var cookieValue = jQuery.cookie("CookiePolicyShown");
+    var WaitingTime = parseInt(jQuery("input#WaitingTime").val(), 10);
+
+    if (jQuery("div#cookiePolicyBanner").size()==1) {
+        if (!cookieValue) {
+
+            setTimeout(
+                function () {
+                    var SlidingTime = parseInt(jQuery("input#HiddenSlidingTime").val(), 10);
+
+                    /* MOVE THE MENU UPWARD for the shadow*/
+//                    jQuery("div#page").css('margin-top', '-5px');
+                    /* Display the banner and sliding it down*/
+                    jQuery("div#cookiePolicyBanner").css('display', 'inline-block');
+                    jQuery("div#cookiePolicyBanner").animate({ "height": "100px" }, SlidingTime);
+
+                    //move the background wrapper due to the shadow (100-5px)
+                    if (jQuery.browser.mozilla) {
+                        jQuery("body.home").css({
+                            'background-position': 'left 95px',
+                            '-moz-transition': 'all ' + SlidingTime + 'ms'
+                        });
+                    }
+                    else {
+                        jQuery("body.home").animate({
+                            'background-position-y': "95px"
+                        }, SlidingTime);
+                    }
+                }, WaitingTime);
+        } 
+    }
+}
+
+/*
+===================================
+UpdateCookiePolicy
+===================================
+*/
+function UpdateCookiePolicy() {
+    var AcknowledgePeriod = parseInt(jQuery("input#HiddenAcknowledgePeriod").val(), 10);
+    var SlidingTime = parseInt(jQuery("input#HiddenSlidingTime").val(), 10);
+
+    /*Add a cookie*/
+    var date = new Date();
+    date.setDate(date.getDate() + AcknowledgePeriod);
+    jQuery.cookie("CookiePolicyShown", AcknowledgePeriod, { expires: date, path: "/" });
+
+    /* 5px: it is the div#cookiePolicyBanner (-) margin-bottom*/
+    jQuery("div#cookiePolicyBanner").animate({ "height": "5px" }, SlidingTime, function () {
+        /* hide banner agian */
+        jQuery("div#cookiePolicyBanner").css('display', 'none');
+        /* set menu margin to 0 again */
+        jQuery("div#page").css('margin-top', '0');
+    });
+
+    //move the background wrapper due to the shadow
+    if (jQuery.browser.mozilla) {
+        jQuery("body.home").css({
+            'background-position': 'left top',
+            '-moz-transition': 'all ' + SlidingTime + 'ms'
+        });
+    }
+    else {
+        jQuery("body.home").animate({
+            'background-position-y': "0"
+        }, SlidingTime);
+    }
+}
+        
+/*
+===================================
+RemoveCookiePolicy
+===================================
+*/
+function RemoveCookiePolicy() {
+    jQuery.removeCookie("CookiePolicyShown");
+}
+
+function ValidateQuerygss() {
+    if (jQuery.trim(jQuery("input.search-query").val()) == '') {
+        return false;
+    }
+    else {
+        return true;
+    }
+
+}
+
+// Clears textbox on focus
+function TextBoxOnFocus(c, defaultText) {
+    if (c.type == "text") {
+        if (defaultText == null)
+            defaultText = c.defaultValue;
+
+        if (c.value == defaultText)
+            c.value = '';
+    }
+    else if (c.type == "textarea") {
+        c.select();
+    }
+} 

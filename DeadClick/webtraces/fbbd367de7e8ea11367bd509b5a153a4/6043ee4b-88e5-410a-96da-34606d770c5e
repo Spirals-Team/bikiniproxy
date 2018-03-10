@@ -1,0 +1,63 @@
+
+jQuery.widget( 'app.selectmenu', jQuery.ui.selectmenu, {
+    _drawButton: function() {
+        this._super();
+        
+        var selected = this.element
+                .find( '[selected]' )
+                .length,
+            placeholder = this.options.placeholder;
+        
+        if ( !selected && placeholder ) {
+            this.buttonText.text( placeholder );    
+        }
+    }
+});
+
+jQuery(document).ready(function($) {
+	$('#city_menu').selectmenu({
+		width: 200,
+		placeholder: 'Select Your Region',
+        select: function( event, ui ) {
+            window.location.href = ui.item.value;
+        }
+	});
+
+    $('.print-link a').click(function(e) {
+        e.preventDefault();
+        window.print();
+    });
+
+    if($('.dropdown').is('*')) {
+        $('.dropdown ul.filter').columnize({
+            width: 210,
+        });
+        
+        $('.dropdown .toggle').click(function(e){
+            e.preventDefault();
+            $('.filter-container').not($(this).siblings('.filter-container')).css('visibility', 'hidden');
+            if ($(this).siblings('.filter-container').css('visibility') === 'hidden') {
+                $(this).siblings('.filter-container').css({ visibility : 'visible' });
+            } else {
+                $(this).siblings('.filter-container').css({ visibility : 'hidden' });
+            }
+            $(this).siblings().show();
+        });
+
+        $('.dropdown ul.filter').mouseleave(function(){
+            $(this).parent().css({ visibility : 'hidden' });
+            $(this).parent().siblings('.close').hide();
+        });
+    }
+});
+
+jQuery(window).load(function() {
+	var aboveHeight = jQuery('#header-top-wrapper').outerHeight();
+	jQuery(window).scroll(function() {
+    	if (jQuery(window).scrollTop() > aboveHeight) {
+    		jQuery('#nav-wrapper').css('max-width','100%');
+    	} else {
+    		jQuery('#nav-wrapper').css('max-width','1000px');
+    	}
+	});
+});

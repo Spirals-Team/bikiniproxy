@@ -1,0 +1,54 @@
+// mobile menu
+$(document).ready(function(){
+$("#nav-mobile").html($("#topmenu").html());
+$("#nav-trigger span").click(function(){
+if ($("#nav-mobile ul").hasClass("expanded")) {
+$("#nav-mobile ul.expanded").removeClass("expanded").slideUp(250);
+$(this).removeClass("open");
+} else {
+$("#nav-mobile ul").addClass("expanded").slideDown(250);
+$(this).addClass("open");
+}
+});
+});
+
+//search box
+$(document).ready(function(){
+$("#search-trigger").click(function(){
+if ($("#search-mobile").hasClass("expanded")) {
+$("#search-mobile.expanded").removeClass("expanded").slideUp(250);
+$(this).removeClass("open");
+} else {
+$("#search-mobile").addClass("expanded").slideDown(250);
+$(this).addClass("open");
+}
+});
+});
+
+//News Headlines
+var timer = false;
+$(window).bind("load resize",function(){
+    if (timer !== false) {
+        clearTimeout(timer);
+    }
+   timer = setTimeout(function() {
+   w = $(window).width();
+   if ( w<768) {
+   $("#headline-mobile").html($("#newstab").html());
+   $('#headline-mobile #menu li:first-child a').click(function() {
+   $("#headline-mobile #menu li:first-child").addClass('active');
+   if($("#headline-mobile #menu li:last-child").hasClass('active')) {
+   $("#headline-mobile #menu li:last-child").removeClass("active");
+   };
+   });
+   $('#headline-mobile #menu li:last-child a').click(function() {
+   $("#headline-mobile #menu li:last-child").addClass('active');
+   if($("#headline-mobile #menu li:first-child").hasClass('active')) {
+   $("#headline-mobile #menu li:first-child").removeClass("active");
+   };
+   });
+   } else if ( w>768) {
+   $("#headline-mobile div").remove();
+   };
+   }, 100);
+});

@@ -1,0 +1,60 @@
+
+// SMOOTH ANCHOR
+
+
+
+	$(document).ready(function() {
+    function filterPath(string) {
+    return string
+    .replace(/^\//,'')
+    .replace(/(index|default).[a-zA-Z]{3,4}$/,'')
+    .replace(/\/$/,'');
+    }
+    $('a[href*=#]').each(function() {
+    if ( filterPath(location.pathname) == filterPath(this.pathname)
+    && location.hostname == this.hostname
+    && this.hash.replace(/#/,'') ) {
+    var $targetId = $(this.hash), $targetAnchor = $('[name=' + this.hash.slice(1) +']');
+    var $target = $targetId.length ? $targetId : $targetAnchor.length ? $targetAnchor : false;
+    if ($target) {
+    var targetOffset = $target.offset().top;
+    $(this).click(function() {
+    $('html, body').animate({scrollTop: targetOffset}, 400);
+    return false;
+    });
+    }
+    }
+    });
+    });
+
+
+
+// FONT RESIZER
+
+
+$(document).ready(function(){
+  // Reset Font Size
+  var originalFontSize = $('html').css('font-size');
+  $(".resetFont").click(function(){
+  $('html').css('font-size', originalFontSize);
+  });
+  // Increase Font Size
+  $(".increaseFont").click(function(){
+  	var currentFontSize = $('html').css('font-size');
+ 	var currentFontSizeNum = parseFloat(currentFontSize, 10);
+    var newFontSize = currentFontSizeNum*1.2;
+	$('html').css('font-size', newFontSize);
+	return false;
+  });
+  // Decrease Font Size
+  $(".decreaseFont").click(function(){
+  	var currentFontSize = $('html').css('font-size');
+ 	var currentFontSizeNum = parseFloat(currentFontSize, 10);
+    var newFontSize = currentFontSizeNum*0.8;
+	$('html').css('font-size', newFontSize);
+	return false;
+  });
+});
+
+
+

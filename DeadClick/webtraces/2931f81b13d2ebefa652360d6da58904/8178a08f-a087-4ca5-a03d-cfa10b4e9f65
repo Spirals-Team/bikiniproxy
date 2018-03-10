@@ -1,0 +1,96 @@
+/**
+ * JSON AJAX WP is a script for getting the posts using WordPress Query
+ 
+ *
+ * @copyright 2013
+ * @version 1.0
+ * @author RAJA CRN
+ * @link http://themepacific.com
+ * @license http://www.gnu.org/licenses/old-licenses/gpl-2.0.html
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ *
+ * @package JSON AJAX WP 
+ */
+jQuery(function(jQuery) {
+
+
+jQuery('.blog-lists-blog').on("click", ".json_click_handler", function(){
+
+var count = jQuery(this).siblings('.recent-lists').length;
+var mydata1 = "";
+ 	var displayed1 = new Array();
+
+ 
+   jQuery(".json_click_handler").siblings('.recent-lists').each(function(index) {
+    mydata1+=jQuery(this).data('last-value')+",";
+      // console.log('div' + index + ':' + jQuery(this).data('last-value'));
+    });
+ 	 displayed1.push( mydata1);
+      
+	 var auth_id = jQuery('.json_click_handler').data('auth-id');
+ 	 var cat_id =jQuery('.json_click_handler').data('cat-id');
+ 	 var search_id =jQuery('.json_click_handler').data('search-id');
+     var exclude1 = displayed1.toString();
+ 	 doAjaxRequest(exclude1,auth_id,cat_id,search_id);
+	
+	
+	});
+
+ 
+});
+
+ 
+function doAjaxRequest(exclude1,auth_id,cat_id,search_id){
+
+ 
+    var exclude = exclude1;
+   // console.log(exclude);
+ 	 
+	
+     jQuery.ajax({
+	 type : "post",
+          url: tpcrn_ajax.ajaxurl,
+          data:{
+               'action':'do_ajax' ,exclude:exclude,auth_id:auth_id,cat_id:cat_id,search_id:search_id
+                
+               },
+          dataType: 'JSON',
+		   beforeSend: function(){
+		    jQuery('.json_click_handler').prepend('<i class="icon-spinner icon-spin"></i>');
+                jQuery('.json_click_handler').removeClass('json_click_handler');
+               
+                 
+              },
+            success: function(data) {
+                 if(data.type == "success") {
+                  
+                   jQuery(data.posts).each(function(i,p){
+ 
+					  
+                 jQuery('.readd').before(p.content);
+                      
+                   });
+                       
+                 }if(data.type == "fail") { 
+                   jQuery('.readd').html( '  No More posts! ');
+                    
+                 }
+              },
+          error: function(errorThrown){
+               alert('Sorry! Error in Ajax Request');
+               console.log(errorThrown);
+          },
+		    complete: function(response){
+               jQuery('.readd').addClass('json_click_handler');
+		    jQuery('.json_click_handler').children().remove('.icon-spinner');
+              }
+          
+
+     });
+
+}
+
+ 

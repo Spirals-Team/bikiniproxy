@@ -1,0 +1,24 @@
+window.rmdc = '//tags.rd.linksynergy.com/js/2583?reqid=DCB4FAF3128C11E881AA88BC3B956C4C';
+if (typeof rmdc !== "undefined") {
+        var type = "script"
+        if (rmdc.indexOf("/if/") != -1) {
+                type = "iframe"
+        }
+    var el = document.createElement(type);
+    if (el) {
+        // tags... or jp-tags... ?
+        var xdom = "tags.rd.linksynergy.com";
+        var scripts = document.getElementsByTagName(type);
+        for (var script_index = 0; script_index < scripts.length; script_index++) {
+          script_name = scripts[script_index].src;
+          if (script_name.indexOf('jp-tags.mediaforge.com') != -1) {
+            rmdc = rmdc.replace('tags.rd', 'jp-tags.rd')
+            break;
+          }
+        }
+
+        el.setAttribute('type', 'text/javascript');
+        el.src = rmdc + "&xdom=" + xdom;
+        document.body.appendChild(el);
+    }
+}

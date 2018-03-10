@@ -1,0 +1,1 @@
+$(document).foundation('equalizer', 'reflow');

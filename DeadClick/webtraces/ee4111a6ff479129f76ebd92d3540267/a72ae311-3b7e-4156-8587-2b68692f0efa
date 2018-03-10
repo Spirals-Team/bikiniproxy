@@ -1,0 +1,288 @@
+/*jslint browser: true*/
+/*global Juggernaut*/
+
+/**
+* .
+*
+* @class GoogleAdTag
+* @namespace Juggernaut.OO.Models
+* @constructor
+* @extends Juggernaut.OO.Models.Model
+*/
+Juggernaut.OO.Models.GoogleAdTag = Juggernaut.OO.utils.extendClass(
+	Juggernaut.OO.Models.Model,
+	{
+		getSetProps: {
+			/**
+			* .
+			*
+			* @property listensForResize
+			* @default false
+			* @type Boolean
+			*/
+			listensForResize: false,
+			/**
+			* .
+			*
+			* @property loaded
+			* @default false
+			* @type Boolean
+			*/
+			loaded: false,
+			/**
+			* .
+			*
+			* @property slot
+			* @default null
+			* @type <a href="https://developers.google.com/doubleclick-gpt/reference#googletag.Slot" target="_blank">googletag.Slot</a>
+			*/
+			slot: null,
+			/**
+			* .
+			*
+			* @property networkCode
+			* @default null
+			* @type String
+			*/
+			networkCode: null,
+			/**
+			* .
+			*
+			* @property targetDiv
+			* @default null
+			* @type String
+			*/
+			targetDiv: null,
+			/**
+			* .
+			*
+			* @property size
+			* @default null
+			* @type Object
+			*/
+			size: null,
+			/**
+			* .
+			*
+			* @property targeting
+			* @default null
+			* @type Object
+			*/
+			targeting: null,
+			/**
+			* .
+			*
+			* @property containerClass
+			* @default null
+			* @type String
+			*/
+			containerClass: null,
+			/**
+			* .
+			*
+			* @property responsiveMap
+			* @default null
+			* @type Array
+			*/
+			responsiveMap: null,
+			/**
+			* .
+			*
+			* @property sizeChange
+			* @default 0
+			* @type Number
+			*/
+			sizeChange: 0,
+			/**
+			* .
+			*
+			* @property displayed
+			* @default false
+			* @type Boolean
+			*/
+			displayed: false,
+			/**
+			* .
+			*
+			* @property width
+			* @default 0
+			* @type Number
+			*/
+			width: 0,
+			/**
+			* .
+			*
+			* @property height
+			* @default 0
+			* @type Number
+			*/
+			height: 0,
+			/**
+			* .
+			*
+			* @property isEmpty
+			* @default false
+			* @type Boolean
+			*/
+			isEmpty: false,
+			/**
+			* .
+			*
+			* @property creativeId
+			* @default null
+			* @type String
+			*/
+			creativeId: null,
+			/**
+			* .
+			*
+			* @property lineItemId
+			* @default null
+			* @type String
+			*/
+			lineItemId: null,
+			/**
+			* .
+			*
+			* @property reportToGA
+			* @default false
+			* @type Boolean
+			*/
+			reportToGA: false
+		},
+		pubMethods: {
+			/**
+			* .
+			*
+			* @method	defineSlot
+			*/
+			defineSlot: function() {
+				"use strict";
+				var size = ( this.size ) ? this.size : [ this.width, this.height ];
+				this.slot = googletag.defineSlot( this.networkCode, size, this.targetDiv )
+					.setCollapseEmptyDiv( true, true )
+					.defineSizeMapping( this.buildSizeMap() )
+					.addService( googletag.pubads() );
+
+				this.applyTargeting();
+
+				googletag.enableServices();
+				googletag.pubads().addEventListener( 'slotRenderEnded', this._onRender );
+				this.loaded = true;
+			},
+
+			/**
+			* .
+			*
+			* @method	applyTargeting
+			*/
+			applyTargeting: function() {
+				"use strict";
+				for( var key in this.targeting ) {
+					this.slot.setTargeting( key, this.targeting[ key ] );
+				}
+			},
+
+			/**
+			* .
+			*
+			* @method	buildSizeMap
+			* @return {<a href="https://developers.google.com/doubleclick-gpt/reference#googletag.GeneralSizeArray" target="_blank">googletag.GeneralSizeArray</a>}.
+			*/
+			buildSizeMap: function() {
+				"use strict";
+				if( this.responsiveMap ) {
+					var map = googletag.sizeMapping();
+					for ( var i = this.responsiveMap.length - 1; i >= 0; i-- ) {
+						map.addSize( this.responsiveMap[ i ][ 0 ], this.responsiveMap[ i ][ 1 ] );
+					}
+					map = map.build();
+
+					return map;
+				}
+			},
+
+			/**
+			* .
+			*
+			* @method	clear
+			*/
+			clear: function() {
+				"use strict";
+				if( this.loaded && this.displayed ) {
+					googletag.pubads().clear( [ this.slot ] );
+					this.displayed = false;
+				}
+			},
+
+			/**
+			* .
+			*
+			* @method	display
+			*/
+			display: function() {
+				"use strict";
+				if( !this.displayed ) {
+					googletag.display( this.targetDiv );
+					this.displayed = true;
+				}
+			},
+
+			/**
+			* .
+			*
+			* @method	refresh
+			*/
+			refresh: function() {
+				"use strict";
+				googletag.pubads().refresh( [ this.slot ] );
+				this.displayed = true;
+			},
+
+			/**
+			* .
+			*
+			* @private
+			* @method	_onRender
+			* @param {Event} e .
+			*/
+			_onRender: function( e ) {
+				"use strict";
+				if( e.slot === this.slot ) {
+					this.isEmpty = e.isEmpty;
+					if( e.size && ( this.width !== e.size[ 0 ] || this.height !== e.size[ 1 ] ) ) {
+						this._width = e.size[ 0 ];
+						this._height = e.size[ 1 ];
+						this.sizeChange = this.sizeChange + 1;
+					}
+					this.creativeId = e.creativeId;
+					this.lineItemId = e.lineItemId;
+					this.trigger( 'adRendered' );
+					if( !e.isEmpty && this.reportToGA ) {
+						this._trackAd( e.creativeId );
+					}
+				}
+			},
+
+			/**
+			* .
+			*
+			* @method	_trackAd
+			* @param {String} creativeId .
+			*/
+			_trackAd: function( creativeId ) {
+				"use strict";
+
+				var options = {
+					hitType: 'event',
+					eventCategory: 'ad',
+					eventAction: this.targeting.sect,
+					eventLabel: creativeId
+				};
+				ga( 'send', options );
+			}
+
+		}
+	}
+);
+

@@ -1,0 +1,311 @@
+// [2016-12-12] RQ:v1.6 - Fix issue on Opt-out with blocking cookies
+// [2016-02-03] RQ:v1.5 - Fix UA issue with IE
+// [2015-12-30] RQ:v1.4 - Remove Edge Dependency
+
+(function () {
+  var base = '//sync.graph.bluecava.com/';
+  Date.now = Date.now || function () { return +new Date; };
+
+  var post = (function () {
+    var xhr = (window.XMLHttpRequest && (window.location.protocol !== "file:" || !window.ActiveXObject))
+      ? function () { return new window.XMLHttpRequest(); }
+      : function () { try { return new window.ActiveXObject("Microsoft.XMLHTTP"); } catch (e) { return null; } };
+
+    var post = function (url, data, callback) {
+      isCalled = false;
+      try {
+        var request = xhr();
+        request.open('POST', base + url, false);
+        request.onreadystatechange = function () {
+          if (isCalled) return;
+          if (request.readyState !== 4 && request.status === 200) return;
+          isCalled = true;
+          if (request.readyState === 4 && request.status === 200) {
+            var d = null;
+            try { d = JSON.parse(request.responseText); }
+            catch (ex) { callback({ state: request.readyState, status: request.status, invalidJson: request.responseText }, null); return; }
+            callback(null, d);
+          }
+          else
+            callback({ state: request.readyState, status: request.status }, null);
+        };
+        request.setRequestHeader('Content-Type', 'application/json');
+        request.withCredentials = true;
+        data
+          ? request.send(data)
+          : request.send();
+      } catch (err) {
+        if (isCalled) return;
+        isCalled = true;
+        callback(err, null);
+      }
+    };
+    return post;
+  }());
+
+  var ls = {
+    IsObj: function (o) { return (o !== null && typeof o !== 'undefined'); },
+    clear: function (key) {
+      var wLS = null;
+      try { wLS = window.localStorage; } catch (e) { wLS = null; }
+      if (ls.IsObj(wLS)) { wLS.clear(); }
+      else {
+        try {
+          var ieDiv = document.getElementById('BCLDGuidDiv');
+          if (ls.IsObj(ieDiv)) {
+            if (!ls.IsObj(ieDiv.addBehavior)) return false;
+            ieDiv.addBehavior("#default#userData");
+            ieDiv.removeAttribute(key);
+            ieDiv.save("BCLStore");
+          }
+        } catch (e) { return false; }
+      }
+      return true;
+    },
+    read: function (key) {
+      if (ls.check() === false) return '';
+      try {
+        if (ls.ieDiv) { //for IE
+          ls.ieDiv.load("BCLStore");
+          var value = ls.ieDiv.getAttribute(key);
+          return value === null ? '' : value;
+        } else { //for all other browsers that support local storage
+          return ls.IsObj(window.localStorage)
+            ? window.localStorage.getItem(key) : '';
+        }
+      } catch (e) {
+        return '';
+      }
+    },
+    check: function () {
+      try {
+        if (ls.IsObj(window.localStorage))
+          return true;
+      } catch (e) { }
+      ls.ieDiv = document.getElementById('BCLDGuidDiv');
+      if (ls.IsObj(ls.ieDiv)) {
+        if (!common.IsObj(ls.ieDiv.addBehavior)) return false;
+        ls.ieDiv.addBehavior("#default#userData");
+      }
+      return true;
+    },
+    set: function (key, value) {
+      var wLS = null;
+      try { wLS = window.localStorage; } catch (e) { wLS = null; }
+      if (ls.IsObj(wLS)) { wLS.setItem(key, value); }
+      else {
+        try {
+          var ieDiv = document.getElementById('BCLDGuidDiv');
+          if (ls.IsObj(ieDiv)) {
+            if (!ls.IsObj(ieDiv.addBehavior)) return false;
+            ls.ieDiv.addBehavior("#default#userData");
+            ls.ieDiv.setAttribute(key, value);
+            ieDiv.save("BCLStore");
+          }
+        }
+        catch (e) { return false; }
+      }
+      return true;
+    },
+    zeroPad: function (num, count) { var s = num + ''; while (s.length < count) { s = "0" + s; } return s; },
+    toISO: function (d) { return d.getUTCFullYear() + '-' + ls.zeroPad(d.getUTCMonth() + 1, 2) + '-' + ls.zeroPad(d.getUTCDate(), 2) + 'T' + ls.zeroPad(d.getUTCHours(), 2) + ':' + ls.zeroPad(d.getUTCMinutes(), 2) + ':' + ls.zeroPad(d.getUTCSeconds(), 2) + '.' + ls.zeroPad(d.getUTCMilliseconds(), 3) + 'Z'; }
+  };
+
+  var cookie = function (name, value, options) {
+    function isDate(o) { return '[object Date]' == Object.prototype.toString.call(o); }
+
+    options = options || {};
+    var def = [encodeURIComponent(name) + '=' + encodeURIComponent(value)];
+    if (options.path) def.push('path=' + options.path);
+    if (options.domain) def.push('domain=' + options.domain);
+    var maxAge = 'maxAge' in options
+      ? options.maxAge
+      : ('max_age' in options
+        ? options.max_age
+        : options['max-age']), maxAgeNbr;
+    if (typeof maxAge !== 'undefined' && typeof maxAge != 'null' && (!isNaN(maxAgeNbr = parseFloat(maxAge))))
+      def.push('max-age=' + maxAgeNbr);
+    var expires = isDate(options.expires)
+      ? options.expires.toUTCString()
+      : options.expires;
+    if (expires) def.push('expires=' + expires);
+    if (options.secure) def.push('secure');
+    def = def.join(';');
+    document.cookie = def;
+    return def;
+  };
+
+  var identify = function (ss, cb) {
+    var idx = {
+      DeviceInfo: {
+        Ids: {
+          LocalStorageCookieId: ls.read('BCLD0103')
+        },
+        Parcel: ss
+      },
+      RequestInfo: {
+        PartnerId: '36f09d22-bb3f-41de-8d3a-8e2851685394',
+        UserAgent: navigator.userAgent
+      }
+    };
+    if (!idx.DeviceInfo.Parcel || idx.DeviceInfo.Parcel === '')
+      delete idx.DeviceInfo.Parcel;
+    if (!idx.DeviceInfo.Ids.LocalStorageCookieId || idx.DeviceInfo.Ids.LocalStorageCookieId === '')
+      delete idx.DeviceInfo.Ids;
+
+    post('req.bci', JSON.stringify(idx), function (err, result) {
+      log(['identify', err, result]);
+      if (err) return cb(err);
+      try {
+        cb(null, {
+          id: result.Ids.DeviceId,
+          optout: (result.Flags & 64 > 0)
+        });
+      } catch (err) {
+        cb('err');
+      }
+    });
+  }
+
+  var actionOptOut = function (ss, optout, cb) {
+    log(['actionOptOut', 'pr.bci', optout, ss]);
+    post('pr.bci', JSON.stringify({
+      DeviceInfo: {
+        Parcel: ss,
+        Ids: {
+          LocalStorageCookieId: ls.read("BCLD0103"),
+        },
+      },
+      RequestInfo: {
+        Optout: optout,
+        UserAgent: navigator.userAgent
+      },
+    }), function (err, result) {
+      log(['actionOptOut', err, result]);
+      // Drop LS and SS Cookie on successful Opt-in
+      if (!optout && !err && result && result.Ids && result.Ids.LocalStorageCookieId) {
+        ls.set('BCLD0103', result.Ids.LocalStorageCookieId);
+        ls.set('BCLD0104', ls.toISO(new Date()));
+
+        // Store Last Snapshot to Cookies
+        cookie('ssx', '', {
+          expires: new Date(Date.now() + 86400000),
+          domain: '.bluecava.com',
+          path: '/'
+        });
+      }
+      // Clear LocalStorage on successful Opt-out
+      if (optout && !err) {
+        ls.clear('BCLD0103');
+        ls.clear('BCLD0104');
+      }
+
+      cb(err, result);
+    });
+  };
+  var actionReset = function (ss, cb) {
+    log(['actionReset', 'ai.bci', ss]);
+    post('ai.bci', JSON.stringify({
+      Parcel: ss,
+      UserAgent: navigator.userAgent
+    }), function (err, result) {
+      log(['actionReset', err, result]);
+      cb(err, result);
+    });
+  };
+  var actionStat = function (ss, cb) {
+    identify(ss, function (err, result) {
+      var report = '';
+      if (err) report = 'err';
+      else report = 'BC|' + result.id + '|' + result.optout;
+      window.parent.postMessage(report, '*');
+      log(['actionStat', err, result]);
+      cb(err, result);
+    });
+  }
+  var actionGetId = function (ss, cb) {
+    identify(ss, function (err, result) {
+      if (err) { return cb(err, null); }
+      cb(null, result);
+    });
+  };
+
+  var run = function (action, cb) {
+    b.exec(function (err, ss) {
+      if (action === 'opt-out') { actionOptOut(ss, true, cb); }
+      if (action === 'opt-in') { actionOptOut(ss, false, cb); }
+      if (action === 'reset') { actionReset(ss, cb); }
+      if (action === 'stats') { actionStat(ss, cb); }
+      if (action === 'get') { actionGetId(ss, cb); }
+    });
+  }
+
+  var log = function (info) {
+    //try { console.log(info); } catch (e) { }
+  };
+
+  var uiStateLoading = function () {
+    jQuery("#bcOptIn").removeClass('active');
+    jQuery("#bcOptOut").removeClass('active');
+    jQuery('#bcLoading').addClass('active');
+    jQuery("#bcMessage").removeClass('active');
+    jQuery("#adReset").removeClass('active');
+    jQuery('#adLoading').addClass('active');
+    jQuery('#adID').html('Loading...');
+    jQuery('#adMessage').hide();
+  }
+
+  var uiStateReady = function (id, optout) {
+    jQuery('#bcLoading').removeClass('active');
+
+    if (optout) {
+      // User has opted out, show button to opt in
+      jQuery('#adID').html('Opted-out!');
+      jQuery("#bcOptOut").removeClass('active');
+      jQuery("#bcOptIn").addClass('active');
+      jQuery("#bcMessage").addClass('active');
+
+    } else {
+      // User has not opted out, show button to opt out
+      jQuery('#adID').html(id);
+      jQuery("#bcOptOut").addClass('active');
+      jQuery("#bcOptIn").removeClass('active');
+      jQuery("#bcMessage").removeClass('active');
+    }
+
+    jQuery('#adLoading').removeClass('active');
+    jQuery("#adReset").addClass('active');
+  }
+
+  window.BlueCavaStart = function () {
+    uiStateLoading();
+    run('get', function (err, data) {
+      log(['BlueCavaStart', err, data]);
+      if (data.id && data.id === '00000000-0000-0000-0000-000000000000' && data.optout !== 1) {
+        jQuery('#cookieNotice').show();
+      }
+      if (err) { data = { id: 'Unable to get Advertising ID!', optout: false }; }
+      uiStateReady(data.id, data.optout);
+    });
+  };
+
+  window.BlueCavaReset = function () {
+    uiStateLoading();
+    run('reset', function (err, data) {
+      log(['BlueCavaReset', err, data]);
+      window.BlueCavaStart();
+    });
+  };
+
+  window.BlueCavaOptOut = function (optout) {
+    uiStateLoading();
+    run(optout ? 'opt-out' : 'opt-in', function (err, data) {
+      log(['BlueCavaOptOut', optout, err, data]);
+      window.BlueCavaStart();
+    });
+  };
+}());
+
+jQuery(document).ready(function () {
+  window.BlueCavaStart();
+});

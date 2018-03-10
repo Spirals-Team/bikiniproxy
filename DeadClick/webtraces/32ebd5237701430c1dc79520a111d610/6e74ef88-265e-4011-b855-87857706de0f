@@ -1,0 +1,786 @@
+function LuhnCheck(str)
+{
+  var regExp = /\s+/g;
+  str = str.replace(regExp, '');
+  
+  var result = true;
+  var sum = 0; 
+  var mul = 1; 
+  var strLen = str.length;
+  for (i = 0; i < strLen; i++)
+  {
+    var digit = str.substring(strLen-i-1,strLen-i);
+    var tproduct = parseInt(digit ,10)*mul;
+    if (tproduct >= 10)
+      sum += (tproduct % 10) + 1;
+    else
+      sum += tproduct;
+    if (mul == 1)
+      mul++;
+    else
+      mul--;
+  }
+  if ((sum % 10) != 0) result = false;
+    
+  return result;
+}
+
+function validateCCNum(cardNum)
+{
+	var regExp = /\s+/g;
+	cardNum = cardNum.replace(regExp, '');
+	var result = false;
+	var cardLen = cardNum.length;
+	var firstdig = cardNum.substring(0,1);
+	var seconddig = cardNum.substring(1,2);
+	var first2digs = cardNum.substring(0,2);
+	var first3digs = cardNum.substring(0,3);
+	var first4digs = cardNum.substring(0,4);
+	var first5digs = cardNum.substring(0,5);
+	var first6digs = cardNum.substring(0,6);
+	
+	//cascade validation
+	//source: http://en.wikipedia.org/wiki/Credit_card_number
+	for(i=0; i<11; i++){
+		switch(i){
+			case 0: //American Express 34 and 37 15 
+				result = (cardLen == 15) && ((first2digs == "34") || (first2digs == "37"));
+				break;
+			case 1: //Bankcard 560�561 16 
+				result = (cardLen == 16) && ((first3digs == "560") || (first3digs == "561"));
+				break;
+			case 2: //Diners Club International[1] 36 15 
+				result = (cardLen == 15) && (first2digs == "36");
+				break;
+			case 3: //Diners Club US & Canada[1] 55 16 
+				result = (cardLen == 16) && (first2digs == "55");
+				break;
+			
+			//As of October 1st, 2005, Discover Bank will include a new BIN in the range of 650000�650999.
+			case 4: //Discover Card 6011 and 650* 16 
+				result = (cardLen == 16) && ((first3digs == "650") || (first4digs == "6011"));
+				break;
+			case 5: //JCB 3 16 
+				result = (cardLen == 16) && (firstdig == "3");
+				break;
+			case 6: //JCB 1800 and 2131 15 
+				result = (cardLen == 15) && ((first4digs == "1800") || (first4digs == "2131"));
+				break;
+				
+			//As of November 8, 2004, MasterCard purchased the domestic (US) Diner's Club BIN range.
+			//Diner's club international's website makes no reference to old 38 prefix numbers,
+			//and they can be presumed reissued under the 55 or 36 BIN prefix
+			case 7: //MasterCard* 51�55, 36 14 or 16 
+				result = ((cardLen == 14) || (cardLen == 16)) && ((first2digs == "36") || (first2digs == "51") || (first2digs == "52") || (first2digs == "53") || (first2digs == "54") || (first2digs == "55") || (first2digs == "56") || (first2digs == "57")||(first2digs == "58") || (first2digs == "38") || (first2digs == "22"));
+				break;
+			case 8: //Visa 4 13 or 16 	
+				result = ((cardLen == 13) || (cardLen == 16)) && (firstdig == "4");
+				break;
+			case 9: //Solo (debit card)
+				result = ((cardLen == 16) || (cardLen == 18) || (cardLen == 19)) && (first4digs == "6334" || first4digs == "6767");
+				break;
+			case 10: //Switch (debit card)
+				result = ((cardLen == 16) || (cardLen == 18) || (cardLen == 19)) && (first4digs == "4903" || first4digs == "4905" || first4digs == "4911" || first4digs == "4936" || first4digs == "6333" || first4digs == "6759" || first6digs == "564182" || first6digs == "633110");
+				break;
+		}
+		if(result) return true;
+	}
+	return false;
+}
+
+/**
+ * Validate cc type by number
+ */
+function validateCCType(type, caption, cardNum)
+{
+	var regExp = /\s+/g;
+	cardNum = cardNum.replace(regExp, '');
+	cardNum = $.trim(cardNum.toLowerCase());
+	var cardLength = cardNum.length;
+	type = type.replace(regExp, '').replace(/No\~/, '').replace(/Yes\~/, '');
+	type = $.trim(type.toLowerCase());
+	caption = caption.replace(regExp, '');
+	caption = $.trim(caption.toLowerCase());
+	
+	var templates = new Array(
+		//name, start numbers, length
+		[['americanexpress', 'amex'], ['34', '37'], [15]],
+		[['diners', 'dinersclub', 'diners', 'dicl'], ['300', '301', '302', '303', '304', '305', '36'], [15]],
+		[['diners', 'carteblanche', 'carte'], ['38'], [14]],
+		[['diners', 'dinersclub', 'carteblanche', 'carte', 'blanche'], ['300', '301', '302', '303', '304', '305'], [14]],
+		[['diners', 'dinersclub', 'enroute', 'ert'], ['2014', '2149'], [15]],
+		[['diners', 'dinersclub', 'international'], ['36'], [14]],
+		[['diners', 'dinersclub'], ['54', '55'], [16]],
+		[['discover', 'dino', 'novus', 'discovernovus'], ['6011', '6221', '6222', '6223', '6224', '6225', '6226', '6227', '6228', '6229', '644', '645', '646', '647', '648', '649', '65'], [16]],
+		[['instapayment', 'insta'], ['637', '638', '639'], [16]],
+		[['jcb'], ['35'], [16]],
+		[['jcb'], ['2131', '1800'], [15]],
+		[['laser'], ['6304', '6706', '6771', '6709'], [16, 17, 18, 19]],
+              [['mastercard', 'mc', 'master'], ['51', '52', '53', '54', '55', '22'], [16]],
+		[['visa'], ['4'], [13, 16]],
+		[['visaelectron', 'electron', 'visa'], ['4026', '417500', '4508', '4844', '4913', '4917'], [16]],
+		//[['abc', 'australianbankcard'], [], []],
+		[['sw', 'maestro', 'switch'], ['4903', '4905', '4911', '4936', '564182', '633110', '6333', '6759'], [16, 18, 19]],
+		[['solo'], ['6334', '6767'], [16, 18, 19]],
+		//[['uke', 'visaelectron'], [], []],
+		[['bankcard'], ['5610', '560221', '560222', '560223', '560224', '560225'], [16]],
+		[['chinaunionpay', 'china', 'union', 'unionpay'], ['62'], [16]]
+	);
+	
+	var first1 = cardNum.substr(0, 1);
+	var first2 = cardNum.substr(0, 2);
+	var first3 = cardNum.substr(0, 3);
+	var first4 = cardNum.substr(0, 4);
+	var first5 = cardNum.substr(0, 5);
+	var first6 = cardNum.substr(0, 6);
+	// try to find match
+	var fullMatch = false;
+	var nameMatch = false;
+	$.each(templates, function(templateIndex, template)
+	{
+		//check type and caption
+		if ($.inArray(type, template[0]) != -1 || $.inArray(caption, template[0]) != -1)
+		{
+			nameMatch = true;
+			//check length
+			if ($.inArray(cardLength, template[2]) != -1)
+			{
+				//check first digits
+				if (
+					($.inArray(first1, template[1]) != -1) || ($.inArray(first2, template[1]) != -1) || ($.inArray(first3, template[1]) != -1) ||
+					($.inArray(first4, template[1]) != -1) || ($.inArray(first5, template[1]) != -1) || ($.inArray(first6, template[1]) != -1)
+				)
+				{
+					fullMatch = true;
+				}
+			}
+		}
+	});
+	// if cart name match found but cart was not validated - returns false
+	return fullMatch ? true : (nameMatch ? false : true);
+}
+
+
+// checks if the card is expired
+function isCardExpired (expMonth, expYear) {
+	var expDate = new Date();
+	expDate.setFullYear(expYear,expMonth - 1,1);
+	var today = new Date();
+	today.setFullYear(today.getFullYear(),today.getMonth(),1);
+	if (expDate < today)
+	{
+		return true;
+	}
+	return false;
+}
+
+function validateExpDate(expDate){
+	//valid are  mmyy, mm/yy, mm20yy, mm/20yy
+	var rex = /^(([0]\d{1})|([1]([012])))(\/?)(([2][0])?)(\d{2})$/;
+	return rex.test(expDate);
+}
+
+function validateExpMonth(expDate){
+	//valid are  01-12
+	var rex = /^(([0]?\d{1})|([1]([012])))$/;
+	return rex.test(expDate);
+}
+
+function validateExpYear(expDate){
+	//valid are  mmyy, mm/yy, mm20yy, mm/20yy
+	var rex = /^(([2][0])?)(\d{2})$/;
+	return rex.test(expDate);
+}
+
+function validateCVC2(cvc2){
+	//valid are ddd or dddd
+	var rex = /^(\d{3,4})$/;
+	return cvc2==""?true:rex.test(cvc2);
+}
+
+function validateName(name){
+	var rex = /^[a-zA-Z \-\']+$/;
+	return rex.test(name);
+}
+
+function validateText(txt){
+	var d = "";
+	for(i=0; i < txt.length; i++){
+		if(txt.charAt(i) != " "){
+			d = d + txt.charAt(i);
+		}
+	}
+	if(d == ""){
+		return false;
+	}
+	else{
+		return true;
+	}
+}
+
+function CheckField(frm, fname, ftitle){
+	var s = frm.elements[fname].value;
+	var d = "";
+	
+	for(i=0; i < s.length; i++){
+		if(s.charAt(i) != " "){
+			d = d + s.charAt(i);
+		}
+	}
+	if(d == ""){
+		alert(msg.please_enter + ' ' + ftitle);
+		frm.elements[fname].focus();
+		return false;
+	}
+	else{
+		return true;
+	}
+}
+
+function CheckCustomFields(frm, place){
+	var irex = /^custom_field\[(\d{1,})\]$/;
+	for(i=0; i<frm.elements.length; i++){
+		if(irex.test(frm.elements[i].name)){
+		//	alert(frm.elements[i].name);
+			var s = frm.elements[i].name;
+			var id = s.substring(13, s.length-1);
+			if(frm.elements['custom_field_place[' + id + ']'].value == place){
+				if(frm.elements['custom_field_required[' + id + ']'].value == 'yes'){
+					//alert(frm.elements[i].type);
+					if(frm.elements[i].type == "checkbox" && !frm.elements[i].checked){
+						alert(msg.to_continue_please_check + ' ' + frm.elements['custom_field_name[' + id + ']'].value);
+						frm.elements[i].focus();
+						return false;
+					}
+					else if(frm.elements[i].value == ""){
+						alert(msg.please_enter + ' ' + frm.elements['custom_field_name[' + id + ']'].value);
+						frm.elements[i].focus();
+						return false;
+					}
+				}
+			}
+		}
+	}
+	return true;
+}
+
+function CheckAddProduct(frm, min_order, max_order, allowed_max)
+{
+	if (product_may_be_added)
+	{
+		var rex = /^(\d{1,})$/;
+		var err = false;
+		if (!rex.test(frm.elements["oa_quantity"].value))
+		{
+			alert(msg.enter_numeric_product_quantity);
+			frm.elements["oa_quantity"].focus();
+			return false;
+		}
+		
+		var quantity = frm.elements["oa_quantity"].value * 1;
+		
+		if ($("meta[name='ddm-page']").attr('content') == 'product')
+		{
+			if (inventory_control != 'No')
+			{
+				if (((inventory_control == 'Yes') || (inventory_control == 'AttrRuleExc') || (inventory_control == 'AttrRuleInc' && inventory_hash_found)) && quantity > product_stock)
+				{
+					alert(msg.number_of_items_exceed_inventory);
+					err = true;
+				}
+			}
+		}
+		else
+		{
+			if ((allowed_max != "-") && (quantity > allowed_max))
+			{
+				alert(msg.number_of_items_exceed_inventory);
+				err = true;
+			}
+		}
+		
+		if (quantity < min_order)
+		{
+			alert(msg.number_of_items_exceeded_min);
+			err = true;
+		}
+		if ((max_order != "-") && (quantity > max_order))
+		{
+			alert(msg.number_of_items_exceeded_max);
+			err = true;
+		}
+		
+		if (err)
+		{
+			frm.elements["oa_quantity"].focus();
+			return false;
+		}
+		
+		return true;
+	}
+	return false;
+}
+
+function CheckResetPassword(frm){
+	if(!CheckField(frm, "login", "username")) return false;
+	if(!isEmail(frm.elements["email"].value)){
+		alert(msg.enter_valid_email);
+		frm.elements["email"].focus();
+		return false;
+	}
+	return true;
+}
+
+/**
+ * Submit cart form
+ */ 
+function submitCartForm(action)
+{
+	$('#form-cart-oa-todo').val(action);
+	$('#form-cart').submit();
+	
+	return false;
+}
+
+/**
+ * Handle cart buttons, etc
+ */
+$(document).ready(function(){
+	$("#insureship_active").change(function(){submitCartForm("update");});
+	$('#form-cart-continue-shopping').click(function(){submitCartForm("continue");return false;});
+	$('#form-cart-update').click(function(){submitCartForm("update");return false;});
+	$('#form-cart').submit(function(){return CheckCartForm();})
+	$('.page-cart .button-checkout').each(function(){
+		$(this).attr('disabled', false).removeAttr('disabled').removeAttr('aria-disabled');
+		$(this).click(function(){submitCartForm("checkout");return false;});
+	});
+	$('.page-cart .button-apply-promo').removeAttr('disabled').removeAttr('aria-disabled').removeClass('mobile-button-disabled').removeClass('ui-state-disabled');
+	
+});
+
+/**
+ * Check cart form
+ * @param frm
+ * @return
+ */
+function CheckCartForm()
+{
+	var frm = document.getElementById('form-cart');
+	var irex = /^oa_quantity\[(\d{1,})\]$/;
+	var prex = /^oa_pid_to_ocid\[(\d{1,})\]$/;
+	var drex = /^(\d{1,})$/;
+	
+	var products = new Array();
+	
+	for (i=0; i<frm.elements.length; i++)
+	{
+		if (irex.test(frm.elements[i].name))
+		{
+			if (!drex.test(frm.elements[i].value))
+			{
+				alert(msg.enter_numeric_product_quantity);
+				frm.elements[i].focus();
+				return false;	
+			}
+			if (frm.elements[i].value * 1 < (frm.elements["min_" + frm.elements[i].name].value) * 1)
+			{
+				alert(msg.number_of_items_exceeded_min);
+				frm.elements[i].focus();
+				return false;
+			}
+			if(
+				(frm.elements["max_" + frm.elements[i].name].value != "-") && 
+				(frm.elements[i].value * 1 > frm.elements["max_" + frm.elements[i].name].value * 1)
+			)
+			{
+				alert(msg.number_of_items_exceeded_max);
+				frm.elements[i].focus();
+				return false;
+			}
+			if(
+				(frm.elements["allowed_" + frm.elements[i].name].value != "-") && 
+				(frm.elements[i].value * 1 > frm.elements["allowed_" + frm.elements[i].name].value * 1)
+			)
+			{
+				alert(msg.number_of_items_exceed_inventory);
+				frm.elements[i].focus();
+				return false;
+			}
+		}
+		
+		if (prex.test(frm.elements[i].name))
+		{
+			var ocid = frm.elements[i].value;
+			var pid = frm.elements["oa_ocid_to_pid[" + ocid + "]"].value;
+			if (products[pid])
+			{
+				products[pid] = products[pid] + frm.elements["oa_quantity[" + ocid + "]"].value * 1;
+			}
+			else
+			{
+				products[pid] = frm.elements["oa_quantity[" + ocid + "]"].value * 1;
+			}
+			
+			if (frm.elements["oa_inventory_control[" + ocid + "]"].value == "Yes")
+			{
+				if (frm.elements["allowed_oa_quantity[" + ocid + "]"].value < products[pid])
+				{
+					alert(msg.number_of_items_exceed_inventory);
+					frm.elements["oa_quantity[" + ocid + "]"].focus();
+					return false;
+				}
+			}
+		}
+	}
+	return true;
+}
+
+function CheckNewsletters(frm){
+	if(!isEmail(frm.elements["email"].value)){
+		alert(msg.enter_valid_email);
+		frm.elements["email"].focus();
+		return false;
+	}
+	return true;
+}
+
+function CheckUnsubscribe(frm){
+	if(!isEmail(frm.elements["cancel_email"].value)){
+		alert(msg.enter_valid_email);
+		frm.elements["cancel_email"].focus();
+		return false;
+	}
+	if(confirm(msg.want_cancel_subscription)){
+		return true;
+	}
+	return false;
+}
+
+function CheckLoginForm(frm){
+	if(!CheckField(frm, "login", msg.your_username)) return false;
+	if(!CheckField(frm, "password", msg.your_password)) return false;
+	return true;
+}
+
+/**
+ * CHECK SIGNUP FORM
+ * @param frm
+ * @param fm_company
+ * @param fm_address2
+ * @param fm_phone
+ * @param ship2all
+ * @param ship2countries
+ * @return
+ */
+function CheckSignupForm(frm, fm_company, fm_address2, fm_phone, ship2all, ship2countries)
+{
+	if (!CheckField(frm, "form[fname]", msg.first_name)) return false;
+	if (!CheckField(frm, "form[lname]", msg.last_name)) return false;
+	if (fm_company == "Required" && (!CheckField(frm, "form[company]", msg.company_name))) return false;
+	if (!CheckField(frm, "form[address1]", msg.address_line1)) return false;
+	if (fm_address2 == "Required" && (!CheckField(frm, "form[address2]", msg.address_line2))) return false;
+	if (!CheckField(frm, "form[city]", msg.city_name)) return false;
+	if (!CheckField(frm, "form[country]", msg.country)) return false;
+	if ($("#billing_state:visible").length > 0)
+	{
+		if (frm.elements["form[state]"].value == "" || frm.elements["form[state]"].value == "0")
+		{
+			alert(msg.select_province_state);
+			frm.elements["form[state]"].focus();
+			return false;
+		}
+	}
+	else
+	{
+		if (!CheckField(frm, "form[province]", msg.custom_province_state)) return false;
+	}
+	
+	if (!CheckField(frm, "form[zip]", msg.zip_postal_code)) return false;
+	if (fm_phone == "Required" && (!CheckField(frm, "form[phone]", msg.phone_number))) return false;
+	
+	if (!CheckCustomFields(frm, 'billing')) return false;	
+	
+	if (!ship2all && frm.elements["form[thesame]"].checked)
+	{
+		//check shipping country
+		c = frm.elements["form[country]"].value;
+		is_country = false;
+		for (i=1; i<= ship2countries.length; i++)
+		{
+			if (ship2countries[i] == c)
+			{
+				is_country = true;
+			}
+		}
+		if (!is_country)
+		{
+			alert(msg.incorrect_shipping_address);
+			return false;
+		}
+	}
+	
+	if (!CheckField(frm, "form[login]", msg.username)) return false;
+	if (!CheckField(frm, "form[password]", msg.password)) return false;
+	if (!CheckField(frm, "form[password2]", msg.password_confirmation)) return false;
+	if (!CheckField(frm, "form[email]", msg.email_address)) return false;
+	if (!isEmail(frm.elements["form[email]"].value))
+	{
+		alert(msg.enter_valid_email);
+		frm.elements["form[email]"].focus();
+		return false;
+	}
+	
+	if (!CheckCustomFields(frm, 'account')) return false;
+	if (!CheckCustomFields(frm, 'signup')) return false;
+	
+	if (frm.elements["form[agree]"])
+	{
+		if (frm.elements["form[agree]"].checked == false)
+		{
+			alert(msg.read_terms_before_registration);
+			return false;
+		}
+	}
+
+	return true;
+}
+
+/**
+ * Check payment profile form
+ */
+function CheckPaymentProfile(frm, fm_address2, fm_phone)
+{
+	if (!CheckField(frm, "form[first_name]", msg.first_name)) return false;
+	if (!CheckField(frm, "form[last_name]", msg.last_name)) return false;
+	if (!CheckField(frm, "form[address1]", msg.address_line1)) return false;
+	if (fm_address2 == "Required" && (!CheckField(frm, "form[address2]", msg.address_line2))) return false;
+	if (!CheckField(frm, "form[city]", msg.city_name)) return false;
+	if (!CheckField(frm, "form[country]", msg.country)) return false;
+	if ($("#billing_state:visible").length > 0)
+	{
+		if (frm.elements["form[state]"].value == "" || frm.elements["form[state]"].value == "0")
+		{
+			alert(msg.select_province_state);
+			frm.elements["form[state]"].focus();
+			return false;
+		}
+	}
+	else
+	{
+		if (!CheckField(frm, "form[province]", msg.custom_province_state)) return false;
+	}
+	
+	if (!CheckField(frm, "form[zip]", msg.zip_postal_code)) return false;
+	if (fm_phone == 'Required' && (!CheckField(frm, 'form[phone]', msg.phone_number))) return false;
+
+	if (!CheckField(frm, "form[cc_number]", msg.cc_number)) return false;
+	if (!validateCCNum(frm.elements["form[cc_number]"].value))
+	{
+		alert(msg.cc_number_invalid);
+		return false;
+	}
+	if (isCardExpired(frm.elements["form[cc_expiration_month]"].value, frm.elements["form[cc_expiration_year]"].value))
+	{
+		alert(msg.cc_expired);
+		return false;
+	}
+	return true;
+}
+
+/**
+ * Check shipping address form
+ */
+function CheckShippingAddress(frm, fm_company, fm_address2)
+{
+	if(!CheckField(frm, "form[name]", msg.name)) return false;
+	if(fm_company == "Required" && (!CheckField(frm, "form[company]", msg.company_name))) return false;
+	if(!CheckField(frm, "form[address1]", msg.address_line1)) return false;
+	if(fm_address2 == "Required" && (!CheckField(frm, "form[address2]", msg.address_line2))) return false;
+	if(!CheckField(frm, "form[city]", msg.city_name)) return false;
+	
+	//check is state/province select OR custom state/province
+	if($("#shipping_state:visible").length > 0){
+		//check province/state from select
+		if(frm.elements["form[state]"].value == "" || frm.elements["form[state]"].value == "0"){
+			alert(msg.select_province_state);
+			frm.elements["form[state]"].focus();
+			return false;
+		}
+	}
+	else{
+		//check custom province/state
+		if(!CheckField(frm, "form[province]", msg.custom_province_state)) return false;
+	}
+	
+	if(!CheckField(frm, "form[zip]", msg.zip_postal_code)) return false;
+	
+	if(!CheckCustomFields(frm, 'shipping')){
+		return false;	
+	}
+	
+	return true;
+}
+
+///////////////////////////////
+// CHECK PROFILE FORM
+function CheckProfileForm(frm, fm_company, fm_address2, fm_phone){
+	if(!CheckField(frm, "form[fname]", msg.first_name)) return false;
+	if(!CheckField(frm, "form[lname]", msg.last_name)) return false;
+	if(fm_company == "Required" && (!CheckField(frm, "form[company]", msg.company_name))) return false;
+	if(!CheckField(frm, "form[address1]", msg.address_line1)) return false;
+	if(fm_address2 == "Required" && (!CheckField(frm, "form[address2]", msg.address_line2))) return false;
+	if(!CheckField(frm, "form[city]", msg.city_name)) return false;
+	if(!CheckField(frm, "form[country]", msg.country)) return false;
+	if(!CheckField(frm, "form[country]", msg.country)) return false;
+	if($("#billing_state:visible").length > 0){
+		if(frm.elements["form[state]"].value == "" || frm.elements["form[state]"].value == "0"){
+			alert(msg.select_province_state);
+			frm.elements["form[state]"].focus();
+			return false;
+		}
+	}
+	else{
+		if(!CheckField(frm, "form[province]", msg.custom_province_state)) return false;
+	}
+	
+	if(!CheckField(frm, "form[zip]", msg.zip_postal_code)) return false;
+	if(fm_phone == "Required" && (!CheckField(frm, "form[phone]", msg.phone_number))) return false;
+	if(!CheckField(frm, "form[email]", msg.email_address)) return false;
+	if(!isEmail(frm.elements["form[email]"].value)){
+		alert(msg.enter_valid_email);
+		frm.elements["form[email]"].focus();
+		return false;
+	}
+	
+	if(!CheckCustomFields(frm, 'billing')){
+		return false;	
+	}
+	
+	if(frm.elements["password"] != null && frm.elements["form[password]"].value != ""){
+		if(frm.elements["form[password]"].value != frm.elements["form[password2]"].value){
+			alert(msg.different_password_and_comfirmation);
+			frm.elements["form[password]"].focus();
+			return false;
+		}
+	}
+	
+	if(!CheckCustomFields(frm, 'account')){
+		return false;	
+	}
+	
+	return true;
+}
+
+function ConfirmDeleteShippingAddress(address_id){
+	if(confirm(msg.confirm_delete_shipping_address)){
+		document.location = site_https_url + 'ua=' + USER_DELETE_ADDRESS + '&address_id=' + address_id;
+	}
+}
+
+function ConfirmDeletePaymentProfile(profile_id){
+	if(confirm(msg.confirm_delete_payment_profile)){
+		document.location = site_https_url + 'ua=' + USER_DELETE_PAYMENT_PROFILE + '&profile_id=' + profile_id;
+	}
+}
+
+function CheckWishlistName(frm){
+	if(!CheckField(frm, "wishlist_name", msg.enterWishlistName)) return false;	
+	return true;
+}
+
+function CheckWishlistEmailFrm(frm){
+	if(!CheckField(frm, "mail_subject", "subject")) return false;	
+	if(!isEmail(frm.elements["your_email"].value)){
+		alert(msg.enter_valid_email);
+		frm.elements["your_email"].focus();
+		return false;
+	}
+	return true;
+}
+
+function ConfirmDeleteWishlist(wl_id){
+	if(confirm(msg.confirm_delete_wishlist)){		
+		document.location = site_https_url + 'p=manage_wishlist&wl_action=delete_wishlist&wlid=' + wl_id;
+	}
+}
+
+function ConfirmDeleteWishlistProduct(wlp_id){
+	if(confirm(msg.confirm_delete_wishlist_product)){		
+		document.location = site_https_url + 'p=manage_wishlist&wl_action=delete_product&wlpid=' + wlp_id;
+	}
+}
+
+/**
+ * Validate gift certificate form
+ */
+function CheckGiftCertForm() 
+{
+	var id = document.getElementById('first_name');
+	if (id.value == '') {
+		alert('You must complete recipient\'s first name');
+		id.focus();
+		return false;
+	}
+	id = document.getElementById('last_name');
+	if (id.value == '') {
+		alert('You must complete recipient\'s last name');
+		id.focus();
+		return false;
+	}
+	/*id = document.getElementById('phone');
+	if (id.value == '') {
+		alert('You must complete recipient\'s phone');
+		id.focus();
+		return false;
+	}*/
+	id = document.getElementById('rep_email');
+	if (id.value == '') {
+		alert('You must complete recipient\'s email');
+		id.focus();
+		return false;
+	}
+	if (id.value.indexOf('@') < 1) {
+		alert('You must enter a valid email address');
+		id.focus();
+		return false;
+	}
+	id = document.getElementById('from_name');
+	if (id.value == '') {
+		alert('You must complete your name');
+		id.focus();
+		return false;
+	}
+	id = document.getElementById('gift_amount');
+	if (id.value == '' || id.value*1 < 1) {
+		alert('You must complete a valid gift amount');
+		id.focus();
+		return false;
+	}
+
+	return true;
+}
+
+/**
+ * Check gift certificate info
+ */
+function CheckGiftCertInfo(){
+	var id = document.getElementById('gift_cert_first_name');
+	if (id.value == '') {
+		alert('Please enter first name');
+		id.focus();
+		return false;
+	}
+	id = document.getElementById('gift_cert_last_name');
+	if (id.value == '') {
+		alert('Please enter last name');
+		id.focus();
+		return false;
+	}
+	id = document.getElementById('gift_cert_voucher');
+	if (id.value == '') {
+		alert('Please enter voucher');
+		id.focus();
+		return false;
+	}
+	return true;
+}

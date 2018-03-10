@@ -1,0 +1,336 @@
+/*jslint browser: true*/
+/*global Juggernaut, _ */
+window.Juggernaut = window.Juggernaut || {};
+Juggernaut.OO = {};
+Juggernaut.OO.Models = {};
+Juggernaut.OO.Views = {};
+
+Juggernaut.OO.utils = {
+	extendClass: function( superClass, classProps, constructor ) {
+		'use strict';
+		if( !constructor ) {
+			constructor = function mv(){
+				if( arguments[ 0 ] && this.init ) {
+					this.init.apply( this, arguments );
+				}
+			};
+		}
+
+		constructor.prototype = Object.create( superClass.prototype );
+
+		Object.defineProperty(
+			constructor.prototype,
+			'sup',
+			{
+				value: superClass.prototype,
+				configurable: true,
+				writable: true
+			}
+		);
+
+		if( classProps ) {
+			if( classProps.pubMethods ) {
+				Object.keys( classProps.pubMethods ).forEach(
+					function( prop ) {
+						var desc = Object.getOwnPropertyDescriptor( classProps.pubMethods, prop );
+						desc.enumerable = true;
+						Object.defineProperty( constructor.prototype, prop, desc );
+					}
+				);
+			}
+
+			if( classProps.privMethods ) {
+				Object.keys( classProps.privMethods ).forEach(
+					function( prop ) {
+						var desc = Object.getOwnPropertyDescriptor( classProps.privMethods, prop );
+						desc.enumerable = false;
+						desc.writable = false;
+						desc.configurable = false;
+						Object.defineProperty( constructor.prototype, prop, desc );
+					}
+				);
+			}
+
+			if( classProps.getSetProps ) {
+				Object.keys( classProps.getSetProps ).forEach(
+					function( prop ) {
+						var pub = {
+							enumerable: true,
+							configurable: true,
+							get: function() {
+								return this[ '_'  + prop ];
+							},
+							set: function( value ){
+								if( this[ '_'  + prop ] !== value ) {
+									this[ '_'  + prop ] = value;
+									if( this.trigger ){
+										this.trigger( prop + ':updated' );
+									}
+								}
+							}
+						};
+						Object.defineProperty( constructor.prototype, prop, pub );
+
+						var priv = Object.getOwnPropertyDescriptor( classProps.getSetProps, prop );
+						priv.enumerable = false;
+						Object.defineProperty( constructor.prototype, '_' + prop, priv );
+					}
+				);
+			}
+
+			if( classProps.getProps ) {
+				Object.keys( classProps.getProps ).forEach(
+					function( prop ) {
+						var pub = {
+							enumerable: true,
+							configurable: true,
+							get: function() {
+								return this[ '_'  + prop ];
+							},
+							set: function( value ){
+								if( this[ '_'  + prop ] !== value ) {
+									this[ '_'  + prop ] = value;
+								}
+							}
+						};
+						Object.defineProperty( constructor.prototype, prop, pub );
+
+						var priv = Object.getOwnPropertyDescriptor( classProps.getProps, prop );
+						priv.enumerable = false;
+						Object.defineProperty( constructor.prototype, '_' + prop, priv );
+					}
+				);
+			}
+
+			/*
+			//not in use for power slider but could be useful if we expand extend to more uses
+
+			if( classProps.privProps ) { // Private is only slightly so and not when they are on superclasses
+				Object.keys( classProps.privProps ).forEach(
+					function( prop ) {
+						console.log( prop );
+						var desc = Object.getOwnPropertyDescriptor( classProps.privProps, prop );
+						desc.enumerable = false;
+						Object.defineProperty( constructor.prototype, '_' + prop, desc );
+					}
+				);
+			}
+
+			if( classProps.specialGetSetProps ) {
+				Object.keys( classProps.specialGetSetProps ).forEach(
+					function( prop ) {
+						var obj = classProps.specialGetSetProps[ prop ];
+						var pub = {
+							enumerable: true,
+							configurable: true,
+							get: obj.get || function() {
+								return this[ '_'  + prop ];
+							},
+							set: obj.set || function( value ){
+								if( this[ '_'  + prop ] !== value ) {
+									this[ '_'  + prop ] = value;
+									if( this.trigger ){
+										this.trigger( prop + ':updated' );
+									}
+								}
+							}
+						};
+						Object.defineProperty( constructor.prototype, prop, pub );
+
+						var priv = Object.getOwnPropertyDescriptor( classProps.specialGetSetProps, prop );
+						priv.value = obj.value;
+						priv.enumerable = false;
+						Object.defineProperty( constructor.prototype, '_' + prop, priv );
+					}
+				);
+			}
+
+			if( classProps.getProps ) {
+				Object.keys( classProps.getProps ).forEach(
+					function( prop ) {
+						var pub = {
+							enumerable: true,
+							configurable: true,
+							get: function() {
+								return this[ '_'  + prop ];
+							}
+						};
+						Object.defineProperty( constructor.prototype, prop, pub );
+
+						var priv = Object.getOwnPropertyDescriptor( classProps.getProps, prop );
+						priv.enumerable = false;
+						Object.defineProperty( constructor.prototype, '_' + prop, priv );
+					}
+				);
+			}
+
+			if( classProps.constants ) {
+				Object.keys( classProps.constants ).forEach(
+					function( prop ) {
+						var desc = Object.getOwnPropertyDescriptor( classProps.constants, prop );
+						desc.enumerable = true;
+						desc.writable = false;
+						desc.configurable = false;
+						Object.defineProperty( constructor.prototype, prop, desc );
+					}
+				);
+			}
+			*/
+		}
+
+		function construct(){
+			var obj = new ( constructor.bind.apply( constructor, [].concat.apply( [ null ], arguments ) ) )();
+			superClass.call( obj );
+			return obj;
+		}
+
+		construct.prototype = constructor.prototype;
+
+		return construct;
+	},
+
+	createNewStorageModel:  function( props ) {
+		'use strict';
+		var Storage = Juggernaut.OO.utils.extendClass(
+			Juggernaut.OO.Models.Model,
+			{
+				getSetProps: props
+			}
+		);
+		return new Storage();
+	}
+};
+/**
+* Root abstract class for Marvel OO.
+*
+* @class SuperClass
+* @namespace Juggernaut.OO
+* @constructor
+*/
+Juggernaut.OO.SuperClass = function() {};
+Juggernaut.OO.SuperClass = Juggernaut.OO.utils.extendClass(
+	Juggernaut.OO.SuperClass,
+	{
+		/**
+		* Reference to the super class when something is overridden at higher levels.<br/>
+		* Created in the extend utility.
+		*
+		* @property sup
+		* @type {Object}
+		*/
+		pubMethods: {
+			/**
+			* Debug logging, adds color for warnings and errors.
+			* TODO?: Set up debug level set by query string, might be overkill
+			*
+			* @method log
+			* @param {String} message That which gets logged.
+			* @param {String} type error (red) or warn (orange).
+			* @param {Number} message That which gets logged.
+			*/
+			log: function ( message, type, level ) {
+				'use strict';
+				var style;
+				switch( type ) {
+					case 'error':
+						style = 'color: #FD0105;';
+					break;
+					case 'warn':
+						style = 'color: #FD9C44;';
+					break;
+					default:
+						style = '';
+					break;
+				}
+
+				console.log( '%c ' + message, style );
+			},
+
+			/**
+			* Finds properties, in their current state, and stashes them in an object.
+			* To be used when reverting properties, for example: on destroy.
+			*
+			* @method createDefaults
+			*/
+			createDefaults: function() {
+				'use strict';
+				var defaults = {};
+				for( var key in this ) {
+					if( typeof this[ key ] !== 'function' ) {
+						defaults[ key ] = this[ key ];
+					}
+				}
+				this.defaults = defaults;
+			},
+
+			/**
+			* Replaces all properties that match the ones in the defaults object with the values therein.
+			* To be used when reverting properties, for example: on destroy.
+			*
+			* @method applyDefaults
+			*/
+			applyDefaults: function() {
+				'use strict';
+				for( var key in this.defaults ) {
+					if(this.defaults.hasOwnProperty(key)) {
+						this[ '_' + key ] = this.defaults[ key ];
+					}
+				}
+			},
+
+			/**
+			* Finds all functions in the top level of the provided object
+			* and binds scope to that context using underscore.
+			*
+			* @method bindAll
+			*/
+			bindAll: function( context ) {
+				'use strict';
+				for( var key in context ) {
+					if( typeof context[ key ] === 'function' ) {
+						_.bindAll( context, key );
+					}
+				}
+			},
+
+			/**
+			* I was trying to trick scope into behaving on super classes,
+			* thought I had something here but really
+			* didn't. Please don't use.
+			*
+			* @deprecated
+			* @method callOnAncestors
+			*/
+			callOnAncestors: function( methodName, context, args, descendingOrder ) {
+				'use strict';
+				if( args && !args[ args.length - 1 ].willOverflow ) {
+					//sup is reference to the super class
+					var sup = context.sup;
+					//arguments is not a real array, turning it into one here.
+					args = Array.prototype.slice.call( args );
+					//set and checked in case same method is called on multiple ancestors.
+					args.push( { willOverflow: true } );
+					//Crawls through all the ancestors and checks for method on each, stashes them in an array.
+					var methods = [];
+					while( sup ) {
+						if( sup[ methodName ] ) {
+							if( descendingOrder ) { //calls methods as they are found while going down the tree
+								sup[ methodName ].apply( context, args );
+							} else {
+								methods.push( sup[ methodName ] );
+							}
+						}
+						sup = sup.sup;
+					}
+					if( !descendingOrder ) { //calls the deepest method first and works it's way through childern and grandchildren
+						for (var i = methods.length - 1; i >= 0; i--) {
+							methods[ i ].apply( context, args );
+						}
+					}
+				}
+			}
+		}
+	}
+);
+
+

@@ -1,0 +1,1374 @@
+webpackJsonp([2],{
+
+/***/ 109:
+/***/ (function(module, exports, __webpack_require__) {
+
+/* WEBPACK VAR INJECTION */(function(process) {var DEVELOPMENT = 'development'; // DEVELOPMENT is equivalent to localhost
+var DEV = 'dev';
+var TRAIN = 'train';
+var REF = 'ref';
+var STAGE = 'stage';
+var PROD = 'production';
+
+var validHosts = {
+    localhost: DEVELOPMENT,
+    'localhost.next.cnn.com': DEVELOPMENT,
+    'dev.money.cnn.com': DEV,
+    'dev.money.cnn.io': DEV,
+    'cnnmoney-web-fe.dev.services.ec2.dmtio.net': DEV,
+    'train.money.cnn.com': TRAIN,
+    'train.money.cnn.io': TRAIN,
+    'cnnmoney-web-fe.train.services.ec2.dmtio.net': TRAIN,
+    'ref2.money.cnn.com': REF,
+    'ref.money.cnn.io': REF,
+    'cnnmoney-web-fe.ref.services.ec2.dmtio.net': REF,
+    'stage.money.cnn.com': STAGE,
+    'stage.money.cnn.io': STAGE,
+    'cnnmoney-web-fe.staging.services.ec2.dmtio.net': STAGE,
+    'money.cnn.com': PROD,
+    'money.cnn.io': PROD,
+    'cnnmoney-web-fe.prod-a.services.ec2.dmtio.net': PROD,
+    'cnnmoney-web-fe.prod-b.services.ec2.dmtio.net': PROD
+};
+
+var configEnv = PROD;
+var ENVIRONMENT = process.env.ENVIRONMENT;
+
+if (typeof window !== 'undefined') {
+    // Client side
+    var hostname = window.location.hostname;
+
+    // if env is not production, use validHosts envs
+
+    if (window.__ENVIRONMENTS__.configEnv !== PROD) {
+        var env = validHosts[hostname] ? validHosts[hostname] : PROD;
+        configEnv = env || PROD;
+    }
+} else {
+    // Server side
+    configEnv = ENVIRONMENT || PROD;
+}
+
+var outbrain = {
+    widget: { url: 'https://widgets.outbrain.com/outbrain.js', id: 'js-outbrain-widget' }
+};
+
+var lendingTreeUrl = '\nhttps://widgets.lendingtree.com/LoanExplorer/CnnRates/Index?SpId=ns-cnn-rtwidget-15204-100&widget_height_\ncssclass=h452&splitter_personal=ns-cnn-rt-pl&splitter_mortgage=ns-cnn-rt-m&siteid=personalfinance&esourceid=6201916&\nesourceid_personal=6213006\n';
+
+module.exports = { configEnv: configEnv, outbrain: outbrain, lendingTreeUrl: lendingTreeUrl };
+;
+
+var _temp = function () {
+    if (typeof __REACT_HOT_LOADER__ === 'undefined') {
+        return;
+    }
+
+    __REACT_HOT_LOADER__.register(DEVELOPMENT, 'DEVELOPMENT', '/usr/src/cnnmoney-web-fe/src/config/index.js');
+
+    __REACT_HOT_LOADER__.register(DEV, 'DEV', '/usr/src/cnnmoney-web-fe/src/config/index.js');
+
+    __REACT_HOT_LOADER__.register(TRAIN, 'TRAIN', '/usr/src/cnnmoney-web-fe/src/config/index.js');
+
+    __REACT_HOT_LOADER__.register(REF, 'REF', '/usr/src/cnnmoney-web-fe/src/config/index.js');
+
+    __REACT_HOT_LOADER__.register(STAGE, 'STAGE', '/usr/src/cnnmoney-web-fe/src/config/index.js');
+
+    __REACT_HOT_LOADER__.register(PROD, 'PROD', '/usr/src/cnnmoney-web-fe/src/config/index.js');
+
+    __REACT_HOT_LOADER__.register(validHosts, 'validHosts', '/usr/src/cnnmoney-web-fe/src/config/index.js');
+
+    __REACT_HOT_LOADER__.register(configEnv, 'configEnv', '/usr/src/cnnmoney-web-fe/src/config/index.js');
+
+    __REACT_HOT_LOADER__.register(ENVIRONMENT, 'ENVIRONMENT', '/usr/src/cnnmoney-web-fe/src/config/index.js');
+
+    __REACT_HOT_LOADER__.register(outbrain, 'outbrain', '/usr/src/cnnmoney-web-fe/src/config/index.js');
+
+    __REACT_HOT_LOADER__.register(lendingTreeUrl, 'lendingTreeUrl', '/usr/src/cnnmoney-web-fe/src/config/index.js');
+}();
+
+;
+/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(12)))
+
+/***/ }),
+
+/***/ 110:
+/***/ (function(module, exports) {
+
+// Market services
+var marketServerEnv = {
+    development: '//dev.markets.money.cnn.io/graphql',
+    dev: '//dev.markets.money.cnn.io/graphql',
+    train: '//dev.markets.money.cnn.io/graphql',
+    ref: '//dev.markets.money.cnn.io/graphql',
+    stage: '//markets.money.cnn.io/graphql',
+    production: '//markets.money.cnn.io/graphql'
+};
+
+var marketServer = function marketServer(env) {
+    return marketServerEnv[env] ? marketServerEnv[env] : marketServerEnv['production'];
+};
+
+// Content Services
+var contentServerEnv = {
+    development: 'http://train.content.money.cnn.io:4000/graphql',
+    dev: 'http://dev.content.money.cnn.io/graphql',
+    train: 'http://stage.data.api.cnn.io/money/graphql',
+    ref: 'http://ref.content.money.cnn.io/graphql',
+    stage: 'http://data.api.cnn.io/money/graphql',
+    production: 'http://data.api.cnn.io/money/graphql'
+};
+
+// Content Services for preview
+var contentServerEnvPreview = {
+    development: 'http://train.content.money.cnn.io:4000/graphql',
+    dev: 'http://dev.content.money.cnn.io/graphql',
+    train: 'http://train.content.money.cnn.io:4000/graphql',
+    ref: 'http://ref.content.money.cnn.io/graphql',
+    stage: 'http://content.money.cnn.io/graphql',
+    production: 'http://content.money.cnn.io/graphql'
+};
+
+var contentServer = function contentServer(env, previewUser) {
+    if (previewUser) {
+        return contentServerEnvPreview[env];
+    }
+    return contentServerEnv[env] ? contentServerEnv[env] : contentServerEnv['production'];
+};
+
+module.exports = { marketServer: marketServer, contentServer: contentServer };
+;
+
+var _temp = function () {
+    if (typeof __REACT_HOT_LOADER__ === 'undefined') {
+        return;
+    }
+
+    __REACT_HOT_LOADER__.register(marketServerEnv, 'marketServerEnv', '/usr/src/cnnmoney-web-fe/src/graphql/config.js');
+
+    __REACT_HOT_LOADER__.register(marketServer, 'marketServer', '/usr/src/cnnmoney-web-fe/src/graphql/config.js');
+
+    __REACT_HOT_LOADER__.register(contentServerEnv, 'contentServerEnv', '/usr/src/cnnmoney-web-fe/src/graphql/config.js');
+
+    __REACT_HOT_LOADER__.register(contentServerEnvPreview, 'contentServerEnvPreview', '/usr/src/cnnmoney-web-fe/src/graphql/config.js');
+
+    __REACT_HOT_LOADER__.register(contentServer, 'contentServer', '/usr/src/cnnmoney-web-fe/src/graphql/config.js');
+}();
+
+;
+
+/***/ }),
+
+/***/ 111:
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0_react__ = __webpack_require__(1);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0_react___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_0_react__);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1_prop_types__ = __webpack_require__(2);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1_prop_types___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_1_prop_types__);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_2_modules_icons_twitter_icon__ = __webpack_require__(112);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_3_modules_icons_instagram_icon__ = __webpack_require__(113);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_4_modules_icons_facebook_icon__ = __webpack_require__(114);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_5_modules_icons_rss_icon__ = __webpack_require__(115);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_6_modules_icons_youtube_icon__ = __webpack_require__(116);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_7_config_navigation__ = __webpack_require__(51);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_8__styles_css__ = __webpack_require__(117);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_8__styles_css___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_8__styles_css__);
+
+
+
+
+
+
+
+
+
+
+var defaultProps = {
+    iconColor: '#fff',
+    iconSize: 20,
+    iconSpaceBetween: 25,
+    iconsIncluded: ['facebook', 'twitter', 'instagram']
+};
+
+var propTypes = {
+    iconColor: __WEBPACK_IMPORTED_MODULE_1_prop_types___default.a.string,
+    iconSize: __WEBPACK_IMPORTED_MODULE_1_prop_types___default.a.number,
+    iconsIncluded: __WEBPACK_IMPORTED_MODULE_1_prop_types___default.a.array
+};
+
+var companies = {
+    twitter: {
+        Icon: __WEBPACK_IMPORTED_MODULE_2_modules_icons_twitter_icon__["a" /* default */],
+        url: '//twitter.com/CNNMoney'
+    },
+    facebook: {
+        Icon: __WEBPACK_IMPORTED_MODULE_4_modules_icons_facebook_icon__["a" /* default */],
+        url: '//www.facebook.com/cnnmoney'
+    },
+    instagram: {
+        Icon: __WEBPACK_IMPORTED_MODULE_3_modules_icons_instagram_icon__["a" /* default */],
+        url: '//www.instagram.com/cnnmoney'
+    },
+    youtube: {
+        Icon: __WEBPACK_IMPORTED_MODULE_6_modules_icons_youtube_icon__["a" /* default */],
+        url: '//www.youtube.com/user/CNNMoney'
+    },
+    rss: {
+        Icon: __WEBPACK_IMPORTED_MODULE_5_modules_icons_rss_icon__["a" /* default */],
+        url: __WEBPACK_IMPORTED_MODULE_7_config_navigation__["a" /* cnnMoneyUrl */] + '//services/rss/'
+    }
+};
+
+var IconLink = function IconLink(_ref) {
+    var Icon = _ref.Icon,
+        iconCount = _ref.iconCount,
+        iconSize = _ref.iconSize,
+        iconColor = _ref.iconColor,
+        iconSpaceBetween = _ref.iconSpaceBetween,
+        idx = _ref.idx,
+        url = _ref.url;
+
+    return __WEBPACK_IMPORTED_MODULE_0_react___default.a.createElement(
+        'a',
+        {
+            href: url,
+            target: '_blank',
+            rel: 'noopener',
+            className: __WEBPACK_IMPORTED_MODULE_8__styles_css___default.a.iconLink,
+            style: { marginRight: idx < iconCount - 1 ? iconSpaceBetween + 'px' : '' }
+        },
+        __WEBPACK_IMPORTED_MODULE_0_react___default.a.createElement(Icon, { fill: iconColor, height: iconSize, width: iconSize })
+    );
+};
+
+var SocialShare = function SocialShare(_ref2) {
+    var iconColor = _ref2.iconColor,
+        iconSize = _ref2.iconSize,
+        iconsIncluded = _ref2.iconsIncluded,
+        iconSpaceBetween = _ref2.iconSpaceBetween;
+
+    return __WEBPACK_IMPORTED_MODULE_0_react___default.a.createElement(
+        'div',
+        { className: __WEBPACK_IMPORTED_MODULE_8__styles_css___default.a.socialShare },
+        iconsIncluded.map(function (company, idx) {
+            return __WEBPACK_IMPORTED_MODULE_0_react___default.a.createElement(IconLink, {
+                key: Math.random() + '_' + company,
+                url: companies[company].url,
+                iconSize: iconSize,
+                Icon: companies[company].Icon,
+                iconColor: iconColor,
+                idx: idx,
+                iconCount: iconsIncluded.length,
+                iconSpaceBetween: iconSpaceBetween
+            });
+        })
+    );
+};
+
+SocialShare.defaultProps = defaultProps;
+SocialShare.propTypes = propTypes;
+
+var _default = SocialShare;
+/* harmony default export */ __webpack_exports__["a"] = (_default);
+;
+
+var _temp = function () {
+    if (typeof __REACT_HOT_LOADER__ === 'undefined') {
+        return;
+    }
+
+    __REACT_HOT_LOADER__.register(defaultProps, 'defaultProps', '/usr/src/cnnmoney-web-fe/src/modules/social-share/index.js');
+
+    __REACT_HOT_LOADER__.register(propTypes, 'propTypes', '/usr/src/cnnmoney-web-fe/src/modules/social-share/index.js');
+
+    __REACT_HOT_LOADER__.register(companies, 'companies', '/usr/src/cnnmoney-web-fe/src/modules/social-share/index.js');
+
+    __REACT_HOT_LOADER__.register(IconLink, 'IconLink', '/usr/src/cnnmoney-web-fe/src/modules/social-share/index.js');
+
+    __REACT_HOT_LOADER__.register(SocialShare, 'SocialShare', '/usr/src/cnnmoney-web-fe/src/modules/social-share/index.js');
+
+    __REACT_HOT_LOADER__.register(_default, 'default', '/usr/src/cnnmoney-web-fe/src/modules/social-share/index.js');
+}();
+
+;
+
+/***/ }),
+
+/***/ 112:
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0_react__ = __webpack_require__(1);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0_react___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_0_react__);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1_prop_types__ = __webpack_require__(2);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1_prop_types___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_1_prop_types__);
+
+
+
+var defaultProps = {
+    height: 17,
+    width: 17,
+    fill: '#0666a7'
+};
+
+var propTypes = {
+    height: __WEBPACK_IMPORTED_MODULE_1_prop_types___default.a.number,
+    width: __WEBPACK_IMPORTED_MODULE_1_prop_types___default.a.number,
+    fill: __WEBPACK_IMPORTED_MODULE_1_prop_types___default.a.string
+};
+
+var TwitterIcon = function TwitterIcon(_ref) {
+    var height = _ref.height,
+        width = _ref.width,
+        fill = _ref.fill;
+
+    return __WEBPACK_IMPORTED_MODULE_0_react___default.a.createElement(
+        'svg',
+        { width: width + 5, height: height, viewBox: '0 0 30 24', version: '1.1', xmlns: 'http://www.w3.org/2000/svg' },
+        __WEBPACK_IMPORTED_MODULE_0_react___default.a.createElement('path', {
+            fill: fill,
+            d: 'M29.536,2.84 C28.449,3.323 27.281,3.649 26.057,3.793 C27.307,3.044 28.266,1.856 28.721,0.442 C27.552,1.135 26.253,1.641 24.873,1.912 C23.769,0.739 22.193,0 20.448,0 C17.105,0 14.389,2.712 14.389,6.06 C14.389,6.534 14.442,6.998 14.547,7.44 C9.511,7.185 5.048,4.773 2.06,1.109 C1.537,2.003 1.237,3.045 1.237,4.154 C1.237,6.257 2.31,8.112 3.935,9.198 C2.941,9.168 2.006,8.895 1.191,8.44 L1.191,8.516 C1.191,11.451 3.28,13.901 6.05,14.457 C5.541,14.595 5.007,14.669 4.454,14.669 C4.065,14.669 3.683,14.631 3.314,14.561 C4.085,16.969 6.321,18.719 8.976,18.769 C6.896,20.392 4.287,21.361 1.451,21.361 C0.962,21.361 0.473,21.335 -1.77635684e-15,21.277 C2.684,22.998 5.867,24 9.292,24 C20.437,24 26.529,14.77 26.529,6.762 C26.529,6.499 26.523,6.237 26.513,5.977 C27.695,5.122 28.725,4.056 29.536,2.84 Z',
+            id: 'Shape'
+        })
+    );
+};
+
+TwitterIcon.defaultProps = defaultProps;
+TwitterIcon.propTypes = propTypes;
+
+var _default = TwitterIcon;
+/* harmony default export */ __webpack_exports__["a"] = (_default);
+;
+
+var _temp = function () {
+    if (typeof __REACT_HOT_LOADER__ === 'undefined') {
+        return;
+    }
+
+    __REACT_HOT_LOADER__.register(defaultProps, 'defaultProps', '/usr/src/cnnmoney-web-fe/src/modules/icons/twitter-icon/index.js');
+
+    __REACT_HOT_LOADER__.register(propTypes, 'propTypes', '/usr/src/cnnmoney-web-fe/src/modules/icons/twitter-icon/index.js');
+
+    __REACT_HOT_LOADER__.register(TwitterIcon, 'TwitterIcon', '/usr/src/cnnmoney-web-fe/src/modules/icons/twitter-icon/index.js');
+
+    __REACT_HOT_LOADER__.register(_default, 'default', '/usr/src/cnnmoney-web-fe/src/modules/icons/twitter-icon/index.js');
+}();
+
+;
+
+/***/ }),
+
+/***/ 113:
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0_react__ = __webpack_require__(1);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0_react___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_0_react__);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1_prop_types__ = __webpack_require__(2);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1_prop_types___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_1_prop_types__);
+
+
+
+var defaultProps = {
+    height: 17,
+    width: 17,
+    fill: '#0666a7'
+};
+
+var propTypes = {
+    height: __WEBPACK_IMPORTED_MODULE_1_prop_types___default.a.number,
+    width: __WEBPACK_IMPORTED_MODULE_1_prop_types___default.a.number,
+    fill: __WEBPACK_IMPORTED_MODULE_1_prop_types___default.a.string
+};
+
+var InstagramIcon = function InstagramIcon(_ref) {
+    var height = _ref.height,
+        width = _ref.width,
+        fill = _ref.fill;
+
+    return __WEBPACK_IMPORTED_MODULE_0_react___default.a.createElement(
+        'svg',
+        { width: width, height: height, viewBox: '0 0 20 20', xmlns: 'http://www.w3.org/2000/svg' },
+        __WEBPACK_IMPORTED_MODULE_0_react___default.a.createElement(
+            'defs',
+            null,
+            __WEBPACK_IMPORTED_MODULE_0_react___default.a.createElement('polygon', { points: '9.99683532 19.9861889 0 19.9861889 0 0.00630516673 9.99683532 0.00630516673 19.9936706 0.00630516673 19.9936706 19.9861889' })
+        ),
+        __WEBPACK_IMPORTED_MODULE_0_react___default.a.createElement(
+            'g',
+            { stroke: 'none', strokeWidth: '1', fill: 'none', fillRule: 'evenodd' },
+            __WEBPACK_IMPORTED_MODULE_0_react___default.a.createElement(
+                'g',
+                null,
+                __WEBPACK_IMPORTED_MODULE_0_react___default.a.createElement(
+                    'g',
+                    { transform: 'translate(0.000000, 0.033350)' },
+                    __WEBPACK_IMPORTED_MODULE_0_react___default.a.createElement(
+                        'g',
+                        null,
+                        __WEBPACK_IMPORTED_MODULE_0_react___default.a.createElement('g', null),
+                        __WEBPACK_IMPORTED_MODULE_0_react___default.a.createElement('path', {
+                            d: 'M9.99684524,0.00630516673 C7.28184524,0.00630516673 6.94140873,0.0178051564 5.87517857,0.0664223539 C4.81109127,0.114920586 4.0844246,0.283811813 3.4485119,0.530744349 C2.79113095,0.786044119 2.23363095,1.12763347 1.67787698,1.68300366 C1.12212302,2.2384135 0.780297619,2.79552852 0.524821429,3.45245551 C0.277678571,4.08788942 0.108710317,4.81409394 0.0601388889,5.87740677 C0.0114880952,6.9429403 -1.98412698e-05,7.28314171 -1.98412698e-05,9.99626686 C-1.98412698e-05,12.7093523 0.0114880952,13.0495538 0.0601388889,14.1150873 C0.108710317,15.1784001 0.277678571,15.9046046 0.524821429,16.5400385 C0.780297619,17.1969655 1.12212302,17.7540806 1.67787698,18.3094904 C2.23363095,18.8648606 2.79113095,19.2064499 3.4485119,19.4617497 C4.0844246,19.7086822 4.81109127,19.8775735 5.87517857,19.9260717 C6.94140873,19.9747286 7.28184524,19.9861889 9.99684524,19.9861889 C12.7118452,19.9861889 13.0522421,19.9747286 14.1185119,19.9260717 C15.1825992,19.8775735 15.9092659,19.7086822 16.5451786,19.4617497 C17.2025595,19.2064499 17.7600595,18.8648606 18.3158135,18.3094904 C18.8715675,17.7540806 19.2133929,17.1969655 19.468869,16.5400385 C19.7160119,15.9046046 19.8849802,15.1784001 19.9335516,14.1150873 C19.9822024,13.0495538 19.9936706,12.7093523 19.9936706,9.99626686 C19.9936706,7.28314171 19.9822024,6.9429403 19.9335516,5.87740677 C19.8849802,4.81409394 19.7160119,4.08788942 19.468869,3.45245551 C19.2133929,2.79552852 18.8715675,2.2384135 18.3158135,1.68300366 C17.7600595,1.12763347 17.2025595,0.786044119 16.5451786,0.530744349 C15.9092659,0.283811813 15.1825992,0.114920586 14.1185119,0.0664223539 C13.0522421,0.0178051564 12.7118452,0.00630516673 9.99684524,0.00630516673 M9.99684524,1.80629148 C12.666131,1.80629148 12.9822817,1.81648285 14.0364087,1.86454487 C15.0110913,1.90895862 15.5404167,2.07170331 15.8927183,2.20851353 C16.3593056,2.3897375 16.6923611,2.60621489 17.0421627,2.95581458 C17.3919643,3.30537461 17.608631,3.63816052 17.7899405,4.10446527 C17.9268452,4.45648392 18.0897024,4.98544378 18.1341865,5.95945325 C18.1822817,7.0128523 18.1924405,7.32882443 18.1924405,9.99626686 C18.1924405,12.6636696 18.1822817,12.9796418 18.1341865,14.0330408 C18.0897024,15.0070503 17.9268452,15.5360101 17.7899405,15.8880288 C17.608631,16.3543335 17.3919643,16.6871194 17.0421627,17.0366795 C16.6923611,17.3862792 16.3593056,17.6027566 15.8927183,17.7839805 C15.5404167,17.9207908 15.0110913,18.0835354 14.0364087,18.1279492 C12.9824405,18.1760112 12.6662897,18.1862026 9.99684524,18.1862026 C7.32740079,18.1862026 7.01125,18.1760112 5.95728175,18.1279492 C4.98259921,18.0835354 4.45323413,17.9207908 4.10097222,17.7839805 C3.63438492,17.6027566 3.30132937,17.3862792 2.95152778,17.0366795 C2.60172619,16.6871194 2.38505952,16.3543335 2.20371032,15.8880288 C2.06684524,15.5360101 1.9039881,15.0070503 1.85950397,14.0330408 C1.81140873,12.9796418 1.80125,12.6636696 1.80125,9.99626686 C1.80125,7.32882443 1.81140873,7.0128523 1.85950397,5.95945325 C1.9039881,4.98544378 2.06684524,4.45648392 2.20371032,4.10446527 C2.38505952,3.63816052 2.60172619,3.30537461 2.95152778,2.95581458 C3.30132937,2.60621489 3.63438492,2.3897375 4.10097222,2.20851353 C4.45323413,2.07170331 4.98259921,1.90895862 5.95724206,1.86454487 C7.01140873,1.81648285 7.32755952,1.80629148 9.99684524,1.80629148',
+                            fill: fill,
+                            fillRule: 'nonzero'
+                        })
+                    )
+                ),
+                __WEBPACK_IMPORTED_MODULE_0_react___default.a.createElement('path', {
+                    d: 'M9.99684524,13.3595776 C8.1564881,13.3595776 6.66454365,11.8687031 6.66454365,10.0296168 C6.66454365,8.1904909 8.1564881,6.69961638 9.99684524,6.69961638 C11.8372024,6.69961638 13.3291071,8.1904909 13.3291071,10.0296168 C13.3291071,11.8687031 11.8372024,13.3595776 9.99684524,13.3595776 M9.99684524,4.89963007 C7.16168651,4.89963007 4.86331349,7.19637627 4.86331349,10.0296168 C4.86331349,12.8628177 7.16168651,15.1595639 9.99684524,15.1595639 C12.832004,15.1595639 15.130377,12.8628177 15.130377,10.0296168 C15.130377,7.19637627 12.832004,4.89963007 9.99684524,4.89963007',
+                    fill: fill,
+                    fillRule: 'nonzero'
+                }),
+                __WEBPACK_IMPORTED_MODULE_0_react___default.a.createElement('path', {
+                    d: 'M16.5328095,4.69694077 C16.5328095,5.35902293 15.9957063,5.89571555 15.3332063,5.89571555 C14.6706667,5.89571555 14.1335635,5.35902293 14.1335635,4.69694077 C14.1335635,4.03485861 14.6706667,3.49816599 15.3332063,3.49816599 C15.9957063,3.49816599 16.5328095,4.03485861 16.5328095,4.69694077',
+                    fill: fill,
+                    fillRule: 'nonzero'
+                })
+            )
+        )
+    );
+};
+
+InstagramIcon.defaultProps = defaultProps;
+InstagramIcon.propTypes = propTypes;
+
+var _default = InstagramIcon;
+/* harmony default export */ __webpack_exports__["a"] = (_default);
+;
+
+var _temp = function () {
+    if (typeof __REACT_HOT_LOADER__ === 'undefined') {
+        return;
+    }
+
+    __REACT_HOT_LOADER__.register(defaultProps, 'defaultProps', '/usr/src/cnnmoney-web-fe/src/modules/icons/instagram-icon/index.js');
+
+    __REACT_HOT_LOADER__.register(propTypes, 'propTypes', '/usr/src/cnnmoney-web-fe/src/modules/icons/instagram-icon/index.js');
+
+    __REACT_HOT_LOADER__.register(InstagramIcon, 'InstagramIcon', '/usr/src/cnnmoney-web-fe/src/modules/icons/instagram-icon/index.js');
+
+    __REACT_HOT_LOADER__.register(_default, 'default', '/usr/src/cnnmoney-web-fe/src/modules/icons/instagram-icon/index.js');
+}();
+
+;
+
+/***/ }),
+
+/***/ 114:
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0_react__ = __webpack_require__(1);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0_react___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_0_react__);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1_prop_types__ = __webpack_require__(2);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1_prop_types___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_1_prop_types__);
+
+
+
+var defaultProps = {
+    height: 17,
+    width: 17,
+    fill: '#0666a7'
+};
+
+var propTypes = {
+    height: __WEBPACK_IMPORTED_MODULE_1_prop_types___default.a.number,
+    width: __WEBPACK_IMPORTED_MODULE_1_prop_types___default.a.number,
+    fill: __WEBPACK_IMPORTED_MODULE_1_prop_types___default.a.string
+};
+
+var FacebookIcon = function FacebookIcon(_ref) {
+    var height = _ref.height,
+        width = _ref.width,
+        fill = _ref.fill;
+    return __WEBPACK_IMPORTED_MODULE_0_react___default.a.createElement(
+        'svg',
+        { width: width, height: height, viewBox: '0 0 20 20', xmlns: 'http://www.w3.org/2000/svg' },
+        __WEBPACK_IMPORTED_MODULE_0_react___default.a.createElement('path', {
+            d: 'M1.103809,0 C0.494128755,0 0,0.494128755 0,1.103809 L0,18.896191 C0,19.5057963 0.494128755,20.0000749 1.103809,20.0000749 L10.682668,20.0000749 L10.682668,12.2549776 L8.07624001,12.2549776 L8.07624001,9.23655084 L10.682668,9.23655084 L10.682668,7.01057349 C10.682668,4.42737566 12.260373,3.02074981 14.5648085,3.02074981 C15.6686924,3.02074981 16.6173837,3.10287979 16.893823,3.13959849 L16.893823,5.83924704 L15.2955855,5.8399964 C14.0423539,5.8399964 13.7996358,6.43551372 13.7996358,7.30941872 L13.7996358,9.23655084 L16.7886127,9.23655084 L16.3994695,12.2549776 L13.7996358,12.2549776 L13.7996358,20.0000749 L18.896191,20.0000749 C19.5057963,20.0000749 20,19.5057963 20,18.896191 L20,1.103809 C20,0.494128755 19.5057963,0 18.896191,0 L1.103809,0 Z',
+            fill: fill
+        })
+    );
+};
+
+FacebookIcon.defaultProps = defaultProps;
+FacebookIcon.propTypes = propTypes;
+
+var _default = FacebookIcon;
+/* harmony default export */ __webpack_exports__["a"] = (_default);
+;
+
+var _temp = function () {
+    if (typeof __REACT_HOT_LOADER__ === 'undefined') {
+        return;
+    }
+
+    __REACT_HOT_LOADER__.register(defaultProps, 'defaultProps', '/usr/src/cnnmoney-web-fe/src/modules/icons/facebook-icon/index.js');
+
+    __REACT_HOT_LOADER__.register(propTypes, 'propTypes', '/usr/src/cnnmoney-web-fe/src/modules/icons/facebook-icon/index.js');
+
+    __REACT_HOT_LOADER__.register(FacebookIcon, 'FacebookIcon', '/usr/src/cnnmoney-web-fe/src/modules/icons/facebook-icon/index.js');
+
+    __REACT_HOT_LOADER__.register(_default, 'default', '/usr/src/cnnmoney-web-fe/src/modules/icons/facebook-icon/index.js');
+}();
+
+;
+
+/***/ }),
+
+/***/ 115:
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0_react__ = __webpack_require__(1);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0_react___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_0_react__);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1_prop_types__ = __webpack_require__(2);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1_prop_types___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_1_prop_types__);
+
+
+
+var defaultProps = {
+    height: 18,
+    width: 18,
+    fill: '#0666a7'
+};
+
+var propTypes = {
+    height: __WEBPACK_IMPORTED_MODULE_1_prop_types___default.a.number,
+    width: __WEBPACK_IMPORTED_MODULE_1_prop_types___default.a.number,
+    fill: __WEBPACK_IMPORTED_MODULE_1_prop_types___default.a.string
+};
+
+var RssIcon = function RssIcon(_ref) {
+    var height = _ref.height,
+        width = _ref.width,
+        fill = _ref.fill;
+
+    return __WEBPACK_IMPORTED_MODULE_0_react___default.a.createElement(
+        'svg',
+        { width: width, height: height, viewBox: '0 0 16 16', version: '1.1', xmlns: 'http://www.w3.org/2000/svg' },
+        '>',
+        __WEBPACK_IMPORTED_MODULE_0_react___default.a.createElement('path', {
+            d: 'M5.818142,13.090773 C5.818142,14.697252 4.51556,15.999834 2.909081,15.999834 C1.302602,15.999834 1.99999999e-05,14.697252 1.99999999e-05,13.090773 C1.99999999e-05,11.484295 1.302602,10.181713 2.909081,10.181713 C4.51556,10.181713 5.818142,11.484295 5.818142,13.090773 Z M10.303877,15.999834 C10.243878,15.999834 10.182788,15.992561 10.121697,15.977289 C9.720611,15.87729 9.475522,15.470021 9.575885,15.067844 C9.69952,14.569303 9.773337,13.55695 9.773337,12.968593 C9.773337,9.251904 6.754096,6.228299 3.042862,6.228299 C2.531958,6.228299 1.762511,6.286117 1.279607,6.395934 C0.879611,6.487933 0.474525,6.235208 0.382526,5.830849 C0.290527,5.426489 0.543615,5.023948 0.947247,4.931949 C1.568331,4.790496 2.447231,4.727224 3.042862,4.727224 C7.580996,4.727224 11.272594,8.424276 11.272594,12.968593 C11.272594,13.682404 11.184595,14.811119 11.030415,15.430385 C10.946052,15.771836 10.639874,15.999834 10.303877,15.999834 Z M15.053828,15.999834 C15.010556,15.999834 14.96692,15.996198 14.92292,15.988561 C14.506561,15.916562 14.228018,15.520203 14.300018,15.103843 C14.421107,14.402032 14.470561,13.855856 14.470561,13.219499 C14.470561,6.774112 9.232434,1.53053 2.793592,1.53053 C2.091053,1.53053 1.661967,1.590165 0.906702,1.732709 C0.489615,1.811254 0.091801,1.538166 0.013257,1.122534 C-0.064561,0.707265 0.208164,0.306906 0.622705,0.228725 C1.332879,0.094908 1.903419,0 2.793592,0 C10.075698,0 16,5.93012 16,13.219499 C16,13.939492 15.941819,14.581667 15.806184,15.364932 C15.742184,15.736928 15.418915,15.999834 15.053828,15.999834 Z',
+            fill: fill
+        })
+    );
+};
+
+RssIcon.defaultProps = defaultProps;
+RssIcon.propTypes = propTypes;
+
+var _default = RssIcon;
+/* harmony default export */ __webpack_exports__["a"] = (_default);
+;
+
+var _temp = function () {
+    if (typeof __REACT_HOT_LOADER__ === 'undefined') {
+        return;
+    }
+
+    __REACT_HOT_LOADER__.register(defaultProps, 'defaultProps', '/usr/src/cnnmoney-web-fe/src/modules/icons/rss-icon/index.js');
+
+    __REACT_HOT_LOADER__.register(propTypes, 'propTypes', '/usr/src/cnnmoney-web-fe/src/modules/icons/rss-icon/index.js');
+
+    __REACT_HOT_LOADER__.register(RssIcon, 'RssIcon', '/usr/src/cnnmoney-web-fe/src/modules/icons/rss-icon/index.js');
+
+    __REACT_HOT_LOADER__.register(_default, 'default', '/usr/src/cnnmoney-web-fe/src/modules/icons/rss-icon/index.js');
+}();
+
+;
+
+/***/ }),
+
+/***/ 116:
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0_react__ = __webpack_require__(1);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0_react___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_0_react__);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1_prop_types__ = __webpack_require__(2);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1_prop_types___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_1_prop_types__);
+
+
+
+var defaultProps = {
+    height: 17,
+    width: 17,
+    fill: '#0666a7'
+};
+
+var propTypes = {
+    height: __WEBPACK_IMPORTED_MODULE_1_prop_types___default.a.number,
+    width: __WEBPACK_IMPORTED_MODULE_1_prop_types___default.a.number,
+    fill: __WEBPACK_IMPORTED_MODULE_1_prop_types___default.a.string
+};
+
+var YoutubeIcon = function YoutubeIcon(_ref) {
+    var height = _ref.height,
+        width = _ref.width,
+        fill = _ref.fill;
+
+    return __WEBPACK_IMPORTED_MODULE_0_react___default.a.createElement(
+        'svg',
+        { width: width, height: height, viewBox: '0 0 21 16', version: '1.1', xmlns: 'http://www.w3.org/2000/svg' },
+        __WEBPACK_IMPORTED_MODULE_0_react___default.a.createElement('path', {
+            fill: fill,
+            d: 'M10.29,0 C0.176987999,0 0,0.899345997 0,7.92329997 C0,14.9472539 0.176987999,15.8465999 10.29,15.8465999 C20.4030119,15.8465999 20.5799999,14.9472539 20.5799999,7.92329997 C20.5799999,0.899345997 20.4030119,0 10.29,0 Z M13.5879449,8.26698597 L8.96773497,10.42377 C8.56333797,10.611048 8.23199997,10.401132 8.23199997,9.95454596 L8.23199997,5.89205398 C8.23199997,5.44649698 8.56333797,5.23555198 8.96773497,5.42282998 L13.5879449,7.57961397 C13.9923419,7.76894997 13.9923419,8.07764997 13.5879449,8.26698597 Z'
+        })
+    );
+};
+
+YoutubeIcon.defaultProps = defaultProps;
+YoutubeIcon.propTypes = propTypes;
+
+var _default = YoutubeIcon;
+/* harmony default export */ __webpack_exports__["a"] = (_default);
+;
+
+var _temp = function () {
+    if (typeof __REACT_HOT_LOADER__ === 'undefined') {
+        return;
+    }
+
+    __REACT_HOT_LOADER__.register(defaultProps, 'defaultProps', '/usr/src/cnnmoney-web-fe/src/modules/icons/youtube-icon/index.js');
+
+    __REACT_HOT_LOADER__.register(propTypes, 'propTypes', '/usr/src/cnnmoney-web-fe/src/modules/icons/youtube-icon/index.js');
+
+    __REACT_HOT_LOADER__.register(YoutubeIcon, 'YoutubeIcon', '/usr/src/cnnmoney-web-fe/src/modules/icons/youtube-icon/index.js');
+
+    __REACT_HOT_LOADER__.register(_default, 'default', '/usr/src/cnnmoney-web-fe/src/modules/icons/youtube-icon/index.js');
+}();
+
+;
+
+/***/ }),
+
+/***/ 117:
+/***/ (function(module, exports) {
+
+// removed by extract-text-webpack-plugin
+module.exports = {"social":"_09a2dd12","iconLink":"d108d922"};
+
+/***/ }),
+
+/***/ 333:
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0_react__ = __webpack_require__(1);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0_react___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_0_react__);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1_react_dom__ = __webpack_require__(181);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1_react_dom___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_1_react_dom__);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_2_react_router__ = __webpack_require__(188);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_3_react_apollo__ = __webpack_require__(72);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_3_react_apollo___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_3_react_apollo__);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_4_graphql_apollo__ = __webpack_require__(73);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_5_modules_footer__ = __webpack_require__(334);
+
+
+
+
+
+
+
+Object(__WEBPACK_IMPORTED_MODULE_1_react_dom__["render"])(__WEBPACK_IMPORTED_MODULE_0_react___default.a.createElement(
+    __WEBPACK_IMPORTED_MODULE_2_react_router__["a" /* StaticRouter */],
+    { context: { transformLinks: true } },
+    __WEBPACK_IMPORTED_MODULE_0_react___default.a.createElement(
+        __WEBPACK_IMPORTED_MODULE_3_react_apollo__["ApolloProvider"],
+        { client: __WEBPACK_IMPORTED_MODULE_4_graphql_apollo__["a" /* contentApolloClient */] },
+        __WEBPACK_IMPORTED_MODULE_0_react___default.a.createElement(__WEBPACK_IMPORTED_MODULE_5_modules_footer__["a" /* default */], null)
+    )
+), document.getElementById('react_footer'));
+;
+
+var _temp = function () {
+    if (typeof __REACT_HOT_LOADER__ === 'undefined') {
+        return;
+    }
+}();
+
+;
+
+/***/ }),
+
+/***/ 334:
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0_react__ = __webpack_require__(1);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0_react___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_0_react__);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1_modules_icons_cnn_money_icon__ = __webpack_require__(93);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_2_modules_social_share__ = __webpack_require__(111);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_3_modules_terms_of_service__ = __webpack_require__(335);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_4_util_assets_js__ = __webpack_require__(337);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_5__styles_css__ = __webpack_require__(341);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_5__styles_css___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_5__styles_css__);
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
+
+function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
+
+
+
+
+
+
+
+
+var year = new Date().getFullYear();
+var footerNavLinks = [{
+    title: 'Contact Us',
+    url: '/services/speakup/speakup.html'
+}, {
+    title: 'Closed Captioning',
+    url: '/services/closed-captioning.html'
+}, {
+    title: 'Site Map',
+    url: '/services/sitemap'
+}];
+
+var Footer = function (_PureComponent) {
+    _inherits(Footer, _PureComponent);
+
+    function Footer() {
+        _classCallCheck(this, Footer);
+
+        return _possibleConstructorReturn(this, _PureComponent.apply(this, arguments));
+    }
+
+    Footer.prototype.componentDidMount = function componentDidMount() {
+        Object(__WEBPACK_IMPORTED_MODULE_4_util_assets_js__["a" /* importAsset */])('script', 'adChoice', 'http://consent.truste.com/notice?domain=turner.com&c=trusteLink&text=true').catch(function (error) {
+            return console.log('AdChoice [Error]: ', error);
+        });
+    };
+
+    Footer.prototype.render = function render() {
+
+        return __WEBPACK_IMPORTED_MODULE_0_react___default.a.createElement(
+            'footer',
+            { className: __WEBPACK_IMPORTED_MODULE_5__styles_css___default.a.footer },
+            __WEBPACK_IMPORTED_MODULE_0_react___default.a.createElement(__WEBPACK_IMPORTED_MODULE_3_modules_terms_of_service__["a" /* default */], null),
+            __WEBPACK_IMPORTED_MODULE_0_react___default.a.createElement(
+                'div',
+                { className: __WEBPACK_IMPORTED_MODULE_5__styles_css___default.a.iconBlock },
+                __WEBPACK_IMPORTED_MODULE_0_react___default.a.createElement(__WEBPACK_IMPORTED_MODULE_1_modules_icons_cnn_money_icon__["a" /* default */], null)
+            ),
+            __WEBPACK_IMPORTED_MODULE_0_react___default.a.createElement(
+                'div',
+                { className: __WEBPACK_IMPORTED_MODULE_5__styles_css___default.a.textLinks },
+                footerNavLinks.map(function (link) {
+                    return __WEBPACK_IMPORTED_MODULE_0_react___default.a.createElement(
+                        'a',
+                        { rel: 'noopener', key: link.title, target: '_blank', href: link.url },
+                        link.title
+                    );
+                })
+            ),
+            __WEBPACK_IMPORTED_MODULE_0_react___default.a.createElement(__WEBPACK_IMPORTED_MODULE_2_modules_social_share__["a" /* default */], {
+                iconSpaceBetween: 30,
+                iconSize: 18,
+                iconColor: '#313131',
+                iconsIncluded: ['facebook', 'twitter', 'instagram', 'youtube', 'rss']
+            }),
+            __WEBPACK_IMPORTED_MODULE_0_react___default.a.createElement(
+                'p',
+                { className: __WEBPACK_IMPORTED_MODULE_5__styles_css___default.a.terms },
+                'Most stock quote data provided by BATS. Market indices are shown in real time, except for the DJIA, which is delayed by two minutes. All times are ET. Disclaimer. Morningstar: \xA9 ',
+                year,
+                ' Morningstar, Inc. All Rights Reserved. Factset: FactSet Research Systems Inc.',
+                year,
+                '. All rights reserved. Chicago Mercantile Association: Certain market data is the property of Chicago Mercantile Exchange Inc. and its licensors. All rights reserved. Dow Jones: The Dow Jones branded indices are proprietary to and are calculated, distributed and marketed by DJI Opco, a subsidiary of S&P Dow Jones Indices LLC and have been licensed for use to S&P Opco, LLC and CNN. Standard & Poor\'s and S&P are registered trademarks of Standard & Poor\'s Financial Services LLC and Dow Jones is a registered trademark of Dow Jones Trademark Holdings LLC. All content of the Dow Jones branded indices \xA9 S&P Dow Jones Indices LLC ',
+                year,
+                ' and/or its affiliates.'
+            ),
+            __WEBPACK_IMPORTED_MODULE_0_react___default.a.createElement(
+                'p',
+                { className: __WEBPACK_IMPORTED_MODULE_5__styles_css___default.a.terms },
+                '\xA9 ',
+                year,
+                ' Cable News Network. A Time Warner Company. All Rights Reserved.',
+                __WEBPACK_IMPORTED_MODULE_0_react___default.a.createElement(
+                    'a',
+                    { rel: 'noopener', href: '/services/terms.html' },
+                    'Terms'
+                ),
+                ' ',
+                'under which this service is provided to you.',
+                __WEBPACK_IMPORTED_MODULE_0_react___default.a.createElement(
+                    'a',
+                    { rel: 'noopener', href: '/services/privacy/' },
+                    ' ',
+                    'Privacy Policy.'
+                ),
+                ' ',
+                __WEBPACK_IMPORTED_MODULE_0_react___default.a.createElement('a', { id: 'trusteLink' })
+            )
+        );
+    };
+
+    return Footer;
+}(__WEBPACK_IMPORTED_MODULE_0_react__["PureComponent"]);
+
+var _default = Footer;
+
+
+/* harmony default export */ __webpack_exports__["a"] = (_default);
+;
+
+var _temp = function () {
+    if (typeof __REACT_HOT_LOADER__ === 'undefined') {
+        return;
+    }
+
+    __REACT_HOT_LOADER__.register(year, 'year', '/usr/src/cnnmoney-web-fe/src/modules/footer/index.js');
+
+    __REACT_HOT_LOADER__.register(footerNavLinks, 'footerNavLinks', '/usr/src/cnnmoney-web-fe/src/modules/footer/index.js');
+
+    __REACT_HOT_LOADER__.register(Footer, 'Footer', '/usr/src/cnnmoney-web-fe/src/modules/footer/index.js');
+
+    __REACT_HOT_LOADER__.register(_default, 'default', '/usr/src/cnnmoney-web-fe/src/modules/footer/index.js');
+}();
+
+;
+
+/***/ }),
+
+/***/ 335:
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0_react__ = __webpack_require__(1);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0_react___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_0_react__);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1_modules_icons_close_icon__ = __webpack_require__(61);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_2_util_cookies__ = __webpack_require__(60);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_3__styles_css__ = __webpack_require__(336);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_3__styles_css___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_3__styles_css__);
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
+
+function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
+
+
+
+
+
+
+var TermsOfServiceBanner = function (_Component) {
+    _inherits(TermsOfServiceBanner, _Component);
+
+    function TermsOfServiceBanner() {
+        _classCallCheck(this, TermsOfServiceBanner);
+
+        var _this = _possibleConstructorReturn(this, _Component.call(this));
+
+        _this.state = {
+            hidden: true
+        };
+
+        _this.dismissTOS = _this.dismissTOS.bind(_this);
+        return _this;
+    }
+
+    TermsOfServiceBanner.prototype.componentDidMount = function componentDidMount() {
+        this.setState({ hidden: Object(__WEBPACK_IMPORTED_MODULE_2_util_cookies__["a" /* getCookie */])('CNNtosAgreed') !== '' });
+    };
+
+    TermsOfServiceBanner.prototype.render = function render() {
+        var wrapperClass = this.state.hidden ? __WEBPACK_IMPORTED_MODULE_3__styles_css___default.a.hide : __WEBPACK_IMPORTED_MODULE_3__styles_css___default.a.wrapper;
+
+        return __WEBPACK_IMPORTED_MODULE_0_react___default.a.createElement(
+            'div',
+            { className: wrapperClass },
+            __WEBPACK_IMPORTED_MODULE_0_react___default.a.createElement(
+                'section',
+                { className: __WEBPACK_IMPORTED_MODULE_3__styles_css___default.a.container },
+                __WEBPACK_IMPORTED_MODULE_0_react___default.a.createElement(
+                    'div',
+                    { className: __WEBPACK_IMPORTED_MODULE_3__styles_css___default.a.row },
+                    __WEBPACK_IMPORTED_MODULE_0_react___default.a.createElement(
+                        'h2',
+                        { className: __WEBPACK_IMPORTED_MODULE_3__styles_css___default.a.header },
+                        'Our Terms of Service and Privacy Policy have changed.'
+                    ),
+                    __WEBPACK_IMPORTED_MODULE_0_react___default.a.createElement(
+                        'button',
+                        { className: __WEBPACK_IMPORTED_MODULE_3__styles_css___default.a.close, onClick: this.dismissTOS },
+                        __WEBPACK_IMPORTED_MODULE_0_react___default.a.createElement(__WEBPACK_IMPORTED_MODULE_1_modules_icons_close_icon__["a" /* default */], { fill: '#3061f2', height: 18, width: 18 })
+                    )
+                ),
+                __WEBPACK_IMPORTED_MODULE_0_react___default.a.createElement(
+                    'p',
+                    { className: __WEBPACK_IMPORTED_MODULE_3__styles_css___default.a.content },
+                    'By continuing to use this site, you are agreeing to the new',
+                    ' ',
+                    __WEBPACK_IMPORTED_MODULE_0_react___default.a.createElement(
+                        'a',
+                        { rel: 'noopener', href: '/services/privacy/' },
+                        'Privacy Policy'
+                    ),
+                    ' ',
+                    'and',
+                    ' ',
+                    __WEBPACK_IMPORTED_MODULE_0_react___default.a.createElement(
+                        'a',
+                        { rel: 'noopener', href: '/services/terms.html' },
+                        'Terms of Service'
+                    ),
+                    '.'
+                )
+            )
+        );
+    };
+
+    TermsOfServiceBanner.prototype.dismissTOS = function dismissTOS() {
+        Object(__WEBPACK_IMPORTED_MODULE_2_util_cookies__["b" /* setCookie */])('CNNtosAgreed', 'agreed', 365, '/');
+        this.setState({ hidden: true });
+    };
+
+    return TermsOfServiceBanner;
+}(__WEBPACK_IMPORTED_MODULE_0_react__["Component"]);
+
+var _default = TermsOfServiceBanner;
+
+
+/* harmony default export */ __webpack_exports__["a"] = (_default);
+;
+
+var _temp = function () {
+    if (typeof __REACT_HOT_LOADER__ === 'undefined') {
+        return;
+    }
+
+    __REACT_HOT_LOADER__.register(TermsOfServiceBanner, 'TermsOfServiceBanner', '/usr/src/cnnmoney-web-fe/src/modules/terms-of-service/index.js');
+
+    __REACT_HOT_LOADER__.register(_default, 'default', '/usr/src/cnnmoney-web-fe/src/modules/terms-of-service/index.js');
+}();
+
+;
+
+/***/ }),
+
+/***/ 336:
+/***/ (function(module, exports) {
+
+// removed by extract-text-webpack-plugin
+module.exports = {"hide":"a4da0f1d","wrapper":"_2dc7d020","container":"_1a5e0d1c","row":"_38eba337","header":"_35f77622","content":"_4adbde3f","close":"efdbf835"};
+
+/***/ }),
+
+/***/ 337:
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "a", function() { return importAsset; });
+/* unused harmony export removeAsset */
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0_promise_polyfill__ = __webpack_require__(338);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0_promise_polyfill___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_0_promise_polyfill__);
+
+var assetPromises = {};
+
+var importAsset = function importAsset(type, id, url, options) {
+    if (assetPromises[id] === undefined) {
+        assetPromises[id] = new __WEBPACK_IMPORTED_MODULE_0_promise_polyfill___default.a(function (resolve, reject) {
+            var element = document.createElement(type);
+            element.id = id;
+            if (type === 'link') {
+                element.rel = 'stylesheet';
+                element.href = url;
+            } else if (type === 'script') {
+                element.src = url;
+                if (options && options.async === true) {
+                    element.async = true;
+                }
+                if (options && options.defer === true) {
+                    element.defer = true;
+                }
+            }
+            element.onload = resolve;
+            element.onerror = reject;
+
+            document.getElementsByTagName('head')[0].appendChild(element);
+        });
+    }
+    return assetPromises[id];
+};
+
+var removeAsset = function removeAsset(id) {
+    var el = document.getElementById(id);
+
+    if (el) {
+        el.parentNode.removeChild(el);
+    }
+};
+;
+
+var _temp = function () {
+    if (typeof __REACT_HOT_LOADER__ === 'undefined') {
+        return;
+    }
+
+    __REACT_HOT_LOADER__.register(assetPromises, 'assetPromises', '/usr/src/cnnmoney-web-fe/src/util/assets.js');
+
+    __REACT_HOT_LOADER__.register(importAsset, 'importAsset', '/usr/src/cnnmoney-web-fe/src/util/assets.js');
+
+    __REACT_HOT_LOADER__.register(removeAsset, 'removeAsset', '/usr/src/cnnmoney-web-fe/src/util/assets.js');
+}();
+
+;
+
+/***/ }),
+
+/***/ 341:
+/***/ (function(module, exports) {
+
+// removed by extract-text-webpack-plugin
+module.exports = {"footer":"_4c3b035b","iconBlock":"_05812abd","textLinks":"_7dc7c77c","social":"_7f66fb27","terms":"fe31535c"};
+
+/***/ }),
+
+/***/ 51:
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "b", function() { return defaultSections; });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "c", function() { return internationalSections; });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "a", function() { return cnnMoneyUrl; });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "d", function() { return marketQuotePath; });
+var defaultSections = [{
+    title: 'Companies',
+    url: '/news/companies'
+}, {
+    title: 'Markets',
+    url: '/markets/?iid=Mark_Nav'
+}, {
+    title: 'Tech',
+    url: '/technology/?iid=Tech_Nav'
+}, {
+    title: 'Media',
+    url: '/media/?iid=Media_Nav'
+}];
+
+var internationalSections = [{
+    title: 'Markets',
+    url: '/markets/?iid=Mark_Nav'
+}, {
+    title: 'Economy',
+    url: '/economy'
+}, {
+    title: 'Companies',
+    url: '/news/companies'
+}, {
+    title: 'Tech',
+    url: '/technology/?iid=Tech_Nav'
+}, {
+    title: 'Autos',
+    url: '/autos'
+}, {
+    title: 'India',
+    url: '/news/india'
+}, {
+    title: 'Video',
+    url: '/video'
+}];
+
+var cnnMoneyUrl = '//money.cnn.com';
+var marketQuotePath = '/quote/quote.html?symb=';
+;
+
+var _temp = function () {
+    if (typeof __REACT_HOT_LOADER__ === 'undefined') {
+        return;
+    }
+
+    __REACT_HOT_LOADER__.register(defaultSections, 'defaultSections', '/usr/src/cnnmoney-web-fe/src/config/navigation.js');
+
+    __REACT_HOT_LOADER__.register(internationalSections, 'internationalSections', '/usr/src/cnnmoney-web-fe/src/config/navigation.js');
+
+    __REACT_HOT_LOADER__.register(cnnMoneyUrl, 'cnnMoneyUrl', '/usr/src/cnnmoney-web-fe/src/config/navigation.js');
+
+    __REACT_HOT_LOADER__.register(marketQuotePath, 'marketQuotePath', '/usr/src/cnnmoney-web-fe/src/config/navigation.js');
+}();
+
+;
+
+/***/ }),
+
+/***/ 60:
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "a", function() { return getCookie; });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "b", function() { return setCookie; });
+var getCookie = function getCookie(name) {
+    if (typeof window === 'undefined') {
+        return '';
+    }
+    var cookies = window.document.cookie.split('; ');
+    return cookies.reduce(function (r, v) {
+        var parts = v.split('=');
+        return parts[0] === name ? decodeURIComponent(parts[1]) : r;
+    }, '');
+};
+
+var setCookie = function setCookie(name, value) {
+    var days = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : 14;
+    var path = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : '/';
+    var domain = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : 'cnn.com';
+
+    var expires = new Date(Date.now() + days * 864e5).toUTCString();
+    window.document.cookie = name + '=' + value + '; expires=' + expires + '; path=' + path + '; domain=' + domain + ';';
+};
+;
+
+var _temp = function () {
+    if (typeof __REACT_HOT_LOADER__ === 'undefined') {
+        return;
+    }
+
+    __REACT_HOT_LOADER__.register(getCookie, 'getCookie', '/usr/src/cnnmoney-web-fe/src/util/cookies.js');
+
+    __REACT_HOT_LOADER__.register(setCookie, 'setCookie', '/usr/src/cnnmoney-web-fe/src/util/cookies.js');
+}();
+
+;
+
+/***/ }),
+
+/***/ 61:
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0_react__ = __webpack_require__(1);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0_react___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_0_react__);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1_prop_types__ = __webpack_require__(2);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1_prop_types___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_1_prop_types__);
+
+
+
+var defaultProps = {
+    height: 17,
+    width: 17,
+    fill: '#0666a7'
+};
+
+var propTypes = {
+    height: __WEBPACK_IMPORTED_MODULE_1_prop_types___default.a.number,
+    width: __WEBPACK_IMPORTED_MODULE_1_prop_types___default.a.number,
+    fill: __WEBPACK_IMPORTED_MODULE_1_prop_types___default.a.string
+};
+
+var CloseIcon = function CloseIcon(_ref) {
+    var height = _ref.height,
+        width = _ref.width,
+        fill = _ref.fill;
+
+    return __WEBPACK_IMPORTED_MODULE_0_react___default.a.createElement(
+        'svg',
+        { width: width, height: height, viewBox: '0 0 18 15', version: '1.1', xmlns: 'http://www.w3.org/2000/svg' },
+        __WEBPACK_IMPORTED_MODULE_0_react___default.a.createElement('path', {
+            fill: fill,
+            d: 'M7.52,7.507 L1.2,13.826 C0.932404442,14.0951375 0.932404442,14.5298625 1.2,14.799 C1.46925373,15.0672591 1.90474627,15.0672591 2.174,14.799 L8.493,8.481 L14.805,14.797 C15.077,15.067 15.523,15.067 15.795,14.797 C15.9259276,14.6667481 15.9995391,14.4896825 15.9995391,14.305 C15.9995391,14.1203175 15.9259276,13.9432519 15.795,13.813 L9.48,7.493 L15.8,1.174 C16.0675956,0.904862491 16.0675956,0.470137509 15.8,0.201 C15.5307463,-0.0672590835 15.0952537,-0.0672590835 14.826,0.201 L8.507,6.52 L2.195,0.203 C1.92028214,-0.067134075 1.47971786,-0.067134075 1.205,0.203 C1.07431882,0.333383108 1.00087779,0.51039955 1.00087779,0.695 C1.00087779,0.87960045 1.07431882,1.05661689 1.205,1.187 L7.52,7.507 L7.52,7.507 Z'
+        })
+    );
+};
+
+CloseIcon.defaultProps = defaultProps;
+CloseIcon.propTypes = propTypes;
+
+var _default = CloseIcon;
+/* harmony default export */ __webpack_exports__["a"] = (_default);
+;
+
+var _temp = function () {
+    if (typeof __REACT_HOT_LOADER__ === 'undefined') {
+        return;
+    }
+
+    __REACT_HOT_LOADER__.register(defaultProps, 'defaultProps', '/usr/src/cnnmoney-web-fe/src/modules/icons/close-icon/index.js');
+
+    __REACT_HOT_LOADER__.register(propTypes, 'propTypes', '/usr/src/cnnmoney-web-fe/src/modules/icons/close-icon/index.js');
+
+    __REACT_HOT_LOADER__.register(CloseIcon, 'CloseIcon', '/usr/src/cnnmoney-web-fe/src/modules/icons/close-icon/index.js');
+
+    __REACT_HOT_LOADER__.register(_default, 'default', '/usr/src/cnnmoney-web-fe/src/modules/icons/close-icon/index.js');
+}();
+
+;
+
+/***/ }),
+
+/***/ 73:
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "a", function() { return contentApolloClient; });
+/* unused harmony export marketApolloClient */
+/* unused harmony export createContentApolloClient */
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0_apollo_link_http__ = __webpack_require__(74);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1_isomorphic_fetch__ = __webpack_require__(171);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1_isomorphic_fetch___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_1_isomorphic_fetch__);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_2_apollo_client__ = __webpack_require__(172);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_3_apollo_cache_inmemory__ = __webpack_require__(175);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_3_apollo_cache_inmemory___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_3_apollo_cache_inmemory__);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_4_config__ = __webpack_require__(109);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_4_config___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_4_config__);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_5__config__ = __webpack_require__(110);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_5__config___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_5__config__);
+var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
+
+
+
+
+
+
+
+
+
+// import resolvers from './resolvers';
+// import stateDefaults from './state-defaults';
+
+var opts = {
+    fetch: function fetch(uri, options) {
+        var query = generateQuery(JSON.parse(options.body));
+
+        return __WEBPACK_IMPORTED_MODULE_1_isomorphic_fetch___default()(uri + '?' + query, {
+            method: 'GET',
+            headers: options.headers
+        });
+    }
+};
+
+var customFetch = function customFetch(uri, options) {
+    var body = JSON.parse(options.body);
+    var query = generateQuery(body);
+    var newURI = __WEBPACK_IMPORTED_MODULE_5__config___default.a.contentServer(__WEBPACK_IMPORTED_MODULE_4_config__["configEnv"], body.variables.previewUser);
+
+    return __WEBPACK_IMPORTED_MODULE_1_isomorphic_fetch___default()(newURI + '?' + query, {
+        method: 'GET',
+        headers: options.headers
+    });
+};
+
+var generateQuery = function generateQuery(body) {
+    // remove unnecessary spaces form the query
+    var bodyQuery = encodeURIComponent(body.query.replace(/\s{2,}/g, ' ').replace(/\\n/g, '').replace(/\s+\{\s+/g, '{').replace(/\s+\}/g, '}'));
+    return Object.keys(body.variables).length ? 'variables=' + encodeURIComponent(JSON.stringify(body.variables)) + '&query=' + bodyQuery : '&query=' + bodyQuery;
+};
+
+var cache = new __WEBPACK_IMPORTED_MODULE_3_apollo_cache_inmemory__["InMemoryCache"]();
+//
+// // link to client state for non-network based queries/mutations (redux in apollo, uber for cats...)
+// const createStateLink = cache => {
+//     return withClientState({
+//         cache: typeof window !== 'undefined' ? cache.restore(window.__APOLLO_STATE__) : cache,
+//         resolvers,
+//         defaults: stateDefaults
+//     });
+// };
+
+// Content service
+var contentApolloClient = new __WEBPACK_IMPORTED_MODULE_2_apollo_client__["a" /* default */]({
+    ssrForceFetchDelay: 100,
+    link: Object(__WEBPACK_IMPORTED_MODULE_0_apollo_link_http__["b" /* createHttpLink */])({ fetch: customFetch }),
+    cache: typeof window !== 'undefined' ? cache.restore(window.__APOLLO_STATE__) : cache
+});
+
+// Market service
+var marketApolloClient = new __WEBPACK_IMPORTED_MODULE_2_apollo_client__["a" /* default */]({
+    ssrMode: false,
+    link: new __WEBPACK_IMPORTED_MODULE_0_apollo_link_http__["a" /* HttpLink */](_extends({ uri: __WEBPACK_IMPORTED_MODULE_5__config___default.a.marketServer(__WEBPACK_IMPORTED_MODULE_4_config__["configEnv"]) }, opts)),
+    cache: cache
+});
+
+// Content service - server side rendering
+var createContentApolloClient = function createContentApolloClient() {
+    var previewUser = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : null;
+
+    return new __WEBPACK_IMPORTED_MODULE_2_apollo_client__["a" /* default */]({
+        ssrMode: true,
+        link: new __WEBPACK_IMPORTED_MODULE_0_apollo_link_http__["a" /* HttpLink */](_extends({ uri: __WEBPACK_IMPORTED_MODULE_5__config___default.a.contentServer(__WEBPACK_IMPORTED_MODULE_4_config__["configEnv"], previewUser) }, opts)),
+        cache: new __WEBPACK_IMPORTED_MODULE_3_apollo_cache_inmemory__["InMemoryCache"]()
+    });
+};
+;
+
+var _temp = function () {
+    if (typeof __REACT_HOT_LOADER__ === 'undefined') {
+        return;
+    }
+
+    __REACT_HOT_LOADER__.register(opts, 'opts', '/usr/src/cnnmoney-web-fe/src/graphql/apollo.js');
+
+    __REACT_HOT_LOADER__.register(customFetch, 'customFetch', '/usr/src/cnnmoney-web-fe/src/graphql/apollo.js');
+
+    __REACT_HOT_LOADER__.register(generateQuery, 'generateQuery', '/usr/src/cnnmoney-web-fe/src/graphql/apollo.js');
+
+    __REACT_HOT_LOADER__.register(cache, 'cache', '/usr/src/cnnmoney-web-fe/src/graphql/apollo.js');
+
+    __REACT_HOT_LOADER__.register(contentApolloClient, 'contentApolloClient', '/usr/src/cnnmoney-web-fe/src/graphql/apollo.js');
+
+    __REACT_HOT_LOADER__.register(marketApolloClient, 'marketApolloClient', '/usr/src/cnnmoney-web-fe/src/graphql/apollo.js');
+
+    __REACT_HOT_LOADER__.register(createContentApolloClient, 'createContentApolloClient', '/usr/src/cnnmoney-web-fe/src/graphql/apollo.js');
+}();
+
+;
+
+/***/ }),
+
+/***/ 93:
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0_react__ = __webpack_require__(1);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0_react___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_0_react__);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__styles_css__ = __webpack_require__(94);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__styles_css___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_1__styles_css__);
+
+
+
+var CnnMoneyIcon = function CnnMoneyIcon() {
+    return __WEBPACK_IMPORTED_MODULE_0_react___default.a.createElement(
+        'span',
+        { className: __WEBPACK_IMPORTED_MODULE_1__styles_css___default.a.wrapper },
+        __WEBPACK_IMPORTED_MODULE_0_react___default.a.createElement(
+            'a',
+            { className: __WEBPACK_IMPORTED_MODULE_1__styles_css___default.a.link, href: '/', target: '_self' },
+            __WEBPACK_IMPORTED_MODULE_0_react___default.a.createElement('img', { className: __WEBPACK_IMPORTED_MODULE_1__styles_css___default.a.icon, id: 'headerLogo', src: 'http://i.cdn.turner.com/money/.element/cnnm-3.0/img/logo/cnnmoney_blue.svg' })
+        )
+    );
+};
+
+var _default = CnnMoneyIcon;
+/* harmony default export */ __webpack_exports__["a"] = (_default);
+;
+
+var _temp = function () {
+    if (typeof __REACT_HOT_LOADER__ === 'undefined') {
+        return;
+    }
+
+    __REACT_HOT_LOADER__.register(CnnMoneyIcon, 'CnnMoneyIcon', '/usr/src/cnnmoney-web-fe/src/modules/icons/cnn-money-icon/index.js');
+
+    __REACT_HOT_LOADER__.register(_default, 'default', '/usr/src/cnnmoney-web-fe/src/modules/icons/cnn-money-icon/index.js');
+}();
+
+;
+
+/***/ }),
+
+/***/ 94:
+/***/ (function(module, exports) {
+
+// removed by extract-text-webpack-plugin
+module.exports = {"wrapper":"f9786d8e","icon":"f234abe9","link":"a2419916"};
+
+/***/ })
+
+},[333]);
+//# sourceMappingURL=footer.d3bd58bb6f1c91487068.js.map

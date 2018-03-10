@@ -1,0 +1,202 @@
+//BRING FORM DATA OVER AND ASSIGN VARIABLE NAMES
+			function mlf2()	{
+		m = window.document.mlf_form.moisture.selectedIndex
+		mm = window.document.mlf_form.moisture_design.selectedIndex 
+		a = parseFloat(window.document.mlf_form.base_load.value).toString();
+		b = 8760
+		c = parseFloat(window.document.mlf_form.moisture.options[m].value).toString();
+		d = parseFloat(window.document.mlf_form.moisture_design.options[mm].value).toString();	
+		f = parseFloat(window.document.mlf_form.load_peak.value).toString();
+		g = parseFloat(window.document.mlf_form.pres_aver.value).toString();
+		h = parseFloat(window.document.mlf_form.pres_peak.value).toString();
+		util = parseFloat(window.document.mlf_form.ultility_cost.value).toString();
+
+design_scfm = parseFloat(f)
+annual_scfm = parseFloat(a)
+design_pressure = parseFloat(g)
+annual_pressure = parseFloat(h)
+design_temp_f = parseFloat(d)
+annual_temp_f = parseFloat(c)
+
+//CHECK TO MAKE SURE DESIGN IS HIGHER THAN ANNUAL DATA AND THAT PRESSURE DESIGN
+//IS LOWER THAN ANNUAL PRESSURE
+traffic_light = "go"
+		if (design_scfm < annual_scfm) {
+		alert("Design SCFM Conditions should always be higher than Annual Condition.")
+		traffic_light = "stop"
+		
+		}
+		if (design_pressure > annual_pressure) {
+		alert("Design Pressure should be less than Annual Pressure.")
+		traffic_light = "stop"
+		
+		}
+		if (design_temp_f < annual_temp_f) {
+		alert("Design Temperature Conditions should always be higher than Annual Condition.")
+		traffic_light = "stop"
+		
+		}
+//MAKE SURE ALL DATA IS SUPPLIED AND POP AN ALERT IF DATA IS MISSING
+if (traffic_light == "go") {
+if ((a == "NaN") || (c == "NaN") || (d == "NaN") || (f == "NaN")  || (g == "NaN") || (h == "NaN") || (util == "NaN"))	{	
+	alert("Sorry. Please enter numeric values for all variables. Try Again.");
+}
+else {	
+//SAVINGS EQUATION BASED CABE ELECTRIC CALC FORM 104
+//Assign purge and heater KW based on provided peak SCFM
+if ((f <= 1200))	{
+	var hp = 5;
+	var kw = 26;
+		}
+else if ((f >= 1201 && f <= 1600))  {
+	var hp = 10;
+	var kw = 32;
+		}
+else if ((f >= 1601 && f <= 2000))  {
+	var hp = 7.5;
+	var kw = 40;
+		}	
+else if ((f >= 2001 && f <= 2500))  {
+	var hp = 10;
+	var kw = 44;
+		}
+else if ((f >= 2501 && f <= 3000))  {
+	var hp = 15;
+	var kw = 56;
+		}
+else if ((f >= 3001 && f <= 4000))  {
+	var hp = 10;
+	var kw = 77;
+		}
+else if ((f >= 4001 && f <= 5000))  {
+	var hp = 20;
+	var kw = 100;
+		}
+else if ((f >= 5001 && f <= 6000))  {
+	var hp = 30;
+	var kw = 117;
+		}
+else if ((f >= 6001 && f <= 7000))  {
+	var hp = 40;
+	var kw = 141;
+		}
+else if ((f >= 7001 && f <= 9000))  {
+	var hp = 30;
+	var kw = 174;
+		}
+else if ((f >= 9001 && f <= 10000))  {
+	var hp = 50;
+	var kw = 208;
+		}
+else if ((f >= 10001))  {
+	var hp = 75;
+	var kw = 236;
+		}
+	
+// END OF ASSIGNING KW AND PURGE FLOW
+
+
+
+
+// OLD MLF FORMULA
+// MOISTURE LOAD FACTOR FORMULA
+// (ANNUAL SCFM / DESIGN SCFM) = SCFM MLF
+// (DESIGN PRESSURE + 14.7) / (ANNUAL PRESSURE + 14.7)) = PRESSURE MLF
+// (ANNUAL TEMP / DESIGN TEMP) = TEMP MLF
+// SET RELATIVE HUMIDITY TO 100% (1) = RELATIVE HUMIDITY MLF
+// MOISTURE LOAD FACTOR = SCFM MLF * PRESSURE MLF * TEMP MLF * RELATIVE HUMIDITY MLF
+//		with(Math)	{	
+//		mlfa = (a / f);
+//		mlfb = ((h + 14.7) / (g + 14.7));
+//		mlfc = (c / d);		
+//		mlfd = 1;
+//		mlfe = (mlfa * mlfb * mlfc * mlfd);
+//		mlff = mlfe;
+//		mlf = (mlfe * 100);
+//		mlff = (mlff * 1); 
+// END OF OLD MLF FORMULA
+
+// REPLACEMENT MLF FORMULA
+	with(Math){
+		a = (a * 1);
+		b = (b * 1);
+		c = (c * 1);
+		d = (d * 1);
+		f = (f * 1);
+		g = (g * 1);
+		h = (h * 1);
+		util = (util * 1);
+	// MLF is figured by multiplying 4 factors
+	// MLFA is SCFM ANNUAL SCFM Divided by Design SCFM		
+		mlfa = (a / f);
+	// MLFB is Pressure
+	//MLFB is Pressure Annual Average Divided by Pressure Design Minimum
+		mlfb = ((g + 14.7) / (h + 14.7));
+	//MLFC is Air Moisture User selects temperature and it is converted to grains
+	//MLFC is Annual Ambient Grains Divided by Peak Moisture Grains
+		mlfc = (c / d);
+	//Below is a correction factor for Grains
+		mlfc = 1-((1-mlfc)/2);
+	//MLFD is Relative Humidity Set to 100 percent
+		mlfd = 1;
+	//Multiply factors to get the Moisture Load factor MLF
+		mlfe = (mlfa * mlfb * mlfc * mlfd);
+		mlff = mlfe;
+		mlf = (mlfe * 100);
+		mlff = (mlff * 1);
+	}		
+		mlf = Math.round(mlf);
+		mlf = mlf + "%";
+
+
+//END REPLACEMENT MLF FORMULA
+//ANNUAL COST FORMULA
+// (BLOWER SIZE HP * .746 * BLOWER ON TIME * DAYS OF THE WEEK * WEEKS PER YEAR * UTILITY COST) +
+// (HEATER SIZE KW * HEATER ON TIME * DAYS OF THE WEEK * WEEKS PER YEAR * UTILITY COST)
+		annual_cost = (hp  * 0.746 * 21 * 7 * 52 * util) + (kw * 21 * 7 * 52 * util);
+			
+		annual_cost = Math.round(annual_cost);
+		savings = (annual_cost * mlff);
+		savings = Math.round(savings);
+//SUBTRACTION TO SHOW POTENTIAL SAVINGS
+		potential = (annual_cost - savings);				
+		//mlf = Math.round(mlf);
+		//mlf = mlf + "%";
+		annual_cost = annual_cost + " "
+		annual_cost = commas(annual_cost)
+		savings = savings + " "
+		savings = commas(savings)
+		potential = potential + " "
+		potential = commas(potential)		
+		annual_cost = "$" + annual_cost + ".00";
+		savings = "$" + savings + ".00";
+		potential = "$" + potential + ".00";
+		window.document.mlf_form.annual_cost.value = annual_cost;
+		window.document.mlf_form.savings.value = savings;
+		window.document.mlf_form.potential.value = potential;
+		window.document.mlf_form.mlf.value = mlf;
+	}		
+	}	
+	}
+
+function commas(here)  {
+//ADD COMMAS
+	if (here.length > 4)  {
+		j = here.length - 1
+		here = here.substring(0,j)
+		n = here.length - 3
+		d = here.length
+			while (n > 0) {
+				sub_des_lbs = here.substring(n,d)
+				sub2_des_lbs = here.substring(0,n)
+				here =  sub2_des_lbs + "," + sub_des_lbs
+				n = n - 3
+				d = d + 1
+				}
+		return here
+		}
+	else {
+		return here
+		}
+}
+					

@@ -1,0 +1,96 @@
+/*
+ * mathjax-config-classic.js
+ * MathJax configuration file customized for PMC, classic view.  This starts with the extensions and
+ * jax from MML_HTMLorMML.js, and then adds PMC custom configurations.
+ *
+ * This is the completely unminified version.
+ * The deployed minified version of this, as of 11/6/2014, includes minified versions of the
+ * following modules:
+ *   /jax/input/MathML/config.js
+ *   /jax/output/HTML-CSS/config.js
+ *   /jax/output/NativeMML/config.js
+ *   /config/MMLorHTML.js
+ *   /extensions/mml2jax.js
+ *   /extensions/MathEvents.js
+ *   /extensions/MathZoom.js
+ *   /extensions/MathMenu.js
+ *   /jax/element/mml/jax.js
+ *   /extensions/toMathML.js
+ *   /jax/input/MathML/jax.js
+ *   /jax/output/NativeMML/jax.js
+ *   /jax/output/HTML-CSS/jax.js
+ *   /jax/output/HTML-CSS/autoload/mtable.js
+ */
+
+MathJax.Hub.Config({"v1.0-compatible": false});
+
+MathJax.Hub.Config({
+  config: ["MMLorHTML.js"],
+  extensions: [
+    "mml2jax.js",
+    "MathEvents.js",
+    "MathZoom.js",
+    "MathMenu.js",
+    "toMathML.js"
+  ],
+  jax: [
+    "input/MathML",
+    "output/HTML-CSS",
+    "output/NativeMML"
+  ],
+
+  // PMC-specific configuration starts here
+  "HTML-CSS": {
+    scale: 120,
+    linebreaks: {
+      automatic: true,
+      width: "container"
+    },
+    undefinedFamily: "STIXGeneral, 'Cambria Math', 'Arial Unicode MS'"
+  },
+
+  // HTML/CSS is the default, but the user might switch to SVG
+  "SVG": {
+    scale: 120,
+    linebreaks: {
+      automatic: true,
+      width: "container"
+    },
+    undefinedFamily: "STIXGeneral, 'Cambria Math', 'Arial Unicode MS'"
+  },
+  showProcessingMessages: false,
+  messageStyle: "none",
+  menuSettings: {
+    zoom: "Hover",
+    zscale: "125%"
+  },
+  MathEvents: {
+    hover: 100
+  },
+  MathZoom: {
+    bodyDiv: true
+  }
+});
+
+MathJax.Hub.Register.StartupHook('End', function() {
+  MathJax.Hub.getAllJax().forEach(function(jax) {
+    // If the <script> element has @id 'MathJax-Element-2', then the <span>
+    // element will have @id 'MathJax-Element-2-Frame'.
+    var span = $('#' + $(jax.SourceElement()).attr('id') + '-Frame');
+    if (span.parents('div.MathJax_Display').length === 0) {
+      span.css({'font-size': '78%'});
+    }
+  });
+});
+
+MathJax.Hub.Register.StartupHook("HTML-CSS multiline Ready", function () {
+  MathJax.ElementJax.mml.mbase.prototype.HTMLlinebreakPenalty.nestfactor = 200;
+  MathJax.ElementJax.mml.mbase.prototype.HTMLlinebreakPenalty.toobig = 1200;
+});
+MathJax.Hub.Register.StartupHook("SVG multiline Ready", function () {
+  MathJax.ElementJax.mml.mbase.prototype.SVGlinebreakPenalty.nestfactor = 200;
+  MathJax.ElementJax.mml.mbase.prototype.SVGlinebreakPenalty.toobig = 1200;
+});
+
+
+MathJax.Ajax.loadComplete("/corehtml/pmc/js/mathjax-config-classic.3.4.js");

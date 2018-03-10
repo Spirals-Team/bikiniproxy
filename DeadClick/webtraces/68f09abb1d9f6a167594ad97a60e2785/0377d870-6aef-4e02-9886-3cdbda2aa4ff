@@ -1,0 +1,500 @@
+//  DATALAYER
+
+// -- Measuring Product Impressions-- 
+// Measures product impressions and also tracks a standard
+// pageview for the tag configuration.
+// Product impressions are sent by pushing an impressions object
+// containing one or more impressionFieldObjects.
+if($(".category-product-list").length > 0) {
+jsonObj = [];
+    $(".category-product-list li a.product-link").each(function(index) {
+
+                    prodName = $(this).parent().find('.product-title').html(),
+price = ($(this).parent().find('span').find('.now').length > 0) ? 'sale' : 'normal',
+  price = ((price =='normal') ? $(this).parent().find('span').text().substring(1) : $(this).parent().find('span').find('.now').html().substring(1));
+                        a = $(this).find('.product_image').attr('src'),
+                        b = '',
+                        c = $(this).find('.product-price').text().trim();
+                    if (a) {
+                        a = a.substring(a.length - 15);
+                        a = a.substring(0, 9);
+                        b = a.substring(0, 3);
+                    }
+                    if (c) {
+                        c = c.substring(c.length - 5);
+                    }
+                    prodID = a;
+                    catID = b;
+                    prodPrice = price;
+        item = {};
+        item ["name"] = prodName;
+        item ["id"] = prodID;
+        item ["price"] = prodPrice;
+        item ["brand"] = 'Mint Velvet';
+        item ["category"] = catID;
+        item ["variant"] = '';
+        item ["list"] = 'PLP';
+        item ["postion"] = index+1;
+
+        jsonObj.push(item);
+    });
+
+jsonString = JSON.stringify(jsonObj);
+console.log(jsonObj);
+
+dataLayer.push({
+  'ecommerce': {
+    'currencyCode': 'GBP',                       // Local currency is optional.
+    'impressions': jsonObj
+  }
+});
+
+
+// --Measuring Product Clicks--
+// aka clicking form PLP
+
+/**
+ * Call this function when a user clicks on a product link. This function uses the event
+ * callback datalayer variable to handle navigation after the ecommerce data has been sent
+ * to Google Analytics.
+ * @param {Object} productObj An object representing a product.
+ */
+
+
+
+$(".product-link, .product-title").click(function( event ) {
+  // event.preventDefault();
+// page variables
+  name = $(this).parent().find('.product-title').html();
+  var price ='';
+  price = ($(this).parent().find('span').find('.now').length > 0) ? 'sale' : 'normal' ;
+  price = ((price =='normal') ? $(this).parent().find('span').html().substring(1) : $(this).parent().find('span').find('.now').html().substring(1));
+  prodID = $(this).find('.product_image_2').attr('src');
+  prodID = prodID.substring(prodID.length - 13);
+  prodID = prodID.substring(0, 9);
+  catID = prodID.substring(0, 3);
+
+  console.log(name);
+  console.log(price);
+  console.log(prodID);
+  console.log(catID);
+
+    dataLayer.push({
+        'event': 'productClick',
+        'ecommerce': {
+            'click': {
+                'actionField': {
+                    'list': 'Search Results'
+                }, // Optional list property.
+                'products': [{
+                    'name': name, // Name or ID is required.
+                    'id': prodID,
+                    'price': price,
+                    'brand': 'Mint Velvet',
+                    'category': catID,
+                    'variant': ''
+                }]
+            }
+        },
+        'eventCallback': function() {
+            // document.location = document.location;
+        }
+    });
+
+});
+}
+
+
+
+// Basket
+// --Measuring Promotion Impressions
+// what promos are present on pageload
+// An example of measuring promotion views. This example assumes that
+// information about the promotions displayed is available when the page loads.
+
+
+if(($('.ly_viewbasket').length > 0 || $('.ly_checkout\\.delivery\\.address').length > 0 || $('.ly_paymentdetails').length > 0) && $(".promo").length > 0) {
+
+var promoName = $('.basket-summary-promotion-name').text().trim();
+
+dataLayer.push({
+  'ecommerce': {
+    'promoView': {
+      'promotions': [                     // Array of promoFieldObjects.
+       {
+         'id': '',            // ID or Name is required.
+         'name': promoName,
+         'creative': '',
+         'position': ''
+       }]
+    }
+  }
+});
+
+};
+
+
+
+//jhenry rework of top nav link thingy to fix IE11 not support ES6 
+function fixTopNavigationLinks() {
+    $('#header li.level_1 > .dl-submenu').each(function() {
+        topNavUrl = $(this).prev('a');
+        firstCaturl = $(this).find('li.level_2:first-child a').prop('href');
+        topNavUrl.prop('href', firstCaturl);
+    });
+}
+
+
+function contactFormFix(e) {
+    e.attr("action", "https://" + location.host + e.attr("action"))
+}
+
+function disabledCardFields() {
+    $("[name=checkoutAddressMode]").change(function() {
+        "createAddress" == this.value ? $("input, select", "#new-payment-card").attr("disabled", !0) : $("input, select", "#new-payment-card").attr("disabled", !1)
+    })
+}
+$(document).ready(function() {
+    fixTopNavigationLinks();
+    var e = $.cookie("country_iso");
+    $("body").addClass("country_" + e), $(".size_select_list").find("li.has_stock").find(".custom_input").click(function() {
+        $(this).parent().find("input").prop("checked", !0)
+    }), sli.init()
+}), window.console || (window.console = {}), window.console.log || (window.console.log = function() {}), $(document).ready(function() {
+    function e(e) {
+        var t = $(e);
+        "Show more" === t.html() ? t.html("Show less") : t.html("Show more")
+    }
+    var t = $("#cms_content");
+    t.find(".mv_read-more").after('<a href="#" class="mv_more-link">Show more</a>'), t.on("click", ".mv_more-link", function(t) {
+        t.preventDefault(), $(this).prev(".mv_read-more").toggle(), e(this)
+    }), $(".contact-form form").length > 0 && contactFormFix($(".contact-form form")), $("#telephoneNumber, #mobileNumber").length > 0 && $("#telephoneNumber, #mobileNumber").attr("data-rule-maxlength", 20)
+}), $(document).ready(function() {
+    function e(e) {
+        var t = $(e);
+        "+" === t.html() ? t.html("-") : t.html("+")
+    }
+
+    function e(e) {
+        var t = $(e);
+        "+" === t.html() ? t.html("-") : t.html("+")
+    }
+    var t = $("#cms_content");
+    t.find(".mv_plus").before('<a href="#" class="mv_plus-link">+</a>'), t.on("click", ".mv_plus-link", function(t) {
+        t.preventDefault(), $(this).next(".mv_plus").toggle(), e(this)
+    });
+    var t = $("#cms_content");
+    t.find(".mv_careers-open").before('<a href="#" class="mv_careers-arrow-link">+</a>'), t.on("click", ".mv_careers-arrow-link", function(t) {
+        t.preventDefault(), $(this).next(".mv_careers-open").slideToggle(), e(this)
+    })
+}), $(document).ready(function() {
+    function e(e) {
+        var t = $(e);
+        "Show more" === t.html() ? t.html("Show less") : t.html("Show more")
+    }
+    var t = $("#cms_content");
+    t.find(".mv_show-more").after('<a href="#" class="mv_show-link">Show more</a>'), t.on("click", ".mv_show-link", function(t) {
+        t.preventDefault(), $(this).prev(".mv_show-more").toggle(), e(this)
+    }), $("#order-confirmation-page").find("p strong:last-child").html("0345 456 2200")
+}), $(document).ready(function() {
+    $(".enter-manual-address a").click(function() {
+        $("#state").is(":hidden") && $("#state").addClass("ignore")
+    })
+}), $(document).ready(function() {
+    $("#customerMarketing_27").attr("checked", !1)
+}), $(document).ready(function() {
+    $("#main").find(".store-notes").before('<div class="col-xs-7"><p class="return-to-stores-page"><a href="/store-locator">return to stores page</a></p></div>')
+}), $(document).ready(function() {
+    $(".ShoppingBag").find("#footer").before('<div class="visible-xs col-xs-12 remove-gutter"><a href="tel:03454562200"><img src="/pws/client/images/responsive/footer/call_us.jpg" class="img-responsive need-help-banner" alt="need help? call us 0345 456 2200"/></a></div>'), $(".checkout").find("#page").after('<div class="visible-xs col-xs-12 remove-gutter"><a href="tel:03454562200"><img src="/pws/client/images/responsive/footer/call_us.jpg" class="img-responsive need-help-banner" alt="need help? call us 0345 456 2200"/></a></div>')
+}), $(document).ready(function() {
+    $(".no-touch .masterTooltip").hover(function() {
+        var e = $(this),
+            t = e.attr("title");
+        e.data("tipText", t).removeAttr("title"), $('<p class="tooltip"></p>').text(t).appendTo("body").fadeIn("slow")
+    }, function() {
+        var e = $(this);
+        e.attr("title", e.data("tipText")), $(".tooltip").remove()
+    }).mousemove(function(e) {
+        var t = e.pageX + 20,
+            o = e.pageY + 10;
+        $(".tooltip").css({
+            top: o,
+            left: t
+        })
+    })
+}), $(document).ready(function() {
+    var e = 400,
+        t = 1200,
+        o = 700,
+        n = $("#back-to-top");
+    $(window).scroll(function() {
+        $(this).scrollTop() > e ? n.addClass("cd-is-visible") : n.removeClass("cd-is-visible cd-fade-out"), $(this).scrollTop() > t && n.addClass("cd-fade-out")
+    }), n.on("click", function(e) {
+        e.preventDefault(), $("body,html").animate({
+            scrollTop: 0
+        }, o)
+    })
+}), $(document).ready(function() {
+    var e = $('<div id="cookie_policy_banner" class="cookie-policy-banner"><p class="cookie-policy-banner__p">We use cookies to enhance your shopping experience.<br class="cookie-policy-banner__br"> Simply close this message to confirm your consent.</p><p class="cookie-policy-banner__p">For more information please see our <a href="/content/cookies" rel="nofollow" title="Privacy &amp; Cookies Policy">cookies policy.</a></p><span id="close-cookie-banner" class="cookie-policy-banner__close">Close</span></div>');
+    $.cookie("cookie_policy_accepted") || ($("#page").prepend(e), $("#close-cookie-banner").on("click", function(e) {
+        e.preventDefault(), $.cookie("cookie_policy_accepted", !0, {
+            path: "/",
+            domain: ".mintvelvet.co.uk",
+            expires: 3652.5
+        }), $("#cookie_policy_banner").slideUp()
+    }))
+}), $(document).ready(function() {
+    $("label[for='gift_receipt_new_card']").parent().css("background-color", "#f7f6f6")
+}), $(document).ready(function() {
+    var e = $(".ly_solrsearchresults").find(".category-top .category-info");
+    e.find("p").before(e.find("h1"))
+}), $(document).ready(function() {
+    $(".ly_solrsearchresults #main .category-parent .category-top .category-info").find(".hidden-sm").removeClass()
+}), $(document).ready(function() {
+
+  function set_header_telephone_number() {
+    console.log('setting header telephone number');
+    var $header_phone_number = $('#header_phone_number'),
+      country_iso = $.cookie('country_iso'),
+        phone_number;
+
+        if (country_iso) {
+          phone_number = $header_phone_number.data(country_iso.toLowerCase() + '-number');
+          if (!phone_number) {
+            phone_number = $header_phone_number.data('international-number');
+          }
+
+
+          if (phone_number !== null) {
+            $header_phone_number.attr('href', phone_number_as_href(phone_number));
+            $header_phone_number.find('span').html(phone_number);
+            $header_phone_number.show();
+          }
+
+        }
+  }
+
+  function phone_number_as_href(number) {
+    var href_number;
+
+    href_number = number.replace(/ /g, '')
+    .replace(/-/g, '')
+    .replace(/\+/, '00')
+    .replace('(0)', '');
+
+    return 'tel:' + href_number;
+  } 
+}); 
+var btf, btf = btf || {};
+btf.product = btf.product || {}, btf.product.images = btf.product.images || {},
+    function(e, t) {
+        "use strict";
+        e.altImages = {
+            settings: {
+                useSwipe: !1,
+                swipeThumbSpeed: 500,
+                altImageWrapClass: "product_altImages",
+                zoomImgFolder: "/1000px/",
+                mainImgFolder: "/360px/",
+                thumbImgFolder: "/80px/",
+                maxAltImages: 5,
+                maxFailedReqs: 2
+            },
+            storage: {
+                slides: [],
+                thumbs: []
+            },
+            build: function(o, n) {
+                var a, s, i, r, c = t.extend({}, e.altImages.settings, n),
+                    l = t("img", o),
+                    d = l.attr("src"),
+                    m = d.lastIndexOf("."),
+                    p = d.substr(0, m),
+                    u = d.substr(m, d.length),
+                    h = t("<ul>"),
+                    g = t('<div class="swiper-wrapper">'),
+                    f = t('<div class="swiper-container">'),
+                    v = o.attr("class"),
+                    b = 0,
+                    w = 0,
+                    _ = 0,
+                    $ = 0,
+                    y = 0,
+                    k = 0,
+                    x = function(e) {
+                        e.preventDefault(), btf.product.images.altImages.mySwiper.swipeNext()
+                    },
+                    I = function(e) {
+                        e.preventDefault(), btf.product.images.altImages.mySwiper.swipePrev()
+                    },
+                    S = function(e, o, n, a) {
+                        this.swipeSlide = a, this.thumbImgUrl = e, this.mainImgUrl = o, this.zoomedImgUrl = n, this.$altImg = t('<li data-order="' + a + '"><a href="' + n + '" ><img src="' + e + '" /></a></li>'), 0 === a && this.$altImg.addClass("selected"), this.init()
+                    },
+                    A = function(o, n, a) {
+                        this.$thisSwipeSlide = t('<div class="swiper-slide" data-order="' + a + '">'), this.mainImgUrl = o, this.zoomedImgUrl = n, this.$imgAnchor = t('<a href="' + n + '" class="' + v + '" ><img src="' + o + '"/>'), e.altImages.$allTargetAnchors = e.altImages.$allTargetAnchors ? e.altImages.$allTargetAnchors.add(this.$imgAnchor) : this.$imgAnchor, g.append(this.$thisSwipeSlide.append(this.$imgAnchor)), g.find("div").sort(function(e, t) {
+                            return +e.getAttribute("data-order") - +t.getAttribute("data-order")
+                        }).appendTo(g)
+                    },
+                    C = function() {
+                        b > 0 && c.useSwipe && o.parent().html(f.append(g)), w > 0 && (a = t("." + c.altImageWrapClass), 0 === a.length && (a = t('<div class="' + c.altImageWrapClass + '">'), c.useSwipe ? f.after(a) : o.append(a)), 0 === h.find(".selected").length && h.find("li:nth(0)").addClass("selected"), a.append(h)), c.useSwipe && (e.altImages.mySwiper = t(".swiper-container").swiper(c.swipeSettings), t("html").hasClass("ie8") || t(".swiper-container").prepend('<a class="arrow-left swipe-ctrl" href="#"></a><a class="arrow-right swipe-ctrl" href="#"></a>').after('<span class="superzoom_open superzoom_link">Enlarge</span>'), t(".arrow-left").on("click", I), t(".arrow-right").on("click", x), t(".superzoom_open").LightBox(), t(".zoom").zoomify({
+                            noZoomNode: btf.product.images.altImages.mySwiper ? btf.product.images.altImages.mySwiper.wrapper : null,
+                            noZoomClass: "pauseZoom"
+                        })), h.find("li").on("click", function(o) {
+                            o.preventDefault(), c.useSwipe && e.altImages.mySwiper.swipeTo(h.find("li").index(t(this)), c.swipeThumbSpeed), t("li.selected", h).removeClass("selected"), t(this).addClass("selected")
+                        })
+                    },
+                    T = function(o, n, a, s) {
+                        t.ajax({
+                            cache: false,
+                            type: "HEAD",
+                            url: o
+                        }).done(function() {
+                            Swiper && (e.altImages.storage.slides[s] = new A(n, a, s), b += 1), e.altImages.storage.thumbs[s] = new S(o, n, a, s), w += 1
+                        }).fail(function() {
+                            Swiper && ($ += 1), y += 1
+                        }).always(function() {
+                            k += 1, k >= c.maxAltImages && C()
+                        })
+                    },
+                    F = function() {
+                        for (_ = 0; _ < c.maxAltImages; _++) s = 0 === _ ? p + "_2" + u : 1 === _ ? d : 2 === _ ? p + "_1" + u : p + "_" + _ + u, i = s.replace(c.mainImgFolder, c.thumbImgFolder), r = s.replace(c.mainImgFolder, c.zoomImgFolder), T(i, s, r, _)
+                    };
+                S.prototype = {
+                    constuctor: e.altImages.build.NewDesktopAltImage,
+                    init: function() {
+                        h.append(this.$altImg), h.find("li").sort(function(e, t) {
+                            return +e.getAttribute("data-order") - +t.getAttribute("data-order")
+                        }).appendTo(h)
+                    }
+                }, F()
+            }
+        }, t.fn.altImages = function(o) {
+            var n = this.filter("a").has("img");
+            return n.each(function() {
+                e.altImages.build(t(this), o)
+            }), this
+        }
+    }(btf.product.images, jQuery);
+var sli = {
+    init: function() {
+        sli.copy_fresca_cookies(), sli.set_basket_cookies(), $("#add_to_bag").on("click", function() {
+            sli.set_basket_cookies()
+        })
+    },
+    copy_fresca_cookies: function() {
+        if ("fashion.mintvelvet.co.uk" !== window.location.host) {
+            var e = $.cookie("currency_iso"),
+                t = $.cookie("country_iso");
+            $.cookie("sli_currency", e, {
+                path: "/",
+                domain: ".mintvelvet.co.uk"
+            }), $.cookie("sli_country", t, {
+                path: "/",
+                domain: ".mintvelvet.co.uk"
+            })
+        }
+    },
+    set_basket_cookies: function() {
+        var e = function() {
+            var e = $(".header-bag-details"),
+                t = $(e[0]).html(),
+                o = $(e[1]).html();
+            $.cookie("sli_basket_items", t, {
+                path: "/",
+                domain: ".mintvelvet.co.uk",
+                expires: .5
+            }), $.cookie("sli_basket_value", o, {
+                path: "/",
+                domain: ".mintvelvet.co.uk",
+                expires: .5
+            })
+        };
+        setTimeout(e, 2e3)
+    }
+};
+$(document).ready(function() {
+    $("body.ly_myaccount #oldPassword").attr("data-msg-required", "Old password required"), $("body.ly_myaccount #oldPassword").attr("data-msg-minlength", "Please ensure your password is a minimum of 8 characters")
+});
+
+
+$(document).ready(function(){
+	var flagCountry = $.cookie("country_iso") || "";
+	if (flagCountry) {
+		$('a.second-nav-countries img.country-ico').attr('src', '/pws/client/images/flags/' + flagCountry.toLowerCase() + '.png' );
+	}
+});
+
+// MINTV-601
+$(document).ready(function() {
+    var sort = false;
+    $('.size_select_list li').each(function() {
+        var sort_order = $(this).find('.custom_input').text();
+        if (sort_order.indexOf(' UK ') > -1 && sort_order.indexOf(' US ') > -1) {
+            sort_order = sort_order
+                .replace(' UK ', '')
+                .replace(' US ', '')
+                .replace('Short', 1)
+                .replace('Regular', 2)
+                .replace('Long', 3);
+            $(this)[0].dataset.sortOrder = sort_order;
+            sort = true;
+        }
+    });
+
+    if (sort) {
+        $('.size_select_list li.has_stock').sort(function(a, b) {
+            return parseInt(a.dataset.sortOrder, 10) - parseInt(b.dataset.sortOrder, 10);
+        }).each(function() {
+            console.log($(this).data('sort-order'));
+            $(this).appendTo(".size_select_list");
+        });
+
+        $('.size_select').click();
+        $('.size_select_list li.has_stock:nth(0) span.custom_input').click();
+    }
+
+});
+// EOF MINTV-601
+
+// puts the delivery under the subtotal so promo comes after
+$(document).ready(function() {
+if($("#basket-summary-shipping-name, #basket-summary-shipping-value").length > 0) {
+    $('#basket-summary-shipping-name, #basket-summary-shipping-value').insertAfter('#basket-summary-subtotal-value');
+}
+});
+
+// removes recheked checkbox
+$(document).ready(function() {
+    if ($("#register input").length > 0) {
+        $('#register input').removeProp('checked');
+    }
+    if ($("#form-bwr-registration input").length > 0) {
+        $('#form-bwr-registration input').removeProp('checked');
+    }
+});
+
+
+// irish number
+$(document).ready(function() {
+    if($('body[data-country-id="IE"].ly_customer\\.guest\\.register\\.details').length > 0 || $('body[data-country-id="IE"].ly_paymentdetails').length > 0 || $('body[data-country-id="IE"].ly_loginregister').length > 0) {
+    $('#mobile').attr('placeholder','e.g. 00353 7XXX XXXXXX');
+}
+});
+
+
+$(document).ready(function() {
+    $("#request_password a").on('click', function() {
+        var mvEmail = $("#login #email").val();
+        $.cookie('email_passer', mvEmail, {
+            expires: 1
+        });
+    });
+
+
+
+    // populates the email:
+    if ($("#customerPasswordResetEmailRequest").length > 0 && $.cookie('email_passer') !== null) {
+        email = $.cookie('email_passer');
+        $('#customerEmail').val(email);
+    }
+});

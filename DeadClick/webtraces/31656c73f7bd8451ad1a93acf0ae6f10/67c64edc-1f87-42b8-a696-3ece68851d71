@@ -1,0 +1,165 @@
+
+
+<!DOCTYPE html>
+<html>
+<head>
+<style type="text/css">
+html, body {
+    padding: 0;
+    margin: 0;
+}
+</style>
+<script type='text/javascript'>
+// 3.3.4: added document.domain  to fix problems in iphones etc..., this is what the rest of thepage is set to.
+// 4.0.0: moved to invoke using the definePassback method
+// 4.1.0: nw value not being brought in as KVP, we now add this on invocation
+// 4.2.0: forced the gogoteag gpt.js to load from HTTPS
+// 4.3.0: setting gamp pages to document.domain=3p.ampproject.net
+// 4.3.1: added 940x250 and 970x250 sizes
+// 4.3.2: fixed AdX passbacks which don;t set dimensions in url, have to sniff via the viewport
+// 4.4.0: added support for Goolge Analytics
+// 4.5.0: Added 'Adomik' support (see tmg-gpt.js)
+// 4.5.1: Added 300x50 size support
+function getParam(keyname,url){
+  // Rewritten based on - http://stackoverflow.com/questions/901115/how-can-i-get-query-string-values-in-javascript
+  keyname = keyname.replace(/[\[]/, "\\\[").replace(/[\]]/, "\\\]");
+  var regex = new RegExp("[\\?&#]" + keyname + "=([^&#]*)"),
+      results = regex.exec(url);
+  var end = new Date().getTime();
+  return results == null ? "" : decodeURIComponent(results[1].replace(/\+/g, " "));
+}
+function getViewport() {
+  var viewPortWidth;
+  var viewPortHeight;
+  // the more standards compliant browsers (mozilla/netscape/opera/IE7) use window.innerWidth and window.innerHeight
+  if (typeof window.innerWidth != 'undefined') {
+    viewPortWidth = window.innerWidth,
+    viewPortHeight = window.innerHeight
+  }
+  // IE6 in standards compliant mode (i.e. with a valid doctype as the first line in the document)
+  else if (typeof document.documentElement != 'undefined' && typeof document.documentElement.clientWidth !=
+  'undefined' && document.documentElement.clientWidth != 0) {
+    viewPortWidth = document.documentElement.clientWidth,
+    viewPortHeight = document.documentElement.clientHeight
+  }
+  // older versions of IE
+  else {
+    viewPortWidth = document.getElementsByTagName('body')[0].clientWidth,
+    viewPortHeight = document.getElementsByTagName('body')[0].clientHeight
+  }
+  return [viewPortWidth, viewPortHeight];
+}
+function getAdGroup(){
+  var rand = Math.random();
+  switch (false){
+    case !(rand < 0.09): 
+      return "ad_ex" + (Math.floor(100 * rand)); 
+    case !(rand < 0.10): 
+      return "ad_bc";
+    default : 
+      return "ad_opt";
+  }
+}
+
+//////////////////////
+var googletag     = googletag || {};
+    googletag.cmd = googletag.cmd || [];
+// make this work on GAMP pages
+(getParam('nw',location.href)=='gamp') ? document.domain = '3p.ampproject.net': document.domain = 'telegraph.co.uk';
+</script>
+<script type='text/javascript' src='https://www.googletagservices.com/tag/js/gpt.js'></script>
+<script type='text/javascript'>
+///////////////////////////////////////////////////////////////
+// GENERIC Passback
+////////////////////////////////////////////////////////////////
+var tmpAd = {
+  'version'  : '4.5.1',
+  'date'     : '2018-01-04',
+  'debug'    : false,
+  'ga'       : false,
+  'logfile'  : 'passback',
+  'network'  : getParam('nw',location.href),
+  'sz'       : getParam('sz',location.href),
+  'data'     : getParam('data',location.href),
+  'viewport' : getViewport(),
+  'referrer' : document.referrer,
+  'adomik'   : {
+    'ad_h'     : (new Date()).getUTCHours(),
+    'ad_group' : getAdGroup()
+  }, 
+  'type'     : {
+    '300x50'   : 'mob',
+    '320x50'   : 'mob',
+    '728x90'   : 'ban',
+    '970x250'  : 'ban',
+    '940x250'  : 'ban',
+    '300x250'  : 'mpu',
+    '160x600'  : 'skl',
+    '120x600'  : 'sks',
+    '300x600'  : 'hpg'
+  },
+  'size'     : {
+    '300x50'   : [300,50],
+    '320x50'   : [320,50],
+    '728x90'   : [728,90],
+    '970x250'  : [970,250],
+    '940x250'  : [940,250],
+    '300x250'  : [300,250],
+    '160x600'  : [160,600],
+    '120x600'  : [120,600],
+    '300x600'  : [300,600]
+  }
+}
+// Misc processing
+tmpAd.adsize = tmpAd.size[tmpAd.sz];  // get array of sizes for this ad.
+(window.location.search.indexOf('debug') > 0) ? tmpAd.debug = true : null; // sets the debug based on if there's a debug istr in the url
+// Adx requires a bit of processing to get size.
+if(typeof tmpAd.adsize == 'undefined'){
+  // we don't know the size of the ad from the url so lets attempt to grab this from the effective viewport in the page
+  console.info('TMG-ADTECH: AdX passback sets size via viewport, not tag sz='+tmp.viewport);
+  tmp.adsize = tmp.viewport;
+}
+</script>
+</head>
+<body>
+<script type="text/javascript">
+// Call and display the ad.
+// prepend the network id with a period if set
+(tmpAd.network.length > 0) ? tmpAd.dfpadunit = '/6582/tmg.telegraph.passback/passback.'+tmpAd.network : tmpAd.dfpadunit = '/6582/tmg.telegraph.passback/passback'+tmpAd.network;
+// LOGGING
+//console.log("PASSBACK["+tmp.version+"]: document.domain -> "+document.domain);
+if(tmpAd.debug){
+  console.log("PASSBACK ["+tmpAd.version+"]:");
+  console.log("googletag.pubads()");
+  console.log("  .definePassback('"+tmpAd.dfpadunit+"','"+tmpAd.adsize+"')");
+  console.log("  .setTargeting('ad_group', '"+tmpAd.adomik.ad_group+"')");
+  console.log("  .setTargeting('ad_h',     '"+tmpAd.adomik.ad_h+"')");
+  console.log("  .setTargeting('nw',       '"+tmpAd.network+"')");
+  console.log("  .display();");
+} else {
+  console.log("PASSBACK ["+tmpAd.version+"]: "+tmpAd.dfpadunit);  
+}
+//////////////////////////////////////////////////////////////////////////////////////////
+// 3.2.0 - update the url to fix nested iframe problems.
+googletag.pubads().set("page_url", "http://www.telegraph.co.uk");
+// INVOKE AD
+googletag.pubads()
+  .definePassback(tmpAd.dfpadunit, tmpAd.adsize)
+  .setTargeting('ad_group', tmpAd.adomik.ad_group)
+  .setTargeting('ad_h',     tmpAd.adomik.ad_h)
+  .setTargeting('nw',       tmpAd.network)
+  .display();
+//////////////////////////////////////////////////////////////////////////////////////////
+</script>
+<script>
+if(tmpAd.qa){
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+  ga('create', 'UA-26273524-4', 'auto');
+  ga('send', 'pageview');
+}
+</script>
+</body>
+</html>

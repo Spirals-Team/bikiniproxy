@@ -1,0 +1,41 @@
+/*
+Copyright (c) 2018 Isarta Inc. All Rights Reserved.
+For more informations: info@isarta.com
+*/
+
+var fetching = false;
+var page = 0;
+
+$(document).ready(function() {
+	$(document).scroll(function() {
+		var currentPos = $(window).scrollTop();
+		var pageDown   = $(window).height();
+		var pageHeight = $(document).height();
+
+		var urlParams = new URLSearchParams(QUERY_STRING);
+		var rpp = urlParams.get('rpp');
+		
+		if (currentPos + (pageDown * 5) > pageHeight && !fetching && rpp) {
+			console.log('ajouter des emplois...');
+			
+			urlParams.set('page', ++page);
+			urlParams.set('show_more', 'true');
+		
+			fetching = true;
+
+			$.post('/cgi-bin/emplois/search.cgi', urlParams.toString(), function(result) {
+				if (result) {
+					$('#searchResultsTable').append(result);
+					fetching = false;
+				} else {
+					// On laisse fetching à true pour ne plus faire de requètes
+					console.log('fini');
+				}	
+			});
+		}
+	});
+
+	$('#showMoreSearchResults').hover(function() {
+		$('#searchResultsTable').append($('#showMoreResultsTemp').html());
+	});
+});

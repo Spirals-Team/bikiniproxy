@@ -1,0 +1,69 @@
+/**
+ * JSON AJAX WP is a script for getting the posts using WordPress Query
+ *
+ * @copyright 2013
+ * @version 1.0
+ * @author RAJA CRN
+ * @link http://themepacific.com
+ *
+ * @package JSON AJAX WP 
+ */
+jQuery(function(jQuery) {
+  (function() {
+ jQuery('.megabar li a').mouseover(function(e){
+ 	var mydata1 = "";
+ 	var displayed1 = new Array();
+
+	 
+	if(!jQuery('.showslide').data('active')) {
+	var count=0;
+	    jQuery(".megabar li a").each(function(index) {
+   if(jQuery(this).data('cat')){
+    mydata1+=jQuery(this).data('cat')+",";
+	count++;
+	}
+     });
+ 	 displayed1.push(mydata1);
+	 
+	var tp_post = displayed1.toString();
+   	doAjaxRequestmenu(tp_post,count);
+	}
+	 
+	
+function doAjaxRequestmenu(tp_post,count){
+tpcrn_megamenu_active = true;
+      jQuery.ajax({
+	 type : "post",
+          url: tpcrn_ajax.ajaxurl,
+          data:{
+               'action':'do_ajax_menu' ,target1:tp_post,c:count
+                },
+          dataType: 'JSON',
+		    beforeSend: function(){
+                jQuery("#tpcrn_slide_content").html('<div id="loadingProgressG"><div id="loadingProgressG_1" class="loadingProgressG">'); 
+                 
+              },
+             success: function(data) {
+				 
+ 			    jQuery(data.posts).each(function(i,p){
+                jQuery("#tpcrn_slide_content").append(p.content);
+                    });
+ 			   },
+          error: function(errorThrown){
+                console.log(errorThrown);
+          },
+		    complete: function(response){
+ 			 jQuery('.megabar li').addClass('tpcrn_ok'); 
+			jQuery("#tpcrn_slide_content").children().remove('#loadingProgressG');
+			
+               }
+      });
+
+}
+ 
+});
+
+})();
+ });
+
+ 
