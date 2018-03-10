@@ -1,0 +1,342 @@
+<html ng-app="BikiniRepair" ng-controller="AppCtrl">
+    <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <!-- Angular Material style sheet -->
+        <link rel="stylesheet" href="//fonts.googleapis.com/css?family=RobotoDraft:300,400,500,700,400italic">
+        <!-- CSS -->
+        <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+        <!-- Optional theme -->
+        <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap-theme.min.css" integrity="sha384-rHyoN1iRsVXV4nD0JutlnGaslCJuC7uwjduW9SVrLvRYooPp2bWYgmgJQIXwl/Sp" crossorigin="anonymous">
+        <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css">
+
+        <title>({{states.length}}) BikiniRepair</title>
+        <link rel="stylesheet" href="/css/style.css">
+    </head>
+    <body keypress-events>
+    <div id="wrapper">
+        <!-- Navigation -->
+        <nav class="navbar navbar-inverse navbar-fixed-top" role="navigation">
+            <div class="navbar-header">
+                <h2>BikiniRepair {{filteredStates.length}} States
+                    <a href="https://github.com/tdurieux/DeadClick"><i class="fa fa-github" aria-hidden="true"></i></a>
+                </h2>
+                <input type="search" placeholder="Search..." ng-model="search" autofocus>
+            </div>
+            <!-- Sidebar Menu Items - These collapse to the responsive navigation menu on small screens -->
+            <div class="collapse navbar-collapse navbar-ex1-collapse">
+                <ul id="menu" class="nav navbar-nav side-nav">
+                    <li>
+                        <h3>State</h3>
+                    </li>
+                    <li>
+                        <ul class="nav">
+                            <li ng-repeat="(s, count) in handled">
+                                <label for="{{ s }}" ng-class="{'actived': filter[s]}"><input type="checkbox" id="{{ s }}" ng-model="filter[s]" ng-click="clickFilter(s)">{{s}} ({{ count }})</label>
+                            </li>
+                        </ul>
+                    </li>
+                    <li>
+                        <h3>Exceptions</h3>
+                    </li>
+                    <li>
+                        <ul class="nav">
+                            <li ng-repeat="error in errors | orderBy : '-count'">
+                                <label for="{{ error.message }}" ng-class="{'actived': filter[error.message]}"><input type="checkbox" id="{{ error.message }}" ng-model="filter[error.message]" ng-click="clickFilter(error)">{{error.message}} ({{ error.count }})</label>
+                            </li>
+                        </ul>
+                    </li>
+                </ul>
+            </div>
+            <!-- /.navbar-collapse -->
+        </nav>
+
+        <div id="page-wrapper">
+            <table id="mainTable" class="table">
+                <colgroup>
+                    <col span="1" style="width: 5%;">
+                    <col span="1" style="width: 85%;">
+                    <col span="1" style="width: 5%;">
+                    <col span="1" style="width: 5%;">
+                    <col span="1" style="width: 5%;">
+                </colgroup>
+                <thead>
+                <tr>
+                    <th>
+                        #
+                    </th>
+                    <th>
+                        <a href="#" ng-click="sort(['url'])">
+                            URL
+                            <span ng-show="sortType == 'url' && sortReverse" class="fa fa-caret-down"></span>
+                            <span ng-show="sortType == 'url' && !sortReverse" class="fa fa-caret-up"></span>
+                        </a>
+                    </th>
+                    <th>
+                        <a href="#" ng-click="sort('handled')">
+                            Handled
+                            <span ng-show="sortType == 'handled' && sortReverse" class="fa fa-caret-down"></span>
+                            <span ng-show="sortType == 'handled' && !sortReverse" class="fa fa-caret-up"></span>
+                        </a>
+                    </th>
+                    <th>
+                        <a href="#" ng-click="sort('errors.length')">
+                            # Errors
+                            <span ng-show="sortType == 'errors.length' && sortReverse" class="fa fa-caret-down"></span>
+                            <span ng-show="sortType == 'errors.length' && !sortReverse" class="fa fa-caret-up"></span>
+                        </a>
+                    </th>
+                    <th>
+                        <a href="#" ng-click="sort('nbRequests')">
+                            # Requests
+                            <span ng-show="sortType == 'nbRequests' && sortReverse" class="fa fa-caret-down"></span>
+                            <span ng-show="sortType == 'nbRequests' && !sortReverse" class="fa fa-caret-up"></span>
+                        </a>
+                    </th>
+                    <th>Options</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr ng-repeat="(i, state) in states| orderBy:sortType:sortReverse| filter:stateFilter as filteredStates">
+                    <td>{{ i + 1 }}</td>
+                    <td class="columnUrl" ng-click="openState(state)">{{ state.url }}</td>
+                    <td ng-click="openState(state)">{{ status(state) }}</td>
+                    <td ng-click="openState(state)">{{ state.errors.length }}</td>
+                    <td ng-click="openState(state)">{{ state.nbRequests }}</td>
+                    <td><button class="btn" ng-click="repairState(state)">Repair</button></td>
+
+                </tr>
+                </tbody>
+            </table>
+        </div>
+        <!-- /#page-wrapper -->
+    </div><!-- /#wrapper -->
+    <span ng-controller="stateController"></span>
+
+    <!-- Angular Material requires Angular.js Libraries -->
+    <script src="js/angular.js"></script>
+    <script src="js/script.js"></script>
+    </body>
+    <script type="text/ng-template" id="modelRepair.html">
+        <div class="modalheader">
+            <h3 class="modal-title url">{{ $ctrl.repair.state.url }} {{ $ctrl.repair.status }}</h3>
+            <a ng-click="$ctrl.previousState()"><i class="fa fa-arrow-left" aria-hidden="true"></i> Previous State</a> | <a ng-click="$ctrl.nextState()">Next State <i class="fa fa-arrow-right" aria-hidden="true"></i></a>
+        </div>
+        <div class="modal-body">
+            <h2>Repair Models</h2>
+            <table fixed-header class="table table-striped">
+                <thead>
+                <tr>
+                    <th>#</th><th>Name</th><th>Description</th><th>Status</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr ng-repeat="(i, repairModel) in $ctrl.repair.repairModels">
+                    <td>{{ i + 1 }}</td>
+                    <td>{{ repairModel.name }}</td>
+                    <td>{{ repairModel.description }}</td>
+                    <td><div class="repairStatus" ng-class="{disable: !repairModel.enable, activated: repairModel.isToApply}"></div></td>
+                </tr>
+                </tbody>
+            </table>
+            <div class="row">
+                <div class="col-sm">
+                    <h1>Buggy State</h1>
+                    <h2>{{$ctrl.buggyState.errors.length}}  Errors</h2>
+                    <table fixed-header class="table table-striped">
+                        <thead>
+                        <tr>
+                            <th>#</th><th>Messsage</th><th>Location</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr ng-repeat="(i, error) in $ctrl.buggyState.errors">
+                            <td>{{ i + 1 }}</td>
+                            <td>{{ error.message }}</td>
+                            <td class="columnUrl">{{ error.exceptionDetails.url }}:{{ error.exceptionDetails.lineNumber }}:{{ error.exceptionDetails.columnNumber }}</td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="col-sm">
+                    <h1>Repaired State</h1>
+                    <h2>{{$ctrl.repair.state.errors.length}}  Errors</h2>
+                    <table fixed-header class="table table-striped">
+                        <thead>
+                        <tr>
+                            <th>#</th><th>Messsage</th><th>Location</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr ng-repeat="(i, error) in $ctrl.repair.state.errors">
+                            <td>{{ i + 1 }}</td>
+                            <td>{{ error.message }}</td>
+                            <td class="columnUrl">{{ error.exceptionDetails.url }}:{{ error.exceptionDetails.lineNumber }}:{{ error.exceptionDetails.columnNumber }}</td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-sm">
+                    <h2>{{$ctrl.buggyState.requests.length}} Requests</h2>
+                    <table fixed-header class="table table-striped">
+                        <colgroup>
+                            <col span="1" style="width: 5%;">
+                            <col span="1" style="width: 85%;">
+                            <col span="1" style="width: 5%;">
+                            <col span="1" style="width: 5%;">
+                            <col span="1" style="width: 5%;">
+                        </colgroup>
+                        <thead>
+                        <tr>
+                            <th>#</th><th>URL</th><th>Method</th><th>Status</th><th>Type</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr ng-repeat="(i, request) in $ctrl.buggyState.requests">
+                            <td>{{ i + 1 }}</td>
+                            <td class="columnUrl">{{ request.url }}</td>
+                            <td>{{ request.method }}</td>
+                            <td class="status{{ request.status }}">{{ request.status }}</td>
+                            <td>{{ request.type }}</td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="col-sm">
+                    <h2>{{$ctrl.repair.state.requests.length}} Requests</h2>
+                    <table fixed-header class="table table-striped">
+                        <colgroup>
+                            <col span="1" style="width: 5%;">
+                            <col span="1" style="width: 85%;">
+                            <col span="1" style="width: 5%;">
+                            <col span="1" style="width: 5%;">
+                            <col span="1" style="width: 5%;">
+                        </colgroup>
+                        <thead>
+                        <tr>
+                            <th>#</th><th>URL</th><th>Method</th><th>Status</th><th>Type</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr ng-repeat="(i, request) in $ctrl.repair.state.requests">
+                            <td>{{ i + 1 }}</td>
+                            <td class="columnUrl">{{ request.url }}</td>
+                            <td>{{ request.method }}</td>
+                            <td class="status{{ request.status }}">{{ request.status }}</td>
+                            <td>{{ request.type }}</td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-sm">
+                    <h2>Screenshot</h2>
+                    <img class="screenshot" ng-src="{{$ctrl.buggyState.screenshot}}">
+                </div>
+                <div class="col-sm">
+                    <h2>Screenshot</h2>
+                    <img class="screenshot" ng-src="{{$ctrl.repair.state.screenshot}}">
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-primary" type="button" ng-click="$ctrl.ok()">OK</button>
+        </div>
+    </script>
+    <script type="text/ng-template" id="modelState.html">
+        <div class="modalheader">
+            <h3 class="modal-title url" id="modal-title">{{ $ctrl.state.url }}</h3>
+            <a ng-click="$ctrl.previousState()"><i class="fa fa-arrow-left" aria-hidden="true"></i> Previous State</a> | <a ng-click="$ctrl.nextState()">Next State <i class="fa fa-arrow-right" aria-hidden="true"></i></a>
+        </div>
+        <button class="btn" ng-click="$ctrl.parent.$parent.repairState($ctrl.state)">Repair</button>
+        <h2>Repair Models</h2>
+        <table fixed-header class="table table-striped">
+            <thead>
+            <tr>
+                <th>#</th><th>Name</th><th>Description</th><th>Status</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr ng-repeat="(i, repairModel) in $ctrl.repair.repairModels">
+                <td>{{ i + 1 }}</td>
+                <td>{{ repairModel.name }}</td>
+                <td>{{ repairModel.description }}</td>
+                <td><div class="repairStatus" ng-class="{disable: !repairModel.enable, activated: repairModel.isToApply}"></div></td>
+            </tr>
+            </tbody>
+        </table>
+        <div class="row">
+            <div class="col-sm">
+                <h1>Buggy State</h1>
+                <h2>{{$ctrl.buggyState.errors.length}}  Errors</h2>
+                <table fixed-header class="table table-striped">
+                    <thead>
+                    <tr>
+                        <th>#</th><th>Messsage</th><th>Location</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr ng-repeat="(i, error) in $ctrl.repair.oldErrors">
+                        <td>{{ i + 1 }}</td>
+                        <td>{{ error.message }} {{ error.handled }}</td>
+                        <td class="columnUrl">{{ error.exceptionDetails.url }}:{{ error.exceptionDetails.lineNumber }}:{{ error.exceptionDetails.columnNumber }}</td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="col-sm">
+                <h1>Repaired State</h1>
+                <h2>{{$ctrl.repair.state.errors.length}}  Errors</h2>
+                <table fixed-header class="table table-striped">
+                    <thead>
+                    <tr>
+                        <th>#</th><th>Messsage</th><th>Location</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr ng-repeat="(i, error) in $ctrl.repair.newErrors">
+                        <td>{{ i + 1 }}</td>
+                        <td>{{ error.message }} {{ error.handled }}</td>
+                        <td class="columnUrl">{{ error.exceptionDetails.url }}:{{ error.exceptionDetails.lineNumber }}:{{ error.exceptionDetails.columnNumber }}</td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-sm">
+                <h2>{{$ctrl.state.requests.length}} Requests</h2>
+                <table fixed-header class="table table-striped">
+                    <colgroup>
+                        <col span="1" style="width: 5%;">
+                        <col span="1" style="width: 85%;">
+                        <col span="1" style="width: 5%;">
+                        <col span="1" style="width: 5%;">
+                        <col span="1" style="width: 5%;">
+                    </colgroup>
+                    <thead>
+                    <tr>
+                        <th>#</th><th>URL</th><th>Method</th><th>Status</th><th>Type</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr ng-repeat="(i, request) in $ctrl.state.requests">
+                        <td>{{ i + 1 }}</td>
+                        <td class="columnUrl">{{ request.url }}</td>
+                        <td>{{ request.method }}</td>
+                        <td class="status{{ request.status }}">{{ request.status }}</td>
+                        <td>{{ request.type }}</td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <h2>Screenshot</h2>
+        <img class="screenshot" ng-src="{{$ctrl.state.screenshot}}">
+        <div class="modal-footer">
+            <button class="btn btn-primary" type="button" ng-click="$ctrl.ok()">OK</button>
+        </div>
+    </script>
+</html>
