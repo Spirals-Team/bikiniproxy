@@ -8,7 +8,6 @@ const Error = require('DeadClick').Error;
 const repairService = require('./server/repairService');
 
 (async () => {
-    utils.requestsPath = __dirname + '/new_collect/';
 
     await repairService.startProxy(8008);
 
