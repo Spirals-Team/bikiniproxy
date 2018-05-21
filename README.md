@@ -1,7 +1,10 @@
 # BikiniProxy 
 
 BikiniProxy is a novel technique to provide self-healing for the web.
-BikiniProxy is designed as an HTTP proxy that uses five self-healing strategies to rewrite the buggy HTML and Javascript code.
+BikiniProxy is designed as an HTTP proxy that uses five self-healing strategies to rewrite buggy HTML and Javascript code.
+
+[Fully Automated HTML and Javascript Rewriting for Constructing a Self-healing Web Proxy](https://arxiv.org/pdf/1803.08725) (Thomas Durieux, Youssef Hamadi and Martin Monperrus), arXiv 1803.08725, 2018.
+
 
 ## Self-healing Strategies
 
