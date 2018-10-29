@@ -3,12 +3,11 @@
 BikiniProxy is a novel technique to provide self-healing for the web.
 BikiniProxy is designed as an HTTP proxy that uses five self-healing strategies to rewrite buggy HTML and Javascript code.
 
-[Fully Automated HTML and Javascript Rewriting for Constructing a Self-healing Web Proxy](https://arxiv.org/pdf/1803.08725) (Thomas Durieux, Youssef Hamadi and Martin Monperrus), ISSRE, 2018.
+[Fully Automated HTML and Javascript Rewriting for Constructing a Self-healing Web Proxy](https://arxiv.org/pdf/1803.08725) (Thomas Durieux, Youssef Hamadi and Martin Monperrus), Proceedings of ISSRE, 2018.
 
 ```bibtex
 @inproceedings{durieux2018fully,
 	author={Durieux, Thomas and Hamadi, Youssef and Monperrus, Martin},
-	journal={Under submission},
 	title={Fully Automated HTML and JavaScript Rewriting for Constructing a Self-healing Web Proxy},
 	booktitle={Proceedings of the 29th IEEE International Symposium on Software Reliability Engineering (ISSRE)},
 	organization={IEEE},
