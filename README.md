@@ -11,6 +11,7 @@ BikiniProxy is designed as an HTTP proxy that uses five self-healing strategies 
 	title={Fully Automated HTML and JavaScript Rewriting for Constructing a Self-healing Web Proxy},
 	booktitle={Proceedings of the 29th IEEE International Symposium on Software Reliability Engineering (ISSRE)},
 	organization={IEEE},
+	doi = {10.1109/ISSRE.2018.00012},
 	year={2018},
 }
 ```
