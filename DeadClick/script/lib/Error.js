@@ -1,7 +1,7 @@
 class Error {
     getMessage() {
         let exceptionDetails = this.exceptionDetails;
-        if (exceptionDetails.exception) {
+        if (exceptionDetails != null && exceptionDetails.exception) {
             let exception = exceptionDetails.exception;
             if (exception.preview) {
                 let properties = exception.preview.properties;
@@ -15,6 +15,9 @@ class Error {
                 return exception.value;
             }
             return exception.description;
+        }
+        if (exceptionDetails == null) {
+            console.log(this)
         }
         return exceptionDetails.text;
     }

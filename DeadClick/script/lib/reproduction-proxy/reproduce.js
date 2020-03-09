@@ -6,6 +6,9 @@ const Request = require('../Request');
 const State = require('../State');
 const collector = require('../state-collector/collect');
 
+function delay(ms) {
+    return new Promise(r => setTimeout(r, ms));
+}
 
 /**
  *
@@ -33,7 +36,7 @@ function getRequestFromReq(collectedState, req) {
 
 function generateCert() {
     const exec = require('child_process').exec;
-
+    console.log(AnyProxy.utils.certMgr.ifRootCAFileExists())
     if (!AnyProxy.utils.certMgr.ifRootCAFileExists()) {
         AnyProxy.utils.certMgr.generateRootCA((error, keyPath) => {
             // let users to trust this CA before using proxy
@@ -152,6 +155,8 @@ async function startProxy(port) {
                     }
                     const data = await fs.readFile(utils.requestsPath + output.requestState.id + "/" + r.id);
 
+                    await delay(100)
+
                     const parametersO = new URL.URLSearchParams(r.url);
                     const parametersC = new URL.URLSearchParams(requestDetail.url);
                     if (parametersO.has("cb") || parametersO.has("callback")) {
@@ -245,7 +250,7 @@ function getExceptionError(errors) {
 function compareStates(expectedState, actualState) {
     if (expectedState.errors.length !== actualState.errors.length) {
         console.log(expectedState.errors.length, actualState.errors.length);
-        return "DIFF_NB_ERRORS";
+        return {identical: false, type: "DIFF_NB_ERRORS", expected: expectedState, actual: actualState};
     }
 
     let expErrors = getExceptionError(expectedState.errors);
@@ -253,15 +258,13 @@ function compareStates(expectedState, actualState) {
 
     for (let i = 0; i < expErrors.length; i++) {
         if (expErrors[i] != actErrors[i]) {
-            console.log(expErrors[i]);
-            console.log(actErrors[i]);
-            return "DIFF_ERROR";
+            return {identical: false, type: "DIFF_ERROR", expected: expectedState, actual: actualState};
         }
     }
-    return true;
+    return {identical: true, expected: expectedState, actual: actualState};
 }
 
-async function reproduceRequestState(expectedState, proxy) {
+async function reproduceRequestState(expectedState, proxy, extension) {
     for (const url in expectedState.requests) {
         const r = expectedState.requests[url];
         delete expectedState.requests[url];
@@ -275,7 +278,8 @@ async function reproduceRequestState(expectedState, proxy) {
                 url: expectedState.url,
                 proxy: "localhost:" + proxy.port,
                 collectScreenShot: false,
-                timeout: 35000
+                timeout: 35000,
+                extension: extension
             });
 
             resolve(compareStates(expectedState, actualState))

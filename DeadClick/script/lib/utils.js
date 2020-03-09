@@ -14,7 +14,7 @@ async function close() {
     }
 }
 
-async function getBrowser(proxy) {
+async function getBrowser(proxy, extension) {
     if (browser != null && (browser.nbRequest === 0 || browser.nbRequest % 100 !== 0)) {
         return browser;
     }
@@ -24,11 +24,18 @@ async function getBrowser(proxy) {
         args.push('--proxy-server=' + proxy);
         args.push('--ignore-certificate-errors')
     }
+    if (extension) {
+        path_extension =  require('path').join(__dirname, '../../../chrome-extension/app');
+        
+
+        args.push('--disable-extensions-except=' + path_extension);
+        args.push('--load-extension=' + path_extension)
+    }
 
     browser = await puppeteer.launch({
         args: args,
         ignoreHTTPSErrors: !!proxy,
-        headless: true
+        headless: extension?false:true
     });
 
     browser.nbRequest = 0;

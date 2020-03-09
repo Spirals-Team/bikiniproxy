@@ -76,7 +76,7 @@ async function collectPage(opts = {}) {
     };
     opts = Object.assign({}, defaults, opts);
     return new Promise(async (resolve, reject) => {
-        const browser = await utils.getBrowser(opts.proxy);
+        const browser = await utils.getBrowser(opts.proxy, opts.extension);
 
         const output = new Sate(md5(opts.url), opts.url);
 
@@ -125,6 +125,25 @@ async function collectPage(opts = {}) {
                     console.error("error", e);
                     return reject(e);
                 }
+            }
+            if (opts.extension) {
+                const targets = await browser.targets();
+                const backgroundPageTarget = targets.find(target => target.url().indexOf('mghichlnekibemgcefdcnmdajbhlbffl') != -1);
+                const backgroundPage = await backgroundPageTarget.page();
+
+                var data = JSON.parse(await backgroundPage.evaluate(function(){
+                    console.log(window)
+                    return JSON.stringify({
+                        repairActions: window.repairActions,
+                        errors: window.knownErrors,
+                        tab: window.lastTabId
+                    })
+                }));
+                if (data.repairActions) {
+                    output.repairActions = data.repairActions[data.tab]
+                    output.errors_extension = data.errors[data.tab]
+                }
+                console.log(data)
             }
         } catch (e) {
             console.error(e);
