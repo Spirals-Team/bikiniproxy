@@ -57,7 +57,12 @@ async function saveRequest(request) {
         delete r.body;
     }
     if (request.errors.length > 0) {
-        await fs.rename(request.screenshot, requestPath + "/screenshot.png");
+        try {
+            await fs.rename(request.screenshot, requestPath + "/screenshot.png");
+        } catch (e) {
+            await fs.writeFile(requestPath + "/screenshot.png", await fs.readFile(request.screenshot));
+            await fs.delete(request.screenshot);
+        }
     }
     delete request.screenshot;
     await fs.writeFile(requestPath + '/request.json', JSON.stringify(request));
